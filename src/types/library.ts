@@ -1,0 +1,79 @@
+export type BookType = 'Livro' | 'Ebook';
+
+export type BookCategory = 
+  | 'Espiritualidade ou Religioso'
+  | 'Ficção'
+  | 'Não-Ficção'
+  | 'Biografia'
+  | 'Autoajuda'
+  | 'Negócios'
+  | 'Ciência'
+  | 'História'
+  | 'Romance'
+  | 'Fantasia'
+  | 'Outro';
+
+export type ReadingStatus = 'Não iniciado' | 'Lendo' | 'Concluido';
+
+export interface Book {
+  id: string;
+  numero: number;
+  livro: string;
+  totalPaginas: number;
+  tipo: BookType;
+  categoria: BookCategory;
+  valorPago: number;
+}
+
+export interface DailyReading {
+  id: string;
+  dia: number;
+  mes: string;
+  livroId: string;
+  livroLido: string;
+  paginaInicial: number;
+  paginaFinal: number;
+  tempoGasto: number; // minutos
+  quantidadePaginas: number; // calculado automaticamente
+}
+
+export interface BookStatus {
+  id: string;
+  numero: number;
+  livroId: string;
+  livro: string;
+  status: ReadingStatus;
+  quantidadeLida: number;
+}
+
+export interface BookEvaluation {
+  id: string;
+  livroId: string;
+  livro: string;
+  criatividade: number; // 1-10
+  escrita: number; // 1-10
+  aprendizados: number; // 1-10
+  prazer: number; // 1-10
+  impacto: number; // 1-10
+  notaFinal: number; // calculado ou manual
+}
+
+export interface Quote {
+  id: string;
+  citacao: string;
+  livroId: string;
+  livro: string;
+  pagina: number;
+}
+
+export interface DashboardStats {
+  totalPaginas: number;
+  paginasLidas: number;
+  percentualLido: number;
+  paginasFaltantes: number;
+  diasLeitura: number;
+  mediaPaginasDia: number;
+  livrosCadastrados: number;
+  livrosLendo: number;
+  livrosConcluidos: number;
+}
