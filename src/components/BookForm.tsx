@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Plus } from 'lucide-react';
+import { PlusCircle, Plus, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { ManageOptionsDialog } from './ManageOptionsDialog';
 import type { Book } from '@/types/library';
 
 interface BookFormProps {
@@ -20,6 +21,8 @@ export function BookForm({ onSubmit }: BookFormProps) {
   const [newCategory, setNewCategory] = useState('');
   const [showNewType, setShowNewType] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
+  const [manageTypesOpen, setManageTypesOpen] = useState(false);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
 
   useEffect(() => {
     loadTypesAndCategories();
@@ -178,6 +181,14 @@ export function BookForm({ onSubmit }: BookFormProps) {
                   >
                     <Plus className="w-4 h-4" />
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setManageTypesOpen(true)}
+                    className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                    title="Gerenciar tipos"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
@@ -232,6 +243,14 @@ export function BookForm({ onSubmit }: BookFormProps) {
                   >
                     <Plus className="w-4 h-4" />
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setManageCategoriesOpen(true)}
+                    className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                    title="Gerenciar categorias"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
                 </div>
               )}
             </div>
@@ -258,6 +277,26 @@ export function BookForm({ onSubmit }: BookFormProps) {
           </button>
         </form>
       </div>
+
+      <ManageOptionsDialog
+        isOpen={manageTypesOpen}
+        onClose={() => {
+          setManageTypesOpen(false);
+          loadTypesAndCategories();
+        }}
+        type="types"
+        title="Gerenciar Tipos"
+      />
+
+      <ManageOptionsDialog
+        isOpen={manageCategoriesOpen}
+        onClose={() => {
+          setManageCategoriesOpen(false);
+          loadTypesAndCategories();
+        }}
+        type="categories"
+        title="Gerenciar Categorias"
+      />
     </div>
   );
 }
