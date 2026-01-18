@@ -28,6 +28,7 @@ const Index = () => {
     addQuote,
     deleteBook,
     deleteQuote,
+    clearAllData,
     getDashboardStats,
   } = useLibrary();
 
@@ -99,10 +100,18 @@ const Index = () => {
     });
   };
 
+  const handleClearAllData = () => {
+    clearAllData();
+    toast({
+      title: "Dados limpos",
+      description: "Todos os dados foram removidos. Pode começar do zero!",
+    });
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} />;
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onClearData={handleClearAllData} />;
       case 'cadastrar':
         return <BookForm onSubmit={handleAddBook} />;
       case 'leitura':
@@ -114,7 +123,7 @@ const Index = () => {
       case 'citacoes':
         return <QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} />;
       default:
-        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} />;
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onClearData={handleClearAllData} />;
     }
   };
 
