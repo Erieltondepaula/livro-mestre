@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Trash2 } from 'lucide-react';
-import type { Book, BookType, BookCategory } from '@/types/library';
+import { X, Save, Trash2, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import type { Book } from '@/types/library';
 
 interface BookEditDialogProps {
   book: Book | null;
@@ -10,28 +11,23 @@ interface BookEditDialogProps {
   onDelete: (id: string) => void;
 }
 
-const bookTypes: BookType[] = ['Livro', 'Ebook'];
-
-const bookCategories: BookCategory[] = [
-  'Espiritualidade ou Religioso',
-  'Ficção',
-  'Não-Ficção',
-  'Biografia',
-  'Autoajuda',
-  'Negócios',
-  'Ciência',
-  'História',
-  'Romance',
-  'Fantasia',
-  'Outro',
-];
-
 export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: BookEditDialogProps) {
   const [livro, setLivro] = useState('');
   const [totalPaginas, setTotalPaginas] = useState('');
-  const [tipo, setTipo] = useState<BookType>('Livro');
-  const [categoria, setCategoria] = useState<BookCategory>('Ficção');
+  const [tipo, setTipo] = useState('Livro');
+  const [categoria, setCategoria] = useState('Ficção');
   const [valorPago, setValorPago] = useState('');
+  
+  const [bookTypes, setBookTypes] = useState<string[]>([]);
+  const [bookCategories, setBookCategories] = useState<string[]>([]);
+  const [newType, setNewType] = useState('');
+  const [newCategory, setNewCategory] = useState('');
+  const [showNewType, setShowNewType] = useState(false);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+
+  useEffect(() => {
+    loadTypesAndCategories();
+  }, []);
 
   useEffect(() => {
     if (book) {
@@ -42,6 +38,51 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
       setValorPago(book.valorPago.toString());
     }
   }, [book]);
+
+  const loadTypesAndCategories = async () => {
+    const { data: typesData } = await supabase
+      .from('book_types')
+      .select('name')
+      .order('name');
+    
+    const { data: categoriesData } = await supabase
+      .from('book_categories')
+      .select('name')
+      .order('name');
+
+    if (typesData) setBookTypes(typesData.map(t => t.name));
+    if (categoriesData) setBookCategories(categoriesData.map(c => c.name));
+  };
+
+  const handleAddType = async () => {
+    if (!newType.trim()) return;
+    
+    const { error } = await supabase
+      .from('book_types')
+      .insert({ name: newType.trim() });
+    
+    if (!error) {
+      setTipo(newType.trim());
+      setNewType('');
+      setShowNewType(false);
+      loadTypesAndCategories();
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) return;
+    
+    const { error } = await supabase
+      .from('book_categories')
+      .insert({ name: newCategory.trim() });
+    
+    if (!error) {
+      setCategoria(newCategory.trim());
+      setNewCategory('');
+      setShowNewCategory(false);
+      loadTypesAndCategories();
+    }
+  };
 
   if (!isOpen || !book) return null;
 
@@ -54,8 +95,8 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
       ...book,
       livro: livro.trim().toUpperCase(),
       totalPaginas: parseInt(totalPaginas),
-      tipo,
-      categoria,
+      tipo: tipo as Book['tipo'],
+      categoria: categoria as Book['categoria'],
       valorPago: parseFloat(valorPago) || 0,
     });
     onClose();
@@ -116,15 +157,52 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
               <label className="block text-sm font-medium text-foreground mb-2">
                 Tipo
               </label>
-              <select
-                value={tipo}
-                onChange={(e) => setTipo(e.target.value as BookType)}
-                className="input-library"
-              >
-                {bookTypes.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+              {showNewType ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                    className="input-library flex-1"
+                    placeholder="Novo tipo..."
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddType}
+                    className="px-2 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewType(false)}
+                    className="px-2 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <select
+                    value={tipo}
+                    onChange={(e) => setTipo(e.target.value)}
+                    className="input-library flex-1"
+                  >
+                    {bookTypes.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewType(true)}
+                    className="px-2 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                    title="Adicionar novo tipo"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -133,15 +211,52 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
               <label className="block text-sm font-medium text-foreground mb-2">
                 Categoria
               </label>
-              <select
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value as BookCategory)}
-                className="input-library"
-              >
-                {bookCategories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+              {showNewCategory ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="input-library flex-1"
+                    placeholder="Nova categoria..."
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCategory}
+                    className="px-2 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCategory(false)}
+                    className="px-2 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <select
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    className="input-library flex-1"
+                  >
+                    {bookCategories.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCategory(true)}
+                    className="px-2 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                    title="Adicionar nova categoria"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>
