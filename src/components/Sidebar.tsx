@@ -53,7 +53,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
 
       <div className="p-4 border-t border-border">
         <p className="text-xs text-muted-foreground text-center">
-          © 2023 Planner de Leituras
+          © Planner de Leituras
         </p>
       </div>
     </aside>
