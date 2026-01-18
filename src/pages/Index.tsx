@@ -1,12 +1,119 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { Sidebar } from '@/components/Sidebar';
+import { Dashboard } from '@/components/Dashboard';
+import { BookForm } from '@/components/BookForm';
+import { ReadingForm } from '@/components/ReadingForm';
+import { StatusView } from '@/components/StatusView';
+import { EvaluationForm } from '@/components/EvaluationForm';
+import { QuotesView } from '@/components/QuotesView';
+import { useLibrary } from '@/hooks/useLibrary';
+import { toast } from '@/hooks/use-toast';
+
+type View = 'dashboard' | 'cadastrar' | 'leitura' | 'status' | 'avaliacao' | 'citacoes';
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+  const [currentView, setCurrentView] = useState<View>('dashboard');
+  const {
+    books,
+    readings,
+    statuses,
+    evaluations,
+    quotes,
+    isLoaded,
+    addBook,
+    addReading,
+    addEvaluation,
+    addQuote,
+    deleteBook,
+    deleteQuote,
+    getDashboardStats,
+  } = useLibrary();
+
+  if (!isLoaded) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando biblioteca...</p>
+        </div>
       </div>
+    );
+  }
+
+  const handleAddBook = (book: Parameters<typeof addBook>[0]) => {
+    addBook(book);
+    toast({
+      title: "Livro cadastrado!",
+      description: `"${book.livro}" foi adicionado à sua biblioteca.`,
+    });
+  };
+
+  const handleAddReading = (reading: Parameters<typeof addReading>[0]) => {
+    addReading(reading);
+    toast({
+      title: "Leitura registada!",
+      description: `Sessão de leitura registada com sucesso.`,
+    });
+  };
+
+  const handleAddEvaluation = (evaluation: Parameters<typeof addEvaluation>[0]) => {
+    addEvaluation(evaluation);
+    toast({
+      title: "Avaliação salva!",
+      description: `Avaliação de "${evaluation.livro}" registada.`,
+    });
+  };
+
+  const handleAddQuote = (quote: Parameters<typeof addQuote>[0]) => {
+    addQuote(quote);
+    toast({
+      title: "Citação guardada!",
+      description: "A citação foi adicionada à sua coleção.",
+    });
+  };
+
+  const handleDeleteBook = (id: string) => {
+    const book = books.find(b => b.id === id);
+    deleteBook(id);
+    toast({
+      title: "Livro removido",
+      description: book ? `"${book.livro}" foi removido da biblioteca.` : "Livro removido.",
+    });
+  };
+
+  const handleDeleteQuote = (id: string) => {
+    deleteQuote(id);
+    toast({
+      title: "Citação removida",
+      description: "A citação foi removida da sua coleção.",
+    });
+  };
+
+  const renderView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} />;
+      case 'cadastrar':
+        return <BookForm onSubmit={handleAddBook} />;
+      case 'leitura':
+        return <ReadingForm books={books} onSubmit={handleAddReading} />;
+      case 'status':
+        return <StatusView statuses={statuses} books={books} onDeleteBook={handleDeleteBook} />;
+      case 'avaliacao':
+        return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
+      case 'citacoes':
+        return <QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} />;
+      default:
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} />;
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
+      <main className="flex-1 p-8 overflow-auto">
+        {renderView()}
+      </main>
     </div>
   );
 };
