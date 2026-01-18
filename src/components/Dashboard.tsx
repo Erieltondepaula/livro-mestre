@@ -1,17 +1,64 @@
-import { BookOpen, BookCheck, Clock, TrendingUp, Library, Target } from 'lucide-react';
-import type { DashboardStats, BookStatus } from '@/types/library';
+import { BookOpen, BookCheck, Clock, TrendingUp, Library, Target, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import type { DashboardStats, BookStatus, Book } from '@/types/library';
 
 interface DashboardProps {
   stats: DashboardStats;
   recentStatuses: BookStatus[];
+  books: Book[];
+  onClearData: () => void;
 }
 
-export function Dashboard({ stats, recentStatuses }: DashboardProps) {
+export function Dashboard({ stats, recentStatuses, books, onClearData }: DashboardProps) {
+  // Calcular a percentagem de leitura para cada status
+  const getReadPercentage = (status: BookStatus) => {
+    const book = books.find(b => b.id === status.livroId);
+    if (!book || book.totalPaginas === 0) return 0;
+    return Math.min(100, (status.quantidadeLida / book.totalPaginas) * 100);
+  };
+
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="font-display text-3xl font-bold text-foreground mb-2">Dashboard</h2>
-        <p className="text-muted-foreground">Visão geral do seu progresso de leitura</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-3xl font-bold text-foreground mb-2">Dashboard</h2>
+          <p className="text-muted-foreground">Visão geral do seu progresso de leitura</p>
+        </div>
+        
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Limpar Dados
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação irá remover TODOS os dados: livros, leituras, avaliações e citações. 
+                Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onClearData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Sim, limpar tudo
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Progress Card */}
@@ -122,36 +169,42 @@ export function Dashboard({ stats, recentStatuses }: DashboardProps) {
       {/* Recent Status */}
       <div className="card-library p-6">
         <h3 className="font-display text-xl font-semibold text-foreground mb-4">Status dos Livros</h3>
-        <div className="overflow-x-auto">
-          <table className="table-library">
-            <thead>
-              <tr>
-                <th>Nº</th>
-                <th>Livro</th>
-                <th>Status</th>
-                <th>Páginas Lidas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentStatuses.map((status) => (
-                <tr key={status.id}>
-                  <td className="font-medium">{status.numero}</td>
-                  <td>{status.livro}</td>
-                  <td>
-                    <span className={`status-badge ${
-                      status.status === 'Não iniciado' ? 'status-not-started' :
-                      status.status === 'Lendo' ? 'status-reading' :
-                      'status-completed'
-                    }`}>
-                      {status.status}
-                    </span>
-                  </td>
-                  <td>{status.quantidadeLida}</td>
+        {recentStatuses.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            Nenhum livro cadastrado ainda. Comece cadastrando o seu primeiro livro!
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table-library">
+              <thead>
+                <tr>
+                  <th>Nº</th>
+                  <th>Livro</th>
+                  <th>Status</th>
+                  <th>Quantidade Lida</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {recentStatuses.map((status) => (
+                  <tr key={status.id}>
+                    <td className="font-medium">{status.numero}</td>
+                    <td>{status.livro}</td>
+                    <td>
+                      <span className={`status-badge ${
+                        status.status === 'Não iniciado' ? 'status-not-started' :
+                        status.status === 'Lendo' ? 'status-reading' :
+                        'status-completed'
+                      }`}>
+                        {status.status}
+                      </span>
+                    </td>
+                    <td>{getReadPercentage(status).toFixed(0)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

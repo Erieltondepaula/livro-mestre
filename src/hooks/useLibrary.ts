@@ -11,174 +11,11 @@ const STORAGE_KEYS = {
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// Dados importados do Excel - Planner de Leituras 2023
-const initialBooks: Book[] = [
-  {
-    id: 'book1',
-    numero: 1,
-    livro: 'CARTAS DE UM DIABO A SEU APRENDIZ',
-    totalPaginas: 208,
-    tipo: 'Livro',
-    categoria: 'Ficção',
-    valorPago: 24.99,
-  },
-  {
-    id: 'book2',
-    numero: 2,
-    livro: 'JESUS É________',
-    totalPaginas: 204,
-    tipo: 'Livro',
-    categoria: 'Espiritualidade ou Religioso',
-    valorPago: 45.59,
-  },
-  {
-    id: 'book3',
-    numero: 3,
-    livro: 'O EVANGELHO MALTRAPILHO',
-    totalPaginas: 222,
-    tipo: 'Livro',
-    categoria: 'Espiritualidade ou Religioso',
-    valorPago: 35.05,
-  },
-  {
-    id: 'book4',
-    numero: 4,
-    livro: 'ANTIGO TESTAMENTO',
-    totalPaginas: 1270,
-    tipo: 'Livro',
-    categoria: 'Espiritualidade ou Religioso',
-    valorPago: 0,
-  },
-  {
-    id: 'book5',
-    numero: 5,
-    livro: 'NOVO TESTAMENTO',
-    totalPaginas: 456,
-    tipo: 'Livro',
-    categoria: 'Espiritualidade ou Religioso',
-    valorPago: 0,
-  },
-  {
-    id: 'book6',
-    numero: 6,
-    livro: 'HEROIS DA FÉ',
-    totalPaginas: 203,
-    tipo: 'Ebook',
-    categoria: 'Espiritualidade ou Religioso',
-    valorPago: 0,
-  },
-  {
-    id: 'book7',
-    numero: 7,
-    livro: 'LIVRO FAÇA FORTUNA COM AÇÕES - DÉCIO BAZIN',
-    totalPaginas: 256,
-    tipo: 'Ebook',
-    categoria: 'Autoajuda',
-    valorPago: 0,
-  },
-  {
-    id: 'book8',
-    numero: 8,
-    livro: 'AVIVAMENTO RESPONSÁVEL',
-    totalPaginas: 136,
-    tipo: 'Livro',
-    categoria: 'Espiritualidade ou Religioso',
-    valorPago: 34.90,
-  },
-  {
-    id: 'book9',
-    numero: 9,
-    livro: 'BOM DIA ESPÍRITO SANTO',
-    totalPaginas: 244,
-    tipo: 'Livro',
-    categoria: 'Espiritualidade ou Religioso',
-    valorPago: 0,
-  },
-  {
-    id: 'book10',
-    numero: 10,
-    livro: 'CINCO SEGREDOS DA RIQUEZA QUE 96% DAS PESSOAS NÃO SABEM - CRAIG HILL',
-    totalPaginas: 142,
-    tipo: 'Livro',
-    categoria: 'Autoajuda',
-    valorPago: 46.20,
-  },
-  {
-    id: 'book11',
-    numero: 11,
-    livro: 'CASAMENTO LIVRE DE CONFLITOS FINANCEIROS - CHUK BENTLEY E ANN BENTLEY',
-    totalPaginas: 169,
-    tipo: 'Livro',
-    categoria: 'Autoajuda',
-    valorPago: 0,
-  },
-];
-
-const initialStatus: BookStatus[] = [
-  { id: 'status1', numero: 1, livroId: 'book1', livro: 'CARTAS DE UM DIABO A SEU APRENDIZ', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status2', numero: 2, livroId: 'book2', livro: 'JESUS É________', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status3', numero: 3, livroId: 'book3', livro: 'O EVANGELHO MALTRAPILHO', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status4', numero: 4, livroId: 'book4', livro: 'ANTIGO TESTAMENTO', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status5', numero: 5, livroId: 'book5', livro: 'NOVO TESTAMENTO', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status6', numero: 6, livroId: 'book6', livro: 'HEROIS DA FÉ', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status7', numero: 7, livroId: 'book7', livro: 'LIVRO FAÇA FORTUNA COM AÇÕES - DÉCIO BAZIN', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status8', numero: 8, livroId: 'book8', livro: 'AVIVAMENTO RESPONSÁVEL', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status9', numero: 9, livroId: 'book9', livro: 'BOM DIA ESPÍRITO SANTO', status: 'Não iniciado', quantidadeLida: 0 },
-  { id: 'status10', numero: 10, livroId: 'book10', livro: 'CINCO SEGREDOS DA RIQUEZA QUE 96% DAS PESSOAS NÃO SABEM - CRAIG HILL', status: 'Concluido', quantidadeLida: 142 },
-  { id: 'status11', numero: 11, livroId: 'book11', livro: 'CASAMENTO LIVRE DE CONFLITOS FINANCEIROS - CHUK BENTLEY E ANN BENTLEY', status: 'Não iniciado', quantidadeLida: 0 },
-];
-
-const initialEvaluations: BookEvaluation[] = [
-  {
-    id: 'eval1',
-    livroId: 'book8',
-    livro: 'AVIVAMENTO RESPONSÁVEL',
-    criatividade: 5,
-    escrita: 10,
-    aprendizados: 10,
-    prazer: 10,
-    impacto: 10,
-    notaFinal: 9.0,
-  },
-];
-
-const initialQuotes: Quote[] = [
-  {
-    id: 'quote1',
-    citacao: 'Deus não trabalha com desperdício; Para que Ele vai dar se não tem ninguém para comer? Para que Ele vai dar se ninguém quer reter? Para que Ele vai dar unção se ninguém quer pregar? E para que Ele vai dar o avivamento se ninguém quer ir?',
-    livroId: 'book8',
-    livro: 'AVIVAMENTO RESPONSÁVEL',
-    pagina: 15,
-  },
-  {
-    id: 'quote2',
-    citacao: 'Deus não faz nada apenas por fazer, Ele faz para o Homem entrar na sua responsabilidade (precisamos exercer nossa responsabilidade para com o criador)',
-    livroId: 'book8',
-    livro: 'AVIVAMENTO RESPONSÁVEL',
-    pagina: 15,
-  },
-  {
-    id: 'quote3',
-    citacao: 'VOCÊ PRECISA REAGIR ÀQUILO QUE VOCÊ RECEBEU DO CÉU',
-    livroId: 'book8',
-    livro: 'AVIVAMENTO RESPONSÁVEL',
-    pagina: 15,
-  },
-  {
-    id: 'quote4',
-    citacao: 'A coisa mais extraordinária é você largar a sua vida para viver a grandeza de Deus!',
-    livroId: 'book8',
-    livro: 'AVIVAMENTO RESPONSÁVEL',
-    pagina: 15,
-  },
-  {
-    id: 'quote5',
-    citacao: 'Ele fez o mais difícil. Ele deixou a grandeza Dele para viver a nossa pequenez, e tudo que ele pede é que eu e você deixemos nossa pequenez para viver a grandeza Dele',
-    livroId: 'book8',
-    livro: 'AVIVAMENTO RESPONSÁVEL',
-    pagina: 15,
-  },
-];
+// Dados iniciais vazios - começar do zero
+const initialBooks: Book[] = [];
+const initialStatus: BookStatus[] = [];
+const initialEvaluations: BookEvaluation[] = [];
+const initialQuotes: Quote[] = [];
 
 export function useLibrary() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -357,6 +194,20 @@ export function useLibrary() {
     setQuotes(prev => prev.filter(q => q.id !== id));
   }, []);
 
+  // Clear all data - reset to empty
+  const clearAllData = useCallback(() => {
+    setBooks([]);
+    setReadings([]);
+    setStatuses([]);
+    setEvaluations([]);
+    setQuotes([]);
+    
+    // Clear localStorage
+    Object.values(STORAGE_KEYS).forEach(key => {
+      localStorage.removeItem(key);
+    });
+  }, []);
+
   // Calculate dashboard stats
   const getDashboardStats = useCallback((): DashboardStats => {
     const totalPaginas = books.reduce((sum, book) => sum + book.totalPaginas, 0);
@@ -394,6 +245,7 @@ export function useLibrary() {
     addQuote,
     deleteBook,
     deleteQuote,
+    clearAllData,
     getDashboardStats,
   };
 }
