@@ -8,6 +8,7 @@ import { EvaluationForm } from '@/components/EvaluationForm';
 import { QuotesView } from '@/components/QuotesView';
 import { useLibrary } from '@/hooks/useLibrary';
 import { toast } from '@/hooks/use-toast';
+import type { Book } from '@/types/library';
 
 type View = 'dashboard' | 'cadastrar' | 'leitura' | 'status' | 'avaliacao' | 'citacoes';
 
@@ -21,6 +22,7 @@ const Index = () => {
     quotes,
     isLoaded,
     addBook,
+    updateBook,
     addReading,
     addEvaluation,
     addQuote,
@@ -45,6 +47,14 @@ const Index = () => {
     toast({
       title: "Livro cadastrado!",
       description: `"${book.livro}" foi adicionado à sua biblioteca.`,
+    });
+  };
+
+  const handleUpdateBook = (book: Book) => {
+    updateBook(book);
+    toast({
+      title: "Livro atualizado!",
+      description: `"${book.livro}" foi atualizado com sucesso.`,
     });
   };
 
@@ -98,7 +108,7 @@ const Index = () => {
       case 'leitura':
         return <ReadingForm books={books} onSubmit={handleAddReading} />;
       case 'status':
-        return <StatusView statuses={statuses} books={books} onDeleteBook={handleDeleteBook} />;
+        return <StatusView statuses={statuses} books={books} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
       case 'avaliacao':
         return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
       case 'citacoes':

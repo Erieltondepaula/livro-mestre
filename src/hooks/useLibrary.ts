@@ -139,6 +139,39 @@ export function useLibrary() {
     return newBook;
   }, [books.length]);
 
+  // Update book
+  const updateBook = useCallback((updatedBook: Book) => {
+    setBooks(prev => prev.map(b => b.id === updatedBook.id ? updatedBook : b));
+    
+    // Update status with new book name
+    setStatuses(prev => prev.map(s => 
+      s.livroId === updatedBook.id 
+        ? { ...s, livro: updatedBook.livro }
+        : s
+    ));
+    
+    // Update evaluations with new book name
+    setEvaluations(prev => prev.map(e => 
+      e.livroId === updatedBook.id 
+        ? { ...e, livro: updatedBook.livro }
+        : e
+    ));
+    
+    // Update quotes with new book name
+    setQuotes(prev => prev.map(q => 
+      q.livroId === updatedBook.id 
+        ? { ...q, livro: updatedBook.livro }
+        : q
+    ));
+    
+    // Update readings with new book name
+    setReadings(prev => prev.map(r => 
+      r.livroId === updatedBook.id 
+        ? { ...r, livroLido: updatedBook.livro }
+        : r
+    ));
+  }, []);
+
   // Add daily reading
   const addReading = useCallback((reading: Omit<DailyReading, 'id' | 'quantidadePaginas'>) => {
     const quantidadePaginas = reading.paginaFinal - reading.paginaInicial;
@@ -241,6 +274,7 @@ export function useLibrary() {
     quotes,
     isLoaded,
     addBook,
+    updateBook,
     addReading,
     addEvaluation,
     addQuote,
