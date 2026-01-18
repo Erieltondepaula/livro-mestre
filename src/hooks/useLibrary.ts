@@ -1,21 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats } from '@/types/library';
-
-const STORAGE_KEYS = {
-  books: 'library_books',
-  readings: 'library_readings',
-  status: 'library_status',
-  evaluations: 'library_evaluations',
-  quotes: 'library_quotes',
-};
-
-const generateId = () => Math.random().toString(36).substr(2, 9);
-
-// Dados iniciais vazios - começar do zero
-const initialBooks: Book[] = [];
-const initialStatus: BookStatus[] = [];
-const initialEvaluations: BookEvaluation[] = [];
-const initialQuotes: Quote[] = [];
 
 export function useLibrary() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -25,188 +10,309 @@ export function useLibrary() {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load data from localStorage
-  useEffect(() => {
-    const loadedBooks = localStorage.getItem(STORAGE_KEYS.books);
-    const loadedReadings = localStorage.getItem(STORAGE_KEYS.readings);
-    const loadedStatus = localStorage.getItem(STORAGE_KEYS.status);
-    const loadedEvaluations = localStorage.getItem(STORAGE_KEYS.evaluations);
-    const loadedQuotes = localStorage.getItem(STORAGE_KEYS.quotes);
+  // Load data from database
+  const loadData = useCallback(async () => {
+    try {
+      // Load books
+      const { data: booksData } = await supabase
+        .from('books')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-    setBooks(loadedBooks ? JSON.parse(loadedBooks) : initialBooks);
-    setReadings(loadedReadings ? JSON.parse(loadedReadings) : []);
-    setStatuses(loadedStatus ? JSON.parse(loadedStatus) : initialStatus);
-    setEvaluations(loadedEvaluations ? JSON.parse(loadedEvaluations) : initialEvaluations);
-    setQuotes(loadedQuotes ? JSON.parse(loadedQuotes) : initialQuotes);
-    setIsLoaded(true);
+      // Load statuses with book info
+      const { data: statusesData } = await supabase
+        .from('statuses')
+        .select('*, books(name, total_pages)')
+        .order('created_at', { ascending: true });
+
+      // Load readings with book info
+      const { data: readingsData } = await supabase
+        .from('readings')
+        .select('*, books(name)')
+        .order('created_at', { ascending: true });
+
+      // Load evaluations with book info
+      const { data: evaluationsData } = await supabase
+        .from('evaluations')
+        .select('*, books(name)')
+        .order('created_at', { ascending: true });
+
+      // Load quotes with book info
+      const { data: quotesData } = await supabase
+        .from('quotes')
+        .select('*, books(name)')
+        .order('created_at', { ascending: true });
+
+      // Transform to app format
+      if (booksData) {
+        setBooks(booksData.map((b, index) => ({
+          id: b.id,
+          numero: index + 1,
+          livro: b.name,
+          totalPaginas: b.total_pages,
+          tipo: b.type as Book['tipo'],
+          categoria: b.category as Book['categoria'],
+          valorPago: Number(b.paid_value) || 0,
+        })));
+      }
+
+      if (statusesData) {
+        setStatuses(statusesData.map((s, index) => ({
+          id: s.id,
+          numero: index + 1,
+          livroId: s.book_id,
+          livro: (s.books as any)?.name || '',
+          status: s.status as BookStatus['status'],
+          quantidadeLida: s.pages_read,
+        })));
+      }
+
+      if (readingsData) {
+        setReadings(readingsData.map(r => ({
+          id: r.id,
+          dia: r.day,
+          mes: r.month,
+          livroId: r.book_id,
+          livroLido: (r.books as any)?.name || '',
+          paginaInicial: r.start_page,
+          paginaFinal: r.end_page,
+          tempoGasto: parseInt(r.time_spent || '0'),
+          quantidadePaginas: r.end_page - r.start_page,
+        })));
+      }
+
+      if (evaluationsData) {
+        setEvaluations(evaluationsData.map(e => ({
+          id: e.id,
+          livroId: e.book_id,
+          livro: (e.books as any)?.name || '',
+          criatividade: e.creativity || 0,
+          escrita: e.writing || 0,
+          aprendizados: e.learnings || 0,
+          prazer: e.pleasure || 0,
+          impacto: e.impact || 0,
+          notaFinal: Number(e.final_grade) || 0,
+        })));
+      }
+
+      if (quotesData) {
+        setQuotes(quotesData.map(q => ({
+          id: q.id,
+          citacao: q.quote,
+          livroId: q.book_id,
+          livro: (q.books as any)?.name || '',
+          pagina: q.page || 0,
+        })));
+      }
+
+      setIsLoaded(true);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setIsLoaded(true);
+    }
   }, []);
 
-  // Save to localStorage
   useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem(STORAGE_KEYS.books, JSON.stringify(books));
-  }, [books, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem(STORAGE_KEYS.readings, JSON.stringify(readings));
-  }, [readings, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem(STORAGE_KEYS.status, JSON.stringify(statuses));
-  }, [statuses, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem(STORAGE_KEYS.evaluations, JSON.stringify(evaluations));
-  }, [evaluations, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem(STORAGE_KEYS.quotes, JSON.stringify(quotes));
-  }, [quotes, isLoaded]);
+    loadData();
+  }, [loadData]);
 
   // Add book
-  const addBook = useCallback((book: Omit<Book, 'id' | 'numero'>) => {
-    const newBook: Book = {
-      ...book,
-      id: generateId(),
-      numero: books.length + 1,
-    };
-    setBooks(prev => [...prev, newBook]);
+  const addBook = useCallback(async (book: Omit<Book, 'id' | 'numero'>) => {
+    const { data: newBookData, error } = await supabase
+      .from('books')
+      .insert({
+        name: book.livro,
+        total_pages: book.totalPaginas,
+        type: book.tipo,
+        category: book.categoria,
+        paid_value: book.valorPago,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding book:', error);
+      return null;
+    }
 
     // Create initial status
-    const newStatus: BookStatus = {
-      id: generateId(),
-      numero: newBook.numero,
-      livroId: newBook.id,
-      livro: newBook.livro,
-      status: 'Não iniciado',
-      quantidadeLida: 0,
-    };
-    setStatuses(prev => [...prev, newStatus]);
+    await supabase
+      .from('statuses')
+      .insert({
+        book_id: newBookData.id,
+        status: 'Não iniciado',
+        pages_read: 0,
+      });
 
-    return newBook;
-  }, [books.length]);
+    await loadData();
+    return newBookData;
+  }, [loadData]);
 
   // Update book
-  const updateBook = useCallback((updatedBook: Book) => {
-    setBooks(prev => prev.map(b => b.id === updatedBook.id ? updatedBook : b));
-    
-    // Update status with new book name
-    setStatuses(prev => prev.map(s => 
-      s.livroId === updatedBook.id 
-        ? { ...s, livro: updatedBook.livro }
-        : s
-    ));
-    
-    // Update evaluations with new book name
-    setEvaluations(prev => prev.map(e => 
-      e.livroId === updatedBook.id 
-        ? { ...e, livro: updatedBook.livro }
-        : e
-    ));
-    
-    // Update quotes with new book name
-    setQuotes(prev => prev.map(q => 
-      q.livroId === updatedBook.id 
-        ? { ...q, livro: updatedBook.livro }
-        : q
-    ));
-    
-    // Update readings with new book name
-    setReadings(prev => prev.map(r => 
-      r.livroId === updatedBook.id 
-        ? { ...r, livroLido: updatedBook.livro }
-        : r
-    ));
-  }, []);
+  const updateBook = useCallback(async (updatedBook: Book) => {
+    const { error } = await supabase
+      .from('books')
+      .update({
+        name: updatedBook.livro,
+        total_pages: updatedBook.totalPaginas,
+        type: updatedBook.tipo,
+        category: updatedBook.categoria,
+        paid_value: updatedBook.valorPago,
+      })
+      .eq('id', updatedBook.id);
+
+    if (error) {
+      console.error('Error updating book:', error);
+      return;
+    }
+
+    await loadData();
+  }, [loadData]);
 
   // Add daily reading
-  const addReading = useCallback((reading: Omit<DailyReading, 'id' | 'quantidadePaginas'>) => {
+  const addReading = useCallback(async (reading: Omit<DailyReading, 'id' | 'quantidadePaginas'>) => {
     const quantidadePaginas = reading.paginaFinal - reading.paginaInicial;
-    const newReading: DailyReading = {
-      ...reading,
-      id: generateId(),
-      quantidadePaginas,
-    };
-    setReadings(prev => [...prev, newReading]);
+
+    const { data: newReadingData, error } = await supabase
+      .from('readings')
+      .insert({
+        book_id: reading.livroId,
+        day: reading.dia,
+        month: reading.mes,
+        start_page: reading.paginaInicial,
+        end_page: reading.paginaFinal,
+        time_spent: reading.tempoGasto.toString(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding reading:', error);
+      return null;
+    }
 
     // Update status
-    setStatuses(prev => prev.map(status => {
-      if (status.livroId === reading.livroId) {
-        const newQuantidade = status.quantidadeLida + quantidadePaginas;
-        const book = books.find(b => b.id === reading.livroId);
-        const newStatus: BookStatus['status'] = book && newQuantidade >= book.totalPaginas 
-          ? 'Concluido' 
-          : 'Lendo';
-        return {
-          ...status,
-          quantidadeLida: newQuantidade,
-          status: newStatus,
-        };
-      }
-      return status;
-    }));
+    const { data: currentStatus } = await supabase
+      .from('statuses')
+      .select('pages_read')
+      .eq('book_id', reading.livroId)
+      .maybeSingle();
 
-    return newReading;
-  }, [books]);
+    const { data: bookData } = await supabase
+      .from('books')
+      .select('total_pages')
+      .eq('id', reading.livroId)
+      .single();
+
+    const newPagesRead = (currentStatus?.pages_read || 0) + quantidadePaginas;
+    const newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
+
+    await supabase
+      .from('statuses')
+      .update({
+        pages_read: newPagesRead,
+        status: newStatus,
+      })
+      .eq('book_id', reading.livroId);
+
+    await loadData();
+    return newReadingData;
+  }, [loadData]);
 
   // Add evaluation
-  const addEvaluation = useCallback((evaluation: Omit<BookEvaluation, 'id'>) => {
-    const existing = evaluations.find(e => e.livroId === evaluation.livroId);
+  const addEvaluation = useCallback(async (evaluation: Omit<BookEvaluation, 'id'>) => {
+    // Check if exists
+    const { data: existing } = await supabase
+      .from('evaluations')
+      .select('id')
+      .eq('book_id', evaluation.livroId)
+      .maybeSingle();
+
     if (existing) {
-      setEvaluations(prev => prev.map(e => 
-        e.livroId === evaluation.livroId 
-          ? { ...evaluation, id: e.id }
-          : e
-      ));
+      await supabase
+        .from('evaluations')
+        .update({
+          creativity: evaluation.criatividade,
+          writing: evaluation.escrita,
+          learnings: evaluation.aprendizados,
+          pleasure: evaluation.prazer,
+          impact: evaluation.impacto,
+          final_grade: evaluation.notaFinal,
+        })
+        .eq('id', existing.id);
     } else {
-      const newEvaluation: BookEvaluation = {
-        ...evaluation,
-        id: generateId(),
-      };
-      setEvaluations(prev => [...prev, newEvaluation]);
+      await supabase
+        .from('evaluations')
+        .insert({
+          book_id: evaluation.livroId,
+          creativity: evaluation.criatividade,
+          writing: evaluation.escrita,
+          learnings: evaluation.aprendizados,
+          pleasure: evaluation.prazer,
+          impact: evaluation.impacto,
+          final_grade: evaluation.notaFinal,
+        });
     }
-  }, [evaluations]);
+
+    await loadData();
+  }, [loadData]);
 
   // Add quote
-  const addQuote = useCallback((quote: Omit<Quote, 'id'>) => {
-    const newQuote: Quote = {
-      ...quote,
-      id: generateId(),
-    };
-    setQuotes(prev => [...prev, newQuote]);
-    return newQuote;
-  }, []);
+  const addQuote = useCallback(async (quote: Omit<Quote, 'id'>) => {
+    const { data: newQuoteData, error } = await supabase
+      .from('quotes')
+      .insert({
+        book_id: quote.livroId,
+        quote: quote.citacao,
+        page: quote.pagina,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding quote:', error);
+      return null;
+    }
+
+    await loadData();
+    return newQuoteData;
+  }, [loadData]);
 
   // Delete functions
-  const deleteBook = useCallback((id: string) => {
-    setBooks(prev => prev.filter(b => b.id !== id));
-    setStatuses(prev => prev.filter(s => s.livroId !== id));
-    setReadings(prev => prev.filter(r => r.livroId !== id));
-    setEvaluations(prev => prev.filter(e => e.livroId !== id));
-    setQuotes(prev => prev.filter(q => q.livroId !== id));
-  }, []);
+  const deleteBook = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('books')
+      .delete()
+      .eq('id', id);
 
-  const deleteQuote = useCallback((id: string) => {
-    setQuotes(prev => prev.filter(q => q.id !== id));
-  }, []);
+    if (error) {
+      console.error('Error deleting book:', error);
+      return;
+    }
 
-  // Clear all data - reset to empty
-  const clearAllData = useCallback(() => {
-    setBooks([]);
-    setReadings([]);
-    setStatuses([]);
-    setEvaluations([]);
-    setQuotes([]);
-    
-    // Clear localStorage
-    Object.values(STORAGE_KEYS).forEach(key => {
-      localStorage.removeItem(key);
-    });
-  }, []);
+    await loadData();
+  }, [loadData]);
+
+  const deleteQuote = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('quotes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting quote:', error);
+      return;
+    }
+
+    await loadData();
+  }, [loadData]);
+
+  // Clear all data
+  const clearAllData = useCallback(async () => {
+    // Delete all books (cascade will delete related records)
+    await supabase.from('books').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await loadData();
+  }, [loadData]);
 
   // Calculate dashboard stats
   const getDashboardStats = useCallback((): DashboardStats => {

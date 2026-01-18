@@ -14,7 +14,185 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          name: string
+          paid_value: number | null
+          total_pages: number
+          type: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          paid_value?: number | null
+          total_pages?: number
+          type?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          paid_value?: number | null
+          total_pages?: number
+          type?: string
+        }
+        Relationships: []
+      }
+      evaluations: {
+        Row: {
+          book_id: string
+          created_at: string | null
+          creativity: number | null
+          final_grade: number | null
+          id: string
+          impact: number | null
+          learnings: number | null
+          pleasure: number | null
+          writing: number | null
+        }
+        Insert: {
+          book_id: string
+          created_at?: string | null
+          creativity?: number | null
+          final_grade?: number | null
+          id?: string
+          impact?: number | null
+          learnings?: number | null
+          pleasure?: number | null
+          writing?: number | null
+        }
+        Update: {
+          book_id?: string
+          created_at?: string | null
+          creativity?: number | null
+          final_grade?: number | null
+          id?: string
+          impact?: number | null
+          learnings?: number | null
+          pleasure?: number | null
+          writing?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: true
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          book_id: string
+          created_at: string | null
+          id: string
+          page: number | null
+          quote: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string | null
+          id?: string
+          page?: number | null
+          quote: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string | null
+          id?: string
+          page?: number | null
+          quote?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      readings: {
+        Row: {
+          book_id: string
+          created_at: string | null
+          day: number
+          end_page: number
+          id: string
+          month: string
+          start_page: number
+          time_spent: string | null
+        }
+        Insert: {
+          book_id: string
+          created_at?: string | null
+          day: number
+          end_page?: number
+          id?: string
+          month: string
+          start_page?: number
+          time_spent?: string | null
+        }
+        Update: {
+          book_id?: string
+          created_at?: string | null
+          day?: number
+          end_page?: number
+          id?: string
+          month?: string
+          start_page?: number
+          time_spent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readings_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statuses: {
+        Row: {
+          book_id: string
+          created_at: string | null
+          id: string
+          pages_read: number
+          status: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string | null
+          id?: string
+          pages_read?: number
+          status?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string | null
+          id?: string
+          pages_read?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statuses_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: true
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
