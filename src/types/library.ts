@@ -1,17 +1,6 @@
-export type BookType = 'Livro' | 'Ebook';
-
-export type BookCategory = 
-  | 'Espiritualidade ou Religioso'
-  | 'Ficção'
-  | 'Não-Ficção'
-  | 'Biografia'
-  | 'Autoajuda'
-  | 'Negócios'
-  | 'Ciência'
-  | 'História'
-  | 'Romance'
-  | 'Fantasia'
-  | 'Outro';
+// Tipos dinâmicos - agora vêm do banco de dados
+export type BookType = string;
+export type BookCategory = string;
 
 export type ReadingStatus = 'Não iniciado' | 'Lendo' | 'Concluido';
 
