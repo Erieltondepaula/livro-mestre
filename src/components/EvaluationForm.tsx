@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Star, Save } from 'lucide-react';
+import { Star, Save, MessageSquare } from 'lucide-react';
 import type { Book, BookEvaluation } from '@/types/library';
 
 interface EvaluationFormProps {
@@ -44,6 +44,7 @@ export function EvaluationForm({ books, evaluations, onSubmit }: EvaluationFormP
     prazer: 0,
     impacto: 0,
   });
+  const [observacoes, setObservacoes] = useState('');
 
   const selectedBook = books.find(b => b.id === livroId);
   const existingEval = evaluations.find(e => e.livroId === livroId);
@@ -59,6 +60,7 @@ export function EvaluationForm({ books, evaluations, onSubmit }: EvaluationFormP
         prazer: existing.prazer,
         impacto: existing.impacto,
       });
+      setObservacoes(existing.observacoes || '');
     } else {
       setRatings({
         criatividade: 0,
@@ -67,6 +69,7 @@ export function EvaluationForm({ books, evaluations, onSubmit }: EvaluationFormP
         prazer: 0,
         impacto: 0,
       });
+      setObservacoes('');
     }
   };
 
@@ -82,6 +85,7 @@ export function EvaluationForm({ books, evaluations, onSubmit }: EvaluationFormP
       livro: selectedBook.livro,
       ...ratings,
       notaFinal: Math.round(notaFinal * 10) / 10,
+      observacoes: observacoes.trim() || undefined,
     });
   };
 
@@ -133,6 +137,24 @@ export function EvaluationForm({ books, evaluations, onSubmit }: EvaluationFormP
               </div>
             ))}
 
+            {/* Campo de Observações */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4" />
+                Observações
+              </label>
+              <textarea
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                className="input-library min-h-[100px] resize-y"
+                placeholder="Adicione suas observações, notas ou comentários sobre o livro..."
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Campo opcional para anotações pessoais sobre o livro.
+              </p>
+            </div>
+
             {livroId && (
               <div className="p-4 bg-secondary rounded-lg">
                 <p className="text-sm text-muted-foreground">Nota Final (média)</p>
@@ -168,6 +190,15 @@ export function EvaluationForm({ books, evaluations, onSubmit }: EvaluationFormP
                   <span className="text-muted-foreground">Prazer: {evaluation.prazer}</span>
                   <span className="text-muted-foreground">Impacto: {evaluation.impacto}</span>
                 </div>
+                {evaluation.observacoes && (
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3" />
+                      Observações:
+                    </p>
+                    <p className="text-sm text-foreground italic">"{evaluation.observacoes}"</p>
+                  </div>
+                )}
               </div>
             ))}
             {evaluations.length === 0 && (
