@@ -1,4 +1,8 @@
-import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book } from 'lucide-react';
+import { useState } from 'react';
+import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario';
 
@@ -18,22 +22,22 @@ const navItems = [
   { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
 ];
 
-export function Sidebar({ currentView, onViewChange }: SidebarProps) {
+function SidebarContent({ currentView, onViewChange, onItemClick }: SidebarProps & { onItemClick?: () => void }) {
   return (
-    <aside className="w-72 bg-card border-r border-border h-screen sticky top-0 flex flex-col">
-      <div className="p-6 border-b border-border">
+    <>
+      <div className="p-4 md:p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
             <Library className="w-5 h-5 text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="font-display text-xl font-semibold text-foreground">Minha Biblioteca</h1>
-            <p className="text-sm text-muted-foreground">Planner de Leituras</p>
+          <div className="min-w-0">
+            <h1 className="font-display text-lg md:text-xl font-semibold text-foreground truncate">Minha Biblioteca</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Planner de Leituras</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-3 md:p-4 overflow-y-auto">
         <ul className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -41,11 +45,14 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
             return (
               <li key={item.id}>
                 <button
-                  onClick={() => onViewChange(item.id)}
+                  onClick={() => {
+                    onViewChange(item.id);
+                    onItemClick?.();
+                  }}
                   className={`nav-item w-full ${isActive ? 'active' : ''}`}
                 >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium truncate">{item.label}</span>
                 </button>
               </li>
             );
@@ -58,6 +65,44 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
           © Planner de Leituras
         </p>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar({ currentView, onViewChange }: SidebarProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="flex-shrink-0">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Abrir menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 p-0 flex flex-col">
+            <SidebarContent 
+              currentView={currentView} 
+              onViewChange={onViewChange} 
+              onItemClick={() => setOpen(false)}
+            />
+          </SheetContent>
+        </Sheet>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+            <Library className="w-4 h-4 text-primary-foreground" />
+          </div>
+          <span className="font-display font-semibold text-foreground truncate">Minha Biblioteca</span>
+        </div>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 lg:w-72 bg-card border-r border-border h-screen sticky top-0 flex-col flex-shrink-0">
+        <SidebarContent currentView={currentView} onViewChange={onViewChange} />
+      </aside>
+    </>
   );
 }
