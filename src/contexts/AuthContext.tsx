@@ -21,12 +21,14 @@ interface AuthContextType {
   isAdmin: boolean;
   isMaster: boolean;
   isLoading: boolean;
+  permissions: string[];
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (updates: Partial<Pick<Profile, 'display_name'>>) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
+  hasModuleAccess: (moduleKey: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -58,7 +61,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
 
     setIsAdmin(!!roleData);
+
+    // Fetch user permissions
+    const { data: permissionsData } = await supabase
+      .from('user_permissions')
+      .select('module_key')
+      .eq('user_id', userId);
+
+    setPermissions(permissionsData?.map(p => p.module_key) || []);
   };
+
+  // Check if user has access to a module
+  const hasModuleAccess = useCallback((moduleKey: string): boolean => {
+    // Master users and admins have access to all modules
+    if (profile?.is_master || isAdmin) {
+      return true;
+    }
+    // Regular users need explicit permission
+    return permissions.includes(moduleKey);
+  }, [profile?.is_master, isAdmin, permissions]);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -124,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setIsAdmin(false);
+    setPermissions([]);
   };
 
   const updateProfile = async (updates: Partial<Pick<Profile, 'display_name'>>) => {
@@ -162,12 +184,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isMaster: profile?.is_master ?? false,
     isLoading,
+    permissions,
     signUp,
     signIn,
     signOut,
     updateProfile,
     updatePassword,
     refreshProfile,
+    hasModuleAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

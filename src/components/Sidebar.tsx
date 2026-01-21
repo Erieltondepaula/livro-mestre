@@ -89,6 +89,11 @@ function UserMenu() {
 }
 
 function SidebarContent({ currentView, onViewChange, onItemClick }: SidebarProps & { onItemClick?: () => void }) {
+  const { hasModuleAccess } = useAuth();
+  
+  // Filter nav items based on user permissions
+  const accessibleItems = navItems.filter(item => hasModuleAccess(item.id));
+
   return (
     <>
       <div className="p-4 md:p-6 border-b border-border">
@@ -104,26 +109,33 @@ function SidebarContent({ currentView, onViewChange, onItemClick }: SidebarProps
       </div>
 
       <nav className="flex-1 p-3 md:p-4 overflow-y-auto">
-        <ul className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentView === item.id;
-            return (
-              <li key={item.id}>
-                <button
-                  onClick={() => {
-                    onViewChange(item.id);
-                    onItemClick?.();
-                  }}
-                  className={`nav-item w-full ${isActive ? 'active' : ''}`}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-medium truncate">{item.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        {accessibleItems.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            <p>Nenhum módulo liberado.</p>
+            <p className="text-xs mt-1">Entre em contato com o administrador.</p>
+          </div>
+        ) : (
+          <ul className="space-y-1">
+            {accessibleItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentView === item.id;
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => {
+                      onViewChange(item.id);
+                      onItemClick?.();
+                    }}
+                    className={`nav-item w-full ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium truncate">{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </nav>
 
       <div className="p-3 md:p-4 border-t border-border">
