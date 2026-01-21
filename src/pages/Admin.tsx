@@ -30,10 +30,12 @@ import {
   UserCheck, 
   Search,
   ArrowLeft,
-  Crown
+  Crown,
+  Settings
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { UserPermissionsDialog } from '@/components/UserPermissionsDialog';
 
 interface UserProfile {
   id: string;
@@ -57,6 +59,10 @@ export default function Admin() {
     action: 'activate' | 'deactivate' | 'delete' | 'makeAdmin' | 'removeAdmin';
     user: UserProfile | null;
   }>({ open: false, action: 'activate', user: null });
+  const [permissionsDialog, setPermissionsDialog] = useState<{
+    open: boolean;
+    user: UserProfile | null;
+  }>({ open: false, user: null });
 
   const loadUsers = async () => {
     setLoading(true);
@@ -250,7 +256,15 @@ export default function Admin() {
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow 
+                      key={user.id}
+                      className={!user.is_master && user.user_id !== profile?.user_id ? 'cursor-pointer hover:bg-muted/50' : ''}
+                      onClick={() => {
+                        if (!user.is_master && user.user_id !== profile?.user_id) {
+                          setPermissionsDialog({ open: true, user });
+                        }
+                      }}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {user.is_master && (
@@ -282,7 +296,15 @@ export default function Admin() {
                       </TableCell>
                       <TableCell className="text-right">
                         {!user.is_master && user.user_id !== profile?.user_id && (
-                          <div className="flex justify-end gap-1">
+                          <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setPermissionsDialog({ open: true, user })}
+                              title="Gerenciar Permissões"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </Button>
                             {user.is_active ? (
                               <Button
                                 variant="ghost"
@@ -372,6 +394,13 @@ export default function Admin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UserPermissionsDialog
+        open={permissionsDialog.open}
+        onOpenChange={(open) => setPermissionsDialog(prev => ({ ...prev, open }))}
+        user={permissionsDialog.user}
+        onSave={loadUsers}
+      />
     </div>
   );
 }
