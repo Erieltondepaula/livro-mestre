@@ -1,30 +1,49 @@
 import { useState } from 'react';
 import { Edit2, Trash2, BookOpen } from 'lucide-react';
-import type { Book, BookStatus } from '@/types/library';
+import type { Book, BookStatus, DailyReading } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
 
 interface BooksListViewProps {
   books: Book[];
   statuses: BookStatus[];
+  readings: DailyReading[];
   onDeleteBook: (id: string) => void;
   onUpdateBook: (book: Book) => void;
 }
 
-export function BooksListView({ books, statuses, onDeleteBook, onUpdateBook }: BooksListViewProps) {
+export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdateBook }: BooksListViewProps) {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
 
   const getBookStatus = (bookId: string) => {
     return statuses.find(s => s.livroId === bookId);
   };
 
-  const getReadingTimeEstimate = (book: Book, status: BookStatus | undefined) => {
+  // Calculate reading speed (pages per minute) based on reading history
+  const getAverageReadingSpeed = (bookId: string): number | null => {
+    const bookReadings = readings.filter(r => r.livroId === bookId && r.tempoGasto > 0);
+    
+    if (bookReadings.length === 0) return null;
+    
+    const totalPages = bookReadings.reduce((sum, r) => sum + r.quantidadePaginas, 0);
+    const totalMinutes = bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0);
+    
+    if (totalMinutes === 0) return null;
+    
+    return totalPages / totalMinutes; // pages per minute
+  };
+
+  const getReadingTimeEstimate = (book: Book, status: BookStatus | undefined): string | null => {
     if (!status) return null;
     
     const pagesRemaining = book.totalPaginas - status.quantidadeLida;
     if (pagesRemaining <= 0) return null;
     
-    // Estimate: 2 min per page
-    const totalMinutes = pagesRemaining * 2;
+    const avgSpeed = getAverageReadingSpeed(book.id);
+    
+    // If we have reading history, use actual speed; otherwise default to 2 min/page
+    const minutesPerPage = avgSpeed ? (1 / avgSpeed) : 2;
+    const totalMinutes = Math.round(pagesRemaining * minutesPerPage);
+    
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     
@@ -32,6 +51,26 @@ export function BooksListView({ books, statuses, onDeleteBook, onUpdateBook }: B
       return `${hours}h ${minutes}min`;
     }
     return `${minutes}min`;
+  };
+
+  // Get status color based on reading progress
+  const getStatusInfo = (book: Book, status: BookStatus | undefined): { text: string; colorClass: string } => {
+    if (!status || status.status === 'Não iniciado') {
+      return { text: 'Não iniciado', colorClass: 'text-gray-500' };
+    }
+    
+    if (status.status === 'Concluido') {
+      return { text: 'Livro concluído', colorClass: 'text-green-600' };
+    }
+    
+    // Reading in progress - check percentage
+    const percentRead = (status.quantidadeLida / book.totalPaginas) * 100;
+    
+    if (percentRead > 50) {
+      return { text: '', colorClass: 'text-orange-500' }; // More than half read
+    }
+    
+    return { text: '', colorClass: 'text-blue-600' }; // Still reading, less than half
   };
 
   return (
@@ -52,7 +91,6 @@ export function BooksListView({ books, statuses, onDeleteBook, onUpdateBook }: B
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {books.map((book) => {
             const status = getBookStatus(book.id);
-            const isCompleted = status?.status === 'Concluido';
             const timeEstimate = getReadingTimeEstimate(book, status);
             
             return (
@@ -92,13 +130,23 @@ export function BooksListView({ books, statuses, onDeleteBook, onUpdateBook }: B
                   </div>
 
                   {/* Status indicator */}
-                  {isCompleted ? (
-                    <p className="text-sm font-medium text-success">Livro concluído</p>
-                  ) : timeEstimate ? (
-                    <p className="text-sm font-medium text-primary">
-                      Tempo para finalizar: {timeEstimate}
-                    </p>
-                  ) : null}
+                  {(() => {
+                    const statusInfo = getStatusInfo(book, status);
+                    if (status?.status === 'Concluido') {
+                      return <p className={`text-sm font-medium ${statusInfo.colorClass}`}>{statusInfo.text}</p>;
+                    }
+                    if (timeEstimate) {
+                      return (
+                        <p className={`text-sm font-medium ${statusInfo.colorClass}`}>
+                          Tempo para finalizar: {timeEstimate}
+                        </p>
+                      );
+                    }
+                    if (status?.status === 'Não iniciado' || !status) {
+                      return <p className={`text-sm font-medium ${statusInfo.colorClass}`}>{statusInfo.text}</p>;
+                    }
+                    return null;
+                  })()}
 
                   {/* Actions */}
                   <div className="flex justify-center gap-2 pt-2">
