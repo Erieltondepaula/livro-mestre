@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { ImageUpload } from './ImageUpload';
+import { toast } from '@/hooks/use-toast';
 import type { Book } from '@/types/library';
 
 interface BookEditDialogProps {
@@ -13,6 +15,7 @@ interface BookEditDialogProps {
 }
 
 export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: BookEditDialogProps) {
+  const { isAdmin } = useAuth();
   const [livro, setLivro] = useState('');
   const [autor, setAutor] = useState('');
   const [ano, setAno] = useState('');
@@ -63,10 +66,12 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
 
   const handleAddType = async () => {
     if (!newType.trim()) return;
+    if (!isAdmin) {
+      toast({ title: "Acesso negado", description: "Apenas administradores podem adicionar tipos.", variant: "destructive" });
+      return;
+    }
     
-    const { error } = await supabase
-      .from('book_types')
-      .insert({ name: newType.trim() });
+    const { error } = await supabase.from('book_types').insert({ name: newType.trim() });
     
     if (!error) {
       setTipo(newType.trim());
@@ -78,10 +83,12 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
 
   const handleAddCategory = async () => {
     if (!newCategory.trim()) return;
+    if (!isAdmin) {
+      toast({ title: "Acesso negado", description: "Apenas administradores podem adicionar categorias.", variant: "destructive" });
+      return;
+    }
     
-    const { error } = await supabase
-      .from('book_categories')
-      .insert({ name: newCategory.trim() });
+    const { error } = await supabase.from('book_categories').insert({ name: newCategory.trim() });
     
     if (!error) {
       setCategoria(newCategory.trim());

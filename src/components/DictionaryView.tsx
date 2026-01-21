@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { VocabularyDialog } from './VocabularyDialog';
 import { toast } from '@/hooks/use-toast';
-
 interface SinonimoGrupo {
   sentido: string;
   palavras: string[];
@@ -53,6 +53,7 @@ interface VocabularyEntry {
 }
 
 export function DictionaryView() {
+  const { user } = useAuth();
   const [searchWord, setSearchWord] = useState('');
   const [contextPhrase, setContextPhrase] = useState('');
   const [result, setResult] = useState<DictionaryResult | null>(null);
@@ -121,11 +122,11 @@ export function DictionaryView() {
   };
 
   const saveToVocabulary = async () => {
-    if (!result) return;
+    if (!result || !user) return;
     
     setIsSaving(true);
     try {
-      // First try to check if word exists
+      // First try to check if word exists for this user
       const { data: existing } = await supabase
         .from('vocabulary')
         .select('id')
@@ -144,22 +145,23 @@ export function DictionaryView() {
         etimologia: result.etimologia,
         observacoes: result.observacoes,
         analise_contexto: result.analiseContexto as unknown as any || null,
+        user_id: user.id,
       };
 
       let error;
       if (existing) {
         // Update existing
-        const result = await supabase
+        const updateResult = await supabase
           .from('vocabulary')
           .update(vocabularyData)
           .eq('id', existing.id);
-        error = result.error;
+        error = updateResult.error;
       } else {
         // Insert new
-        const result = await supabase
+        const insertResult = await supabase
           .from('vocabulary')
           .insert(vocabularyData);
-        error = result.error;
+        error = insertResult.error;
       }
 
       if (error) throw error;
