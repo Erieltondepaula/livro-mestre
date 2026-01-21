@@ -74,16 +74,16 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
+      {/* Mobile Header - visible below 720px */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border px-3 sm:px-4 py-2 sm:py-3 flex items-center gap-2 sm:gap-3">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="flex-shrink-0">
+            <Button variant="ghost" size="icon" className="flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10">
               <Menu className="h-5 w-5" />
               <span className="sr-only">Abrir menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 flex flex-col">
+          <SheetContent side="left" className="w-[280px] sm:w-72 p-0 flex flex-col">
             <SidebarContent 
               currentView={currentView} 
               onViewChange={onViewChange} 
@@ -92,15 +92,15 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
           </SheetContent>
         </Sheet>
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-            <Library className="w-4 h-4 text-primary-foreground" />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+            <Library className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-foreground" />
           </div>
-          <span className="font-display font-semibold text-foreground truncate">Minha Biblioteca</span>
+          <span className="font-display font-semibold text-foreground truncate text-sm sm:text-base">Minha Biblioteca</span>
         </div>
       </div>
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 lg:w-72 bg-card border-r border-border h-screen sticky top-0 flex-col flex-shrink-0">
+      {/* Desktop Sidebar - visible from 1024px */}
+      <aside className="hidden lg:flex w-60 xl:w-72 bg-card border-r border-border h-screen sticky top-0 flex-col flex-shrink-0">
         <SidebarContent currentView={currentView} onViewChange={onViewChange} />
       </aside>
     </>
