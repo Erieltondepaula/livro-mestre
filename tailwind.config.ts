@@ -12,6 +12,12 @@ export default {
       'lg': '1024px',
       'xl': '1200px',
       '2xl': '1400px',
+      // Resoluções de alta definição
+      'fhd': '1920px',   // Full HD 1920x1080
+      '2k': '2048px',    // 2K 2048x1080
+      'qhd': '2560px',   // QHD 2560x1440
+      '4k': '3840px',    // 4K UHD 3840x2160
+      '8k': '7680px',    // 8K UHD-2 7680x4320
     },
     container: {
       center: true,

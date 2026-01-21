@@ -121,7 +121,7 @@ const Index = () => {
       case 'leitura':
         return <ReadingForm books={books} onSubmit={handleAddReading} />;
       case 'status':
-        return <StatusView statuses={statuses} books={books} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
+        return <StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
       case 'avaliacao':
         return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
       case 'citacoes':
@@ -136,8 +136,10 @@ const Index = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-      <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 overflow-auto pt-14 sm:pt-16 lg:pt-4 xl:pt-8">
-        {renderView()}
+      <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 fhd:p-12 4k:p-16 8k:p-20 overflow-auto pt-14 sm:pt-16 lg:pt-4 xl:pt-8 fhd:pt-12 4k:pt-16">
+        <div className="content-container">
+          {renderView()}
+        </div>
       </main>
     </div>
   );
