@@ -7,6 +7,7 @@ interface Profile {
   user_id: string;
   email: string;
   display_name: string | null;
+  avatar_url: string | null;
   is_active: boolean;
   is_master: boolean;
   created_at: string;
