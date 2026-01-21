@@ -12,6 +12,7 @@ export interface Book {
   tipo: BookType;
   categoria: BookCategory;
   valorPago: number;
+  coverUrl?: string;
 }
 
 export interface DailyReading {

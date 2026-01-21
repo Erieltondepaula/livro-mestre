@@ -53,6 +53,7 @@ export function useLibrary() {
           tipo: b.type as Book['tipo'],
           categoria: b.category as Book['categoria'],
           valorPago: Number(b.paid_value) || 0,
+          coverUrl: (b as any).cover_url || undefined,
         })));
       }
 
@@ -126,7 +127,8 @@ export function useLibrary() {
         type: book.tipo,
         category: book.categoria,
         paid_value: book.valorPago,
-      })
+        cover_url: book.coverUrl,
+      } as any)
       .select()
       .single();
 
@@ -158,7 +160,8 @@ export function useLibrary() {
         type: updatedBook.tipo,
         category: updatedBook.categoria,
         paid_value: updatedBook.valorPago,
-      })
+        cover_url: updatedBook.coverUrl,
+      } as any)
       .eq('id', updatedBook.id);
 
     if (error) {

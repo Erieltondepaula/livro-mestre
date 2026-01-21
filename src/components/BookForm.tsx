@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { PlusCircle, Plus, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ManageOptionsDialog } from './ManageOptionsDialog';
+import { ImageUpload } from './ImageUpload';
 import type { Book } from '@/types/library';
 
 interface BookFormProps {
@@ -14,6 +15,7 @@ export function BookForm({ onSubmit }: BookFormProps) {
   const [tipo, setTipo] = useState('Livro');
   const [categoria, setCategoria] = useState('Ficção');
   const [valorPago, setValorPago] = useState('');
+  const [coverUrl, setCoverUrl] = useState<string | undefined>();
   
   const [bookTypes, setBookTypes] = useState<string[]>([]);
   const [bookCategories, setBookCategories] = useState<string[]>([]);
@@ -84,6 +86,7 @@ export function BookForm({ onSubmit }: BookFormProps) {
       tipo: tipo as Book['tipo'],
       categoria: categoria as Book['categoria'],
       valorPago: parseFloat(valorPago) || 0,
+      coverUrl,
     });
 
     // Reset form
@@ -92,6 +95,7 @@ export function BookForm({ onSubmit }: BookFormProps) {
     setTipo('Livro');
     setCategoria('Ficção');
     setValorPago('');
+    setCoverUrl(undefined);
   };
 
   return (
@@ -103,18 +107,28 @@ export function BookForm({ onSubmit }: BookFormProps) {
 
       <div className="card-library-elevated p-8 max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Nome do Livro
-            </label>
-            <input
-              type="text"
-              value={livro}
-              onChange={(e) => setLivro(e.target.value)}
-              className="input-library"
-              placeholder="Ex: O Pequeno Príncipe"
-              required
+          <div className="flex gap-6">
+            <ImageUpload
+              value={coverUrl}
+              onChange={setCoverUrl}
+              bookName={livro}
             />
+            
+            <div className="flex-1 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Nome do Livro
+                </label>
+                <input
+                  type="text"
+                  value={livro}
+                  onChange={(e) => setLivro(e.target.value)}
+                  className="input-library"
+                  placeholder="Ex: O Pequeno Príncipe"
+                  required
+                />
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-6">
