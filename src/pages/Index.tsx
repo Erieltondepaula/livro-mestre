@@ -114,7 +114,7 @@ const Index = () => {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onClearData={handleClearAllData} />;
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} />;
       case 'cadastrar':
         return <BookForm onSubmit={handleAddBook} />;
       case 'livros':
@@ -130,7 +130,7 @@ const Index = () => {
       case 'dicionario':
         return <DictionaryView />;
       default:
-        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onClearData={handleClearAllData} />;
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} />;
     }
   };
 

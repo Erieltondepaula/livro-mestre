@@ -27,6 +27,7 @@ interface UserPermissionsDialogProps {
   onOpenChange: (open: boolean) => void;
   user: UserProfile | null;
   onSave?: () => void;
+  isMasterEditing?: boolean;
 }
 
 const MODULES = [
@@ -40,10 +41,13 @@ const MODULES = [
   { key: 'dicionario', label: 'Dicionário', icon: Book },
 ];
 
-export function UserPermissionsDialog({ open, onOpenChange, user, onSave }: UserPermissionsDialogProps) {
+export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMasterEditing }: UserPermissionsDialogProps) {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // Check if editing a master user (only show info, no permission changes)
+  const isEditingMaster = user?.is_master ?? false;
 
   useEffect(() => {
     if (open && user) {
@@ -140,9 +144,14 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave }: User
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Permissões de Módulos</DialogTitle>
+          <DialogTitle>
+            {isEditingMaster ? 'Perfil do Usuário Mestre' : 'Permissões de Módulos'}
+          </DialogTitle>
           <DialogDescription>
-            Configure os módulos que {user?.display_name || user?.email} poderá acessar.
+            {isEditingMaster 
+              ? `${user?.display_name || user?.email} é o usuário mestre com acesso total ao sistema.`
+              : `Configure os módulos que ${user?.display_name || user?.email} poderá acessar.`
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -150,7 +159,46 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave }: User
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
+        ) : isEditingMaster ? (
+          // Master user info view
+          <div className="space-y-6">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+              <p className="text-sm text-foreground font-medium mb-2">Acesso Total</p>
+              <p className="text-sm text-muted-foreground">
+                O usuário mestre tem acesso a todos os módulos e funcionalidades do sistema automaticamente. 
+                Não é necessário configurar permissões individuais.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {MODULES.map((module) => {
+                const Icon = module.icon;
+                
+                return (
+                  <div
+                    key={module.key}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-primary/5 border-primary/20"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-4 h-4 text-primary" />
+                      <Label className="text-sm font-medium text-foreground">
+                        {module.label}
+                      </Label>
+                    </div>
+                    <Switch checked={true} disabled />
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end pt-4 border-t">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Fechar
+              </Button>
+            </div>
+          </div>
         ) : (
+          // Regular user permissions view
           <div className="space-y-6">
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleSelectAll}>
