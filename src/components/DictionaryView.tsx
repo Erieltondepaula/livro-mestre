@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
+import { VocabularyDialog } from './VocabularyDialog';
+import { toast } from '@/hooks/use-toast';
 
 interface SinonimoGrupo {
   sentido: string;
@@ -35,14 +36,52 @@ interface DictionaryResult {
   analiseContexto?: AnaliseContexto;
 }
 
+interface VocabularyEntry {
+  id: string;
+  palavra: string;
+  silabas: string | null;
+  fonetica: string | null;
+  classe: string | null;
+  definicoes: string[];
+  sinonimos: SinonimoGrupo[];
+  antonimos: string[];
+  exemplos: string[];
+  etimologia: string | null;
+  observacoes: string | null;
+  analise_contexto: AnaliseContexto | null;
+  created_at: string;
+}
+
 export function DictionaryView() {
   const [searchWord, setSearchWord] = useState('');
   const [contextPhrase, setContextPhrase] = useState('');
   const [result, setResult] = useState<DictionaryResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
+  
+  // Saved vocabulary
+  const [savedWords, setSavedWords] = useState<VocabularyEntry[]>([]);
+  const [selectedEntry, setSelectedEntry] = useState<VocabularyEntry | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Load saved vocabulary
+  useEffect(() => {
+    loadVocabulary();
+  }, []);
+
+  const loadVocabulary = async () => {
+    const { data, error } = await supabase
+      .from('vocabulary')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (!error && data) {
+      setSavedWords(data as unknown as VocabularyEntry[]);
+    }
+  };
 
   const searchDictionary = async (word?: string, context?: string) => {
     const wordToSearch = word || searchWord.trim();
@@ -81,6 +120,67 @@ export function DictionaryView() {
     await searchDictionary(result.palavra, contextPhrase.trim());
   };
 
+  const saveToVocabulary = async () => {
+    if (!result) return;
+    
+    setIsSaving(true);
+    try {
+      // First try to check if word exists
+      const { data: existing } = await supabase
+        .from('vocabulary')
+        .select('id')
+        .ilike('palavra', result.palavra)
+        .maybeSingle();
+
+      const vocabularyData = {
+        palavra: result.palavra.toLowerCase(),
+        silabas: result.silabas,
+        fonetica: result.fonetica,
+        classe: result.classe,
+        definicoes: result.definicoes as unknown as any,
+        sinonimos: result.sinonimos as unknown as any,
+        antonimos: result.antonimos as unknown as any,
+        exemplos: result.exemplos as unknown as any,
+        etimologia: result.etimologia,
+        observacoes: result.observacoes,
+        analise_contexto: result.analiseContexto as unknown as any || null,
+      };
+
+      let error;
+      if (existing) {
+        // Update existing
+        const result = await supabase
+          .from('vocabulary')
+          .update(vocabularyData)
+          .eq('id', existing.id);
+        error = result.error;
+      } else {
+        // Insert new
+        const result = await supabase
+          .from('vocabulary')
+          .insert(vocabularyData);
+        error = result.error;
+      }
+
+      if (error) throw error;
+
+      toast({
+        title: "Palavra salva!",
+        description: `"${result.palavra}" foi adicionada ao seu vocabulário.`,
+      });
+
+      loadVocabulary();
+    } catch (err: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -92,6 +192,11 @@ export function DictionaryView() {
     setShowResult(false);
     setResult(null);
     setContextPhrase('');
+  };
+
+  const openWordDetail = (entry: VocabularyEntry) => {
+    setSelectedEntry(entry);
+    setIsDialogOpen(true);
   };
 
   if (showResult && result) {
@@ -176,8 +281,21 @@ export function DictionaryView() {
             </div>
           )}
 
-          {/* Context Analysis Section */}
+          {/* Save Button */}
           <div className="border-t pt-6 mt-6">
+            <Button 
+              onClick={saveToVocabulary} 
+              disabled={isSaving}
+              className="mb-6"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Guardar palavra no vocabulário
+            </Button>
+
             <p className="text-primary mb-4">
               Você tem uma frase ou trecho real onde essa palavra aparece para que eu possa analisar o contexto e identificar o sentido correto?
             </p>
@@ -191,14 +309,14 @@ export function DictionaryView() {
               <Button 
                 onClick={analyzeContext} 
                 disabled={isAnalyzing || !contextPhrase.trim()}
-                className="bg-primary hover:bg-primary/90"
+                variant="secondary"
               >
                 {isAnalyzing ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : (
-                  <Save className="w-4 h-4 mr-2" />
+                  <Search className="w-4 h-4 mr-2" />
                 )}
-                Analisar contexto e guardar na base
+                Analisar contexto
               </Button>
             </div>
           </div>
@@ -294,8 +412,30 @@ export function DictionaryView() {
         </Alert>
       )}
 
+      {/* Saved Vocabulary */}
+      {savedWords.length > 0 && (
+        <div className="card-library p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-foreground">Palavras Salvas</h3>
+            <span className="text-sm text-muted-foreground">({savedWords.length})</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {savedWords.map((entry) => (
+              <button
+                key={entry.id}
+                onClick={() => openWordDetail(entry)}
+                className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
+                {entry.palavra}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Empty state */}
-      {!result && !error && !isLoading && (
+      {!result && !error && !isLoading && savedWords.length === 0 && (
         <div className="card-library p-12 text-center">
           <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-muted-foreground">
@@ -303,6 +443,13 @@ export function DictionaryView() {
           </p>
         </div>
       )}
+
+      {/* Vocabulary Dialog */}
+      <VocabularyDialog 
+        entry={selectedEntry} 
+        isOpen={isDialogOpen} 
+        onClose={() => setIsDialogOpen(false)} 
+      />
     </div>
   );
 }
