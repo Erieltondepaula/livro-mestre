@@ -47,8 +47,12 @@ function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <User className="w-4 h-4 text-primary" />
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-4 h-4 text-primary" />
+            )}
           </div>
           <div className="text-left min-w-0 flex-1">
             <p className="text-sm font-medium truncate">
@@ -61,15 +65,20 @@ function UserMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuItem onClick={() => navigate('/profile')}>
+          <User className="w-4 h-4 mr-2" />
+          Meu Perfil
+        </DropdownMenuItem>
         {isAdmin && (
           <>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate('/admin')}>
               <Shield className="w-4 h-4 mr-2" />
               Gerenciar Usuários
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
           </>
         )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
           <LogOut className="w-4 h-4 mr-2" />
           Sair da conta
