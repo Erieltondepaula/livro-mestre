@@ -44,6 +44,7 @@ export function StatusView({ statuses, books, onDeleteBook, onUpdateBook }: Stat
             <thead>
               <tr>
                 <th>Nº</th>
+                <th>Miniatura</th>
                 <th>Livro</th>
                 <th>Status</th>
                 <th>Progresso</th>
@@ -64,9 +65,22 @@ export function StatusView({ statuses, books, onDeleteBook, onUpdateBook }: Stat
                     onClick={() => handleEditClick(status.livroId)}
                   >
                     <td className="font-medium">{status.numero}</td>
+                    <td>
+                      <div className="w-12 h-16 rounded overflow-hidden bg-muted flex items-center justify-center">
+                        {book?.coverUrl ? (
+                          <img
+                            src={book.coverUrl}
+                            alt={`Capa de ${status.livro}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground text-center">Sem capa</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="font-medium">
                       <div className="flex flex-col">
-                        <span>{status.livro}</span>
+                        <span className="uppercase">{status.livro}</span>
                         {book && (
                           <span className="text-xs text-muted-foreground">
                             {book.categoria} • {book.tipo}
@@ -127,7 +141,7 @@ export function StatusView({ statuses, books, onDeleteBook, onUpdateBook }: Stat
               })}
               {statuses.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center text-muted-foreground py-8">
+                  <td colSpan={7} className="text-center text-muted-foreground py-8">
                     Nenhum livro cadastrado ainda.
                   </td>
                 </tr>
