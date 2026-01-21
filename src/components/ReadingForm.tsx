@@ -28,10 +28,14 @@ const meses = [
 ];
 
 export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
+  const today = new Date();
+  const currentDay = today.getDate().toString();
+  const currentMonth = meses[today.getMonth()];
+
   const [mode, setMode] = useState<'daily' | 'period'>('daily');
   const [livroId, setLivroId] = useState('');
-  const [dia, setDia] = useState('');
-  const [mes, setMes] = useState(meses[new Date().getMonth()]);
+  const [dia, setDia] = useState(currentDay); // Preenche com o dia atual
+  const [mes, setMes] = useState(currentMonth); // Preenche com o mês atual
   const [paginaInicial, setPaginaInicial] = useState('');
   const [paginaFinal, setPaginaFinal] = useState('');
   const [tempoGasto, setTempoGasto] = useState('');
@@ -103,7 +107,13 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
 
   const resetFormOnModeChange = (newMode: 'daily' | 'period') => {
     setMode(newMode);
-    setDia('');
+    // Se for modo diário, restaurar data atual
+    if (newMode === 'daily') {
+      setDia(currentDay);
+      setMes(currentMonth);
+    } else {
+      setDia('');
+    }
     setDataInicio(undefined);
     setDataFim(undefined);
   };
