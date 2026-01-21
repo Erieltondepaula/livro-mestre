@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { VocabularyDialog } from '@/components/VocabularyDialog';
 import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare, Book } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Book as BookType, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType, VocabularyWord } from '@/types/library';
-
 interface BookMetricsDialogProps {
   book: BookType | null;
   status: BookStatus | null;
@@ -26,12 +27,39 @@ export function BookMetricsDialog({
   isOpen, 
   onClose 
 }: BookMetricsDialogProps) {
+  const [selectedWord, setSelectedWord] = useState<VocabularyWord | null>(null);
+  const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
+
   if (!book || !status) return null;
 
   const progress = (status.quantidadeLida / book.totalPaginas) * 100;
   const bookReadings = readings.filter(r => r.livroId === book.id);
   const bookQuotes = quotes.filter(q => q.livroId === book.id);
   const bookVocabulary = vocabulary.filter(v => v.bookId === book.id);
+
+  const handleWordClick = (word: VocabularyWord) => {
+    setSelectedWord(word);
+    setIsVocabDialogOpen(true);
+  };
+
+  const mapWordToEntry = (word: VocabularyWord) => ({
+    id: word.id,
+    palavra: word.palavra,
+    silabas: word.silabas || null,
+    fonetica: word.fonetica || null,
+    classe: word.classe || null,
+    definicoes: word.definicoes || [],
+    sinonimos: word.sinonimos || [],
+    antonimos: word.antonimos || [],
+    exemplos: word.exemplos || [],
+    etimologia: word.etimologia || null,
+    observacoes: word.observacoes || null,
+    analise_contexto: word.analise_contexto || null,
+    created_at: word.createdAt,
+    book_id: word.bookId,
+    source_type: word.source_type,
+    source_details: word.source_details,
+  });
   
   // Calcular métricas
   const totalPagesRead = status.quantidadeLida;
@@ -234,9 +262,10 @@ export function BookMetricsDialog({
               </h3>
               <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                 {bookVocabulary.map((word) => (
-                  <div
+                  <button
                     key={word.id}
-                    className="px-3 py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors"
+                    onClick={() => handleWordClick(word)}
+                    className="px-3 py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-primary/10 hover:border-primary/30 transition-colors cursor-pointer text-left"
                   >
                     <p className="text-sm font-medium">{word.palavra}</p>
                     {word.classe && (
@@ -245,7 +274,7 @@ export function BookMetricsDialog({
                     {word.pagina && (
                       <p className="text-[10px] text-muted-foreground">Pág. {word.pagina}</p>
                     )}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -297,6 +326,16 @@ export function BookMetricsDialog({
             </div>
           </div>
         </div>
+
+        {/* Vocabulary Dialog */}
+        <VocabularyDialog
+          entry={selectedWord ? mapWordToEntry(selectedWord) : null}
+          isOpen={isVocabDialogOpen}
+          onClose={() => {
+            setIsVocabDialogOpen(false);
+            setSelectedWord(null);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

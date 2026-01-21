@@ -61,14 +61,43 @@ export interface Quote {
   pagina: number;
 }
 
+export interface SinonimoGrupo {
+  sentido: string;
+  palavras: string[];
+}
+
+export interface AnaliseContexto {
+  frase: string;
+  sentidoIdentificado: string;
+  explicacao: string;
+  sentidosNaoAplicaveis: string[];
+  sinonimosAdequados: string[];
+  fraseReescrita: string;
+  observacao: string;
+}
+
 export interface VocabularyWord {
   id: string;
   palavra: string;
+  silabas: string | null;
+  fonetica: string | null;
   classe: string | null;
   definicoes: string[];
+  sinonimos: SinonimoGrupo[];
+  antonimos: string[];
+  exemplos: string[];
+  etimologia: string | null;
+  observacoes: string | null;
+  analise_contexto: AnaliseContexto | null;
   bookId: string | null;
   bookName: string | null;
   pagina: number | null;
+  source_type: string | null;
+  source_details: {
+    bookName?: string;
+    author?: string;
+    page?: number;
+  } | null;
   createdAt: string;
 }
 

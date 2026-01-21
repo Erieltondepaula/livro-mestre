@@ -135,19 +135,29 @@ export function useLibrary() {
         setVocabulary(vocabularyData.map(v => {
           // Parse source_details to get page number
           let pagina: number | null = null;
-          if (v.source_details && typeof v.source_details === 'object') {
-            const details = v.source_details as { page?: number };
-            pagina = details.page || null;
+          const sourceDetails = v.source_details as { bookName?: string; author?: string; page?: number } | null;
+          if (sourceDetails && typeof sourceDetails === 'object') {
+            pagina = sourceDetails.page || null;
           }
           
           return {
             id: v.id,
             palavra: v.palavra,
-            classe: v.classe,
+            silabas: v.silabas || null,
+            fonetica: v.fonetica || null,
+            classe: v.classe || null,
             definicoes: Array.isArray(v.definicoes) ? v.definicoes as string[] : [],
+            sinonimos: Array.isArray(v.sinonimos) ? v.sinonimos as { sentido: string; palavras: string[] }[] : [],
+            antonimos: Array.isArray(v.antonimos) ? v.antonimos as string[] : [],
+            exemplos: Array.isArray(v.exemplos) ? v.exemplos as string[] : [],
+            etimologia: v.etimologia || null,
+            observacoes: v.observacoes || null,
+            analise_contexto: v.analise_contexto as { frase: string; sentidoIdentificado: string; explicacao: string; sentidosNaoAplicaveis: string[]; sinonimosAdequados: string[]; fraseReescrita: string; observacao: string } | null,
             bookId: v.book_id,
             bookName: (v.books as any)?.name || null,
             pagina,
+            source_type: v.source_type || null,
+            source_details: sourceDetails || null,
             createdAt: v.created_at,
           };
         }));
