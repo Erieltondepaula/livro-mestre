@@ -6,11 +6,13 @@ import { ReadingForm } from '@/components/ReadingForm';
 import { StatusView } from '@/components/StatusView';
 import { EvaluationForm } from '@/components/EvaluationForm';
 import { QuotesView } from '@/components/QuotesView';
+import { BooksListView } from '@/components/BooksListView';
+import { DictionaryView } from '@/components/DictionaryView';
 import { useLibrary } from '@/hooks/useLibrary';
 import { toast } from '@/hooks/use-toast';
 import type { Book } from '@/types/library';
 
-type View = 'dashboard' | 'cadastrar' | 'leitura' | 'status' | 'avaliacao' | 'citacoes';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -114,6 +116,8 @@ const Index = () => {
         return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onClearData={handleClearAllData} />;
       case 'cadastrar':
         return <BookForm onSubmit={handleAddBook} />;
+      case 'livros':
+        return <BooksListView books={books} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
       case 'leitura':
         return <ReadingForm books={books} onSubmit={handleAddReading} />;
       case 'status':
@@ -122,6 +126,8 @@ const Index = () => {
         return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
       case 'citacoes':
         return <QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} />;
+      case 'dicionario':
+        return <DictionaryView />;
       default:
         return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onClearData={handleClearAllData} />;
     }

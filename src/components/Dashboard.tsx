@@ -179,28 +179,45 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
               <thead>
                 <tr>
                   <th>Nº</th>
+                  <th>Miniatura</th>
                   <th>Livro</th>
                   <th>Status</th>
                   <th>Quantidade Lida</th>
                 </tr>
               </thead>
               <tbody>
-                {recentStatuses.map((status) => (
-                  <tr key={status.id}>
-                    <td className="font-medium">{status.numero}</td>
-                    <td>{status.livro}</td>
-                    <td>
-                      <span className={`status-badge ${
-                        status.status === 'Não iniciado' ? 'status-not-started' :
-                        status.status === 'Lendo' ? 'status-reading' :
-                        'status-completed'
-                      }`}>
-                        {status.status}
-                      </span>
-                    </td>
-                    <td>{getReadPercentage(status).toFixed(0)}%</td>
-                  </tr>
-                ))}
+                {recentStatuses.map((status) => {
+                  const book = books.find(b => b.id === status.livroId);
+                  return (
+                    <tr key={status.id}>
+                      <td className="font-medium">{status.numero}</td>
+                      <td>
+                        <div className="w-12 h-16 rounded overflow-hidden bg-muted flex items-center justify-center">
+                          {book?.coverUrl ? (
+                            <img
+                              src={book.coverUrl}
+                              alt={`Capa de ${status.livro}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground text-center">Sem capa</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="uppercase font-medium">{status.livro}</td>
+                      <td>
+                        <span className={`status-badge ${
+                          status.status === 'Não iniciado' ? 'status-not-started' :
+                          status.status === 'Lendo' ? 'status-reading' :
+                          'status-completed'
+                        }`}>
+                          {status.status}
+                        </span>
+                      </td>
+                      <td>{getReadPercentage(status).toFixed(0)}%</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

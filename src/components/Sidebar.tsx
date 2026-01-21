@@ -1,6 +1,6 @@
-import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library } from 'lucide-react';
+import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book } from 'lucide-react';
 
-type View = 'dashboard' | 'cadastrar' | 'leitura' | 'status' | 'avaliacao' | 'citacoes';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario';
 
 interface SidebarProps {
   currentView: View;
@@ -10,10 +10,12 @@ interface SidebarProps {
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
   { id: 'cadastrar' as View, label: 'Cadastrar Livro', icon: PlusCircle },
+  { id: 'livros' as View, label: 'Livros Cadastrados', icon: Library },
   { id: 'leitura' as View, label: 'Registar Leitura', icon: BookOpen },
   { id: 'status' as View, label: 'Status dos Livros', icon: BookMarked },
   { id: 'avaliacao' as View, label: 'Avaliações', icon: Star },
   { id: 'citacoes' as View, label: 'Citações', icon: Quote },
+  { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
 ];
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
