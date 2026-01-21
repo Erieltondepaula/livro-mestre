@@ -107,7 +107,7 @@ Contexto/frase para análise: "${context}"`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -118,15 +118,18 @@ Contexto/frase para análise: "${context}"`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI Gateway error:", errorText);
-      throw new Error(`AI Gateway error: ${response.status}`);
+      console.error("AI Gateway error:", response.status, errorText);
+      throw new Error(`AI Gateway error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log("AI response received:", JSON.stringify(data).slice(0, 200));
+    
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
-      throw new Error("No response from AI");
+      console.error("No content in AI response:", JSON.stringify(data));
+      throw new Error("No response from AI - empty content");
     }
 
     // Parse JSON from response (handle markdown code blocks)
