@@ -52,6 +52,7 @@ export type Database = {
       }
       books: {
         Row: {
+          author: string | null
           category: string | null
           cover_url: string | null
           created_at: string | null
@@ -60,8 +61,10 @@ export type Database = {
           paid_value: number | null
           total_pages: number
           type: string
+          year: number | null
         }
         Insert: {
+          author?: string | null
           category?: string | null
           cover_url?: string | null
           created_at?: string | null
@@ -70,8 +73,10 @@ export type Database = {
           paid_value?: number | null
           total_pages?: number
           type?: string
+          year?: number | null
         }
         Update: {
+          author?: string | null
           category?: string | null
           cover_url?: string | null
           created_at?: string | null
@@ -80,6 +85,7 @@ export type Database = {
           paid_value?: number | null
           total_pages?: number
           type?: string
+          year?: number | null
         }
         Relationships: []
       }

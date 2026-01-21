@@ -14,6 +14,8 @@ interface BookEditDialogProps {
 
 export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: BookEditDialogProps) {
   const [livro, setLivro] = useState('');
+  const [autor, setAutor] = useState('');
+  const [ano, setAno] = useState('');
   const [totalPaginas, setTotalPaginas] = useState('');
   const [tipo, setTipo] = useState('Livro');
   const [categoria, setCategoria] = useState('Ficção');
@@ -34,6 +36,8 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
   useEffect(() => {
     if (book) {
       setLivro(book.livro);
+      setAutor(book.autor || '');
+      setAno(book.ano?.toString() || '');
       setTotalPaginas(book.totalPaginas.toString());
       setTipo(book.tipo);
       setCategoria(book.categoria);
@@ -97,6 +101,8 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
     onSave({
       ...book,
       livro: livro.trim().toUpperCase(),
+      autor: autor.trim() || undefined,
+      ano: ano ? parseInt(ano) : undefined,
       totalPaginas: parseInt(totalPaginas),
       tipo: tipo as Book['tipo'],
       categoria: categoria as Book['categoria'],
@@ -136,21 +142,49 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
               bookName={livro}
             />
             
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Nome do Livro
-              </label>
-              <input
-                type="text"
-                value={livro}
-                onChange={(e) => setLivro(e.target.value)}
-                className="input-library"
-                required
-              />
+            <div className="flex-1 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Nome do Livro
+                </label>
+                <input
+                  type="text"
+                  value={livro}
+                  onChange={(e) => setLivro(e.target.value)}
+                  className="input-library"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Autor
+                </label>
+                <input
+                  type="text"
+                  value={autor}
+                  onChange={(e) => setAutor(e.target.value)}
+                  className="input-library"
+                  placeholder="Ex: Antoine de Saint-Exupéry"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Ano
+              </label>
+              <input
+                type="number"
+                value={ano}
+                onChange={(e) => setAno(e.target.value)}
+                className="input-library"
+                placeholder="Ex: 2023"
+                min="1000"
+                max="2100"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Total de Páginas
@@ -164,7 +198,6 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Tipo
