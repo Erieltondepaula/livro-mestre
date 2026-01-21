@@ -1,26 +1,13 @@
-import { BookOpen, BookCheck, Clock, TrendingUp, Library, Target, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { BookOpen, BookCheck, Clock, TrendingUp, Library, Target } from 'lucide-react';
 import type { DashboardStats, BookStatus, Book } from '@/types/library';
 
 interface DashboardProps {
   stats: DashboardStats;
   recentStatuses: BookStatus[];
   books: Book[];
-  onClearData: () => void;
 }
 
-export function Dashboard({ stats, recentStatuses, books, onClearData }: DashboardProps) {
+export function Dashboard({ stats, recentStatuses, books }: DashboardProps) {
   // Calcular a percentagem de leitura para cada status
   const getReadPercentage = (status: BookStatus) => {
     const book = books.find(b => b.id === status.livroId);
@@ -35,30 +22,6 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
           <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">Dashboard</h2>
           <p className="text-sm md:text-base text-muted-foreground">Visão geral do seu progresso de leitura</p>
         </div>
-        
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive w-full sm:w-auto">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Limpar Dados
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação irá remover TODOS os dados: livros, leituras, avaliações e citações. 
-                Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-              <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={onClearData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto">
-                Sim, limpar tudo
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
 
       {/* Progress Card */}
