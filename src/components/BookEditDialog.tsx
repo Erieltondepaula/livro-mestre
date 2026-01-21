@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { ImageUpload } from './ImageUpload';
 import type { Book } from '@/types/library';
 
 interface BookEditDialogProps {
@@ -17,6 +18,7 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
   const [tipo, setTipo] = useState('Livro');
   const [categoria, setCategoria] = useState('Ficção');
   const [valorPago, setValorPago] = useState('');
+  const [coverUrl, setCoverUrl] = useState<string | undefined>();
   
   const [bookTypes, setBookTypes] = useState<string[]>([]);
   const [bookCategories, setBookCategories] = useState<string[]>([]);
@@ -36,6 +38,7 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
       setTipo(book.tipo);
       setCategoria(book.categoria);
       setValorPago(book.valorPago.toString());
+      setCoverUrl(book.coverUrl);
     }
   }, [book]);
 
@@ -98,6 +101,7 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
       tipo: tipo as Book['tipo'],
       categoria: categoria as Book['categoria'],
       valorPago: parseFloat(valorPago) || 0,
+      coverUrl,
     });
     onClose();
   };
@@ -125,17 +129,25 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
         </div>
 
         <form onSubmit={handleSave} className="p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Nome do Livro
-            </label>
-            <input
-              type="text"
-              value={livro}
-              onChange={(e) => setLivro(e.target.value)}
-              className="input-library"
-              required
+          <div className="flex gap-4">
+            <ImageUpload
+              value={coverUrl}
+              onChange={setCoverUrl}
+              bookName={livro}
             />
+            
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Nome do Livro
+              </label>
+              <input
+                type="text"
+                value={livro}
+                onChange={(e) => setLivro(e.target.value)}
+                className="input-library"
+                required
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
