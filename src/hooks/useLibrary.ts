@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats } from '@/types/library';
+import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats, VocabularyWord } from '@/types/library';
 
 export function useLibrary() {
   const { user } = useAuth();
@@ -10,6 +10,7 @@ export function useLibrary() {
   const [statuses, setStatuses] = useState<BookStatus[]>([]);
   const [evaluations, setEvaluations] = useState<BookEvaluation[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [vocabulary, setVocabulary] = useState<VocabularyWord[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load data from database
@@ -20,6 +21,7 @@ export function useLibrary() {
       setStatuses([]);
       setEvaluations([]);
       setQuotes([]);
+      setVocabulary([]);
       setIsLoaded(true);
       return;
     }
@@ -54,6 +56,12 @@ export function useLibrary() {
         .from('quotes')
         .select('*, books(name)')
         .order('created_at', { ascending: true });
+
+      // Load vocabulary with book info
+      const { data: vocabularyData } = await supabase
+        .from('vocabulary')
+        .select('*, books(name)')
+        .order('created_at', { ascending: false });
 
       // Transform to app format
       if (booksData) {
@@ -121,6 +129,28 @@ export function useLibrary() {
           livro: (q.books as any)?.name || '',
           pagina: q.page || 0,
         })));
+      }
+
+      if (vocabularyData) {
+        setVocabulary(vocabularyData.map(v => {
+          // Parse source_details to get page number
+          let pagina: number | null = null;
+          if (v.source_details && typeof v.source_details === 'object') {
+            const details = v.source_details as { page?: number };
+            pagina = details.page || null;
+          }
+          
+          return {
+            id: v.id,
+            palavra: v.palavra,
+            classe: v.classe,
+            definicoes: Array.isArray(v.definicoes) ? v.definicoes as string[] : [],
+            bookId: v.book_id,
+            bookName: (v.books as any)?.name || null,
+            pagina,
+            createdAt: v.created_at,
+          };
+        }));
       }
 
       setIsLoaded(true);
@@ -406,6 +436,7 @@ export function useLibrary() {
     statuses,
     evaluations,
     quotes,
+    vocabulary,
     isLoaded,
     addBook,
     updateBook,

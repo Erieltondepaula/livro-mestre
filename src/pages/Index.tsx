@@ -22,6 +22,7 @@ const Index = () => {
     statuses,
     evaluations,
     quotes,
+    vocabulary,
     isLoaded,
     addBook,
     updateBook,
@@ -121,7 +122,7 @@ const Index = () => {
       case 'leitura':
         return <ReadingForm books={books} onSubmit={handleAddReading} />;
       case 'status':
-        return <StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
+        return <StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
       case 'avaliacao':
         return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
       case 'citacoes':

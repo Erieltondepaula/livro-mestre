@@ -1,16 +1,17 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare } from 'lucide-react';
+import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare, Book } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { Book, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType } from '@/types/library';
+import type { Book as BookType, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType, VocabularyWord } from '@/types/library';
 
 interface BookMetricsDialogProps {
-  book: Book | null;
+  book: BookType | null;
   status: BookStatus | null;
   readings: DailyReading[];
   evaluation: BookEvaluation | null;
   quotes: QuoteType[];
+  vocabulary: VocabularyWord[];
   isOpen: boolean;
   onClose: () => void;
 }
@@ -21,6 +22,7 @@ export function BookMetricsDialog({
   readings, 
   evaluation, 
   quotes,
+  vocabulary,
   isOpen, 
   onClose 
 }: BookMetricsDialogProps) {
@@ -29,6 +31,7 @@ export function BookMetricsDialog({
   const progress = (status.quantidadeLida / book.totalPaginas) * 100;
   const bookReadings = readings.filter(r => r.livroId === book.id);
   const bookQuotes = quotes.filter(q => q.livroId === book.id);
+  const bookVocabulary = vocabulary.filter(v => v.bookId === book.id);
   
   // Calcular métricas
   const totalPagesRead = status.quantidadeLida;
@@ -218,6 +221,32 @@ export function BookMetricsDialog({
                     +{bookQuotes.length - 5} citações
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Vocabulário */}
+          {bookVocabulary.length > 0 && (
+            <div className="card-library p-4">
+              <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
+                <Book className="w-4 h-4" />
+                Palavras Pesquisadas ({bookVocabulary.length})
+              </h3>
+              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                {bookVocabulary.map((word) => (
+                  <div
+                    key={word.id}
+                    className="px-3 py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-muted transition-colors"
+                  >
+                    <p className="text-sm font-medium">{word.palavra}</p>
+                    {word.classe && (
+                      <p className="text-[10px] text-muted-foreground">{word.classe}</p>
+                    )}
+                    {word.pagina && (
+                      <p className="text-[10px] text-muted-foreground">Pág. {word.pagina}</p>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

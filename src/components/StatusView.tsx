@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2, Edit2, BarChart3 } from 'lucide-react';
-import type { BookStatus, Book, DailyReading, BookEvaluation, Quote } from '@/types/library';
+import type { BookStatus, Book, DailyReading, BookEvaluation, Quote, VocabularyWord } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
 import { BookMetricsDialog } from './BookMetricsDialog';
 
@@ -10,11 +10,12 @@ interface StatusViewProps {
   readings: DailyReading[];
   evaluations: BookEvaluation[];
   quotes: Quote[];
+  vocabulary: VocabularyWord[];
   onDeleteBook: (id: string) => void;
   onUpdateBook: (book: Book) => void;
 }
 
-export function StatusView({ statuses, books, readings, evaluations, quotes, onDeleteBook, onUpdateBook }: StatusViewProps) {
+export function StatusView({ statuses, books, readings, evaluations, quotes, vocabulary, onDeleteBook, onUpdateBook }: StatusViewProps) {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
 
@@ -200,6 +201,7 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, onD
         readings={readings}
         evaluation={viewingBook ? getBookEvaluation(viewingBook.id) : null}
         quotes={quotes}
+        vocabulary={vocabulary}
         isOpen={!!viewingBook}
         onClose={() => setViewingBook(null)}
       />
