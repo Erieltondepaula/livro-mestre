@@ -1,11 +1,23 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Allowed origins for CORS
+const allowedOrigins = [
+  "https://readwise-notes.lovable.app",
+  "https://id-preview--083acb00-7fa0-4d40-932e-1e8abb44986c.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(origin: string | null) {
+  const allowedOrigin = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+}
 
 interface DictionaryRequest {
   word: string;
@@ -13,17 +25,68 @@ interface DictionaryRequest {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Autenticação necessária" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("Supabase configuration missing");
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    // Validate the JWT token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Token inválido" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "Usuário não identificado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { word, context } = (await req.json()) as DictionaryRequest;
 
     if (!word) {
       return new Response(
         JSON.stringify({ error: "Palavra é obrigatória" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate word input
+    const cleanWord = word.trim().slice(0, 100);
+    if (!cleanWord || cleanWord.length < 1) {
+      return new Response(
+        JSON.stringify({ error: "Palavra inválida" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -70,9 +133,12 @@ Formato de resposta JSON:
   "observacoes": "Pode ser usado em diversas formas: romântico, fraternal, platônico, etc."
 }`;
 
-    let userPrompt = `Defina a palavra: "${word}"`;
+    let userPrompt = `Defina a palavra: "${cleanWord}"`;
 
-    if (context) {
+    // Validate and sanitize context
+    const cleanContext = context?.trim().slice(0, 500);
+    
+    if (cleanContext) {
       systemPrompt += `
 
 Quando fornecido um contexto/frase, também analise:
@@ -95,9 +161,9 @@ Adicione ao JSON:
     "observacao": "nota sobre o uso"
   }
 }`;
-      userPrompt = `Defina a palavra: "${word}"
+      userPrompt = `Defina a palavra: "${cleanWord}"
 
-Contexto/frase para análise: "${context}"`;
+Contexto/frase para análise: "${cleanContext}"`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -117,19 +183,14 @@ Contexto/frase para análise: "${context}"`;
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      throw new Error(`AI Gateway error: ${response.status} - ${errorText}`);
+      throw new Error("Erro ao processar requisição");
     }
 
     const data = await response.json();
-    console.log("AI response received:", JSON.stringify(data).slice(0, 200));
-    
     const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
-      console.error("No content in AI response:", JSON.stringify(data));
-      throw new Error("No response from AI - empty content");
+      throw new Error("Resposta vazia do serviço");
     }
 
     // Parse JSON from response (handle markdown code blocks)
@@ -147,10 +208,9 @@ Contexto/frase para análise: "${context}"`;
     );
 
   } catch (error: unknown) {
-    console.error("Error in dictionary function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Erro ao processar palavra";
+    const corsHeaders = getCorsHeaders(req.headers.get("origin"));
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "Erro ao processar palavra" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
