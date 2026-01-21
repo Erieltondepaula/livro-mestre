@@ -178,8 +178,12 @@ export function useLibrary() {
     await loadData();
   }, [loadData]);
 
-  // Add daily reading
-  const addReading = useCallback(async (reading: Omit<DailyReading, 'id' | 'quantidadePaginas'>) => {
+  // Add daily reading (with optional retroactive support)
+  const addReading = useCallback(async (reading: Omit<DailyReading, 'id' | 'quantidadePaginas'> & { 
+    dataInicio?: Date; 
+    dataFim?: Date;
+    isRetroactive?: boolean;
+  }) => {
     const quantidadePaginas = reading.paginaFinal - reading.paginaInicial;
 
     const { data: newReadingData, error } = await supabase
@@ -201,20 +205,32 @@ export function useLibrary() {
     }
 
     // Update status
-    const { data: currentStatus } = await supabase
-      .from('statuses')
-      .select('pages_read')
-      .eq('book_id', reading.livroId)
-      .maybeSingle();
-
     const { data: bookData } = await supabase
       .from('books')
       .select('total_pages')
       .eq('id', reading.livroId)
       .single();
 
-    const newPagesRead = (currentStatus?.pages_read || 0) + quantidadePaginas;
-    const newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
+    // For retroactive readings, set pages directly to paginaFinal
+    // For regular readings, accumulate pages
+    let newPagesRead: number;
+    let newStatus: string;
+
+    if (reading.isRetroactive) {
+      // Retroactive: set pages directly to the final page
+      newPagesRead = reading.paginaFinal;
+      newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
+    } else {
+      // Regular: accumulate pages
+      const { data: currentStatus } = await supabase
+        .from('statuses')
+        .select('pages_read')
+        .eq('book_id', reading.livroId)
+        .maybeSingle();
+
+      newPagesRead = (currentStatus?.pages_read || 0) + quantidadePaginas;
+      newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
+    }
 
     await supabase
       .from('statuses')
