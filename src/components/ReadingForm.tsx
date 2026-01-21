@@ -87,16 +87,16 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h2 className="font-display text-3xl font-bold text-foreground mb-2">Registar Leitura</h2>
-        <p className="text-muted-foreground">Registre a sua sessão de leitura do dia</p>
+        <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">Registar Leitura</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Registre a sua sessão de leitura do dia</p>
       </div>
 
-      <div className="card-library-elevated p-8 max-w-2xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="card-library-elevated p-4 md:p-6 lg:p-8 max-w-2xl">
+        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
           {/* Data Início e Data Fim */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Data Início
@@ -180,7 +180,7 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
 
           {/* Dia e Mês - opcional se usar Data Início/Fim */}
           {!isRetroactive && (
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Dia
@@ -214,7 +214,7 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4 md:gap-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Página Inicial

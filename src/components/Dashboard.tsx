@@ -29,21 +29,21 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 md:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-3xl font-bold text-foreground mb-2">Dashboard</h2>
-          <p className="text-muted-foreground">Visão geral do seu progresso de leitura</p>
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2">Dashboard</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Visão geral do seu progresso de leitura</p>
         </div>
         
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive w-full sm:w-auto">
               <Trash2 className="w-4 h-4 mr-2" />
               Limpar Dados
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
             <AlertDialogHeader>
               <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
               <AlertDialogDescription>
@@ -51,9 +51,9 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
                 Esta ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={onClearData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <AlertDialogCancel className="w-full sm:w-auto">Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onClearData} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto">
                 Sim, limpar tudo
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -62,16 +62,16 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
       </div>
 
       {/* Progress Card */}
-      <div className="card-library-elevated p-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="card-library-elevated p-4 md:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
           <div>
-            <h3 className="font-display text-2xl font-semibold text-foreground">Progresso Total</h3>
-            <p className="text-muted-foreground mt-1">
+            <h3 className="font-display text-xl md:text-2xl font-semibold text-foreground">Progresso Total</h3>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
               {stats.paginasLidas.toLocaleString()} de {stats.totalPaginas.toLocaleString()} páginas
             </p>
           </div>
-          <div className="text-right">
-            <span className="text-4xl font-display font-bold text-primary">
+          <div className="text-left sm:text-right">
+            <span className="text-3xl md:text-4xl font-display font-bold text-primary">
               {stats.percentualLido.toFixed(1)}%
             </span>
           </div>
@@ -84,13 +84,13 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
           />
         </div>
         
-        <p className="text-sm text-muted-foreground mt-4">
+        <p className="text-xs md:text-sm text-muted-foreground mt-3 md:mt-4">
           Faltam <span className="font-semibold text-foreground">{stats.paginasFaltantes.toLocaleString()}</span> páginas para completar todos os livros
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
         <div className="stat-card">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -167,59 +167,61 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
       </div>
 
       {/* Recent Status */}
-      <div className="card-library p-6">
-        <h3 className="font-display text-xl font-semibold text-foreground mb-4">Status dos Livros</h3>
+      <div className="card-library p-4 md:p-6">
+        <h3 className="font-display text-lg md:text-xl font-semibold text-foreground mb-4">Status dos Livros</h3>
         {recentStatuses.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
+          <p className="text-muted-foreground text-center py-8 text-sm md:text-base">
             Nenhum livro cadastrado ainda. Comece cadastrando o seu primeiro livro!
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="table-library">
-              <thead>
-                <tr>
-                  <th>Nº</th>
-                  <th>Miniatura</th>
-                  <th>Livro</th>
-                  <th>Status</th>
-                  <th>Quantidade Lida</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentStatuses.map((status) => {
-                  const book = books.find(b => b.id === status.livroId);
-                  return (
-                    <tr key={status.id}>
-                      <td className="font-medium">{status.numero}</td>
-                      <td>
-                        <div className="w-12 h-16 rounded overflow-hidden bg-muted flex items-center justify-center">
-                          {book?.coverUrl ? (
-                            <img
-                              src={book.coverUrl}
-                              alt={`Capa de ${status.livro}`}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground text-center">Sem capa</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="uppercase font-medium">{status.livro}</td>
-                      <td>
-                        <span className={`status-badge ${
-                          status.status === 'Não iniciado' ? 'status-not-started' :
-                          status.status === 'Lendo' ? 'status-reading' :
-                          'status-completed'
-                        }`}>
-                          {status.status}
-                        </span>
-                      </td>
-                      <td>{getReadPercentage(status).toFixed(0)}%</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="overflow-x-auto -mx-4 md:mx-0">
+            <div className="min-w-[600px] md:min-w-0 px-4 md:px-0">
+              <table className="table-library w-full">
+                <thead>
+                  <tr>
+                    <th className="text-xs md:text-sm">Nº</th>
+                    <th className="text-xs md:text-sm hidden sm:table-cell">Miniatura</th>
+                    <th className="text-xs md:text-sm">Livro</th>
+                    <th className="text-xs md:text-sm">Status</th>
+                    <th className="text-xs md:text-sm">Lido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentStatuses.map((status) => {
+                    const book = books.find(b => b.id === status.livroId);
+                    return (
+                      <tr key={status.id}>
+                        <td className="font-medium text-sm">{status.numero}</td>
+                        <td className="hidden sm:table-cell">
+                          <div className="w-10 h-14 md:w-12 md:h-16 rounded overflow-hidden bg-muted flex items-center justify-center">
+                            {book?.coverUrl ? (
+                              <img
+                                src={book.coverUrl}
+                                alt={`Capa de ${status.livro}`}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-[8px] md:text-[10px] text-muted-foreground text-center">Sem capa</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="uppercase font-medium text-xs md:text-sm max-w-[120px] md:max-w-none truncate">{status.livro}</td>
+                        <td>
+                          <span className={`status-badge text-xs ${
+                            status.status === 'Não iniciado' ? 'status-not-started' :
+                            status.status === 'Lendo' ? 'status-reading' :
+                            'status-completed'
+                          }`}>
+                            {status.status}
+                          </span>
+                        </td>
+                        <td className="text-sm">{getReadPercentage(status).toFixed(0)}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
