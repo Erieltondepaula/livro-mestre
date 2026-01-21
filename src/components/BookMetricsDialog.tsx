@@ -284,10 +284,10 @@ export function BookMetricsDialog({
           {bookReadings.length > 0 && (
             <div className="card-library p-4">
               <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider">
-                Últimas Leituras
+                Histórico de Leituras ({bookReadings.length})
               </h3>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
-                {bookReadings.slice(-5).reverse().map((reading) => (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {[...bookReadings].reverse().map((reading) => (
                   <div key={reading.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm py-2 border-b border-border last:border-0 gap-1">
                     <span className="font-medium">{formatReadingDate(reading)}</span>
                     <span className="text-muted-foreground">
