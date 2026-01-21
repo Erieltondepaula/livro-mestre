@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.083acb007fa04d40932e1e8abb44986c',
+  appId: 'app.lovable.planoleitura',
   appName: 'Plano de Leitura',
   webDir: 'dist',
   server: {
