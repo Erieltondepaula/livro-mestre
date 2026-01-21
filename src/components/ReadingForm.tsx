@@ -47,8 +47,8 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
   const isPeriodMode = mode === 'period' && dataInicio && dataFim;
   const isBookCompleted = selectedBook && parseInt(paginaFinal) >= selectedBook.totalPaginas;
   
-  // Dias de leitura: diferença entre data início e data fim + 1
-  const diasLeitura = dataInicio && dataFim ? differenceInDays(dataFim, dataInicio) + 1 : 0;
+  // Dias de leitura: diferença entre data início e data fim
+  const diasLeitura = dataInicio && dataFim ? differenceInDays(dataFim, dataInicio) : 0;
   const paginasPorDia = diasLeitura > 0 && paginasLidas > 0 ? (paginasLidas / diasLeitura).toFixed(1) : 0;
   const tempoMedioPorDia = diasLeitura > 0 && tempoGasto ? (parseInt(tempoGasto) / diasLeitura).toFixed(0) : 0;
 
