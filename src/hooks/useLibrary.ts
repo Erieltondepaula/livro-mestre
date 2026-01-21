@@ -101,8 +101,8 @@ export function useLibrary() {
           paginaFinal: r.end_page,
           tempoGasto: parseInt(r.time_spent || '0'),
           quantidadePaginas: r.end_page - r.start_page,
-          dataInicio: (r as any).start_date ? new Date((r as any).start_date) : undefined,
-          dataFim: (r as any).end_date ? new Date((r as any).end_date) : undefined,
+          dataInicio: (r as any).start_date ? new Date((r as any).start_date + 'T12:00:00') : undefined,
+          dataFim: (r as any).end_date ? new Date((r as any).end_date + 'T12:00:00') : undefined,
         })));
       }
 
