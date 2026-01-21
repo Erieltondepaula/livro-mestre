@@ -90,77 +90,77 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
         <div className="stat-card">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Library className="w-6 h-6 text-primary" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Library className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Livros Cadastrados</p>
-              <p className="text-2xl font-display font-bold text-foreground">{stats.livrosCadastrados}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Livros Cadastrados</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.livrosCadastrados}</p>
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-reading/10 flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-reading" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-reading/10 flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-reading" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Lendo Atualmente</p>
-              <p className="text-2xl font-display font-bold text-foreground">{stats.livrosLendo}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Lendo Atualmente</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.livrosLendo}</p>
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
-              <BookCheck className="w-6 h-6 text-success" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
+              <BookCheck className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Concluídos</p>
-              <p className="text-2xl font-display font-bold text-foreground">{stats.livrosConcluidos}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Concluídos</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.livrosConcluidos}</p>
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-              <Clock className="w-6 h-6 text-accent" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Dias de Leitura</p>
-              <p className="text-2xl font-display font-bold text-foreground">{stats.diasLeitura}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Dias de Leitura</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.diasLeitura}</p>
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-secondary-foreground" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary-foreground" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Média por Dia</p>
-              <p className="text-2xl font-display font-bold text-foreground">
-                {stats.mediaPaginasDia.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">pág</span>
+              <p className="text-xs sm:text-sm text-muted-foreground">Média por Dia</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-foreground">
+                {stats.mediaPaginasDia.toFixed(1)} <span className="text-xs sm:text-sm font-normal text-muted-foreground">pág</span>
               </p>
             </div>
           </div>
         </div>
 
         <div className="stat-card">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Target className="w-6 h-6 text-primary" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Target className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total de Páginas</p>
-              <p className="text-2xl font-display font-bold text-foreground">{stats.totalPaginas.toLocaleString()}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Total de Páginas</p>
+              <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.totalPaginas.toLocaleString()}</p>
             </div>
           </div>
         </div>

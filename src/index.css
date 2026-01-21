@@ -132,7 +132,7 @@
   }
 
   .stat-card {
-    @apply bg-card rounded-xl border border-border p-6;
+    @apply bg-card rounded-xl border border-border p-3 sm:p-4 md:p-5 lg:p-6;
     box-shadow: var(--shadow-card);
   }
 
@@ -161,7 +161,7 @@
   }
 
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200;
+    @apply flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-all duration-200 text-sm sm:text-base;
   }
 
   .nav-item:hover {
@@ -177,12 +177,12 @@
   }
 
   .table-library th {
-    @apply text-left p-4 font-semibold text-muted-foreground border-b border-border bg-muted/50;
+    @apply text-left p-2 sm:p-3 md:p-4 font-semibold text-muted-foreground border-b border-border bg-muted/50 text-xs sm:text-sm;
     font-family: var(--font-body);
   }
 
   .table-library td {
-    @apply p-4 border-b border-border;
+    @apply p-2 sm:p-3 md:p-4 border-b border-border text-sm;
   }
 
   .table-library tr:hover td {
@@ -190,7 +190,7 @@
   }
 
   .input-library {
-    @apply w-full px-4 py-3 rounded-lg border border-input bg-background transition-all duration-200;
+    @apply w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-input bg-background transition-all duration-200 text-sm sm:text-base;
   }
 
   .input-library:focus {
@@ -198,7 +198,7 @@
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg bg-primary text-primary-foreground font-medium transition-all duration-200 text-sm sm:text-base;
   }
 
   .btn-primary:hover {
@@ -206,7 +206,7 @@
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-secondary text-secondary-foreground font-medium transition-all duration-200;
+    @apply inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg bg-secondary text-secondary-foreground font-medium transition-all duration-200 text-sm sm:text-base;
   }
 
   .btn-secondary:hover {

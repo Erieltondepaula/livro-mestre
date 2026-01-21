@@ -136,7 +136,7 @@ const Index = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-      <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto pt-16 md:pt-4 lg:pt-8">
+      <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 overflow-auto pt-14 sm:pt-16 lg:pt-4 xl:pt-8">
         {renderView()}
       </main>
     </div>
