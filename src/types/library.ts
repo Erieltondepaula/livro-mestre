@@ -8,6 +8,8 @@ export interface Book {
   id: string;
   numero: number;
   livro: string;
+  autor?: string;
+  ano?: number;
   totalPaginas: number;
   tipo: BookType;
   categoria: BookCategory;

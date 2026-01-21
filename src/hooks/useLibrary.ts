@@ -49,6 +49,8 @@ export function useLibrary() {
           id: b.id,
           numero: index + 1,
           livro: b.name,
+          autor: (b as any).author || undefined,
+          ano: (b as any).year || undefined,
           totalPaginas: b.total_pages,
           tipo: b.type as Book['tipo'],
           categoria: b.category as Book['categoria'],
@@ -123,6 +125,8 @@ export function useLibrary() {
       .from('books')
       .insert({
         name: book.livro,
+        author: book.autor,
+        year: book.ano,
         total_pages: book.totalPaginas,
         type: book.tipo,
         category: book.categoria,
@@ -156,6 +160,8 @@ export function useLibrary() {
       .from('books')
       .update({
         name: updatedBook.livro,
+        author: updatedBook.autor,
+        year: updatedBook.ano,
         total_pages: updatedBook.totalPaginas,
         type: updatedBook.tipo,
         category: updatedBook.categoria,

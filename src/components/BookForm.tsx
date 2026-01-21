@@ -11,6 +11,8 @@ interface BookFormProps {
 
 export function BookForm({ onSubmit }: BookFormProps) {
   const [livro, setLivro] = useState('');
+  const [autor, setAutor] = useState('');
+  const [ano, setAno] = useState('');
   const [totalPaginas, setTotalPaginas] = useState('');
   const [tipo, setTipo] = useState('Livro');
   const [categoria, setCategoria] = useState('Ficção');
@@ -82,6 +84,8 @@ export function BookForm({ onSubmit }: BookFormProps) {
 
     onSubmit({
       livro: livro.trim().toUpperCase(),
+      autor: autor.trim() || undefined,
+      ano: ano ? parseInt(ano) : undefined,
       totalPaginas: parseInt(totalPaginas),
       tipo: tipo as Book['tipo'],
       categoria: categoria as Book['categoria'],
@@ -91,6 +95,8 @@ export function BookForm({ onSubmit }: BookFormProps) {
 
     // Reset form
     setLivro('');
+    setAutor('');
+    setAno('');
     setTotalPaginas('');
     setTipo('Livro');
     setCategoria('Ficção');
@@ -128,10 +134,36 @@ export function BookForm({ onSubmit }: BookFormProps) {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Autor
+                </label>
+                <input
+                  type="text"
+                  value={autor}
+                  onChange={(e) => setAutor(e.target.value)}
+                  className="input-library"
+                  placeholder="Ex: Antoine de Saint-Exupéry"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Ano
+              </label>
+              <input
+                type="number"
+                value={ano}
+                onChange={(e) => setAno(e.target.value)}
+                className="input-library"
+                placeholder="Ex: 2023"
+                min="1000"
+                max="2100"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Total de Páginas
@@ -146,7 +178,6 @@ export function BookForm({ onSubmit }: BookFormProps) {
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Tipo
