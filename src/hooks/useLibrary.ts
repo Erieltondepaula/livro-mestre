@@ -81,6 +81,8 @@ export function useLibrary() {
           paginaFinal: r.end_page,
           tempoGasto: parseInt(r.time_spent || '0'),
           quantidadePaginas: r.end_page - r.start_page,
+          dataInicio: (r as any).start_date ? new Date((r as any).start_date) : undefined,
+          dataFim: (r as any).end_date ? new Date((r as any).end_date) : undefined,
         })));
       }
 
@@ -95,6 +97,7 @@ export function useLibrary() {
           prazer: e.pleasure || 0,
           impacto: e.impact || 0,
           notaFinal: Number(e.final_grade) || 0,
+          observacoes: (e as any).observations || undefined,
         })));
       }
 
@@ -186,6 +189,10 @@ export function useLibrary() {
   }) => {
     const quantidadePaginas = reading.paginaFinal - reading.paginaInicial;
 
+    // Formatar datas para o banco
+    const startDateStr = reading.dataInicio ? reading.dataInicio.toISOString().split('T')[0] : null;
+    const endDateStr = reading.dataFim ? reading.dataFim.toISOString().split('T')[0] : null;
+
     const { data: newReadingData, error } = await supabase
       .from('readings')
       .insert({
@@ -195,7 +202,9 @@ export function useLibrary() {
         start_page: reading.paginaInicial,
         end_page: reading.paginaFinal,
         time_spent: reading.tempoGasto.toString(),
-      })
+        start_date: startDateStr,
+        end_date: endDateStr,
+      } as any)
       .select()
       .single();
 
@@ -263,7 +272,8 @@ export function useLibrary() {
           pleasure: evaluation.prazer,
           impact: evaluation.impacto,
           final_grade: evaluation.notaFinal,
-        })
+          observations: evaluation.observacoes,
+        } as any)
         .eq('id', existing.id);
     } else {
       await supabase
@@ -276,7 +286,8 @@ export function useLibrary() {
           pleasure: evaluation.prazer,
           impact: evaluation.impacto,
           final_grade: evaluation.notaFinal,
-        });
+          observations: evaluation.observacoes,
+        } as any);
     }
 
     await loadData();

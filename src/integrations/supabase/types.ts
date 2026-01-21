@@ -98,6 +98,7 @@ export type Database = {
           id: string
           impact: number | null
           learnings: number | null
+          observations: string | null
           pleasure: number | null
           writing: number | null
         }
@@ -109,6 +110,7 @@ export type Database = {
           id?: string
           impact?: number | null
           learnings?: number | null
+          observations?: string | null
           pleasure?: number | null
           writing?: number | null
         }
@@ -120,6 +122,7 @@ export type Database = {
           id?: string
           impact?: number | null
           learnings?: number | null
+          observations?: string | null
           pleasure?: number | null
           writing?: number | null
         }
@@ -170,9 +173,11 @@ export type Database = {
           book_id: string
           created_at: string | null
           day: number
+          end_date: string | null
           end_page: number
           id: string
           month: string
+          start_date: string | null
           start_page: number
           time_spent: string | null
         }
@@ -180,9 +185,11 @@ export type Database = {
           book_id: string
           created_at?: string | null
           day: number
+          end_date?: string | null
           end_page?: number
           id?: string
           month: string
+          start_date?: string | null
           start_page?: number
           time_spent?: string | null
         }
@@ -190,9 +197,11 @@ export type Database = {
           book_id?: string
           created_at?: string | null
           day?: number
+          end_date?: string | null
           end_page?: number
           id?: string
           month?: string
+          start_date?: string | null
           start_page?: number
           time_spent?: string | null
         }

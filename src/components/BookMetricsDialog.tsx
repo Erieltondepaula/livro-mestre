@@ -1,6 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote } from 'lucide-react';
+import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare } from 'lucide-react';
+import { differenceInDays, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import type { Book, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType } from '@/types/library';
 
 interface BookMetricsDialogProps {
@@ -31,7 +33,25 @@ export function BookMetricsDialog({
   // Calcular métricas
   const totalPagesRead = status.quantidadeLida;
   const totalTimeSpent = bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0);
-  const readingDays = bookReadings.length;
+  
+  // Calcular dias de leitura: considera dataInicio e dataFim se existirem
+  const calculateReadingDays = () => {
+    let totalDays = 0;
+    
+    for (const reading of bookReadings) {
+      if (reading.dataInicio && reading.dataFim) {
+        // Se tem período, calcular a diferença de dias
+        totalDays += differenceInDays(reading.dataFim, reading.dataInicio) + 1;
+      } else {
+        // Se é registro diário, conta como 1 dia
+        totalDays += 1;
+      }
+    }
+    
+    return totalDays;
+  };
+  
+  const readingDays = calculateReadingDays();
   const avgPagesPerDay = readingDays > 0 ? totalPagesRead / readingDays : 0;
   const avgTimePerDay = readingDays > 0 ? totalTimeSpent / readingDays : 0;
   const pagesPerMinute = totalTimeSpent > 0 ? totalPagesRead / totalTimeSpent : 0;
@@ -44,6 +64,17 @@ export function BookMetricsDialog({
       return `${hours}h ${mins}min`;
     }
     return `${mins}min`;
+  };
+
+  // Formatar data de leitura para exibição
+  const formatReadingDate = (reading: DailyReading) => {
+    if (reading.dataInicio && reading.dataFim) {
+      const inicio = format(reading.dataInicio, "dd/MM", { locale: ptBR });
+      const fim = format(reading.dataFim, "dd/MM/yyyy", { locale: ptBR });
+      const dias = differenceInDays(reading.dataFim, reading.dataInicio) + 1;
+      return `${inicio} a ${fim} (${dias} dias)`;
+    }
+    return `${reading.dia}/${reading.mes}`;
   };
 
   return (
@@ -156,6 +187,15 @@ export function BookMetricsDialog({
                 <span className="font-semibold">Nota Final</span>
                 <span className="text-2xl font-bold text-primary">{evaluation.notaFinal.toFixed(1)}</span>
               </div>
+              {evaluation.observacoes && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                    <MessageSquare className="w-3 h-3" />
+                    Observações:
+                  </p>
+                  <p className="text-sm text-foreground italic">"{evaluation.observacoes}"</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -190,8 +230,8 @@ export function BookMetricsDialog({
               </h3>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {bookReadings.slice(-5).reverse().map((reading) => (
-                  <div key={reading.id} className="flex justify-between items-center text-sm py-2 border-b border-border last:border-0">
-                    <span>{reading.dia}/{reading.mes}</span>
+                  <div key={reading.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm py-2 border-b border-border last:border-0 gap-1">
+                    <span className="font-medium">{formatReadingDate(reading)}</span>
                     <span className="text-muted-foreground">
                       Págs {reading.paginaInicial} → {reading.paginaFinal}
                     </span>

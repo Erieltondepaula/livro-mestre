@@ -27,6 +27,8 @@ export interface DailyReading {
   paginaFinal: number;
   tempoGasto: number; // minutos
   quantidadePaginas: number; // calculado automaticamente
+  dataInicio?: Date; // Data de início do período de leitura
+  dataFim?: Date; // Data de fim do período de leitura
 }
 
 export interface BookStatus {
@@ -48,6 +50,7 @@ export interface BookEvaluation {
   prazer: number; // 1-10
   impacto: number; // 1-10
   notaFinal: number; // calculado ou manual
+  observacoes?: string; // Observações adicionais
 }
 
 export interface Quote {
