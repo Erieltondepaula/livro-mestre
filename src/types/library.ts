@@ -61,6 +61,17 @@ export interface Quote {
   pagina: number;
 }
 
+export interface VocabularyWord {
+  id: string;
+  palavra: string;
+  classe: string | null;
+  definicoes: string[];
+  bookId: string | null;
+  bookName: string | null;
+  pagina: number | null;
+  createdAt: string;
+}
+
 export interface DashboardStats {
   totalPaginas: number;
   paginasLidas: number;
