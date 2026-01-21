@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +9,7 @@ import { ArrowLeft, Camera, User, Save, Lock, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 export default function Profile() {
-  const { user, profile, updateProfile, updatePassword, isMaster } = useAuth();
+  const { user, profile, updateProfile, updatePassword, isMaster, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -19,6 +19,20 @@ export default function Profile() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+
+  // Sync avatarUrl with profile when it changes
+  useEffect(() => {
+    if (profile?.avatar_url) {
+      setAvatarUrl(profile.avatar_url);
+    }
+  }, [profile?.avatar_url]);
+
+  // Sync displayName with profile when it changes
+  useEffect(() => {
+    if (profile?.display_name) {
+      setDisplayName(profile.display_name);
+    }
+  }, [profile?.display_name]);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -47,29 +61,35 @@ export default function Profile() {
     setIsUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, file, { upsert: true });
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
 
-      // Update profile with avatar URL
-      const { error: updateError } = await supabase
+      // Update local state immediately for UI feedback
+      const newAvatarUrl = publicUrl;
+      setAvatarUrl(newAvatarUrl);
+
+      // Update avatar_url in profile
+      const { error: avatarUpdateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: newAvatarUrl })
         .eq('user_id', user.id);
 
-      if (updateError) throw updateError;
+      if (avatarUpdateError) throw avatarUpdateError;
 
-      setAvatarUrl(publicUrl + '?t=' + Date.now()); // Cache bust
+      // Refresh profile in context to sync the change across the app
+      await refreshProfile();
+
       toast({
         title: "Foto atualizada!",
         description: "Sua foto de perfil foi atualizada com sucesso.",

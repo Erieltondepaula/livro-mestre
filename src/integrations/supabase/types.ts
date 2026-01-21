@@ -323,6 +323,7 @@ export type Database = {
         Row: {
           analise_contexto: Json | null
           antonimos: Json | null
+          book_id: string | null
           classe: string | null
           created_at: string
           definicoes: Json
@@ -334,12 +335,15 @@ export type Database = {
           palavra: string
           silabas: string | null
           sinonimos: Json | null
+          source_details: Json | null
+          source_type: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           analise_contexto?: Json | null
           antonimos?: Json | null
+          book_id?: string | null
           classe?: string | null
           created_at?: string
           definicoes?: Json
@@ -351,12 +355,15 @@ export type Database = {
           palavra: string
           silabas?: string | null
           sinonimos?: Json | null
+          source_details?: Json | null
+          source_type?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           analise_contexto?: Json | null
           antonimos?: Json | null
+          book_id?: string | null
           classe?: string | null
           created_at?: string
           definicoes?: Json
@@ -368,10 +375,20 @@ export type Database = {
           palavra?: string
           silabas?: string | null
           sinonimos?: Json | null
+          source_details?: Json | null
+          source_type?: string | null
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vocabulary_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
