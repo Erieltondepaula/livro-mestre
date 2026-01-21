@@ -238,6 +238,57 @@ export type Database = {
           },
         ]
       }
+      vocabulary: {
+        Row: {
+          analise_contexto: Json | null
+          antonimos: Json | null
+          classe: string | null
+          created_at: string
+          definicoes: Json
+          etimologia: string | null
+          exemplos: Json | null
+          fonetica: string | null
+          id: string
+          observacoes: string | null
+          palavra: string
+          silabas: string | null
+          sinonimos: Json | null
+          updated_at: string
+        }
+        Insert: {
+          analise_contexto?: Json | null
+          antonimos?: Json | null
+          classe?: string | null
+          created_at?: string
+          definicoes?: Json
+          etimologia?: string | null
+          exemplos?: Json | null
+          fonetica?: string | null
+          id?: string
+          observacoes?: string | null
+          palavra: string
+          silabas?: string | null
+          sinonimos?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          analise_contexto?: Json | null
+          antonimos?: Json | null
+          classe?: string | null
+          created_at?: string
+          definicoes?: Json
+          etimologia?: string | null
+          exemplos?: Json | null
+          fonetica?: string | null
+          id?: string
+          observacoes?: string | null
+          palavra?: string
+          silabas?: string | null
+          sinonimos?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
