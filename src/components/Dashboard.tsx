@@ -180,7 +180,7 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
                 <thead>
                   <tr>
                     <th className="text-xs md:text-sm">Nº</th>
-                    <th className="text-xs md:text-sm hidden sm:table-cell">Miniatura</th>
+                    <th className="text-xs md:text-sm">Miniatura</th>
                     <th className="text-xs md:text-sm">Livro</th>
                     <th className="text-xs md:text-sm">Status</th>
                     <th className="text-xs md:text-sm">Lido</th>
@@ -192,8 +192,8 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
                     return (
                       <tr key={status.id}>
                         <td className="font-medium text-sm">{status.numero}</td>
-                        <td className="hidden sm:table-cell">
-                          <div className="w-10 h-14 md:w-12 md:h-16 rounded overflow-hidden bg-muted flex items-center justify-center">
+                        <td>
+                          <div className="w-8 h-11 sm:w-10 sm:h-14 md:w-12 md:h-16 rounded overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
                             {book?.coverUrl ? (
                               <img
                                 src={book.coverUrl}
@@ -201,7 +201,7 @@ export function Dashboard({ stats, recentStatuses, books, onClearData }: Dashboa
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-[8px] md:text-[10px] text-muted-foreground text-center">Sem capa</span>
+                              <span className="text-[6px] sm:text-[8px] md:text-[10px] text-muted-foreground text-center">Sem capa</span>
                             )}
                           </div>
                         </td>
