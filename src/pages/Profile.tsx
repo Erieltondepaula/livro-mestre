@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Camera, User, Save, Lock, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ImageCropDialog } from '@/components/ImageCropDialog';
 
 export default function Profile() {
   const { user, profile, updateProfile, updatePassword, isMaster, refreshProfile } = useAuth();
@@ -19,6 +20,10 @@ export default function Profile() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
+  
+  // Image crop state
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
 
   // Sync avatarUrl with profile when it changes
   useEffect(() => {
@@ -34,7 +39,7 @@ export default function Profile() {
     }
   }, [profile?.display_name]);
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
@@ -48,25 +53,41 @@ export default function Profile() {
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (max 10MB for cropping)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "Erro",
-        description: "A imagem deve ter no máximo 2MB.",
+        description: "A imagem deve ter no máximo 10MB.",
         variant: "destructive",
       });
       return;
     }
 
+    // Create object URL for cropping
+    const imageUrl = URL.createObjectURL(file);
+    setSelectedImageSrc(imageUrl);
+    setCropDialogOpen(true);
+    
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!user) return;
+
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/avatar-${Date.now()}.jpg`;
 
       // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, croppedBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg'
+        });
 
       if (uploadError) throw uploadError;
 
@@ -102,6 +123,11 @@ export default function Profile() {
       });
     } finally {
       setIsUploading(false);
+      // Clean up object URL
+      if (selectedImageSrc) {
+        URL.revokeObjectURL(selectedImageSrc);
+        setSelectedImageSrc('');
+      }
     }
   };
 
@@ -224,7 +250,7 @@ export default function Profile() {
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleAvatarUpload}
+                onChange={handleFileSelect}
                 className="hidden"
               />
             </div>
@@ -232,7 +258,7 @@ export default function Profile() {
               <p className="font-medium">{profile?.display_name || 'Usuário'}</p>
               <p className="text-sm text-muted-foreground">{profile?.email}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Clique no ícone para alterar a foto (máx. 2MB)
+                Clique no ícone para alterar a foto (máx. 10MB)
               </p>
             </div>
           </div>
@@ -315,6 +341,16 @@ export default function Profile() {
           </form>
         )}
       </div>
+
+      {/* Image Crop Dialog */}
+      <ImageCropDialog
+        open={cropDialogOpen}
+        onOpenChange={setCropDialogOpen}
+        imageSrc={selectedImageSrc}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1}
+        title="Ajustar foto de perfil"
+      />
     </div>
   );
 }
