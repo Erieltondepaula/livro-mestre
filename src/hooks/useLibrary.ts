@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats } from '@/types/library';
 
 export function useLibrary() {
+  const { user } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [readings, setReadings] = useState<DailyReading[]>([]);
   const [statuses, setStatuses] = useState<BookStatus[]>([]);
@@ -12,6 +14,16 @@ export function useLibrary() {
 
   // Load data from database
   const loadData = useCallback(async () => {
+    if (!user) {
+      setBooks([]);
+      setReadings([]);
+      setStatuses([]);
+      setEvaluations([]);
+      setQuotes([]);
+      setIsLoaded(true);
+      return;
+    }
+
     try {
       // Load books
       const { data: booksData } = await supabase
@@ -116,7 +128,7 @@ export function useLibrary() {
       console.error('Error loading data:', error);
       setIsLoaded(true);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     loadData();
@@ -124,6 +136,8 @@ export function useLibrary() {
 
   // Add book
   const addBook = useCallback(async (book: Omit<Book, 'id' | 'numero'>) => {
+    if (!user) return null;
+
     const { data: newBookData, error } = await supabase
       .from('books')
       .insert({
@@ -135,6 +149,7 @@ export function useLibrary() {
         category: book.categoria,
         paid_value: book.valorPago,
         cover_url: book.coverUrl,
+        user_id: user.id,
       } as any)
       .select()
       .single();
@@ -151,11 +166,12 @@ export function useLibrary() {
         book_id: newBookData.id,
         status: 'Não iniciado',
         pages_read: 0,
+        user_id: user.id,
       });
 
     await loadData();
     return newBookData;
-  }, [loadData]);
+  }, [loadData, user]);
 
   // Update book
   const updateBook = useCallback(async (updatedBook: Book) => {
@@ -187,6 +203,8 @@ export function useLibrary() {
     dataFim?: Date;
     isRetroactive?: boolean;
   }) => {
+    if (!user) return null;
+
     const quantidadePaginas = reading.paginaFinal - reading.paginaInicial;
 
     // Formatar datas para o banco
@@ -204,6 +222,7 @@ export function useLibrary() {
         time_spent: reading.tempoGasto.toString(),
         start_date: startDateStr,
         end_date: endDateStr,
+        user_id: user.id,
       } as any)
       .select()
       .single();
@@ -251,10 +270,12 @@ export function useLibrary() {
 
     await loadData();
     return newReadingData;
-  }, [loadData]);
+  }, [loadData, user]);
 
   // Add evaluation
   const addEvaluation = useCallback(async (evaluation: Omit<BookEvaluation, 'id'>) => {
+    if (!user) return;
+
     // Check if exists
     const { data: existing } = await supabase
       .from('evaluations')
@@ -287,20 +308,24 @@ export function useLibrary() {
           impact: evaluation.impacto,
           final_grade: evaluation.notaFinal,
           observations: evaluation.observacoes,
+          user_id: user.id,
         } as any);
     }
 
     await loadData();
-  }, [loadData]);
+  }, [loadData, user]);
 
   // Add quote
   const addQuote = useCallback(async (quote: Omit<Quote, 'id'>) => {
+    if (!user) return null;
+
     const { data: newQuoteData, error } = await supabase
       .from('quotes')
       .insert({
         book_id: quote.livroId,
         quote: quote.citacao,
         page: quote.pagina,
+        user_id: user.id,
       })
       .select()
       .single();
@@ -312,7 +337,7 @@ export function useLibrary() {
 
     await loadData();
     return newQuoteData;
-  }, [loadData]);
+  }, [loadData, user]);
 
   // Delete functions
   const deleteBook = useCallback(async (id: string) => {
@@ -345,10 +370,12 @@ export function useLibrary() {
 
   // Clear all data
   const clearAllData = useCallback(async () => {
+    if (!user) return;
+    
     // Delete all books (cascade will delete related records)
     await supabase.from('books').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await loadData();
-  }, [loadData]);
+  }, [loadData, user]);
 
   // Calculate dashboard stats
   const getDashboardStats = useCallback((): DashboardStats => {

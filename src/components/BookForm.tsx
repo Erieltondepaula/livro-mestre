@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { PlusCircle, Plus, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { ManageOptionsDialog } from './ManageOptionsDialog';
 import { ImageUpload } from './ImageUpload';
+import { toast } from '@/hooks/use-toast';
 import type { Book } from '@/types/library';
 
 interface BookFormProps {
@@ -10,6 +12,7 @@ interface BookFormProps {
 }
 
 export function BookForm({ onSubmit }: BookFormProps) {
+  const { isAdmin } = useAuth();
   const [livro, setLivro] = useState('');
   const [autor, setAutor] = useState('');
   const [ano, setAno] = useState('');
@@ -49,6 +52,14 @@ export function BookForm({ onSubmit }: BookFormProps) {
 
   const handleAddType = async () => {
     if (!newType.trim()) return;
+    if (!isAdmin) {
+      toast({
+        title: "Acesso negado",
+        description: "Apenas administradores podem adicionar tipos.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const { error } = await supabase
       .from('book_types')
@@ -64,6 +75,14 @@ export function BookForm({ onSubmit }: BookFormProps) {
 
   const handleAddCategory = async () => {
     if (!newCategory.trim()) return;
+    if (!isAdmin) {
+      toast({
+        title: "Acesso negado",
+        description: "Apenas administradores podem adicionar categorias.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     const { error } = await supabase
       .from('book_categories')

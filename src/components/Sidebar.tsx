@@ -1,8 +1,17 @@
 import { useState } from 'react';
-import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from '@/hooks/use-toast';
 
 type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario';
 
@@ -21,6 +30,54 @@ const navItems = [
   { id: 'citacoes' as View, label: 'Citações', icon: Quote },
   { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
 ];
+
+function UserMenu() {
+  const { profile, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Até logo!",
+      description: "Você saiu da sua conta.",
+    });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="w-full justify-start gap-2 h-auto py-3">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <User className="w-4 h-4 text-primary" />
+          </div>
+          <div className="text-left min-w-0 flex-1">
+            <p className="text-sm font-medium truncate">
+              {profile?.display_name || 'Usuário'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {profile?.email}
+            </p>
+          </div>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        {isAdmin && (
+          <>
+            <DropdownMenuItem onClick={() => navigate('/admin')}>
+              <Shield className="w-4 h-4 mr-2" />
+              Gerenciar Usuários
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair da conta
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function SidebarContent({ currentView, onViewChange, onItemClick }: SidebarProps & { onItemClick?: () => void }) {
   return (
@@ -60,7 +117,11 @@ function SidebarContent({ currentView, onViewChange, onItemClick }: SidebarProps
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-border">
+      <div className="p-3 md:p-4 border-t border-border">
+        <UserMenu />
+      </div>
+
+      <div className="px-4 pb-4">
         <p className="text-xs text-muted-foreground text-center">
           © Planner de Leituras
         </p>
