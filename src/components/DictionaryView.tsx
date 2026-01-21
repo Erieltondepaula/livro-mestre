@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save, Clock } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save, Clock, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { VocabularyDialog } from './VocabularyDialog';
 import { toast } from '@/hooks/use-toast';
+
 interface SinonimoGrupo {
   sentido: string;
   palavras: string[];
@@ -36,6 +40,12 @@ interface DictionaryResult {
   analiseContexto?: AnaliseContexto;
 }
 
+interface BookOption {
+  id: string;
+  name: string;
+  author: string | null;
+}
+
 interface VocabularyEntry {
   id: string;
   palavra: string;
@@ -50,6 +60,13 @@ interface VocabularyEntry {
   observacoes: string | null;
   analise_contexto: AnaliseContexto | null;
   created_at: string;
+  book_id: string | null;
+  source_type: string | null;
+  source_details: {
+    bookName?: string;
+    author?: string;
+    page?: number;
+  } | null;
 }
 
 export function DictionaryView() {
@@ -63,15 +80,34 @@ export function DictionaryView() {
   const [error, setError] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
   
+  // Source selection
+  const [showSourceDialog, setShowSourceDialog] = useState(false);
+  const [sourceType, setSourceType] = useState<string>('livro');
+  const [selectedBookId, setSelectedBookId] = useState<string>('');
+  const [sourcePage, setSourcePage] = useState<string>('');
+  const [books, setBooks] = useState<BookOption[]>([]);
+  
   // Saved vocabulary
   const [savedWords, setSavedWords] = useState<VocabularyEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<VocabularyEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Load saved vocabulary
+  // Load saved vocabulary and books
   useEffect(() => {
     loadVocabulary();
+    loadBooks();
   }, []);
+
+  const loadBooks = async () => {
+    const { data, error } = await supabase
+      .from('books')
+      .select('id, name, author')
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setBooks(data as BookOption[]);
+    }
+  };
 
   const loadVocabulary = async () => {
     const { data, error } = await supabase
@@ -121,6 +157,13 @@ export function DictionaryView() {
     await searchDictionary(result.palavra, contextPhrase.trim());
   };
 
+  const openSaveDialog = () => {
+    setShowSourceDialog(true);
+    setSourceType('livro');
+    setSelectedBookId('');
+    setSourcePage('');
+  };
+
   const saveToVocabulary = async () => {
     if (!result || !user) return;
     
@@ -132,6 +175,15 @@ export function DictionaryView() {
         .select('id')
         .ilike('palavra', result.palavra)
         .maybeSingle();
+
+      // Get book details if selected
+      const selectedBook = books.find(b => b.id === selectedBookId);
+      
+      const sourceDetails = sourceType === 'livro' && selectedBook ? {
+        bookName: selectedBook.name,
+        author: selectedBook.author,
+        page: sourcePage ? parseInt(sourcePage) : null,
+      } : {};
 
       const vocabularyData = {
         palavra: result.palavra.toLowerCase(),
@@ -146,6 +198,9 @@ export function DictionaryView() {
         observacoes: result.observacoes,
         analise_contexto: result.analiseContexto as unknown as any || null,
         user_id: user.id,
+        book_id: sourceType === 'livro' ? selectedBookId || null : null,
+        source_type: sourceType,
+        source_details: sourceDetails,
       };
 
       let error;
@@ -171,6 +226,7 @@ export function DictionaryView() {
         description: `"${result.palavra}" foi adicionada ao seu vocabulário.`,
       });
 
+      setShowSourceDialog(false);
       loadVocabulary();
     } catch (err: any) {
       toast({
@@ -283,21 +339,8 @@ export function DictionaryView() {
             </div>
           )}
 
-          {/* Save Button */}
+          {/* Context Analysis Section */}
           <div className="border-t pt-6 mt-6">
-            <Button 
-              onClick={saveToVocabulary} 
-              disabled={isSaving}
-              className="mb-6"
-            >
-              {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              Guardar palavra no vocabulário
-            </Button>
-
             <p className="text-primary mb-4">
               Você tem uma frase ou trecho real onde essa palavra aparece para que eu possa analisar o contexto e identificar o sentido correto?
             </p>
@@ -373,7 +416,110 @@ export function DictionaryView() {
               </div>
             </div>
           )}
+
+          {/* Save Button - at the end */}
+          <div className="border-t pt-6 mt-6">
+            <Button 
+              onClick={openSaveDialog} 
+              disabled={isSaving}
+              size="lg"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Guardar palavra no vocabulário
+            </Button>
+          </div>
         </div>
+
+        {/* Source Selection Dialog */}
+        <Dialog open={showSourceDialog} onOpenChange={setShowSourceDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Book className="w-5 h-5" />
+                Selecionar Fonte
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Tipo de Fonte</Label>
+                <Select value={sourceType} onValueChange={setSourceType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="livro">📚 Livro Registrado</SelectItem>
+                    <SelectItem value="artigo">📄 Artigo</SelectItem>
+                    <SelectItem value="site">🌐 Site/Web</SelectItem>
+                    <SelectItem value="outro">📝 Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {sourceType === 'livro' && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Livro</Label>
+                    <Select value={selectedBookId} onValueChange={setSelectedBookId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um livro..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {books.map((book) => (
+                          <SelectItem key={book.id} value={book.id}>
+                            {book.name} {book.author && `- ${book.author}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {books.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum livro cadastrado. Cadastre um livro primeiro.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Página (opcional)</Label>
+                    <Input
+                      type="number"
+                      placeholder="Ex: 42"
+                      value={sourcePage}
+                      onChange={(e) => setSourcePage(e.target.value)}
+                    />
+                  </div>
+                </>
+              )}
+
+              {sourceType !== 'livro' && (
+                <p className="text-sm text-muted-foreground">
+                  A palavra será salva sem vínculo com um livro específico.
+                </p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSourceDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={saveToVocabulary} 
+                disabled={isSaving || (sourceType === 'livro' && !selectedBookId && books.length > 0)}
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Salvar Palavra
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -427,8 +573,9 @@ export function DictionaryView() {
               <button
                 key={entry.id}
                 onClick={() => openWordDetail(entry)}
-                className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
+                className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-primary hover:text-primary-foreground transition-colors flex items-center gap-1"
               >
+                {entry.book_id && <Book className="w-3 h-3" />}
                 {entry.palavra}
               </button>
             ))}

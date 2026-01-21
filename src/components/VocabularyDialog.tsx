@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Book } from 'lucide-react';
 
 interface SinonimoGrupo {
   sentido: string;
@@ -29,6 +30,13 @@ interface VocabularyEntry {
   observacoes: string | null;
   analise_contexto: AnaliseContexto | null;
   created_at: string;
+  book_id?: string | null;
+  source_type?: string | null;
+  source_details?: {
+    bookName?: string;
+    author?: string;
+    page?: number;
+  } | null;
 }
 
 interface VocabularyDialogProps {
@@ -40,12 +48,22 @@ interface VocabularyDialogProps {
 export function VocabularyDialog({ entry, isOpen, onClose }: VocabularyDialogProps) {
   if (!entry) return null;
 
+  const getSourceLabel = (type: string | null | undefined) => {
+    switch (type) {
+      case 'livro': return '📚 Livro';
+      case 'artigo': return '📄 Artigo';
+      case 'site': return '🌐 Site/Web';
+      default: return '📝 Outro';
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-display">
+          <DialogTitle className="text-2xl font-display flex items-center gap-2">
             {entry.palavra}
+            {entry.book_id && <Book className="w-5 h-5 text-primary" />}
           </DialogTitle>
         </DialogHeader>
 
@@ -56,6 +74,28 @@ export function VocabularyDialog({ entry, isOpen, onClose }: VocabularyDialogPro
             {entry.fonetica && <span>{entry.fonetica}</span>}
             {entry.classe && <span>/ {entry.classe}</span>}
           </div>
+
+          {/* Source Info */}
+          {(entry.source_type || entry.source_details) && (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Book className="w-4 h-4" />
+                Fonte
+              </h4>
+              <div className="space-y-1 text-sm">
+                <p><span className="text-muted-foreground">Tipo:</span> {getSourceLabel(entry.source_type)}</p>
+                {entry.source_details?.bookName && (
+                  <p><span className="text-muted-foreground">Livro:</span> {entry.source_details.bookName}</p>
+                )}
+                {entry.source_details?.author && (
+                  <p><span className="text-muted-foreground">Autor:</span> {entry.source_details.author}</p>
+                )}
+                {entry.source_details?.page && (
+                  <p><span className="text-muted-foreground">Página:</span> {entry.source_details.page}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Definitions */}
           {entry.definicoes && entry.definicoes.length > 0 && (
