@@ -40,8 +40,8 @@ export function BookMetricsDialog({
     
     for (const reading of bookReadings) {
       if (reading.dataInicio && reading.dataFim) {
-        // Se tem período, calcular a diferença de dias
-        totalDays += differenceInDays(reading.dataFim, reading.dataInicio) + 1;
+        // Se tem período, calcular a diferença de dias (sem +1)
+        totalDays += differenceInDays(reading.dataFim, reading.dataInicio);
       } else {
         // Se é registro diário, conta como 1 dia
         totalDays += 1;
