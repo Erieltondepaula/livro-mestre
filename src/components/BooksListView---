@@ -3,29 +3,22 @@ import { Edit2, Trash2, BookOpen } from 'lucide-react';
 import type { Book, BookStatus, DailyReading } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
 
-// SETOR 1: Definição de Tipagem (Props)
-// Define quais dados este componente precisa receber do componente "pai" para funcionar.
 interface BooksListViewProps {
-  books: Book[];            // Lista de todos os livros cadastrados
-  statuses: BookStatus[];   // Status de leitura de cada livro (lido, lendo, etc)
-  readings: DailyReading[]; // Histórico de todas as sessões de leitura
-  onDeleteBook: (id: string) => void; // Função para deletar um livro
-  onUpdateBook: (book: Book) => void; // Função para atualizar dados de um livro
+  books: Book[];
+  statuses: BookStatus[];
+  readings: DailyReading[];
+  onDeleteBook: (id: string) => void;
+  onUpdateBook: (book: Book) => void;
 }
 
 export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdateBook }: BooksListViewProps) {
-  // SETOR 2: Estados Locais
-  // Controla se o modal de edição está aberto e qual livro está sendo editado.
   const [editingBook, setEditingBook] = useState<Book | null>(null);
 
-  // SETOR 3: Funções de Busca de Dados
-  // Procura no array de statuses o status específico de um livro usando o ID.
   const getBookStatus = (bookId: string) => {
     return statuses.find(s => s.livroId === bookId);
   };
 
-  // SETOR 4: Lógica de Velocidade de Leitura
-  // Calcula a média de páginas por minuto baseada em todo o histórico de leituras do livro.
+  // Calculate reading speed (pages per minute) based on reading history
   const getAverageReadingSpeed = (bookId: string): number | null => {
     const bookReadings = readings.filter(r => r.livroId === bookId && r.tempoGasto > 0);
     
@@ -36,11 +29,9 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
     
     if (totalMinutes === 0) return null;
     
-    return totalPages / totalMinutes; // Retorna páginas lidas por minuto
+    return totalPages / totalMinutes; // pages per minute
   };
 
-  // SETOR 5: Estimativa de Tempo Restante
-  // Calcula quanto tempo (horas/minutos) falta para terminar o livro baseado na velocidade do usuário.
   const getReadingTimeEstimate = (book: Book, status: BookStatus | undefined): string | null => {
     if (!status) return null;
     
@@ -49,7 +40,7 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
     
     const avgSpeed = getAverageReadingSpeed(book.id);
     
-    // Se não houver histórico, assume um padrão de 2 minutos por página.
+    // If we have reading history, use actual speed; otherwise default to 2 min/page
     const minutesPerPage = avgSpeed ? (1 / avgSpeed) : 2;
     const totalMinutes = Math.round(pagesRemaining * minutesPerPage);
     
@@ -62,8 +53,7 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
     return `${minutes}min`;
   };
 
-  // SETOR 6: Lógica de Cores e Texto de Status
-  // Define a cor e o texto que aparece no card (verde para concluído, azul ou laranja para progresso).
+  // Get status color based on reading progress
   const getStatusInfo = (book: Book, status: BookStatus | undefined): { text: string; colorClass: string } => {
     if (!status || status.status === 'Não iniciado') {
       return { text: 'Não iniciado', colorClass: 'text-gray-500' };
@@ -73,25 +63,23 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
       return { text: 'Livro concluído', colorClass: 'text-green-600' };
     }
     
+    // Reading in progress - check percentage
     const percentRead = (status.quantidadeLida / book.totalPaginas) * 100;
     
     if (percentRead > 50) {
-      return { text: '', colorClass: 'text-orange-500' }; // Laranja se passou da metade
+      return { text: '', colorClass: 'text-orange-500' }; // More than half read
     }
     
-    return { text: '', colorClass: 'text-blue-600' }; // Azul se está no começo
+    return { text: '', colorClass: 'text-blue-600' }; // Still reading, less than half
   };
 
-  // SETOR 7: Renderização da Interface (UI)
   return (
     <div className="space-y-8">
-      {/* Título da Seção */}
       <div className="flex items-center gap-3">
         <BookOpen className="w-8 h-8 text-primary" />
         <h2 className="font-display text-3xl font-bold text-foreground">Livros Cadastrados</h2>
       </div>
 
-      {/* Verificação de Lista Vazia */}
       {books.length === 0 ? (
         <div className="card-library p-12 text-center">
           <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -100,8 +88,6 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
           </p>
         </div>
       ) : (
-        /* SETOR 8: Grid de Cartões */
-        /* Define o layout responsivo: 1 coluna no celular, até 4 colunas em telas grandes. */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {books.map((book) => {
             const status = getBookStatus(book.id);
@@ -112,7 +98,7 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                 key={book.id}
                 className="card-library overflow-hidden hover:shadow-lg transition-shadow"
               >
-                {/* Capa do Livro (Imagem) */}
+                {/* Cover Image */}
                 <div className="aspect-[3/4] bg-muted flex items-center justify-center overflow-hidden">
                   {book.coverUrl ? (
                     <img
@@ -121,11 +107,13 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="text-muted-foreground text-sm text-center p-4">Sem capa</div>
+                    <div className="text-muted-foreground text-sm text-center p-4">
+                      Sem capa
+                    </div>
                   )}
                 </div>
 
-                {/* Informações do Livro (Texto) */}
+                {/* Content */}
                 <div className="p-4 space-y-2">
                   <h3 className="font-display font-semibold text-foreground leading-tight line-clamp-2">
                     {book.livro}
@@ -135,14 +123,13 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                     <p className="text-sm text-muted-foreground">{book.autor}</p>
                   )}
                   
-                  {/* Detalhes Técnicos (Ano, Tipo, Categoria) */}
                   <div className="text-xs text-muted-foreground space-y-1">
                     {book.ano && <p>Ano: {book.ano}</p>}
                     <p>Tipo: {book.tipo}</p>
                     {book.categoria && <p>Categoria: {book.categoria}</p>}
                   </div>
 
-                  {/* Exibição do Status Dinâmico */}
+                  {/* Status indicator */}
                   {(() => {
                     const statusInfo = getStatusInfo(book, status);
                     if (status?.status === 'Concluido') {
@@ -161,10 +148,10 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                     return null;
                   })()}
 
-                  {/* SETOR 9: Botões de Ação (Editar e Deletar) */}
+                  {/* Actions */}
                   <div className="flex justify-center gap-2 pt-2">
                     <button
-                      onClick={() => setEditingBook(book)} // Abre o modal de edição
+                      onClick={() => setEditingBook(book)}
                       className="p-2 rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors"
                       title="Editar livro"
                     >
@@ -173,7 +160,7 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                     <button
                       onClick={() => {
                         if (confirm(`Tem certeza que deseja remover "${book.livro}"?`)) {
-                          onDeleteBook(book.id); // Chama função de deletar
+                          onDeleteBook(book.id);
                         }
                       }}
                       className="p-2 rounded-lg border border-border bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
@@ -189,7 +176,6 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
         </div>
       )}
 
-      {/* SETOR 10: Modal de Edição (Invisível até ser ativado) */}
       <BookEditDialog
         book={editingBook}
         isOpen={!!editingBook}

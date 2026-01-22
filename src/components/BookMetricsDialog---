@@ -6,7 +6,6 @@ import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare, Book
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Book as BookType, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType, VocabularyWord } from '@/types/library';
-
 interface BookMetricsDialogProps {
   book: BookType | null;
   status: BookStatus | null;
@@ -33,6 +32,7 @@ export function BookMetricsDialog({
 
   if (!book || !status) return null;
 
+  const progress = (status.quantidadeLida / book.totalPaginas) * 100;
   const bookReadings = readings.filter(r => r.livroId === book.id);
   const bookQuotes = quotes.filter(q => q.livroId === book.id);
   const bookVocabulary = vocabulary.filter(v => v.bookId === book.id);
@@ -61,61 +61,74 @@ export function BookMetricsDialog({
     source_details: word.source_details,
   });
   
-  // CORREÇÃO SOLICITADA:
-  // Agora ele verifica qual a maior página final registada no histórico (ex: 106)
-  // Se o histórico estiver vazio, ele usa o status original.
-  const totalPagesRead = bookReadings.length > 0 
-    ? Math.max(...bookReadings.map(r => r.paginaFinal)) 
-    : status.quantidadeLida;
-
-  const progress = (totalPagesRead / book.totalPaginas) * 100;
+  // Calcular métricas - páginas lidas vem do status (quantidadeLida = página atual)
+  const totalPagesRead = status.quantidadeLida;
   
-  const calculateTotalTimeMinutes = () => {
-    let totalMinutes = 0;
+  // Calcular tempo total corretamente:
+  // - Para leituras diárias: soma direta do tempoGasto (em segundos)
+  // - Para leituras por período: tempoGasto * dias de leitura
+  const calculateTotalTime = () => {
+    let totalSeconds = 0;
+    
     for (const reading of bookReadings) {
       if (reading.dataInicio && reading.dataFim) {
-        const days = differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
-        totalMinutes += reading.tempoGasto * days;
+        // Período: tempo informado é o tempo médio por dia, multiplica pelos dias
+        const days = differenceInDays(reading.dataFim, reading.dataInicio) + 1;
+        totalSeconds += reading.tempoGasto * days; // tempoGasto já está em segundos
       } else {
-        totalMinutes += reading.tempoGasto;
+        // Leitura diária: soma direta
+        totalSeconds += reading.tempoGasto;
       }
     }
-    return totalMinutes;
+    
+    return totalSeconds;
   };
   
-  const totalTimeMinutes = calculateTotalTimeMinutes();
+  const totalTimeSeconds = calculateTotalTime();
   
+  // Calcular dias de leitura: considera dataInicio e dataFim se existirem
   const calculateReadingDays = () => {
     let totalDays = 0;
+    
     for (const reading of bookReadings) {
       if (reading.dataInicio && reading.dataFim) {
-        totalDays += differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
+        // Se tem período, calcular a diferença de dias + 1 (inclui ambos os dias)
+        totalDays += differenceInDays(reading.dataFim, reading.dataInicio) + 1;
       } else {
+        // Se é registro diário, conta como 1 dia
         totalDays += 1;
       }
     }
+    
     return totalDays;
   };
   
   const readingDays = calculateReadingDays();
   const avgPagesPerDay = readingDays > 0 ? totalPagesRead / readingDays : 0;
-  const pagesPerMinute = totalTimeMinutes > 0 ? totalPagesRead / totalTimeMinutes : 0;
+  const avgTimePerDaySeconds = readingDays > 0 ? totalTimeSeconds / readingDays : 0;
+  const pagesPerMinute = totalTimeSeconds > 0 ? totalPagesRead / (totalTimeSeconds / 60) : 0;
 
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
+  // Formatar tempo em segundos para display
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.round(seconds % 60);
     
     if (hours > 0) {
       return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
     }
-    return `${mins}min`;
+    if (mins > 0) {
+      return secs > 0 ? `${mins}min ${secs}s` : `${mins}min`;
+    }
+    return `${secs}s`;
   };
 
+  // Formatar data de leitura para exibição
   const formatReadingDate = (reading: DailyReading) => {
     if (reading.dataInicio && reading.dataFim) {
-      const inicio = format(new Date(reading.dataInicio), "dd/MM", { locale: ptBR });
-      const fim = format(new Date(reading.dataFim), "dd/MM/yyyy", { locale: ptBR });
-      const dias = differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
+      const inicio = format(reading.dataInicio, "dd/MM", { locale: ptBR });
+      const fim = format(reading.dataFim, "dd/MM/yyyy", { locale: ptBR });
+      const dias = differenceInDays(reading.dataFim, reading.dataInicio) + 1;
       return `${inicio} a ${fim} (${dias} dias)`;
     }
     return `${reading.dia}/${reading.mes}`;
@@ -145,6 +158,7 @@ export function BookMetricsDialog({
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
+          {/* Progresso Geral */}
           <div className="card-library p-4">
             <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider">
               Progresso de Leitura
@@ -161,11 +175,12 @@ export function BookMetricsDialog({
             </div>
             <Progress value={progress} className="h-3 mb-2" />
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>{totalPagesRead} páginas lidas</span>
-              <span>{book.totalPaginas - totalPagesRead} páginas restantes</span>
+              <span>{status.quantidadeLida} páginas lidas</span>
+              <span>{book.totalPaginas - status.quantidadeLida} páginas restantes</span>
             </div>
           </div>
 
+          {/* Estatísticas de Leitura */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="card-library p-4 text-center">
               <BookOpen className="w-5 h-5 mx-auto mb-2 text-primary" />
@@ -175,7 +190,7 @@ export function BookMetricsDialog({
             
             <div className="card-library p-4 text-center">
               <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{formatTime(totalTimeMinutes)}</p>
+              <p className="text-2xl font-bold">{formatTime(totalTimeSeconds)}</p>
               <p className="text-xs text-muted-foreground">Tempo Total</p>
             </div>
             
@@ -193,7 +208,7 @@ export function BookMetricsDialog({
             
             <div className="card-library p-4 text-center">
               <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{formatTime(totalTimeMinutes / (readingDays || 1))}</p>
+              <p className="text-2xl font-bold">{formatTime(avgTimePerDaySeconds)}</p>
               <p className="text-xs text-muted-foreground">Tempo/Dia</p>
             </div>
             
@@ -204,6 +219,7 @@ export function BookMetricsDialog({
             </div>
           </div>
 
+          {/* Avaliação */}
           {evaluation && (
             <div className="card-library p-4">
               <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
@@ -240,6 +256,7 @@ export function BookMetricsDialog({
             </div>
           )}
 
+          {/* Citações */}
           {bookQuotes.length > 0 && (
             <div className="card-library p-4">
               <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
@@ -253,10 +270,16 @@ export function BookMetricsDialog({
                     <p className="text-xs text-muted-foreground mt-1">Página {quote.pagina}</p>
                   </div>
                 ))}
+                {bookQuotes.length > 5 && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    +{bookQuotes.length - 5} citações
+                  </p>
+                )}
               </div>
             </div>
           )}
 
+          {/* Vocabulário */}
           {bookVocabulary.length > 0 && (
             <div className="card-library p-4">
               <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
@@ -274,12 +297,16 @@ export function BookMetricsDialog({
                     {word.classe && (
                       <p className="text-[10px] text-muted-foreground">{word.classe}</p>
                     )}
+                    {word.pagina && (
+                      <p className="text-[10px] text-muted-foreground">Pág. {word.pagina}</p>
+                    )}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Histórico de Leituras */}
           {bookReadings.length > 0 && (
             <div className="card-library p-4">
               <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider">
@@ -293,13 +320,14 @@ export function BookMetricsDialog({
                       Págs {reading.paginaInicial} → {reading.paginaFinal}
                     </span>
                     <span>{reading.quantidadePaginas} págs</span>
-                    <span className="text-muted-foreground">{reading.tempoGasto} min</span>
+                    <span className="text-muted-foreground">{formatTime(reading.tempoGasto)}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* Info do Livro */}
           <div className="card-library p-4">
             <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider">
               Informações do Livro
@@ -315,10 +343,17 @@ export function BookMetricsDialog({
                   <span className="font-medium">{book.ano}</span>
                 </div>
               )}
+              {book.valorPago > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Valor Pago</span>
+                  <span className="font-medium">R$ {book.valorPago.toFixed(2)}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
+        {/* Vocabulary Dialog */}
         <VocabularyDialog
           entry={selectedWord ? mapWordToEntry(selectedWord) : null}
           isOpen={isVocabDialogOpen}

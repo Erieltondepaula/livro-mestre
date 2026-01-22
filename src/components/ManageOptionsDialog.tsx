@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Pencil, Trash2, Check, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -23,20 +23,20 @@ export function ManageOptionsDialog({ isOpen, onClose, type, title }: ManageOpti
 
   const tableName = type === 'types' ? 'book_types' : 'book_categories';
 
-  useEffect(() => {
-    if (isOpen) {
-      loadOptions();
-    }
-  }, [isOpen]);
-
-  const loadOptions = async () => {
+  const loadOptions = useCallback(async () => {
     const { data } = await supabase
       .from(tableName)
       .select('id, name')
       .order('name');
     
     if (data) setOptions(data);
-  };
+  }, [tableName]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadOptions();
+    }
+  }, [isOpen, loadOptions]);
 
   const handleStartEdit = (option: Option) => {
     setEditingId(option.id);
