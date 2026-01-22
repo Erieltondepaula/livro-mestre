@@ -215,6 +215,10 @@ export type Database = {
       }
       readings: {
         Row: {
+          bible_book: string | null
+          bible_chapter: number | null
+          bible_verse_end: number | null
+          bible_verse_start: number | null
           book_id: string
           created_at: string | null
           day: number
@@ -228,6 +232,10 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          bible_book?: string | null
+          bible_chapter?: number | null
+          bible_verse_end?: number | null
+          bible_verse_start?: number | null
           book_id: string
           created_at?: string | null
           day: number
@@ -241,6 +249,10 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          bible_book?: string | null
+          bible_chapter?: number | null
+          bible_verse_end?: number | null
+          bible_verse_start?: number | null
           book_id?: string
           created_at?: string | null
           day?: number

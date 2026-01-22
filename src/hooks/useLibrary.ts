@@ -99,10 +99,14 @@ export function useLibrary() {
           livroLido: (r.books as any)?.name || '',
           paginaInicial: r.start_page,
           paginaFinal: r.end_page,
-          tempoGasto: parseInt(r.time_spent || '0'),
+          tempoGasto: parseInt(r.time_spent || '0'), // Now in seconds
           quantidadePaginas: r.end_page - r.start_page,
           dataInicio: (r as any).start_date ? new Date((r as any).start_date + 'T12:00:00') : undefined,
           dataFim: (r as any).end_date ? new Date((r as any).end_date + 'T12:00:00') : undefined,
+          bibleBook: (r as any).bible_book || undefined,
+          bibleChapter: (r as any).bible_chapter || undefined,
+          bibleVerseStart: (r as any).bible_verse_start || undefined,
+          bibleVerseEnd: (r as any).bible_verse_end || undefined,
         })));
       }
 
@@ -237,11 +241,15 @@ export function useLibrary() {
     await loadData();
   }, [loadData]);
 
-  // Add daily reading (with optional retroactive support)
+  // Add daily reading (with optional retroactive support and Bible mode)
   const addReading = useCallback(async (reading: Omit<DailyReading, 'id' | 'quantidadePaginas'> & { 
     dataInicio?: Date; 
     dataFim?: Date;
     isRetroactive?: boolean;
+    bibleBook?: string;
+    bibleChapter?: number;
+    bibleVerseStart?: number;
+    bibleVerseEnd?: number;
   }) => {
     if (!user) return null;
 
@@ -259,9 +267,13 @@ export function useLibrary() {
         month: reading.mes,
         start_page: reading.paginaInicial,
         end_page: reading.paginaFinal,
-        time_spent: reading.tempoGasto.toString(),
+        time_spent: reading.tempoGasto.toString(), // Now in seconds
         start_date: startDateStr,
         end_date: endDateStr,
+        bible_book: reading.bibleBook || null,
+        bible_chapter: reading.bibleChapter || null,
+        bible_verse_start: reading.bibleVerseStart || null,
+        bible_verse_end: reading.bibleVerseEnd || null,
         user_id: user.id,
       } as any)
       .select()

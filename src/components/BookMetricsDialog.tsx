@@ -61,9 +61,30 @@ export function BookMetricsDialog({
     source_details: word.source_details,
   });
   
-  // Calcular métricas
+  // Calcular métricas - páginas lidas vem do status (quantidadeLida = página atual)
   const totalPagesRead = status.quantidadeLida;
-  const totalTimeSpent = bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0);
+  
+  // Calcular tempo total corretamente:
+  // - Para leituras diárias: soma direta do tempoGasto (em segundos)
+  // - Para leituras por período: tempoGasto * dias de leitura
+  const calculateTotalTime = () => {
+    let totalSeconds = 0;
+    
+    for (const reading of bookReadings) {
+      if (reading.dataInicio && reading.dataFim) {
+        // Período: tempo informado é o tempo médio por dia, multiplica pelos dias
+        const days = differenceInDays(reading.dataFim, reading.dataInicio) + 1;
+        totalSeconds += reading.tempoGasto * days; // tempoGasto já está em segundos
+      } else {
+        // Leitura diária: soma direta
+        totalSeconds += reading.tempoGasto;
+      }
+    }
+    
+    return totalSeconds;
+  };
+  
+  const totalTimeSeconds = calculateTotalTime();
   
   // Calcular dias de leitura: considera dataInicio e dataFim se existirem
   const calculateReadingDays = () => {
@@ -71,8 +92,8 @@ export function BookMetricsDialog({
     
     for (const reading of bookReadings) {
       if (reading.dataInicio && reading.dataFim) {
-        // Se tem período, calcular a diferença de dias (sem +1)
-        totalDays += differenceInDays(reading.dataFim, reading.dataInicio);
+        // Se tem período, calcular a diferença de dias + 1 (inclui ambos os dias)
+        totalDays += differenceInDays(reading.dataFim, reading.dataInicio) + 1;
       } else {
         // Se é registro diário, conta como 1 dia
         totalDays += 1;
@@ -84,17 +105,22 @@ export function BookMetricsDialog({
   
   const readingDays = calculateReadingDays();
   const avgPagesPerDay = readingDays > 0 ? totalPagesRead / readingDays : 0;
-  const avgTimePerDay = readingDays > 0 ? totalTimeSpent / readingDays : 0;
-  const pagesPerMinute = totalTimeSpent > 0 ? totalPagesRead / totalTimeSpent : 0;
+  const avgTimePerDaySeconds = readingDays > 0 ? totalTimeSeconds / readingDays : 0;
+  const pagesPerMinute = totalTimeSeconds > 0 ? totalPagesRead / (totalTimeSeconds / 60) : 0;
 
-  // Formatar tempo
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
+  // Formatar tempo em segundos para display
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.round(seconds % 60);
+    
     if (hours > 0) {
-      return `${hours}h ${mins}min`;
+      return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
     }
-    return `${mins}min`;
+    if (mins > 0) {
+      return secs > 0 ? `${mins}min ${secs}s` : `${mins}min`;
+    }
+    return `${secs}s`;
   };
 
   // Formatar data de leitura para exibição
@@ -164,7 +190,7 @@ export function BookMetricsDialog({
             
             <div className="card-library p-4 text-center">
               <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{formatTime(totalTimeSpent)}</p>
+              <p className="text-2xl font-bold">{formatTime(totalTimeSeconds)}</p>
               <p className="text-xs text-muted-foreground">Tempo Total</p>
             </div>
             
@@ -182,7 +208,7 @@ export function BookMetricsDialog({
             
             <div className="card-library p-4 text-center">
               <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{formatTime(avgTimePerDay)}</p>
+              <p className="text-2xl font-bold">{formatTime(avgTimePerDaySeconds)}</p>
               <p className="text-xs text-muted-foreground">Tempo/Dia</p>
             </div>
             
@@ -294,7 +320,7 @@ export function BookMetricsDialog({
                       Págs {reading.paginaInicial} → {reading.paginaFinal}
                     </span>
                     <span>{reading.quantidadePaginas} págs</span>
-                    <span className="text-muted-foreground">{reading.tempoGasto}min</span>
+                    <span className="text-muted-foreground">{formatTime(reading.tempoGasto)}</span>
                   </div>
                 ))}
               </div>

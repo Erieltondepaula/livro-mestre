@@ -25,10 +25,15 @@ export interface DailyReading {
   livroLido: string;
   paginaInicial: number;
   paginaFinal: number;
-  tempoGasto: number; // minutos
+  tempoGasto: number; // seconds (used to be minutes, now stores seconds for precision)
   quantidadePaginas: number; // calculado automaticamente
   dataInicio?: Date; // Data de início do período de leitura
   dataFim?: Date; // Data de fim do período de leitura
+  // Bible-specific fields
+  bibleBook?: string;
+  bibleChapter?: number;
+  bibleVerseStart?: number;
+  bibleVerseEnd?: number;
 }
 
 export interface BookStatus {

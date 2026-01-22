@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { BookOpen, Calculator, CalendarIcon, Clock, TrendingUp, Info } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 
 interface ReadingFormProps {
   books: Book[];
@@ -19,6 +20,10 @@ interface ReadingFormProps {
     dataInicio?: Date; 
     dataFim?: Date;
     isRetroactive?: boolean;
+    bibleBook?: string;
+    bibleChapter?: number;
+    bibleVerseStart?: number;
+    bibleVerseEnd?: number;
   }) => void;
 }
 
@@ -27,6 +32,29 @@ const meses = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+// Parse time string "MM:SS" or "MM" to total seconds
+function parseTimeToSeconds(timeStr: string): number {
+  if (!timeStr) return 0;
+  const parts = timeStr.split(':');
+  if (parts.length === 2) {
+    const minutes = parseInt(parts[0]) || 0;
+    const seconds = parseInt(parts[1]) || 0;
+    return minutes * 60 + seconds;
+  }
+  // Just minutes
+  return (parseInt(timeStr) || 0) * 60;
+}
+
+// Format seconds to display string
+function formatSecondsToDisplay(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (seconds === 0) {
+    return `${minutes}min`;
+  }
+  return `${minutes}min ${seconds}s`;
+}
+
 export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
   const today = new Date();
   const currentDay = today.getDate().toString();
@@ -34,27 +62,47 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
 
   const [mode, setMode] = useState<'daily' | 'period'>('daily');
   const [livroId, setLivroId] = useState('');
-  const [dia, setDia] = useState(currentDay); // Preenche com o dia atual
-  const [mes, setMes] = useState(currentMonth); // Preenche com o mês atual
+  const [dia, setDia] = useState(currentDay);
+  const [mes, setMes] = useState(currentMonth);
   const [paginaInicial, setPaginaInicial] = useState('');
   const [paginaFinal, setPaginaFinal] = useState('');
-  const [tempoGasto, setTempoGasto] = useState('');
+  const [tempoGasto, setTempoGasto] = useState(''); // Format: "MM:SS" or "MM"
   const [dataInicio, setDataInicio] = useState<Date | undefined>();
   const [dataFim, setDataFim] = useState<Date | undefined>();
+  
+  // Bible mode state
+  const [bibleBook, setBibleBook] = useState('');
+  const [bibleChapter, setBibleChapter] = useState('');
+  const [bibleVerseStart, setBibleVerseStart] = useState('');
+  const [bibleVerseEnd, setBibleVerseEnd] = useState('');
 
   const selectedBook = books.find(b => b.id === livroId);
+  const isBibleCategory = selectedBook?.categoria?.toLowerCase() === 'bíblia' || 
+                          selectedBook?.categoria?.toLowerCase() === 'biblia';
+  
   const paginasLidas = paginaInicial && paginaFinal 
     ? parseInt(paginaFinal) - parseInt(paginaInicial) 
     : 0;
+
+  // Bible data
+  const bibleBookNames = useMemo(() => getBibleBookNames(), []);
+  const bibleChapters = useMemo(() => 
+    bibleBook ? getChaptersArray(bibleBook) : [], [bibleBook]);
+  const bibleVerses = useMemo(() => 
+    bibleBook && bibleChapter ? getVersesArray(bibleBook, parseInt(bibleChapter)) : [], 
+    [bibleBook, bibleChapter]);
 
   // Calcular estatísticas para modo período
   const isPeriodMode = mode === 'period' && dataInicio && dataFim;
   const isBookCompleted = selectedBook && parseInt(paginaFinal) >= selectedBook.totalPaginas;
   
-  // Dias de leitura: diferença entre data início e data fim
-  const diasLeitura = dataInicio && dataFim ? differenceInDays(dataFim, dataInicio) : 0;
+  // Dias de leitura: diferença entre data início e data fim + 1 (inclui ambos os dias)
+  const diasLeitura = dataInicio && dataFim ? differenceInDays(dataFim, dataInicio) + 1 : 0;
   const paginasPorDia = diasLeitura > 0 && paginasLidas > 0 ? (paginasLidas / diasLeitura).toFixed(1) : 0;
-  const tempoMedioPorDia = diasLeitura > 0 && tempoGasto ? (parseInt(tempoGasto) / diasLeitura).toFixed(0) : 0;
+  
+  // Parse tempo para segundos
+  const tempoEmSegundos = parseTimeToSeconds(tempoGasto);
+  const tempoMedioPorDiaSegundos = diasLeitura > 0 && tempoEmSegundos ? Math.round(tempoEmSegundos / diasLeitura) : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,8 +112,10 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
     const book = books.find(b => b.id === livroId);
     if (!book) return;
 
+    // Convert time to seconds for storage
+    const tempoSegundos = parseTimeToSeconds(tempoGasto);
+
     if (mode === 'daily') {
-      // Modo diário: usa dia/mês informados
       if (!dia) return;
 
       onSubmit({
@@ -75,11 +125,16 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
         mes,
         paginaInicial: parseInt(paginaInicial),
         paginaFinal: parseInt(paginaFinal),
-        tempoGasto: parseInt(tempoGasto),
+        tempoGasto: tempoSegundos, // Store as seconds
         isRetroactive: false,
+        ...(isBibleCategory && bibleBook && {
+          bibleBook,
+          bibleChapter: bibleChapter ? parseInt(bibleChapter) : undefined,
+          bibleVerseStart: bibleVerseStart ? parseInt(bibleVerseStart) : undefined,
+          bibleVerseEnd: bibleVerseEnd ? parseInt(bibleVerseEnd) : undefined,
+        }),
       });
     } else {
-      // Modo período: usa as datas de início e fim
       if (!dataInicio || !dataFim) return;
 
       onSubmit({
@@ -89,10 +144,16 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
         mes: meses[dataFim.getMonth()],
         paginaInicial: parseInt(paginaInicial),
         paginaFinal: parseInt(paginaFinal),
-        tempoGasto: parseInt(tempoGasto),
+        tempoGasto: tempoSegundos, // Store as seconds (per session, will be multiplied by days)
         dataInicio,
         dataFim,
         isRetroactive: !!isBookCompleted,
+        ...(isBibleCategory && bibleBook && {
+          bibleBook,
+          bibleChapter: bibleChapter ? parseInt(bibleChapter) : undefined,
+          bibleVerseStart: bibleVerseStart ? parseInt(bibleVerseStart) : undefined,
+          bibleVerseEnd: bibleVerseEnd ? parseInt(bibleVerseEnd) : undefined,
+        }),
       });
     }
 
@@ -102,12 +163,15 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
     setTempoGasto('');
     setDataInicio(undefined);
     setDataFim(undefined);
+    setBibleBook('');
+    setBibleChapter('');
+    setBibleVerseStart('');
+    setBibleVerseEnd('');
     setDia('');
   };
 
   const resetFormOnModeChange = (newMode: 'daily' | 'period') => {
     setMode(newMode);
-    // Se for modo diário, restaurar data atual
     if (newMode === 'daily') {
       setDia(currentDay);
       setMes(currentMonth);
@@ -116,6 +180,30 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
     }
     setDataInicio(undefined);
     setDataFim(undefined);
+  };
+
+  // Reset bible fields when book changes
+  const handleBookChange = (bookId: string) => {
+    setLivroId(bookId);
+    setBibleBook('');
+    setBibleChapter('');
+    setBibleVerseStart('');
+    setBibleVerseEnd('');
+  };
+
+  // Reset chapter/verse when bible book changes
+  const handleBibleBookChange = (bookName: string) => {
+    setBibleBook(bookName);
+    setBibleChapter('');
+    setBibleVerseStart('');
+    setBibleVerseEnd('');
+  };
+
+  // Reset verses when chapter changes
+  const handleBibleChapterChange = (chapter: string) => {
+    setBibleChapter(chapter);
+    setBibleVerseStart('');
+    setBibleVerseEnd('');
   };
 
   return (
@@ -165,7 +253,7 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
             </label>
             <select
               value={livroId}
-              onChange={(e) => setLivroId(e.target.value)}
+              onChange={(e) => handleBookChange(e.target.value)}
               className="input-library"
               required
             >
@@ -177,6 +265,86 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
               ))}
             </select>
           </div>
+
+          {/* Bible Mode: Book, Chapter, Verses */}
+          {isBibleCategory && (
+            <div className="space-y-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <h4 className="font-medium text-sm text-primary flex items-center gap-2">
+                📖 Leitura Bíblica
+              </h4>
+              
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Livro da Bíblia
+                </label>
+                <select
+                  value={bibleBook}
+                  onChange={(e) => handleBibleBookChange(e.target.value)}
+                  className="input-library"
+                >
+                  <option value="">Selecione o livro</option>
+                  {bibleBookNames.map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {bibleBook && (
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Capítulo
+                  </label>
+                  <select
+                    value={bibleChapter}
+                    onChange={(e) => handleBibleChapterChange(e.target.value)}
+                    className="input-library"
+                  >
+                    <option value="">Selecione o capítulo</option>
+                    {bibleChapters.map((ch) => (
+                      <option key={ch} value={ch}>{ch}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {bibleChapter && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Versículo Inicial (opcional)
+                    </label>
+                    <select
+                      value={bibleVerseStart}
+                      onChange={(e) => setBibleVerseStart(e.target.value)}
+                      className="input-library"
+                    >
+                      <option value="">-</option>
+                      {bibleVerses.map((v) => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Versículo Final (opcional)
+                    </label>
+                    <select
+                      value={bibleVerseEnd}
+                      onChange={(e) => setBibleVerseEnd(e.target.value)}
+                      className="input-library"
+                    >
+                      <option value="">-</option>
+                      {bibleVerses
+                        .filter(v => !bibleVerseStart || v >= parseInt(bibleVerseStart))
+                        .map((v) => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Modo Diário: Dia e Mês */}
           {mode === 'daily' && (
@@ -318,17 +486,19 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
           {/* Tempo Gasto */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Tempo Gasto (minutos)
+              Tempo Gasto (minutos:segundos)
             </label>
             <input
-              type="number"
+              type="text"
               value={tempoGasto}
               onChange={(e) => setTempoGasto(e.target.value)}
               className="input-library"
-              placeholder="Ex: 45"
-              min="1"
+              placeholder="Ex: 45 ou 45:30"
               required
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Digite apenas minutos (ex: 45) ou minutos:segundos (ex: 45:30)
+            </p>
           </div>
 
           {/* Estatísticas */}
@@ -357,10 +527,10 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
                       <BookOpen className="w-4 h-4 text-muted-foreground" />
                       <span>Média: <strong>{paginasPorDia} págs/dia</strong></span>
                     </div>
-                    {tempoMedioPorDia && Number(tempoMedioPorDia) > 0 && (
+                    {tempoMedioPorDiaSegundos > 0 && (
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>Tempo médio: <strong>{tempoMedioPorDia} min/dia</strong></span>
+                        <span>Tempo médio: <strong>{formatSecondsToDisplay(tempoMedioPorDiaSegundos)}/dia</strong></span>
                       </div>
                     )}
                     {isBookCompleted && (
