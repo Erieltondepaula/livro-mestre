@@ -327,6 +327,39 @@ export function useLibrary() {
     return newReadingData;
   }, [loadData, user]);
 
+  // Update reading
+  const updateReading = useCallback(async (reading: DailyReading) => {
+    if (!user) return null;
+
+    const startDateStr = reading.dataInicio ? reading.dataInicio.toISOString().split('T')[0] : null;
+    const endDateStr = reading.dataFim ? reading.dataFim.toISOString().split('T')[0] : null;
+
+    const { error } = await supabase
+      .from('readings')
+      .update({
+        day: reading.dia,
+        month: reading.mes,
+        start_page: reading.paginaInicial,
+        end_page: reading.paginaFinal,
+        time_spent: reading.tempoGasto.toString(),
+        start_date: startDateStr,
+        end_date: endDateStr,
+        bible_book: reading.bibleBook || null,
+        bible_chapter: reading.bibleChapter || null,
+        bible_verse_start: reading.bibleVerseStart || null,
+        bible_verse_end: reading.bibleVerseEnd || null,
+      } as any)
+      .eq('id', reading.id);
+
+    if (error) {
+      console.error('Error updating reading:', error);
+      return null;
+    }
+
+    await loadData();
+    return reading;
+  }, [loadData, user]);
+
   // Add evaluation
   const addEvaluation = useCallback(async (evaluation: Omit<BookEvaluation, 'id'>) => {
     if (!user) return;
@@ -469,6 +502,7 @@ export function useLibrary() {
     addBook,
     updateBook,
     addReading,
+    updateReading,
     addEvaluation,
     addQuote,
     deleteBook,

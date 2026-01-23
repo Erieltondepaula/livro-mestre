@@ -13,9 +13,10 @@ interface StatusViewProps {
   vocabulary: VocabularyWord[];
   onDeleteBook: (id: string) => void;
   onUpdateBook: (book: Book) => void;
+  onUpdateReading?: (reading: DailyReading) => void;
 }
 
-export function StatusView({ statuses, books, readings, evaluations, quotes, vocabulary, onDeleteBook, onUpdateBook }: StatusViewProps) {
+export function StatusView({ statuses, books, readings, evaluations, quotes, vocabulary, onDeleteBook, onUpdateBook, onUpdateReading }: StatusViewProps) {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
 
@@ -204,6 +205,7 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
         vocabulary={vocabulary}
         isOpen={!!viewingBook}
         onClose={() => setViewingBook(null)}
+        onUpdateReading={onUpdateReading}
       />
     </div>
   );

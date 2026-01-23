@@ -28,6 +28,7 @@ const Index = () => {
     addBook,
     updateBook,
     addReading,
+    updateReading,
     addEvaluation,
     addQuote,
     deleteBook,
@@ -68,6 +69,14 @@ const Index = () => {
     toast({
       title: "Leitura registada!",
       description: `Sessão de leitura registada com sucesso.`,
+    });
+  };
+
+  const handleUpdateReading = (reading: Parameters<typeof updateReading>[0]) => {
+    updateReading(reading);
+    toast({
+      title: "Leitura atualizada!",
+      description: `Sessão de leitura atualizada com sucesso.`,
     });
   };
 
@@ -123,7 +132,7 @@ const Index = () => {
       case 'leitura':
         return <ReadingForm books={books} onSubmit={handleAddReading} />;
       case 'status':
-        return <StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
+        return <StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} onUpdateReading={handleUpdateReading} />;
       case 'avaliacao':
         return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
       case 'citacoes':
