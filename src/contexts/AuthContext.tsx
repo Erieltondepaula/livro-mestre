@@ -73,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check if user has access to a module
   const hasModuleAccess = useCallback((moduleKey: string): boolean => {
+    // Help module is always accessible to all users
+    if (moduleKey === 'ajuda') return true;
     // Master users and admins have access to all modules
     if (profile?.is_master || isAdmin) {
       return true;
