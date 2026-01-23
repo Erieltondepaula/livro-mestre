@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { VocabularyDialog } from '@/components/VocabularyDialog';
-import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare, Book } from 'lucide-react';
+import { ReadingHistoryDialog } from '@/components/ReadingHistoryDialog';
+import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare, Book, Pencil } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Book as BookType, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType, VocabularyWord } from '@/types/library';
@@ -16,6 +17,7 @@ interface BookMetricsDialogProps {
   vocabulary: VocabularyWord[];
   isOpen: boolean;
   onClose: () => void;
+  onUpdateReading?: (reading: DailyReading) => void;
 }
 
 export function BookMetricsDialog({ 
@@ -26,10 +28,13 @@ export function BookMetricsDialog({
   quotes,
   vocabulary,
   isOpen, 
-  onClose 
+  onClose,
+  onUpdateReading,
 }: BookMetricsDialogProps) {
   const [selectedWord, setSelectedWord] = useState<VocabularyWord | null>(null);
   const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
+  const [editingReading, setEditingReading] = useState<DailyReading | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   if (!book || !status) return null;
 
@@ -40,6 +45,19 @@ export function BookMetricsDialog({
   const handleWordClick = (word: VocabularyWord) => {
     setSelectedWord(word);
     setIsVocabDialogOpen(true);
+  };
+
+  const handleEditReading = (reading: DailyReading) => {
+    setEditingReading(reading);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveReading = (updatedReading: DailyReading) => {
+    if (onUpdateReading) {
+      onUpdateReading(updatedReading);
+    }
+    setIsEditDialogOpen(false);
+    setEditingReading(null);
   };
 
   const mapWordToEntry = (word: VocabularyWord) => ({
@@ -61,9 +79,6 @@ export function BookMetricsDialog({
     source_details: word.source_details,
   });
   
-  // CORREÇÃO SOLICITADA:
-  // Agora ele verifica qual a maior página final registada no histórico (ex: 106)
-  // Se o histórico estiver vazio, ele usa o status original.
   const totalPagesRead = bookReadings.length > 0 
     ? Math.max(...bookReadings.map(r => r.paginaFinal)) 
     : status.quantidadeLida;
@@ -103,10 +118,14 @@ export function BookMetricsDialog({
 
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
+    const mins = Math.floor(minutes % 60);
+    const secs = Math.round((minutes % 1) * 60);
     
     if (hours > 0) {
       return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+    }
+    if (secs > 0) {
+      return `${mins}min ${secs}s`;
     }
     return `${mins}min`;
   };
@@ -120,6 +139,18 @@ export function BookMetricsDialog({
     }
     return `${reading.dia}/${reading.mes}`;
   };
+
+  const formatReadingTime = (minutes: number) => {
+    const mins = Math.floor(minutes);
+    const secs = Math.round((minutes - mins) * 60);
+    if (secs > 0) {
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins} min`;
+  };
+
+  const isBibleCategory = book.categoria?.toLowerCase() === 'bíblia' || 
+                          book.categoria?.toLowerCase() === 'biblia';
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
@@ -250,7 +281,12 @@ export function BookMetricsDialog({
                 {bookQuotes.slice(0, 5).map((quote) => (
                   <div key={quote.id} className="border-l-2 border-primary pl-3">
                     <p className="text-sm italic">"{quote.citacao}"</p>
-                    <p className="text-xs text-muted-foreground mt-1">Página {quote.pagina}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {quote.bibleBook && quote.bibleChapter 
+                        ? `${quote.bibleBook} ${quote.bibleChapter}${quote.bibleVerse ? `:${quote.bibleVerse}` : ''}`
+                        : `Página ${quote.pagina}`
+                      }
+                    </p>
                   </div>
                 ))}
               </div>
@@ -287,13 +323,34 @@ export function BookMetricsDialog({
               </h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {[...bookReadings].reverse().map((reading) => (
-                  <div key={reading.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm py-2 border-b border-border last:border-0 gap-1">
-                    <span className="font-medium">{formatReadingDate(reading)}</span>
+                  <div 
+                    key={reading.id} 
+                    className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm py-2 border-b border-border last:border-0 gap-1 group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{formatReadingDate(reading)}</span>
+                      {isBibleCategory && reading.bibleBook && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          {reading.bibleBook} {reading.bibleChapter}
+                          {reading.bibleVerseStart && `:${reading.bibleVerseStart}`}
+                          {reading.bibleVerseEnd && reading.bibleVerseEnd !== reading.bibleVerseStart && `-${reading.bibleVerseEnd}`}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-muted-foreground">
                       Págs {reading.paginaInicial} → {reading.paginaFinal}
                     </span>
                     <span>{reading.quantidadePaginas} págs</span>
-                    <span className="text-muted-foreground">{reading.tempoGasto} min</span>
+                    <span className="text-muted-foreground">{formatReadingTime(reading.tempoGasto)}</span>
+                    {onUpdateReading && (
+                      <button
+                        onClick={() => handleEditReading(reading)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary/80"
+                        title="Editar leitura"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -326,6 +383,17 @@ export function BookMetricsDialog({
             setIsVocabDialogOpen(false);
             setSelectedWord(null);
           }}
+        />
+
+        <ReadingHistoryDialog
+          reading={editingReading}
+          book={book}
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setEditingReading(null);
+          }}
+          onSave={handleSaveReading}
         />
       </DialogContent>
     </Dialog>
