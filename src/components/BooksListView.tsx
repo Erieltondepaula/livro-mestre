@@ -26,13 +26,15 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
 
   // SETOR 4: Lógica de Velocidade de Leitura
   // Calcula a média de páginas por minuto baseada em todo o histórico de leituras do livro.
+  // NOTA: tempoGasto agora está em SEGUNDOS
   const getAverageReadingSpeed = (bookId: string): number | null => {
     const bookReadings = readings.filter(r => r.livroId === bookId && r.tempoGasto > 0);
     
     if (bookReadings.length === 0) return null;
     
     const totalPages = bookReadings.reduce((sum, r) => sum + r.quantidadePaginas, 0);
-    const totalMinutes = bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0);
+    const totalSeconds = bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0);
+    const totalMinutes = totalSeconds / 60; // Convert seconds to minutes
     
     if (totalMinutes === 0) return null;
     
@@ -57,7 +59,7 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
     const minutes = totalMinutes % 60;
     
     if (hours > 0) {
-      return `${hours}h ${minutes}min`;
+      return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
     }
     return `${minutes}min`;
   };
@@ -128,32 +130,32 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                   )}
                 </div>
 
-                {/* Informações do Livro - Layout compacto estilo Kindle */}
+                {/* Informações do Livro - Layout expandido */}
                 <div className="p-3 space-y-1.5 flex-1 flex flex-col">
-                  <h3 className="font-display font-semibold text-foreground text-sm leading-tight line-clamp-2" title={book.livro}>
+                  <h3 className="font-display font-semibold text-foreground text-sm leading-tight" title={book.livro}>
                     {book.livro}
                   </h3>
                   
                   {book.autor && (
-                    <p className="text-xs text-muted-foreground line-clamp-1" title={book.autor}>{book.autor}</p>
+                    <p className="text-xs text-muted-foreground" title={book.autor}>{book.autor}</p>
                   )}
                   
-                  {/* Detalhes Técnicos - Compacto */}
+                  {/* Detalhes Técnicos */}
                   <div className="text-xs text-muted-foreground space-y-0.5 flex-1">
                     {book.ano && <p>Ano: {book.ano}</p>}
-                    <p className="line-clamp-1">Tipo: {book.tipo}</p>
-                    {book.categoria && <p className="line-clamp-1">Categoria: {book.categoria}</p>}
+                    <p>Tipo: {book.tipo}</p>
+                    {book.categoria && <p>Categoria: {book.categoria}</p>}
                   </div>
 
-                  {/* Exibição do Status Dinâmico - Compacto */}
+                  {/* Exibição do Status Dinâmico */}
                   {(() => {
                     const statusInfo = getStatusInfo(book, status);
                     if (status?.status === 'Concluido') {
-                      return <p className={`text-xs font-medium ${statusInfo.colorClass} line-clamp-1`}>{statusInfo.text}</p>;
+                      return <p className={`text-xs font-medium ${statusInfo.colorClass}`}>{statusInfo.text}</p>;
                     }
                     if (timeEstimate) {
                       return (
-                        <p className={`text-xs font-medium ${statusInfo.colorClass} line-clamp-1`}>
+                        <p className={`text-xs font-medium ${statusInfo.colorClass}`}>
                           Tempo para finalizar: {timeEstimate}
                         </p>
                       );
