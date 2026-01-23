@@ -115,13 +115,13 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                 className="card-library overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 flex flex-col"
                 style={{ minWidth: 'clamp(200px, 100%, 280px)' }}
               >
-                {/* Capa do Livro - Tamanho fixo estilo Kindle */}
-                <div className="w-full h-52 md:h-60 lg:h-72 bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                {/* Capa do Livro - Proporção preservada sem corte */}
+                <div className="w-full aspect-[2/3] bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                   {book.coverUrl ? (
                     <img
                       src={book.coverUrl}
                       alt={`Capa de ${book.livro}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain bg-muted"
                     />
                   ) : (
                     <div className="text-muted-foreground text-xs text-center p-2 flex flex-col items-center justify-center h-full bg-gradient-to-b from-muted to-muted/80">
