@@ -29,6 +29,36 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
+// Ilustrações dos módulos
+import dashboardIllustration from '@/assets/help/dashboard-illustration.png';
+import cadastrarIllustration from '@/assets/help/cadastrar-livro-illustration.png';
+import livrosIllustration from '@/assets/help/livros-illustration.png';
+import leituraIllustration from '@/assets/help/leitura-illustration.png';
+import statusIllustration from '@/assets/help/status-illustration.png';
+import avaliacaoIllustration from '@/assets/help/avaliacao-illustration.png';
+import citacoesIllustration from '@/assets/help/citacoes-illustration.png';
+import bibliaIllustration from '@/assets/help/biblia-illustration.png';
+import vocabularioIllustration from '@/assets/help/vocabulario-illustration.png';
+import dicionarioIllustration from '@/assets/help/dicionario-illustration.png';
+import perfilIllustration from '@/assets/help/perfil-illustration.png';
+import adminIllustration from '@/assets/help/admin-illustration.png';
+
+// Mapeamento de ilustrações por ID do módulo
+const moduleIllustrations: Record<string, string> = {
+  dashboard: dashboardIllustration,
+  cadastrar: cadastrarIllustration,
+  livros: livrosIllustration,
+  leitura: leituraIllustration,
+  status: statusIllustration,
+  avaliacao: avaliacaoIllustration,
+  citacoes: citacoesIllustration,
+  biblia: bibliaIllustration,
+  vocabulario: vocabularioIllustration,
+  dicionario: dicionarioIllustration,
+  perfil: perfilIllustration,
+  admin: adminIllustration
+};
+
 interface HelpSection {
   id: string;
   title: string;
@@ -537,6 +567,8 @@ export function HelpView({ initialSection }: HelpViewProps) {
   const renderSection = (section: HelpSection) => {
     const Icon = section.icon;
     
+    const illustration = moduleIllustrations[section.id];
+    
     return (
       <Card className="border-l-4 border-l-primary">
         <CardHeader>
@@ -551,6 +583,17 @@ export function HelpView({ initialSection }: HelpViewProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Ilustração do Módulo */}
+          {illustration && (
+            <div className="rounded-xl overflow-hidden border bg-gradient-to-br from-muted/30 to-muted/10 p-4">
+              <img 
+                src={illustration} 
+                alt={`Ilustração do módulo ${section.title}`}
+                className="w-full max-h-48 object-contain rounded-lg"
+              />
+            </div>
+          )}
+
           {/* O que é e para que serve */}
           <div className="bg-muted/50 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -742,7 +785,7 @@ export function HelpView({ initialSection }: HelpViewProps) {
 
       {/* Rodapé com versão */}
       <div className="text-center text-sm text-muted-foreground pt-4 border-t">
-        <p>Planner de Leituras - Versão 1.3</p>
+        <p>Planner de Leituras - Versão 1.4</p>
         <p className="text-xs mt-1">Documentação atualizada em 23/01/2026</p>
       </div>
     </div>
