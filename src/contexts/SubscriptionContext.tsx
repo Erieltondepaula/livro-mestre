@@ -39,7 +39,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionStatus>(defaultSubscription);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- CONFIGURAÇÃO DO USUÁRIO MESTRE (VOCÊ) ---
   const MASTER_EMAIL = "erieltondepaulamelo@gmail.com";
 
   const checkSubscription = useCallback(async () => {
@@ -49,30 +48,71 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // --- REGRA DE OURO: SE FOR O DONO, LIBERA TUDO AQUI ---
-    // Isso acontece ANTES de tentar conectar no banco de dados.
-    // Assim, mesmo se o banco falhar, você entra.
+    // 1. REGRA MESTRA (Modo Deus)
     const userEmail = user.email?.toLowerCase().trim();
     if (userEmail === MASTER_EMAIL) {
-      console.log("👑 Usuário Mestre Identificado. Liberando acesso total.");
+      console.log("👑 Modo Deus Ativado");
       setSubscription({
         subscribed: true,
         productId: 'master_plan_unlimited',
-        priceId: 'price_master_key',
-        subscriptionEnd: '2100-12-31T23:59:00Z', // Data longínqua
+        priceId: 'price_master',
+        subscriptionEnd: '2100-12-31T23:59:00Z',
         subscriptionStart: new Date().toISOString(),
         cancelAtPeriodEnd: false,
-        daysUntilExpiry: 36500, // 100 anos
+        daysUntilExpiry: 36500,
         isWithinRefundPeriod: false,
       });
       setIsLoading(false);
-      return; // <--- O segredo é este return: ele para a função aqui para você.
+      return; 
     }
-    // -----------------------------------------------------
 
-    // DAQUI PARA BAIXO É O CÓDIGO ORIGINAL PARA OS OUTROS USUÁRIOS
     try {
       setIsLoading(true);
+
+      // 2. VERIFICAÇÃO DO BANCO DE DADOS (Prioridade sobre o Stripe)
+      // Aqui verificamos se existe uma "cortesia" ou assinatura manual
+      const { data: localSub, error: localError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!localError && localSub && (localSub.status === 'active' || localSub.status === 'trialing')) {
+        // Se achou no banco, USA O BANCO! (Ignora o Edge Function/Stripe)
+        console.log("✅ Assinatura local encontrada:", localSub);
+        
+        const subscriptionEnd = localSub.current_period_end ? new Date(localSub.current_period_end) : null;
+        const subscriptionStart = localSub.created_at ? new Date(localSub.created_at) : null;
+        const now = new Date();
+        
+        let daysUntilExpiry: number | null = null;
+        if (subscriptionEnd) {
+          daysUntilExpiry = Math.ceil((subscriptionEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
+        // Se a data já expirou, bloqueia (mesmo estando 'active' no banco)
+        if (daysUntilExpiry !== null && daysUntilExpiry <= 0) {
+           console.log("❌ Assinatura local expirada.");
+           setSubscription(defaultSubscription);
+        } else {
+           setSubscription({
+            subscribed: true,
+            productId: localSub.plan_type || 'pro', // Assume PRO se não tiver
+            priceId: 'manual_override',
+            subscriptionEnd: localSub.current_period_end,
+            subscriptionStart: localSub.created_at,
+            cancelAtPeriodEnd: false,
+            daysUntilExpiry,
+            isWithinRefundPeriod: false,
+          });
+        }
+        
+        setIsLoading(false);
+        return; // <--- O PULO DO GATO: Sai da função aqui, nem chama o Stripe.
+      }
+
+      // 3. SE NÃO ACHOU NO BANCO, PERGUNTA PRO STRIPE (Fallback)
+      console.log("⚠️ Nada no banco local, verificando Stripe...");
       const { data, error } = await supabase.functions.invoke('check-subscription');
 
       if (error) {
@@ -90,7 +130,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         daysUntilExpiry = Math.ceil((subscriptionEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       }
 
-      // Check if within 7-day refund period (Brazilian consumer law)
       let isWithinRefundPeriod = false;
       if (subscriptionStart) {
         const daysSinceStart = Math.floor((now.getTime() - subscriptionStart.getTime()) / (1000 * 60 * 60 * 24));
@@ -107,6 +146,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         daysUntilExpiry,
         isWithinRefundPeriod,
       });
+
     } catch (error) {
       console.error('Error checking subscription:', error);
       setSubscription(defaultSubscription);
@@ -119,12 +159,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     checkSubscription();
   }, [checkSubscription]);
 
-  // Auto-refresh subscription status every minute
+  // Checa a cada minuto
   useEffect(() => {
     if (!session) return;
-    const interval = setInterval(() => {
-      checkSubscription();
-    }, 60000); // 1 minute
+    const interval = setInterval(() => checkSubscription(), 60000);
     return () => clearInterval(interval);
   }, [session, checkSubscription]);
 
@@ -133,13 +171,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SubscriptionContext.Provider 
-      value={{ 
-        subscription, 
-        isLoading, 
-        checkSubscription,
-        isExpiringSoon,
-        isExpired,
-      }}
+      value={{ subscription, isLoading, checkSubscription, isExpiringSoon, isExpired }}
     >
       {children}
     </SubscriptionContext.Provider>
