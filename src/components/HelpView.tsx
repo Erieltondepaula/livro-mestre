@@ -29,7 +29,19 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
-// Ilustrações dos módulos
+// Screenshots reais dos módulos
+import screenshotDashboard1 from '@/assets/help/screenshot-dashboard-1.png';
+import screenshotDashboard2 from '@/assets/help/screenshot-dashboard-2.png';
+import screenshotDashboard3 from '@/assets/help/screenshot-dashboard-3.png';
+import screenshotCadastrar from '@/assets/help/screenshot-cadastrar.png';
+import screenshotLivros from '@/assets/help/screenshot-livros.png';
+import screenshotLeitura from '@/assets/help/screenshot-leitura.png';
+import screenshotStatus from '@/assets/help/screenshot-status.png';
+import screenshotMetricasHeader from '@/assets/help/screenshot-metricas-header.png';
+import screenshotMetricasProgresso from '@/assets/help/screenshot-metricas-progresso.png';
+import screenshotMetricasCitacoes from '@/assets/help/screenshot-metricas-citacoes.png';
+
+// Ilustrações dos módulos (fallback para módulos sem screenshot)
 import dashboardIllustration from '@/assets/help/dashboard-illustration.png';
 import cadastrarIllustration from '@/assets/help/cadastrar-livro-illustration.png';
 import livrosIllustration from '@/assets/help/livros-illustration.png';
@@ -43,20 +55,55 @@ import dicionarioIllustration from '@/assets/help/dicionario-illustration.png';
 import perfilIllustration from '@/assets/help/perfil-illustration.png';
 import adminIllustration from '@/assets/help/admin-illustration.png';
 
-// Mapeamento de ilustrações por ID do módulo
-const moduleIllustrations: Record<string, string> = {
-  dashboard: dashboardIllustration,
-  cadastrar: cadastrarIllustration,
-  livros: livrosIllustration,
-  leitura: leituraIllustration,
-  status: statusIllustration,
-  avaliacao: avaliacaoIllustration,
-  citacoes: citacoesIllustration,
-  biblia: bibliaIllustration,
-  vocabulario: vocabularioIllustration,
-  dicionario: dicionarioIllustration,
-  perfil: perfilIllustration,
-  admin: adminIllustration
+// Mapeamento de screenshots/ilustrações por ID do módulo
+// Agora suporta múltiplas imagens por módulo com legendas
+interface ModuleImage {
+  src: string;
+  caption: string;
+}
+
+const moduleImages: Record<string, ModuleImage[]> = {
+  dashboard: [
+    { src: screenshotDashboard1, caption: 'Visão geral do Dashboard com menu lateral' },
+    { src: screenshotDashboard2, caption: 'Cards de estatísticas de leitura' },
+    { src: screenshotDashboard3, caption: 'Tabela de status dos livros' }
+  ],
+  cadastrar: [
+    { src: screenshotCadastrar, caption: 'Formulário de cadastro de livro com todos os campos' }
+  ],
+  livros: [
+    { src: screenshotLivros, caption: 'Biblioteca visual com capas dos livros' }
+  ],
+  leitura: [
+    { src: screenshotLeitura, caption: 'Formulário de registro de leitura diária' }
+  ],
+  status: [
+    { src: screenshotStatus, caption: 'Tabela de status com progresso de cada livro' },
+    { src: screenshotMetricasHeader, caption: 'Modal de métricas - Informações do livro' },
+    { src: screenshotMetricasProgresso, caption: 'Modal de métricas - Progresso detalhado' },
+    { src: screenshotMetricasCitacoes, caption: 'Modal de métricas - Citações e vocabulário' }
+  ],
+  avaliacao: [
+    { src: avaliacaoIllustration, caption: 'Sistema de avaliação com estrelas' }
+  ],
+  citacoes: [
+    { src: citacoesIllustration, caption: 'Gerenciamento de citações' }
+  ],
+  biblia: [
+    { src: bibliaIllustration, caption: 'Acompanhamento de leitura bíblica' }
+  ],
+  vocabulario: [
+    { src: vocabularioIllustration, caption: 'Vocabulário aprendido' }
+  ],
+  dicionario: [
+    { src: dicionarioIllustration, caption: 'Consulta ao dicionário' }
+  ],
+  perfil: [
+    { src: perfilIllustration, caption: 'Configurações de perfil' }
+  ],
+  admin: [
+    { src: adminIllustration, caption: 'Painel de administração' }
+  ]
 };
 
 interface HelpSection {
@@ -567,7 +614,7 @@ export function HelpView({ initialSection }: HelpViewProps) {
   const renderSection = (section: HelpSection) => {
     const Icon = section.icon;
     
-    const illustration = moduleIllustrations[section.id];
+    const images = moduleImages[section.id] || [];
     
     return (
       <Card className="border-l-4 border-l-primary">
@@ -583,14 +630,29 @@ export function HelpView({ initialSection }: HelpViewProps) {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Ilustração do Módulo */}
-          {illustration && (
-            <div className="rounded-xl overflow-hidden border bg-gradient-to-br from-muted/30 to-muted/10 p-4">
-              <img 
-                src={illustration} 
-                alt={`Ilustração do módulo ${section.title}`}
-                className="w-full max-h-48 object-contain rounded-lg"
-              />
+          {/* Screenshots/Ilustrações do Módulo */}
+          {images.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-5 h-5 rounded bg-primary/20 flex items-center justify-center">
+                  <span className="text-xs font-bold text-primary">📸</span>
+                </div>
+                <h4 className="font-semibold text-primary">Visualização do Módulo</h4>
+              </div>
+              <div className={`grid gap-4 ${images.length === 1 ? 'grid-cols-1' : images.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2'}`}>
+                {images.map((image, index) => (
+                  <div key={index} className="rounded-xl overflow-hidden border bg-gradient-to-br from-muted/30 to-muted/10 p-3">
+                    <img 
+                      src={image.src} 
+                      alt={image.caption}
+                      className="w-full object-contain rounded-lg shadow-sm"
+                    />
+                    <p className="text-xs text-muted-foreground text-center mt-2 italic">
+                      {image.caption}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
