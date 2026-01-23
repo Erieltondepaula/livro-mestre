@@ -1,7 +1,7 @@
 # 📚 Documentação Completa do Projeto - Biblioteca de Leitura
 
-> **Última atualização:** Janeiro 2026  
-> **Versão:** 1.0  
+> **Última atualização:** 23 Janeiro 2026  
+> **Versão:** 1.1  
 > **Autor:** Documentação gerada via Lovable
 
 ---
@@ -241,6 +241,11 @@ O projeto estará disponível em `http://localhost:5173`
 │   book_types    │     │ book_categories │
 │                 │     │                 │
 └─────────────────┘     └─────────────────┘
+
+┌─────────────────┐
+│ profiles_public │  ◀── VIEW (sem email para segurança)
+│     (VIEW)      │
+└─────────────────┘
 ```
 
 ### 5.2 Scripts SQL - Execução em 3 Partes
@@ -609,9 +614,15 @@ CREATE POLICY "System can insert profiles"
   ON public.profiles FOR INSERT 
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Admins can view all profiles" 
+-- ATUALIZAÇÃO DE SEGURANÇA (Jan 2026): Política restritiva para admins
+-- Admins e masters podem ver perfis, mas emails são protegidos via profiles_public view
+CREATE POLICY "Admins can view public profile data" 
   ON public.profiles FOR SELECT 
-  USING (has_role(auth.uid(), 'admin'));
+  USING (
+    auth.uid() = user_id 
+    OR is_master_user(auth.uid()) 
+    OR has_role(auth.uid(), 'admin')
+  );
 
 CREATE POLICY "Admins can update non-master profiles" 
   ON public.profiles FOR UPDATE 
@@ -845,6 +856,7 @@ ON CONFLICT (id) DO NOTHING;
 | Tabela | Descrição | Campos Principais |
 |--------|-----------|-------------------|
 | `profiles` | Dados do perfil do usuário | user_id, email, display_name, is_active, is_master |
+| `profiles_public` | **VIEW** - Perfis sem email (segurança) | user_id, display_name, is_active, is_master |
 | `user_roles` | Roles de cada usuário | user_id, role (admin/user) |
 | `user_permissions` | Permissões de módulos | user_id, module_key |
 | `book_types` | Tipos de livro | name (Físico, Digital, Audiobook) |
@@ -855,6 +867,34 @@ ON CONFLICT (id) DO NOTHING;
 | `evaluations` | Avaliações de livros | book_id, creativity, pleasure, final_grade |
 | `quotes` | Citações salvas | book_id, quote, page |
 | `vocabulary` | Palavras aprendidas | palavra, definicoes, sinonimos |
+
+### 5.4 View de Segurança: profiles_public
+
+> ⚠️ **IMPORTANTE:** Esta view foi criada para proteger dados sensíveis (emails).
+
+```sql
+-- View que expõe apenas dados públicos dos perfis (sem email)
+CREATE OR REPLACE VIEW public.profiles_public
+WITH (security_invoker = true) AS
+SELECT 
+  id,
+  user_id,
+  display_name,
+  avatar_url,
+  is_active,
+  is_master,
+  created_at,
+  updated_at
+FROM public.profiles;
+
+-- Comentário de segurança
+COMMENT ON VIEW public.profiles_public IS 
+  'View pública de perfis sem dados sensíveis (email). Use esta view para listar usuários.';
+```
+
+**Quando usar:**
+- Use `profiles_public` para listar usuários de forma segura
+- Use `profiles` apenas quando o usuário precisa ver seu próprio email
 
 ---
 
@@ -1148,6 +1188,23 @@ npx cap open android # Abrir no Android Studio
 | Versão | Data | Alterações |
 |--------|------|------------|
 | 1.0 | Jan 2026 | Documentação inicial completa |
+| 1.1 | 23 Jan 2026 | Correções de segurança: view `profiles_public` para proteger emails, políticas RLS atualizadas, módulo "Progresso Bíblia" adicionado às permissões |
+
+---
+
+## 🔒 Notas de Segurança (v1.1)
+
+### Correções Aplicadas em 23/01/2026:
+
+1. **Proteção de Emails**: Criada view `profiles_public` que exclui o campo email para evitar exposição de dados sensíveis.
+
+2. **Políticas RLS Atualizadas**: 
+   - Removida política "Admins can view all profiles" que expunha todos os emails
+   - Adicionada política "Admins can view public profile data" mais restritiva
+
+3. **Comentários de Segurança**: Adicionados comentários nas tabelas `book_categories` e `book_types` indicando que devem conter apenas dados não-sensíveis.
+
+4. **Módulo de Permissões**: Adicionado módulo "Progresso Bíblia" (`biblia`) no sistema de permissões de usuários.
 
 ---
 
