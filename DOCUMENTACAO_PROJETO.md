@@ -1190,19 +1190,50 @@ npx cap open android # Abrir no Android Studio
 | 1.0 | Jan 2026 | Documentação inicial completa |
 | 1.1 | 23 Jan 2026 | Correções de segurança: view `profiles_public` para proteger emails, políticas RLS atualizadas, módulo "Progresso Bíblia" adicionado às permissões |
 | 1.2 | 23 Jan 2026 | Funcionalidade de exclusão de usuários (apenas Mestre) |
+| 1.3 | 23 Jan 2026 | Políticas RLS para exclusão de usuários pelo Mestre, exclusão completa de dados do usuário |
 
 ---
 
 ## 🔒 Notas de Segurança e Funcionalidades
+
+### Versão 1.3 - Exclusão Completa de Usuários (23/01/2026):
+
+**Novas Políticas RLS para Exclusão:**
+```sql
+-- Permitir Mestre excluir perfis de não-mestres
+CREATE POLICY "Master can delete non-master profiles"
+ON public.profiles FOR DELETE
+USING (is_master_user(auth.uid()) AND NOT is_master_user(user_id));
+
+-- Permitir Mestre excluir roles de não-mestres
+CREATE POLICY "Master can delete non-master user roles"
+ON public.user_roles FOR DELETE
+USING (is_master_user(auth.uid()) AND NOT is_master_user(user_id));
+
+-- Permitir Mestre excluir permissões de não-mestres
+CREATE POLICY "Master can delete non-master user permissions"
+ON public.user_permissions FOR DELETE
+USING (is_master_user(auth.uid()) AND NOT is_master_user(user_id));
+```
+
+**Processo de Exclusão de Usuário:**
+1. Deletar livros do usuário (`books`)
+2. Deletar leituras (`readings`)
+3. Deletar status (`statuses`)
+4. Deletar avaliações (`evaluations`)
+5. Deletar citações (`quotes`)
+6. Deletar vocabulário (`vocabulary`)
+7. Deletar permissões (`user_permissions`)
+8. Deletar roles (`user_roles`)
+9. Deletar perfil (`profiles`)
+
+**Localização no código:** `src/pages/Admin.tsx`
 
 ### Versão 1.2 - Exclusão de Usuários (23/01/2026):
 
 **Nova Funcionalidade: Remoção de Usuários**
 - Apenas o **usuário Mestre** pode excluir outros usuários
 - Usuários Mestre não podem ser excluídos (proteção)
-- A exclusão remove: perfil, roles, permissões e todos os dados associados (via CASCADE)
-
-**Localização no código:** `src/pages/Admin.tsx`
 - Botão de lixeira vermelho visível apenas para o Mestre
 - Confirmação obrigatória antes de excluir
 

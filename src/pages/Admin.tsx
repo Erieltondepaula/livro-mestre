@@ -152,15 +152,71 @@ export default function Admin() {
           break;
 
         case 'delete':
-          // Note: This only deletes the profile, not the auth user
-          // Full user deletion would require admin API
-          await supabase
+          // Excluir todos os dados do usuário em ordem para evitar problemas de FK
+          // 1. Primeiro deletar os dados de biblioteca (books, readings, etc.)
+          const { error: booksError } = await supabase
+            .from('books')
+            .delete()
+            .eq('user_id', user.user_id);
+          if (booksError) console.error('Error deleting books:', booksError);
+
+          const { error: readingsError } = await supabase
+            .from('readings')
+            .delete()
+            .eq('user_id', user.user_id);
+          if (readingsError) console.error('Error deleting readings:', readingsError);
+
+          const { error: statusesError } = await supabase
+            .from('statuses')
+            .delete()
+            .eq('user_id', user.user_id);
+          if (statusesError) console.error('Error deleting statuses:', statusesError);
+
+          const { error: evaluationsError } = await supabase
+            .from('evaluations')
+            .delete()
+            .eq('user_id', user.user_id);
+          if (evaluationsError) console.error('Error deleting evaluations:', evaluationsError);
+
+          const { error: quotesError } = await supabase
+            .from('quotes')
+            .delete()
+            .eq('user_id', user.user_id);
+          if (quotesError) console.error('Error deleting quotes:', quotesError);
+
+          const { error: vocabularyError } = await supabase
+            .from('vocabulary')
+            .delete()
+            .eq('user_id', user.user_id);
+          if (vocabularyError) console.error('Error deleting vocabulary:', vocabularyError);
+
+          // 2. Deletar permissões do usuário
+          const { error: permissionsError } = await supabase
+            .from('user_permissions')
+            .delete()
+            .eq('user_id', user.user_id);
+          if (permissionsError) console.error('Error deleting permissions:', permissionsError);
+
+          // 3. Deletar roles do usuário
+          const { error: rolesError } = await supabase
+            .from('user_roles')
+            .delete()
+            .eq('user_id', user.user_id);
+          if (rolesError) console.error('Error deleting roles:', rolesError);
+
+          // 4. Finalmente, deletar o perfil
+          const { error: profileError } = await supabase
             .from('profiles')
             .delete()
             .eq('user_id', user.user_id);
+          
+          if (profileError) {
+            throw profileError;
+          }
+
           toast({
             title: "Usuário removido",
-            description: `${user.email} foi removido do sistema.`,
+            description: `${user.email} foi permanentemente removido do sistema.`,
           });
           break;
       }
