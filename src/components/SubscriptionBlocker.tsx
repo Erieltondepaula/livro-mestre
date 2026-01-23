@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/contexts/AuthContext'; // <--- ADICIONADO
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, Crown, Loader2 } from 'lucide-react';
@@ -10,7 +11,15 @@ interface SubscriptionBlockerProps {
 
 export function SubscriptionBlocker({ children }: SubscriptionBlockerProps) {
   const navigate = useNavigate();
+  const { user } = useAuth(); // <--- Pegando seu usuário aqui
   const { subscription, isLoading, isExpired } = useSubscription();
+
+  // --- REGRA DE OURO: LIBERAÇÃO DO DONO ---
+  // Se for o seu e-mail, ignora tudo e libera o acesso imediatamente
+  if (user?.email === "erieltondepaulamelo@gmail.com") {
+    return <>{children}</>;
+  }
+  // ----------------------------------------
 
   if (isLoading) {
     return (
@@ -20,7 +29,7 @@ export function SubscriptionBlocker({ children }: SubscriptionBlockerProps) {
     );
   }
 
-  // If not subscribed or expired, show blocker
+  // Se não for inscrito ou expirou, mostra o bloqueio (SEU LAYOUT ORIGINAL)
   if (!subscription.subscribed || isExpired) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] p-4">
