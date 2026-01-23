@@ -112,7 +112,29 @@ export function BookMetricsDialog({
   const progress = (totalPagesRead / book.totalPaginas) * 100;
   
   // Now tempoGasto is in SECONDS
+  // For Bible readings, we need to group by day and take max time per day (not sum)
   const calculateTotalTimeSeconds = () => {
+    const isBible = book?.categoria?.toLowerCase() === 'bíblia' || 
+                    book?.categoria?.toLowerCase() === 'biblia';
+    
+    if (isBible) {
+      // Group by day and take max time per day
+      const timeByDay: Record<string, number> = {};
+      for (const reading of bookReadings) {
+        const dateKey = `${reading.dia}/${reading.mes}`;
+        const currentMax = timeByDay[dateKey] || 0;
+        
+        if (reading.dataInicio && reading.dataFim) {
+          const days = differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
+          timeByDay[dateKey] = Math.max(currentMax, reading.tempoGasto * days);
+        } else {
+          timeByDay[dateKey] = Math.max(currentMax, reading.tempoGasto);
+        }
+      }
+      return Object.values(timeByDay).reduce((sum, time) => sum + time, 0);
+    }
+    
+    // For non-Bible books, sum all readings
     let totalSeconds = 0;
     for (const reading of bookReadings) {
       if (reading.dataInicio && reading.dataFim) {
