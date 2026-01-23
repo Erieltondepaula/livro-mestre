@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useAuth } from '@/contexts/AuthContext'; // <--- ADICIONADO
+import { useAuth } from '@/contexts/AuthContext'; // <--- Importante
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, Crown, Loader2 } from 'lucide-react';
@@ -11,15 +11,16 @@ interface SubscriptionBlockerProps {
 
 export function SubscriptionBlocker({ children }: SubscriptionBlockerProps) {
   const navigate = useNavigate();
-  const { user } = useAuth(); // <--- Pegando seu usuário aqui
+  const { user } = useAuth(); // <--- Pegamos seu usuário
   const { subscription, isLoading, isExpired } = useSubscription();
 
-  // --- REGRA DE OURO: LIBERAÇÃO DO DONO ---
-  // Se for o seu e-mail, ignora tudo e libera o acesso imediatamente
-  if (user?.email === "erieltondepaulamelo@gmail.com") {
+  // --- REGRA DE OURO VISUAL ---
+  // Se for você, renderiza o conteúdo (children) imediatamente.
+  // Ignora carregamento, ignora validade, ignora tudo.
+  if (user?.email?.trim().toLowerCase() === "erieltondepaulamelo@gmail.com") {
     return <>{children}</>;
   }
-  // ----------------------------------------
+  // ----------------------------
 
   if (isLoading) {
     return (
@@ -29,7 +30,7 @@ export function SubscriptionBlocker({ children }: SubscriptionBlockerProps) {
     );
   }
 
-  // Se não for inscrito ou expirou, mostra o bloqueio (SEU LAYOUT ORIGINAL)
+  // Lógica original de bloqueio (só aparece para quem NÃO é você)
   if (!subscription.subscribed || isExpired) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] p-4">

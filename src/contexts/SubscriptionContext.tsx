@@ -39,7 +39,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionStatus>(defaultSubscription);
   const [isLoading, setIsLoading] = useState(true);
 
-  // SEU E-MAIL MESTRE
+  // --- CONFIGURAÇÃO DO USUÁRIO MESTRE (VOCÊ) ---
   const MASTER_EMAIL = "erieltondepaulamelo@gmail.com";
 
   const checkSubscription = useCallback(async () => {
@@ -49,30 +49,28 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // --- CORREÇÃO: REGRA MESTRA À PROVA DE FALHAS ---
-    // Converte tudo para minúsculo para garantir que funcione sempre
+    // --- REGRA DE OURO: SE FOR O DONO, LIBERA TUDO AQUI ---
+    // Isso acontece ANTES de tentar conectar no banco de dados.
+    // Assim, mesmo se o banco falhar, você entra.
     const userEmail = user.email?.toLowerCase().trim();
-    const masterEmail = MASTER_EMAIL.toLowerCase().trim();
-
-    if (userEmail === masterEmail) {
-      console.log("👑 Acesso Mestre Vitalício CONFIRMADO para:", userEmail);
-      
+    if (userEmail === MASTER_EMAIL) {
+      console.log("👑 Usuário Mestre Identificado. Liberando acesso total.");
       setSubscription({
         subscribed: true,
-        productId: 'master_plan_unlimited', 
-        priceId: 'price_master',
-        subscriptionEnd: '2099-12-31T23:59:59.999Z',
+        productId: 'master_plan_unlimited',
+        priceId: 'price_master_key',
+        subscriptionEnd: '2099-12-31T23:59:59.999Z', // Data longínqua
         subscriptionStart: new Date().toISOString(),
         cancelAtPeriodEnd: false,
-        daysUntilExpiry: 36500, 
+        daysUntilExpiry: 36500, // 100 anos
         isWithinRefundPeriod: false,
       });
-      
       setIsLoading(false);
-      return; // Sai da função aqui, garantindo o acesso
+      return; // <--- O segredo é este return: ele para a função aqui para você.
     }
-    // --------------------------------------------------
+    // -----------------------------------------------------
 
+    // DAQUI PARA BAIXO É O CÓDIGO ORIGINAL PARA OS OUTROS USUÁRIOS
     try {
       setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('check-subscription');
@@ -92,6 +90,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         daysUntilExpiry = Math.ceil((subscriptionEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       }
 
+      // Check if within 7-day refund period (Brazilian consumer law)
       let isWithinRefundPeriod = false;
       if (subscriptionStart) {
         const daysSinceStart = Math.floor((now.getTime() - subscriptionStart.getTime()) / (1000 * 60 * 60 * 24));
@@ -120,10 +119,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     checkSubscription();
   }, [checkSubscription]);
 
-  // Atualiza a cada minuto
+  // Auto-refresh subscription status every minute
   useEffect(() => {
     if (!session) return;
-    const interval = setInterval(() => checkSubscription(), 60000);
+    const interval = setInterval(() => {
+      checkSubscription();
+    }, 60000); // 1 minute
     return () => clearInterval(interval);
   }, [session, checkSubscription]);
 
@@ -132,7 +133,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SubscriptionContext.Provider 
-      value={{ subscription, isLoading, checkSubscription, isExpiringSoon, isExpired }}
+      value={{ 
+        subscription, 
+        isLoading, 
+        checkSubscription,
+        isExpiringSoon,
+        isExpired,
+      }}
     >
       {children}
     </SubscriptionContext.Provider>
