@@ -91,23 +91,38 @@ export function useLibrary() {
       }
 
       if (readingsData) {
-        setReadings(readingsData.map(r => ({
-          id: r.id,
-          dia: r.day,
-          mes: r.month,
-          livroId: r.book_id,
-          livroLido: (r.books as any)?.name || '',
-          paginaInicial: r.start_page,
-          paginaFinal: r.end_page,
-          tempoGasto: parseInt(r.time_spent || '0'), // Now in seconds
-          quantidadePaginas: r.end_page - r.start_page,
-          dataInicio: (r as any).start_date ? new Date((r as any).start_date + 'T12:00:00') : undefined,
-          dataFim: (r as any).end_date ? new Date((r as any).end_date + 'T12:00:00') : undefined,
-          bibleBook: (r as any).bible_book || undefined,
-          bibleChapter: (r as any).bible_chapter || undefined,
-          bibleVerseStart: (r as any).bible_verse_start || undefined,
-          bibleVerseEnd: (r as any).bible_verse_end || undefined,
-        })));
+        setReadings(readingsData.map(r => {
+          // Parse time_spent - can be "MM:SS" format or seconds number
+          let tempoGastoSeconds = 0;
+          const timeSpentStr = r.time_spent || '0';
+          if (timeSpentStr.includes(':')) {
+            const [mins, secs] = timeSpentStr.split(':').map(Number);
+            tempoGastoSeconds = (mins * 60) + (secs || 0);
+          } else {
+            // Legacy: stored as minutes float or seconds
+            const parsed = parseFloat(timeSpentStr);
+            // If value is small (< 1000), assume it's in minutes and convert
+            tempoGastoSeconds = parsed < 1000 ? Math.round(parsed * 60) : parsed;
+          }
+
+          return {
+            id: r.id,
+            dia: r.day,
+            mes: r.month,
+            livroId: r.book_id,
+            livroLido: (r.books as any)?.name || '',
+            paginaInicial: r.start_page,
+            paginaFinal: r.end_page,
+            tempoGasto: tempoGastoSeconds, // Now always in seconds
+            quantidadePaginas: r.end_page - r.start_page,
+            dataInicio: (r as any).start_date ? new Date((r as any).start_date + 'T12:00:00') : undefined,
+            dataFim: (r as any).end_date ? new Date((r as any).end_date + 'T12:00:00') : undefined,
+            bibleBook: (r as any).bible_book || undefined,
+            bibleChapter: (r as any).bible_chapter || undefined,
+            bibleVerseStart: (r as any).bible_verse_start || undefined,
+            bibleVerseEnd: (r as any).bible_verse_end || undefined,
+          };
+        }));
       }
 
       if (evaluationsData) {
