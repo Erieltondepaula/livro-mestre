@@ -149,6 +149,87 @@ export function BookMetricsDialog({
     return `${mins} min`;
   };
 
+  // Group readings by day for consolidated display
+  const groupReadingsByDay = (readings: DailyReading[], isBible: boolean) => {
+    if (!isBible) {
+      // For non-Bible books, keep original behavior (no grouping)
+      return [...readings].reverse().map(reading => ({
+        key: reading.id,
+        displayDate: formatReadingDate(reading),
+        paginaInicial: reading.paginaInicial,
+        paginaFinal: reading.paginaFinal,
+        quantidadePaginas: reading.quantidadePaginas,
+        tempoGasto: reading.tempoGasto,
+        bibleEntries: reading.bibleBook ? [{
+          bibleBook: reading.bibleBook,
+          bibleChapter: reading.bibleChapter,
+          bibleVerseStart: reading.bibleVerseStart,
+          bibleVerseEnd: reading.bibleVerseEnd,
+        }] : [],
+        readings: [reading],
+      }));
+    }
+
+    // Group by date key (dia/mes)
+    const groups: Record<string, {
+      key: string;
+      displayDate: string;
+      paginaInicial: number;
+      paginaFinal: number;
+      quantidadePaginas: number;
+      tempoGasto: number;
+      bibleEntries: Array<{
+        bibleBook?: string;
+        bibleChapter?: number;
+        bibleVerseStart?: number;
+        bibleVerseEnd?: number;
+      }>;
+      readings: DailyReading[];
+    }> = {};
+
+    for (const reading of readings) {
+      const dateKey = `${reading.dia}/${reading.mes}`;
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = {
+          key: dateKey,
+          displayDate: formatReadingDate(reading),
+          paginaInicial: reading.paginaInicial,
+          paginaFinal: reading.paginaFinal,
+          quantidadePaginas: reading.quantidadePaginas,
+          tempoGasto: reading.tempoGasto,
+          bibleEntries: [],
+          readings: [],
+        };
+      } else {
+        // Merge data
+        groups[dateKey].paginaInicial = Math.min(groups[dateKey].paginaInicial, reading.paginaInicial);
+        groups[dateKey].paginaFinal = Math.max(groups[dateKey].paginaFinal, reading.paginaFinal);
+        groups[dateKey].quantidadePaginas += reading.quantidadePaginas;
+        groups[dateKey].tempoGasto += reading.tempoGasto;
+      }
+
+      groups[dateKey].readings.push(reading);
+
+      if (reading.bibleBook) {
+        groups[dateKey].bibleEntries.push({
+          bibleBook: reading.bibleBook,
+          bibleChapter: reading.bibleChapter,
+          bibleVerseStart: reading.bibleVerseStart,
+          bibleVerseEnd: reading.bibleVerseEnd,
+        });
+      }
+    }
+
+    // Sort by date descending
+    return Object.values(groups).sort((a, b) => {
+      const [dayA, monthA] = a.key.split('/');
+      const [dayB, monthB] = b.key.split('/');
+      if (monthA !== monthB) return monthB.localeCompare(monthA);
+      return parseInt(dayB) - parseInt(dayA);
+    });
+  };
+
   const isBibleCategory = book.categoria?.toLowerCase() === 'bíblia' || 
                           book.categoria?.toLowerCase() === 'biblia';
 
@@ -319,32 +400,36 @@ export function BookMetricsDialog({
           {bookReadings.length > 0 && (
             <div className="card-library p-4">
               <h3 className="font-semibold text-sm text-muted-foreground mb-3 uppercase tracking-wider">
-                Histórico de Leituras ({bookReadings.length})
+                Histórico de Leituras ({groupReadingsByDay(bookReadings, isBibleCategory).length})
               </h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {[...bookReadings].reverse().map((reading) => (
+                {groupReadingsByDay(bookReadings, isBibleCategory).map((group) => (
                   <div 
-                    key={reading.id} 
+                    key={group.key} 
                     className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm py-2 border-b border-border last:border-0 gap-1 group"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{formatReadingDate(reading)}</span>
-                      {isBibleCategory && reading.bibleBook && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                          {reading.bibleBook} {reading.bibleChapter}
-                          {reading.bibleVerseStart && `:${reading.bibleVerseStart}`}
-                          {reading.bibleVerseEnd && reading.bibleVerseEnd !== reading.bibleVerseStart && `-${reading.bibleVerseEnd}`}
-                        </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium">{group.displayDate}</span>
+                      {isBibleCategory && group.bibleEntries.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {group.bibleEntries.map((entry, idx) => (
+                            <span key={idx} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                              {entry.bibleBook} {entry.bibleChapter}
+                              {entry.bibleVerseStart && `:${entry.bibleVerseStart}`}
+                              {entry.bibleVerseEnd && entry.bibleVerseEnd !== entry.bibleVerseStart && `-${entry.bibleVerseEnd}`}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
                     <span className="text-muted-foreground">
-                      Págs {reading.paginaInicial} → {reading.paginaFinal}
+                      Págs {group.paginaInicial} → {group.paginaFinal}
                     </span>
-                    <span>{reading.quantidadePaginas} págs</span>
-                    <span className="text-muted-foreground">{formatReadingTime(reading.tempoGasto)}</span>
+                    <span>{group.quantidadePaginas} págs</span>
+                    <span className="text-muted-foreground">{formatReadingTime(group.tempoGasto)}</span>
                     {onUpdateReading && (
                       <button
-                        onClick={() => handleEditReading(reading)}
+                        onClick={() => handleEditReading(group.readings[0])}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary/80"
                         title="Editar leitura"
                       >
