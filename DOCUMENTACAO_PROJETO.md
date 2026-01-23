@@ -1,7 +1,7 @@
 # 📚 Documentação Completa do Projeto - Biblioteca de Leitura
 
 > **Última atualização:** 23 Janeiro 2026  
-> **Versão:** 1.1  
+> **Versão:** 1.4  
 > **Autor:** Documentação gerada via Lovable
 
 ---
@@ -629,6 +629,11 @@ CREATE POLICY "Admins can update non-master profiles"
   USING (has_role(auth.uid(), 'admin') AND NOT is_master_user(user_id))
   WITH CHECK (has_role(auth.uid(), 'admin') AND NOT is_master_user(user_id));
 
+-- NOVA (Jan 2026): Master pode deletar perfis de não-masters
+CREATE POLICY "Master can delete non-master profiles" 
+  ON public.profiles FOR DELETE 
+  USING (is_master_user(auth.uid()) AND NOT is_master_user(user_id));
+
 -- 3.3 POLÍTICAS: user_roles
 -- =============================================
 CREATE POLICY "Users can view own roles" 
@@ -644,6 +649,11 @@ CREATE POLICY "Admins can manage non-master user roles"
   USING (has_role(auth.uid(), 'admin') AND NOT is_master_user(user_id))
   WITH CHECK (has_role(auth.uid(), 'admin') AND NOT is_master_user(user_id));
 
+-- NOVA (Jan 2026): Master pode deletar roles de não-masters
+CREATE POLICY "Master can delete non-master user roles" 
+  ON public.user_roles FOR DELETE 
+  USING (is_master_user(auth.uid()) AND NOT is_master_user(user_id));
+
 -- 3.4 POLÍTICAS: user_permissions
 -- =============================================
 CREATE POLICY "Users can view own permissions" 
@@ -658,6 +668,11 @@ CREATE POLICY "Admins can manage non-master user permissions"
   ON public.user_permissions FOR ALL 
   USING (has_role(auth.uid(), 'admin') AND NOT is_master_user(user_id))
   WITH CHECK (has_role(auth.uid(), 'admin') AND NOT is_master_user(user_id));
+
+-- NOVA (Jan 2026): Master pode deletar permissões de não-masters
+CREATE POLICY "Master can delete non-master user permissions" 
+  ON public.user_permissions FOR DELETE 
+  USING (is_master_user(auth.uid()) AND NOT is_master_user(user_id));
 
 -- 3.5 POLÍTICAS: book_types e book_categories
 -- =============================================
