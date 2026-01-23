@@ -64,6 +64,10 @@ export interface Quote {
   livroId: string;
   livro: string;
   pagina: number;
+  // Bible-specific reference fields
+  bibleBook?: string;
+  bibleChapter?: number;
+  bibleVerse?: number;
 }
 
 export interface SinonimoGrupo {

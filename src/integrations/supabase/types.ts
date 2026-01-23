@@ -180,6 +180,9 @@ export type Database = {
       }
       quotes: {
         Row: {
+          bible_book: string | null
+          bible_chapter: number | null
+          bible_verse: number | null
           book_id: string
           created_at: string | null
           id: string
@@ -188,6 +191,9 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          bible_book?: string | null
+          bible_chapter?: number | null
+          bible_verse?: number | null
           book_id: string
           created_at?: string | null
           id?: string
@@ -196,6 +202,9 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          bible_book?: string | null
+          bible_chapter?: number | null
+          bible_verse?: number | null
           book_id?: string
           created_at?: string | null
           id?: string

@@ -132,6 +132,9 @@ export function useLibrary() {
           livroId: q.book_id,
           livro: (q.books as any)?.name || '',
           pagina: q.page || 0,
+          bibleBook: (q as any).bible_book || undefined,
+          bibleChapter: (q as any).bible_chapter || undefined,
+          bibleVerse: (q as any).bible_verse || undefined,
         })));
       }
 
@@ -377,8 +380,11 @@ export function useLibrary() {
         book_id: quote.livroId,
         quote: quote.citacao,
         page: quote.pagina,
+        bible_book: quote.bibleBook || null,
+        bible_chapter: quote.bibleChapter || null,
+        bible_verse: quote.bibleVerse || null,
         user_id: user.id,
-      })
+      } as any)
       .select()
       .single();
 
