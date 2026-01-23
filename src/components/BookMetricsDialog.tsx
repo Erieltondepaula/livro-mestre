@@ -58,8 +58,10 @@ export function BookMetricsDialog({
 
   const quotesForSelectedBibleBook = useMemo(() => {
     if (!selectedBibleBookForQuotes) return [];
+    // For non-Bible books, return all quotes
+    if (selectedBibleBookForQuotes === book?.livro) return bookQuotes;
     return quotesByBibleBook[selectedBibleBookForQuotes] || [];
-  }, [quotesByBibleBook, selectedBibleBookForQuotes]);
+  }, [quotesByBibleBook, selectedBibleBookForQuotes, book, bookQuotes]);
 
   if (!book || !status) return null;
 
@@ -387,18 +389,42 @@ export function BookMetricsDialog({
                 <Quote className="w-4 h-4" />
                 Citações ({bookQuotes.length})
               </h3>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(quotesByBibleBook).map(([bibleBook, quotesGroup]) => (
-                  <button
-                    key={bibleBook}
-                    onClick={() => handleBibleBookQuotesClick(bibleBook)}
-                    className="px-3 py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-primary/10 hover:border-primary/30 transition-colors cursor-pointer text-left"
-                  >
-                    <p className="text-sm font-medium">{bibleBook}</p>
-                    <p className="text-[10px] text-muted-foreground">{quotesGroup.length} citação(ões)</p>
-                  </button>
-                ))}
-              </div>
+              {/* For Bible books, show grouped by Bible book name */}
+              {isBibleCategory ? (
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(quotesByBibleBook).map(([bibleBook, quotesGroup]) => (
+                    <button
+                      key={bibleBook}
+                      onClick={() => handleBibleBookQuotesClick(bibleBook)}
+                      className="px-3 py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-primary/10 hover:border-primary/30 transition-colors cursor-pointer text-left"
+                    >
+                      <p className="text-sm font-medium">{bibleBook}</p>
+                      <p className="text-[10px] text-muted-foreground">{quotesGroup.length} citação(ões)</p>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                /* For non-Bible books, show quotes inline with page numbers */
+                <div className="space-y-3 max-h-40 overflow-y-auto">
+                  {bookQuotes.slice(0, 5).map((quote) => (
+                    <div key={quote.id} className="border-l-2 border-primary pl-3">
+                      <p className="text-sm italic">"{quote.citacao}"</p>
+                      <p className="text-xs text-muted-foreground mt-1">Página {quote.pagina}</p>
+                    </div>
+                  ))}
+                  {bookQuotes.length > 5 && (
+                    <button
+                      onClick={() => {
+                        setSelectedBibleBookForQuotes(book?.livro || 'Citações');
+                        setIsQuotesDialogOpen(true);
+                      }}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      Ver todas as {bookQuotes.length} citações
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
