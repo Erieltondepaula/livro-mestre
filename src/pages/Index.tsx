@@ -9,11 +9,12 @@ import { QuotesView } from '@/components/QuotesView';
 import { BooksListView } from '@/components/BooksListView';
 import { DictionaryView } from '@/components/DictionaryView';
 import { BibleProgressView } from '@/components/BibleProgressView';
+import { HelpView } from '@/components/HelpView';
 import { useLibrary } from '@/hooks/useLibrary';
 import { toast } from '@/hooks/use-toast';
 import type { Book } from '@/types/library';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'ajuda';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -141,6 +142,8 @@ const Index = () => {
         return <BibleProgressView readings={readings} />;
       case 'dicionario':
         return <DictionaryView />;
+      case 'ajuda':
+        return <HelpView />;
       default:
         return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} />;
     }

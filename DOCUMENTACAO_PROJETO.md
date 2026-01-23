@@ -1191,10 +1191,42 @@ npx cap open android # Abrir no Android Studio
 | 1.1 | 23 Jan 2026 | Correções de segurança: view `profiles_public` para proteger emails, políticas RLS atualizadas, módulo "Progresso Bíblia" adicionado às permissões |
 | 1.2 | 23 Jan 2026 | Funcionalidade de exclusão de usuários (apenas Mestre) |
 | 1.3 | 23 Jan 2026 | Políticas RLS para exclusão de usuários pelo Mestre, exclusão completa de dados do usuário |
+| 1.4 | 23 Jan 2026 | Módulo de Ajuda (Central de Ajuda) com documentação interativa de todos os módulos |
+| 1.3 | 23 Jan 2026 | Políticas RLS para exclusão de usuários pelo Mestre, exclusão completa de dados do usuário |
 
 ---
 
 ## 🔒 Notas de Segurança e Funcionalidades
+
+### Versão 1.4 - Central de Ajuda (23/01/2026):
+
+**Nova Funcionalidade: Módulo de Ajuda**
+- Adicionado módulo "Ajuda" na sidebar, acessível a todos os usuários
+- Documentação interativa com:
+  - Descrição de cada módulo (o que é e para que serve)
+  - Passo a passo detalhado para utilização
+  - Dicas práticas para cada etapa
+  - Solução de problemas comuns
+  - Módulos relacionados para navegação rápida
+
+**Localização no código:**
+- `src/components/HelpView.tsx` - Componente principal da Central de Ajuda
+- `src/components/Sidebar.tsx` - Item de navegação adicionado
+- `src/pages/Index.tsx` - Rota para o módulo de ajuda
+- `src/contexts/AuthContext.tsx` - Módulo sempre acessível (não requer permissão)
+
+**Módulos documentados:**
+1. Dashboard
+2. Cadastrar Livro
+3. Livros Cadastrados
+4. Registrar Leitura
+5. Status dos Livros
+6. Avaliações
+7. Citações
+8. Progresso Bíblia
+9. Dicionário
+
+---
 
 ### Versão 1.3 - Exclusão Completa de Usuários (23/01/2026):
 
