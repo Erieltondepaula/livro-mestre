@@ -54,8 +54,7 @@ const SUBSCRIPTION_TIERS = {
     features: [
       'Todos os recursos do plano mensal',
       'Economia de 2 meses',
-      'Acesso prioritário a novidades',
-      'Suporte prioritário',
+      'Melhor custo-benefício',
     ],
   },
 };
