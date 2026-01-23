@@ -39,12 +39,36 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionStatus>(defaultSubscription);
   const [isLoading, setIsLoading] = useState(true);
 
+  // --- CONFIGURAÇÃO DO USUÁRIO MESTRE ---
+  const MASTER_EMAIL = "erieltondepaulamelo@gmail.com";
+
   const checkSubscription = useCallback(async () => {
     if (!session) {
       setSubscription(defaultSubscription);
       setIsLoading(false);
       return;
     }
+
+    // --- REGRA DE OURO (GOLDEN RULE - MASTER USER) ---
+    // Verifica se é o dono e libera tudo preenchendo os dados corretamente
+    if (user?.email === MASTER_EMAIL) {
+      console.log("👑 Acesso Mestre Vitalício concedido para:", MASTER_EMAIL);
+      
+      setSubscription({
+        subscribed: true,
+        productId: 'master_plan_unlimited', // ID fictício para validar acesso
+        priceId: 'price_master',
+        subscriptionEnd: '2099-12-31T23:59:59.999Z', // Data futura para nunca expirar
+        subscriptionStart: new Date().toISOString(),
+        cancelAtPeriodEnd: false,
+        daysUntilExpiry: 36500, // ~100 anos
+        isWithinRefundPeriod: false,
+      });
+      
+      setIsLoading(false);
+      return; // Sai da função aqui, ignorando o Supabase
+    }
+    // --------------------------------------------------
 
     try {
       setIsLoading(true);
@@ -88,7 +112,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [session]);
+  }, [session, user]); // Adicionei 'user' nas dependências para garantir a checagem do email
 
   useEffect(() => {
     checkSubscription();
