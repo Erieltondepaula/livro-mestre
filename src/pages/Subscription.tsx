@@ -446,7 +446,7 @@ export default function Subscription() {
                         </Button>
                       ) : (
                         <Button 
-                          className={`w-full ${isPopular ? 'bg-primary' : ''}`}
+                          className="w-full bg-primary"
                           onClick={() => handleCheckout(tier.priceId)}
                           disabled={isCheckingOut !== null}
                         >
