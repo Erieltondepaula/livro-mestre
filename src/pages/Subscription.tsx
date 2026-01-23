@@ -1,12 +1,27 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Check, Crown, Sparkles, Loader2, CreditCard, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Sparkles, Loader2, CreditCard, RefreshCw, AlertTriangle, RotateCcw, Shield } from 'lucide-react';
 
 // Stripe products/prices
 const SUBSCRIPTION_TIERS = {
@@ -45,44 +60,14 @@ const SUBSCRIPTION_TIERS = {
   },
 };
 
-interface SubscriptionStatus {
-  subscribed: boolean;
-  product_id: string | null;
-  price_id: string | null;
-  subscription_end: string | null;
-}
-
 export default function Subscription() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { session } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const { subscription, isLoading: isSubscriptionLoading, checkSubscription } = useSubscription();
   const [isCheckingOut, setIsCheckingOut] = useState<string | null>(null);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
-
-  const checkSubscription = async () => {
-    if (!session) return;
-    
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      
-      if (error) throw error;
-      setSubscriptionStatus(data);
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (session) {
-      checkSubscription();
-    } else {
-      setIsLoading(false);
-    }
-  }, [session]);
+  const [isTogglingAutoRenew, setIsTogglingAutoRenew] = useState(false);
+  const [isRequestingRefund, setIsRequestingRefund] = useState(false);
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
@@ -136,7 +121,6 @@ export default function Subscription() {
 
   const handleManageSubscription = async () => {
     try {
-      setIsLoading(true);
       const { data, error } = await supabase.functions.invoke('customer-portal');
 
       if (error) throw error;
@@ -151,24 +135,77 @@ export default function Subscription() {
         description: 'Tente novamente mais tarde.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleToggleAutoRenew = async () => {
+    try {
+      setIsTogglingAutoRenew(true);
+      const newCancelAtPeriodEnd = !subscription.cancelAtPeriodEnd;
+      
+      const { data, error } = await supabase.functions.invoke('toggle-auto-renew', {
+        body: { cancelAtPeriodEnd: newCancelAtPeriodEnd },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: data.cancel_at_period_end ? 'Renovação desativada' : 'Renovação ativada',
+        description: data.message,
+      });
+
+      await checkSubscription();
+    } catch (error) {
+      console.error('Toggle auto-renew error:', error);
+      toast({
+        title: 'Erro ao alterar configuração',
+        description: 'Tente novamente mais tarde.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false);
+      setIsTogglingAutoRenew(false);
+    }
+  };
+
+  const handleRequestRefund = async () => {
+    try {
+      setIsRequestingRefund(true);
+      
+      const { data, error } = await supabase.functions.invoke('request-refund');
+
+      if (error) throw error;
+
+      toast({
+        title: 'Reembolso processado!',
+        description: `Valor de R$ ${data.refund_amount.toFixed(2)} será devolvido em até 10 dias úteis.`,
+      });
+
+      await checkSubscription();
+    } catch (error: any) {
+      console.error('Refund error:', error);
+      toast({
+        title: 'Erro ao solicitar reembolso',
+        description: error?.message || 'Tente novamente mais tarde.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRequestingRefund(false);
     }
   };
 
   const getCurrentTier = () => {
-    if (!subscriptionStatus?.product_id) return null;
+    if (!subscription?.productId) return null;
     
-    if (subscriptionStatus.product_id === SUBSCRIPTION_TIERS.monthly.productId) {
+    if (subscription.productId === SUBSCRIPTION_TIERS.monthly.productId) {
       return 'monthly';
-    } else if (subscriptionStatus.product_id === SUBSCRIPTION_TIERS.yearly.productId) {
+    } else if (subscription.productId === SUBSCRIPTION_TIERS.yearly.productId) {
       return 'yearly';
     }
     return null;
   };
 
   const currentTier = getCurrentTier();
-  const isSubscribed = subscriptionStatus?.subscribed;
+  const isSubscribed = subscription?.subscribed;
 
   return (
     <div className="min-h-screen bg-background">
@@ -187,8 +224,8 @@ export default function Subscription() {
                 Premium
               </Badge>
             )}
-            <Button variant="outline" size="sm" onClick={checkSubscription} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <Button variant="outline" size="sm" onClick={checkSubscription} disabled={isSubscriptionLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isSubscriptionLoading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
           </div>
@@ -211,19 +248,137 @@ export default function Subscription() {
             }
           </p>
           
-          {isSubscribed && subscriptionStatus?.subscription_end && (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Próxima renovação: {new Date(subscriptionStatus.subscription_end).toLocaleDateString('pt-BR')}
-            </p>
+          {isSubscribed && subscription?.subscriptionEnd && (
+            <div className="mt-4 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {subscription.cancelAtPeriodEnd 
+                  ? `Acesso até: ${new Date(subscription.subscriptionEnd).toLocaleDateString('pt-BR')}`
+                  : `Próxima renovação: ${new Date(subscription.subscriptionEnd).toLocaleDateString('pt-BR')}`
+                }
+              </p>
+              {subscription.cancelAtPeriodEnd && (
+                <Badge variant="outline" className="text-amber-600 border-amber-600">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Renovação automática desativada
+                </Badge>
+              )}
+            </div>
           )}
         </div>
 
-        {isLoading ? (
+        {isSubscriptionLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <>
+            {/* Subscription Management Card - Only show if subscribed */}
+            {isSubscribed && (
+              <Card className="max-w-2xl mx-auto mb-12">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Gerenciar Assinatura
+                  </CardTitle>
+                  <CardDescription>
+                    Configure as opções da sua assinatura
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Auto-renew toggle */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="auto-renew" className="text-base">Renovação Automática</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {subscription.cancelAtPeriodEnd 
+                          ? 'Sua assinatura não será renovada automaticamente'
+                          : 'Sua assinatura será renovada automaticamente'
+                        }
+                      </p>
+                    </div>
+                    <Switch
+                      id="auto-renew"
+                      checked={!subscription.cancelAtPeriodEnd}
+                      onCheckedChange={handleToggleAutoRenew}
+                      disabled={isTogglingAutoRenew}
+                    />
+                  </div>
+
+                  <Separator />
+
+                  {/* Refund option - Only within 7 days */}
+                  {subscription.isWithinRefundPeriod && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label className="text-base flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-green-600" />
+                            Garantia de 7 dias
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            Você ainda pode solicitar reembolso total (CDC Art. 49)
+                          </p>
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground">
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Solicitar Reembolso
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar Solicitação de Reembolso</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja cancelar sua assinatura e solicitar reembolso total?
+                                <br /><br />
+                                • O valor pago será devolvido em até 10 dias úteis
+                                <br />
+                                • Seu acesso será encerrado imediatamente
+                                <br />
+                                • Você poderá assinar novamente a qualquer momento
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={handleRequestRefund}
+                                disabled={isRequestingRefund}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {isRequestingRefund ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Processando...
+                                  </>
+                                ) : (
+                                  'Confirmar Reembolso'
+                                )}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+
+                  {/* Manage in Stripe Portal */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Dados de Pagamento</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Altere cartão, veja faturas ou cancele
+                      </p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleManageSubscription}>
+                      Abrir Portal
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Pricing Cards */}
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => {
@@ -312,22 +467,32 @@ export default function Subscription() {
               })}
             </div>
 
-            {/* FAQ or Additional Info */}
+            {/* Guarantee Badge */}
+            {!isSubscribed && (
+              <div className="text-center mt-8">
+                <Badge variant="outline" className="text-green-600 border-green-600 py-2 px-4">
+                  <Shield className="h-4 w-4 mr-2" />
+                  Garantia de 7 dias - Reembolso total se não gostar
+                </Badge>
+              </div>
+            )}
+
+            {/* FAQ */}
             <div className="mt-16 text-center">
               <h2 className="text-2xl font-semibold mb-4">Perguntas Frequentes</h2>
               <div className="max-w-2xl mx-auto space-y-4 text-left">
                 <details className="border rounded-lg p-4">
-                  <summary className="font-medium cursor-pointer">Como funciona a assinatura?</summary>
+                  <summary className="font-medium cursor-pointer">Como funciona a garantia de 7 dias?</summary>
                   <p className="mt-2 text-muted-foreground text-sm">
-                    Após assinar, você terá acesso imediato a todos os recursos premium. 
-                    A cobrança é automática e você pode cancelar a qualquer momento.
+                    Conforme o Código de Defesa do Consumidor (Art. 49), você tem até 7 dias após a compra 
+                    para solicitar cancelamento e reembolso total, sem necessidade de justificativa.
                   </p>
                 </details>
                 <details className="border rounded-lg p-4">
-                  <summary className="font-medium cursor-pointer">Posso cancelar quando quiser?</summary>
+                  <summary className="font-medium cursor-pointer">Como desativo a renovação automática?</summary>
                   <p className="mt-2 text-muted-foreground text-sm">
-                    Sim! Você pode cancelar sua assinatura a qualquer momento através do botão 
-                    "Gerenciar Assinatura". O acesso continua até o fim do período pago.
+                    Na seção "Gerenciar Assinatura" acima, você pode desativar a renovação automática. 
+                    Seu acesso continua até o fim do período pago, mas não será cobrado novamente.
                   </p>
                 </details>
                 <details className="border rounded-lg p-4">
@@ -335,6 +500,13 @@ export default function Subscription() {
                   <p className="mt-2 text-muted-foreground text-sm">
                     Aceitamos cartões de crédito (Visa, Mastercard, American Express) e 
                     alguns cartões de débito através do Stripe.
+                  </p>
+                </details>
+                <details className="border rounded-lg p-4">
+                  <summary className="font-medium cursor-pointer">O que acontece se eu não renovar?</summary>
+                  <p className="mt-2 text-muted-foreground text-sm">
+                    Ao fim do período pago, seu acesso aos módulos será bloqueado até que você 
+                    realize um novo pagamento. Seus dados permanecerão salvos.
                   </p>
                 </details>
               </div>

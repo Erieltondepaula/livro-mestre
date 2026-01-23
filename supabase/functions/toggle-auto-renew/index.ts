@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
+  console.log(`[TOGGLE-AUTO-RENEW] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
@@ -28,77 +28,64 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
-    logStep("Authenticating user with token");
-    
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    const { cancelAtPeriodEnd } = await req.json();
+    logStep("Request body", { cancelAtPeriodEnd });
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+    // Find customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
     if (customers.data.length === 0) {
-      logStep("No customer found, returning unsubscribed state");
-      return new Response(JSON.stringify({ subscribed: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      throw new Error("Nenhuma assinatura encontrada");
     }
 
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
-
+    // Get active subscription
     const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
+      customer: customers.data[0].id,
       status: "active",
       limit: 1,
     });
-    const hasActiveSub = subscriptions.data.length > 0;
-    let productId = null;
-    let subscriptionEnd = null;
-    let subscriptionStart = null;
-    let priceId = null;
-    let cancelAtPeriodEnd = false;
-    let subscriptionId = null;
 
-    if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
-      subscriptionId = subscription.id;
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      subscriptionStart = new Date(subscription.current_period_start * 1000).toISOString();
-      cancelAtPeriodEnd = subscription.cancel_at_period_end;
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
-      productId = subscription.items.data[0].price.product as string;
-      priceId = subscription.items.data[0].price.id;
-      logStep("Determined subscription details", { productId, priceId, cancelAtPeriodEnd });
-    } else {
-      logStep("No active subscription found");
+    if (subscriptions.data.length === 0) {
+      throw new Error("Nenhuma assinatura ativa encontrada");
     }
 
-    return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
-      product_id: productId,
-      price_id: priceId,
-      subscription_id: subscriptionId,
-      subscription_end: subscriptionEnd,
-      subscription_start: subscriptionStart,
+    const subscription = subscriptions.data[0];
+
+    // Update subscription to cancel or not cancel at period end
+    const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
       cancel_at_period_end: cancelAtPeriodEnd,
+    });
+
+    logStep("Subscription updated", { 
+      subscriptionId: updatedSubscription.id, 
+      cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end 
+    });
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      cancel_at_period_end: updatedSubscription.cancel_at_period_end,
+      message: cancelAtPeriodEnd 
+        ? "Renovação automática desativada. Sua assinatura terminará no fim do período atual."
+        : "Renovação automática ativada. Sua assinatura será renovada automaticamente.",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in check-subscription", { message: errorMessage });
+    logStep("ERROR in toggle-auto-renew", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
