@@ -235,7 +235,8 @@ export function BookMetricsDialog({
         groups[dateKey].paginaInicial = Math.min(groups[dateKey].paginaInicial, reading.paginaInicial);
         groups[dateKey].paginaFinal = Math.max(groups[dateKey].paginaFinal, reading.paginaFinal);
         groups[dateKey].quantidadePaginas += reading.quantidadePaginas;
-        groups[dateKey].tempoGasto += reading.tempoGasto;
+        // For time, use the maximum (only one reading per day should have time set)
+        groups[dateKey].tempoGasto = Math.max(groups[dateKey].tempoGasto, reading.tempoGasto);
       }
 
       groups[dateKey].readings.push(reading);
