@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { VocabularyDialog } from '@/components/VocabularyDialog';
 import { ReadingHistoryDialog } from '@/components/ReadingHistoryDialog';
+import { QuotesListDialog } from '@/components/QuotesListDialog';
 import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare, Book, Pencil } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -35,12 +36,37 @@ export function BookMetricsDialog({
   const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
   const [editingReading, setEditingReading] = useState<DailyReading | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedBibleBookForQuotes, setSelectedBibleBookForQuotes] = useState<string | null>(null);
+  const [isQuotesDialogOpen, setIsQuotesDialogOpen] = useState(false);
+
+  const bookReadings = book ? readings.filter(r => r.livroId === book.id) : [];
+  const bookQuotes = book ? quotes.filter(q => q.livroId === book.id) : [];
+  const bookVocabulary = book ? vocabulary.filter(v => v.bookId === book.id) : [];
+
+  // Group quotes by Bible book for the button display
+  const quotesByBibleBook = useMemo(() => {
+    const groups: Record<string, QuoteType[]> = {};
+    for (const quote of bookQuotes) {
+      const key = quote.bibleBook || 'Outras';
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(quote);
+    }
+    return groups;
+  }, [bookQuotes]);
+
+  const quotesForSelectedBibleBook = useMemo(() => {
+    if (!selectedBibleBookForQuotes) return [];
+    return quotesByBibleBook[selectedBibleBookForQuotes] || [];
+  }, [quotesByBibleBook, selectedBibleBookForQuotes]);
 
   if (!book || !status) return null;
 
-  const bookReadings = readings.filter(r => r.livroId === book.id);
-  const bookQuotes = quotes.filter(q => q.livroId === book.id);
-  const bookVocabulary = vocabulary.filter(v => v.bookId === book.id);
+  const handleBibleBookQuotesClick = (bibleBook: string) => {
+    setSelectedBibleBookForQuotes(bibleBook);
+    setIsQuotesDialogOpen(true);
+  };
 
   const handleWordClick = (word: VocabularyWord) => {
     setSelectedWord(word);
@@ -361,17 +387,16 @@ export function BookMetricsDialog({
                 <Quote className="w-4 h-4" />
                 Citações ({bookQuotes.length})
               </h3>
-              <div className="space-y-3 max-h-40 overflow-y-auto">
-                {bookQuotes.slice(0, 5).map((quote) => (
-                  <div key={quote.id} className="border-l-2 border-primary pl-3">
-                    <p className="text-sm italic">"{quote.citacao}"</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {quote.bibleBook && quote.bibleChapter 
-                        ? `${quote.bibleBook} ${quote.bibleChapter}${quote.bibleVerse ? `:${quote.bibleVerse}` : ''}`
-                        : `Página ${quote.pagina}`
-                      }
-                    </p>
-                  </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(quotesByBibleBook).map(([bibleBook, quotesGroup]) => (
+                  <button
+                    key={bibleBook}
+                    onClick={() => handleBibleBookQuotesClick(bibleBook)}
+                    className="px-3 py-1.5 bg-muted/50 rounded-lg border border-border hover:bg-primary/10 hover:border-primary/30 transition-colors cursor-pointer text-left"
+                  >
+                    <p className="text-sm font-medium">{bibleBook}</p>
+                    <p className="text-[10px] text-muted-foreground">{quotesGroup.length} citação(ões)</p>
+                  </button>
                 ))}
               </div>
             </div>
@@ -482,6 +507,16 @@ export function BookMetricsDialog({
             setEditingReading(null);
           }}
           onSave={handleSaveReading}
+        />
+
+        <QuotesListDialog
+          isOpen={isQuotesDialogOpen}
+          onClose={() => {
+            setIsQuotesDialogOpen(false);
+            setSelectedBibleBookForQuotes(null);
+          }}
+          title={selectedBibleBookForQuotes || ''}
+          quotes={quotesForSelectedBibleBook}
         />
       </DialogContent>
     </Dialog>
