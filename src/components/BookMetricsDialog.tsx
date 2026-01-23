@@ -150,6 +150,20 @@ export function BookMetricsDialog({
   const totalTimeSeconds = calculateTotalTimeSeconds();
   
   const calculateReadingDays = () => {
+    const isBible = book?.categoria?.toLowerCase() === 'bíblia' || 
+                    book?.categoria?.toLowerCase() === 'biblia';
+    
+    if (isBible) {
+      // Count unique days for Bible readings
+      const uniqueDays = new Set<string>();
+      for (const reading of bookReadings) {
+        const dateKey = `${reading.dia}/${reading.mes}`;
+        uniqueDays.add(dateKey);
+      }
+      return uniqueDays.size;
+    }
+    
+    // For non-Bible books, count each reading session
     let totalDays = 0;
     for (const reading of bookReadings) {
       if (reading.dataInicio && reading.dataFim) {
