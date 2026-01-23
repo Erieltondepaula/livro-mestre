@@ -100,9 +100,9 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
           </p>
         </div>
       ) : (
-        /* SETOR 8: Grid de Cartões */
-        /* Define o layout responsivo: 1 coluna no celular, até 4 colunas em telas grandes. */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        /* SETOR 8: Grid de Cartões - Estilo Kindle */
+        /* Grid padronizado com tamanhos fixos para consistência visual */
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
           {books.map((book) => {
             const status = getBookStatus(book.id);
             const timeEstimate = getReadingTimeEstimate(book, status);
@@ -110,10 +110,10 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
             return (
               <div
                 key={book.id}
-                className="card-library overflow-hidden hover:shadow-lg transition-shadow"
+                className="card-library overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 flex flex-col"
               >
-                {/* Capa do Livro (Imagem) */}
-                <div className="aspect-[3/4] bg-muted flex items-center justify-center overflow-hidden">
+                {/* Capa do Livro - Tamanho fixo estilo Kindle */}
+                <div className="w-full h-48 md:h-56 lg:h-64 bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                   {book.coverUrl ? (
                     <img
                       src={book.coverUrl}
@@ -121,65 +121,68 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="text-muted-foreground text-sm text-center p-4">Sem capa</div>
+                    <div className="text-muted-foreground text-xs text-center p-2 flex flex-col items-center justify-center h-full bg-gradient-to-b from-muted to-muted/80">
+                      <BookOpen className="w-8 h-8 mb-2 opacity-50" />
+                      <span>Sem capa</span>
+                    </div>
                   )}
                 </div>
 
-                {/* Informações do Livro (Texto) */}
-                <div className="p-4 space-y-2">
-                  <h3 className="font-display font-semibold text-foreground leading-tight line-clamp-2">
+                {/* Informações do Livro - Layout compacto estilo Kindle */}
+                <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+                  <h3 className="font-display font-semibold text-foreground text-sm leading-tight line-clamp-2" title={book.livro}>
                     {book.livro}
                   </h3>
                   
                   {book.autor && (
-                    <p className="text-sm text-muted-foreground">{book.autor}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1" title={book.autor}>{book.autor}</p>
                   )}
                   
-                  {/* Detalhes Técnicos (Ano, Tipo, Categoria) */}
-                  <div className="text-xs text-muted-foreground space-y-1">
+                  {/* Detalhes Técnicos - Compacto */}
+                  <div className="text-xs text-muted-foreground space-y-0.5 flex-1">
                     {book.ano && <p>Ano: {book.ano}</p>}
-                    <p>Tipo: {book.tipo}</p>
-                    {book.categoria && <p>Categoria: {book.categoria}</p>}
+                    <p className="line-clamp-1">Tipo: {book.tipo}</p>
+                    {book.categoria && <p className="line-clamp-1">Categoria: {book.categoria}</p>}
                   </div>
 
-                  {/* Exibição do Status Dinâmico */}
+                  {/* Exibição do Status Dinâmico - Compacto */}
                   {(() => {
                     const statusInfo = getStatusInfo(book, status);
                     if (status?.status === 'Concluido') {
-                      return <p className={`text-sm font-medium ${statusInfo.colorClass}`}>{statusInfo.text}</p>;
+                      return <p className={`text-xs font-medium ${statusInfo.colorClass} line-clamp-1`}>{statusInfo.text}</p>;
                     }
                     if (timeEstimate) {
                       return (
-                        <p className={`text-sm font-medium ${statusInfo.colorClass}`}>
+                        <p className={`text-xs font-medium ${statusInfo.colorClass} line-clamp-1`}>
                           Tempo para finalizar: {timeEstimate}
                         </p>
                       );
                     }
                     if (status?.status === 'Não iniciado' || !status) {
-                      return <p className={`text-sm font-medium ${statusInfo.colorClass}`}>{statusInfo.text}</p>;
+                      return <p className={`text-xs font-medium ${statusInfo.colorClass}`}>{statusInfo.text}</p>;
                     }
                     return null;
                   })()}
 
-                  {/* SETOR 9: Botões de Ação (Editar e Deletar) */}
-                  <div className="flex justify-center gap-2 pt-2">
+                  {/* SETOR 9: Botões de Ação - Compacto */}
+                  <div className="flex justify-center gap-1.5 pt-1.5 mt-auto">
                     <button
-                      onClick={() => setEditingBook(book)} // Abre o modal de edição
-                      className="p-2 rounded-lg border border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors"
+                      onClick={() => setEditingBook(book)}
+                      className="p-1.5 rounded-md border border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors"
                       title="Editar livro"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => {
                         if (confirm(`Tem certeza que deseja remover "${book.livro}"?`)) {
-                          onDeleteBook(book.id); // Chama função de deletar
+                          onDeleteBook(book.id);
                         }
                       }}
-                      className="p-2 rounded-lg border border-border bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      className="p-1.5 rounded-md border border-border bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                       title="Remover livro"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

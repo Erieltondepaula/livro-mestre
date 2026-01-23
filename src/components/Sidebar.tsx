@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia';
 
 interface SidebarProps {
   currentView: View;
@@ -28,6 +28,7 @@ const navItems = [
   { id: 'status' as View, label: 'Status dos Livros', icon: BookMarked },
   { id: 'avaliacao' as View, label: 'Avaliações', icon: Star },
   { id: 'citacoes' as View, label: 'Citações', icon: Quote },
+  { id: 'biblia' as View, label: 'Progresso Bíblia', icon: Book },
   { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
 ];
 

@@ -8,11 +8,12 @@ import { EvaluationForm } from '@/components/EvaluationForm';
 import { QuotesView } from '@/components/QuotesView';
 import { BooksListView } from '@/components/BooksListView';
 import { DictionaryView } from '@/components/DictionaryView';
+import { BibleProgressView } from '@/components/BibleProgressView';
 import { useLibrary } from '@/hooks/useLibrary';
 import { toast } from '@/hooks/use-toast';
 import type { Book } from '@/types/library';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -127,6 +128,8 @@ const Index = () => {
         return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
       case 'citacoes':
         return <QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} />;
+      case 'biblia':
+        return <BibleProgressView readings={readings} />;
       case 'dicionario':
         return <DictionaryView />;
       default:
