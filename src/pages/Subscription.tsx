@@ -387,7 +387,7 @@ export default function Subscription() {
                 return (
                   <Card 
                     key={key} 
-                    className={`relative ${isPopular ? 'border-primary shadow-lg scale-105' : ''} ${isCurrentPlan ? 'ring-2 ring-amber-500' : ''}`}
+                    className={`relative flex flex-col ${isPopular ? 'border-primary shadow-lg scale-105' : ''} ${isCurrentPlan ? 'ring-2 ring-amber-500' : ''}`}
                   >
                     {isPopular && !isCurrentPlan && (
                       <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
@@ -426,7 +426,7 @@ export default function Subscription() {
                       </ul>
                     </CardContent>
                     
-                    <CardFooter>
+                    <CardFooter className="mt-auto">
                       {isCurrentPlan ? (
                         <Button 
                           className="w-full" 
