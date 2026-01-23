@@ -103,8 +103,8 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
         </div>
       ) : (
         /* SETOR 8: Grid de Cartões - Estilo Kindle */
-        /* Grid com cards mais largos para evitar quebras de linha */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 md:gap-6">
+        /* Grid responsivo com espaçamento consistente em qualquer nível de zoom */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 lg:gap-8">
           {books.map((book) => {
             const status = getBookStatus(book.id);
             const timeEstimate = getReadingTimeEstimate(book, status);
@@ -112,7 +112,8 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
             return (
               <div
                 key={book.id}
-                className="card-library overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 flex flex-col min-w-[200px]"
+                className="card-library overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 flex flex-col"
+                style={{ minWidth: 'clamp(200px, 100%, 280px)' }}
               >
                 {/* Capa do Livro - Tamanho fixo estilo Kindle */}
                 <div className="w-full h-52 md:h-60 lg:h-72 bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
