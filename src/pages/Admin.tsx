@@ -422,6 +422,23 @@ export default function Admin() {
                                       <Shield className="w-4 h-4" />
                                     </Button>
                                   )}
+
+                                  {/* Botão de excluir - APENAS para usuário Mestre */}
+                                  {isMaster && !user.is_master && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      onClick={() => setActionDialog({ 
+                                        open: true, 
+                                        action: 'delete', 
+                                        user 
+                                      })}
+                                      title="Excluir Usuário"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  )}
                                 </>
                               )}
                             </div>

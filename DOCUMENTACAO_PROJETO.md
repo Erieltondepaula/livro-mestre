@@ -1189,12 +1189,24 @@ npx cap open android # Abrir no Android Studio
 |--------|------|------------|
 | 1.0 | Jan 2026 | Documentação inicial completa |
 | 1.1 | 23 Jan 2026 | Correções de segurança: view `profiles_public` para proteger emails, políticas RLS atualizadas, módulo "Progresso Bíblia" adicionado às permissões |
+| 1.2 | 23 Jan 2026 | Funcionalidade de exclusão de usuários (apenas Mestre) |
 
 ---
 
-## 🔒 Notas de Segurança (v1.1)
+## 🔒 Notas de Segurança e Funcionalidades
 
-### Correções Aplicadas em 23/01/2026:
+### Versão 1.2 - Exclusão de Usuários (23/01/2026):
+
+**Nova Funcionalidade: Remoção de Usuários**
+- Apenas o **usuário Mestre** pode excluir outros usuários
+- Usuários Mestre não podem ser excluídos (proteção)
+- A exclusão remove: perfil, roles, permissões e todos os dados associados (via CASCADE)
+
+**Localização no código:** `src/pages/Admin.tsx`
+- Botão de lixeira vermelho visível apenas para o Mestre
+- Confirmação obrigatória antes de excluir
+
+### Versão 1.1 - Correções de Segurança (23/01/2026):
 
 1. **Proteção de Emails**: Criada view `profiles_public` que exclui o campo email para evitar exposição de dados sensíveis.
 
@@ -1205,6 +1217,23 @@ npx cap open android # Abrir no Android Studio
 3. **Comentários de Segurança**: Adicionados comentários nas tabelas `book_categories` e `book_types` indicando que devem conter apenas dados não-sensíveis.
 
 4. **Módulo de Permissões**: Adicionado módulo "Progresso Bíblia" (`biblia`) no sistema de permissões de usuários.
+
+---
+
+## 👤 Hierarquia de Permissões
+
+| Ação | Usuário | Admin | Mestre |
+|------|---------|-------|--------|
+| Ver próprios dados | ✅ | ✅ | ✅ |
+| Gerenciar próprio perfil | ✅ | ✅ | ✅ |
+| Ver lista de usuários | ❌ | ✅ | ✅ |
+| Ativar/Desativar usuários | ❌ | ✅ | ✅ |
+| Promover/Remover Admin | ❌ | ✅ | ✅ |
+| Gerenciar permissões de módulos | ❌ | ✅ | ✅ |
+| Editar usuários Admin | ❌ | ❌ | ✅ |
+| **Excluir usuários** | ❌ | ❌ | ✅ |
+| Ser editado por outros | ✅ | ✅ | ❌ |
+| Ser excluído | ✅ | ✅ | ❌ |
 
 ---
 
