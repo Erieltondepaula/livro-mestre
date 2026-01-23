@@ -20,6 +20,9 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
   const [bibleChapter, setBibleChapter] = useState('');
   const [bibleVerse, setBibleVerse] = useState('');
 
+  // Filter state for saved quotes
+  const [filterBookId, setFilterBookId] = useState('');
+
   const selectedBook = books.find(b => b.id === livroId);
   const isBibleCategory = selectedBook?.categoria?.toLowerCase() === 'bíblia' || 
                           selectedBook?.categoria?.toLowerCase() === 'biblia';
@@ -30,6 +33,24 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
   const bibleVerses = useMemo(() => 
     bibleBook && bibleChapter ? getVersesArray(bibleBook, parseInt(bibleChapter)) : [], 
     [bibleBook, bibleChapter]);
+
+  // Get unique books that have quotes
+  const booksWithQuotes = useMemo(() => {
+    const bookIds = [...new Set(quotes.map(q => q.livroId))];
+    return books.filter(b => bookIds.includes(b.id));
+  }, [books, quotes]);
+
+  // Filter and limit quotes for display
+  const displayedQuotes = useMemo(() => {
+    let filtered = [...quotes];
+    
+    if (filterBookId) {
+      filtered = filtered.filter(q => q.livroId === filterBookId);
+    }
+    
+    // Sort by creation date descending (newest first) and take only 4
+    return filtered.slice(0, 4);
+  }, [quotes, filterBookId]);
 
   const handleBookChange = (bookId: string) => {
     setLivroId(bookId);
@@ -226,7 +247,24 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
         <div className="space-y-4">
           <h3 className="font-display text-xl font-semibold text-foreground">Citações Guardadas</h3>
           
-          {quotes.map((quote) => {
+          {/* Filter by book dropdown */}
+          <div>
+            <select
+              value={filterBookId}
+              onChange={(e) => setFilterBookId(e.target.value)}
+              className="input-library"
+            >
+              <option value="">Todos os livros</option>
+              {booksWithQuotes.map((book) => (
+                <option key={book.id} value={book.id}>
+                  {book.livro}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Display only the 4 most recent quotes */}
+          {displayedQuotes.map((quote) => {
             const bibleRef = formatBibleReference(quote);
             
             return (
@@ -258,13 +296,20 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
             );
           })}
           
-          {quotes.length === 0 && (
+          {displayedQuotes.length === 0 && (
             <div className="card-library p-8 text-center">
               <QuoteIcon className="w-12 h-12 text-muted mx-auto mb-4" />
               <p className="text-muted-foreground">
-                Nenhuma citação guardada ainda.
+                {filterBookId ? 'Nenhuma citação para este livro.' : 'Nenhuma citação guardada ainda.'}
               </p>
             </div>
+          )}
+
+          {/* Show total count when filtering */}
+          {filterBookId && quotes.filter(q => q.livroId === filterBookId).length > 4 && (
+            <p className="text-sm text-muted-foreground text-center">
+              Mostrando 4 de {quotes.filter(q => q.livroId === filterBookId).length} citações
+            </p>
           )}
         </div>
       </div>
