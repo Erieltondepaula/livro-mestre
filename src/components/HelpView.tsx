@@ -19,11 +19,14 @@ import {
   Lightbulb,
   User,
   Settings,
-  ImageIcon
+  ImageIcon,
+  ZoomIn,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogTitle, DialogClose } from '@/components/ui/dialog';
 
 // Screenshots reais dos módulos
 import screenshotDashboard1 from '@/assets/help/screenshot-dashboard-1.png';
@@ -672,6 +675,7 @@ interface HelpViewProps {
 export function HelpView({ initialSection }: HelpViewProps) {
   const [selectedSection, setSelectedSection] = useState<string | null>(initialSection || null);
   const [expandedSteps, setExpandedSteps] = useState<string[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<StepImage | null>(null);
 
   const toggleStep = (stepId: string) => {
     setExpandedSteps(prev => 
@@ -681,21 +685,47 @@ export function HelpView({ initialSection }: HelpViewProps) {
     );
   };
 
+  const openLightbox = (image: StepImage) => {
+    setLightboxImage(image);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+  };
+
   // Componente para renderizar imagem com placeholder
   const ImageWithPlaceholder = ({ image, stepNumber }: { image?: StepImage; stepNumber?: number }) => {
     if (image?.src) {
       return (
-        <div className="my-4 rounded-xl overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-muted/30 to-muted/10">
-          <img 
-            src={image.src} 
-            alt={image.caption}
-            className="w-full object-contain"
-          />
-          <div className="px-4 py-2 bg-muted/50 border-t">
+        <div 
+          className="my-4 rounded-xl overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-muted/30 to-muted/10 cursor-pointer group transition-all hover:border-primary/40 hover:shadow-lg"
+          onClick={() => openLightbox(image)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && openLightbox(image)}
+        >
+          <div className="relative">
+            <img 
+              src={image.src} 
+              alt={image.caption}
+              className="w-full object-contain transition-transform group-hover:scale-[1.01]"
+            />
+            {/* Overlay com ícone de zoom */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-primary text-primary-foreground rounded-full p-3 shadow-lg">
+                <ZoomIn className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+          <div className="px-4 py-2 bg-muted/50 border-t flex items-center justify-between">
             <p className="text-sm text-muted-foreground flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-primary" />
               <span className="italic">{image.caption}</span>
             </p>
+            <span className="text-xs text-primary flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ZoomIn className="w-3 h-3" />
+              Clique para ampliar
+            </span>
           </div>
         </div>
       );
@@ -937,9 +967,39 @@ export function HelpView({ initialSection }: HelpViewProps) {
 
       {/* Rodapé com versão */}
       <div className="text-center text-sm text-muted-foreground pt-4 border-t">
-        <p>Planner de Leituras - Versão 1.4</p>
+        <p>Planner de Leituras - Versão 1.5</p>
         <p className="text-xs mt-1">Documentação atualizada em 23/01/2026</p>
       </div>
+
+      {/* Lightbox Dialog para ampliar imagens */}
+      <Dialog open={!!lightboxImage} onOpenChange={(open) => !open && closeLightbox()}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-background/95 backdrop-blur-sm border-primary/20">
+          <DialogTitle className="sr-only">
+            {lightboxImage?.caption || 'Visualização da imagem'}
+          </DialogTitle>
+          <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-background/80 p-2 hover:bg-background transition-colors shadow-lg border">
+            <X className="w-5 h-5" />
+            <span className="sr-only">Fechar</span>
+          </DialogClose>
+          {lightboxImage && (
+            <div className="flex flex-col max-h-[95vh]">
+              <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
+                <img 
+                  src={lightboxImage.src} 
+                  alt={lightboxImage.caption}
+                  className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                />
+              </div>
+              <div className="p-4 bg-muted/50 border-t">
+                <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-primary" />
+                  <span className="italic">{lightboxImage.caption}</span>
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
