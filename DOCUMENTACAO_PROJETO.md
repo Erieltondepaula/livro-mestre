@@ -1,7 +1,7 @@
 # 📚 Documentação Completa do Projeto - Biblioteca de Leitura
 
 > **Última atualização:** 23 Janeiro 2026  
-> **Versão:** 1.4  
+> **Versão:** 1.5  
 > **Autor:** Documentação gerada via Lovable
 
 ---
@@ -146,12 +146,13 @@ projeto/
 | Componente | Descrição |
 |------------|-----------|
 | `Dashboard.tsx` | Painel principal com métricas |
-| `BooksListView.tsx` | Lista de livros |
+| `BooksListView.tsx` | Lista de livros (grid responsivo com capas completas) |
 | `ReadingForm.tsx` | Registro de leituras |
 | `QuotesView.tsx` | Gerenciamento de citações |
 | `BibleProgressView.tsx` | Progresso da Bíblia |
 | `VocabularyDialog.tsx` | Vocabulário aprendido |
 | `EvaluationForm.tsx` | Avaliação de livros |
+| `HelpView.tsx` | Central de Ajuda com lightbox de imagens |
 
 ---
 
@@ -1207,11 +1208,37 @@ npx cap open android # Abrir no Android Studio
 | 1.2 | 23 Jan 2026 | Funcionalidade de exclusão de usuários (apenas Mestre) |
 | 1.3 | 23 Jan 2026 | Políticas RLS para exclusão de usuários pelo Mestre, exclusão completa de dados do usuário |
 | 1.4 | 23 Jan 2026 | Módulo de Ajuda (Central de Ajuda) com documentação interativa de todos os módulos |
-| 1.3 | 23 Jan 2026 | Políticas RLS para exclusão de usuários pelo Mestre, exclusão completa de dados do usuário |
+| 1.5 | 23 Jan 2026 | Lightbox para imagens na Central de Ajuda, correções visuais na lista de livros |
 
 ---
 
 ## 🔒 Notas de Segurança e Funcionalidades
+
+### Versão 1.5 - Melhorias Visuais e UX (23/01/2026):
+
+**Nova Funcionalidade: Lightbox de Imagens na Central de Ajuda**
+- Imagens agora são clicáveis e abrem em popup ampliado
+- Overlay com ícone de zoom ao passar o mouse
+- Legenda exibida abaixo da imagem ampliada
+- Botão de fechar no canto superior direito
+
+**Correções na Lista de Livros (`BooksListView.tsx`):**
+- **Grid Responsivo Melhorado**: Ajuste de breakpoints para evitar cards colados
+  - Mobile: 1 coluna
+  - SM (640px+): 2 colunas
+  - LG (1024px+): 3 colunas
+  - XL (1280px+): 4 colunas
+  - 2XL (1536px+): 5 colunas
+- **Espaçamento Aumentado**: `gap-6 lg:gap-8` para maior separação entre cards
+- **Capas Completas**: Alterado de `object-cover` para `object-contain` para exibir capas inteiras sem corte
+- **Proporção Fixa**: Uso de `aspect-[2/3]` para manter proporção padrão de livros
+- **Comportamento Independente de Zoom**: Layout funciona corretamente em qualquer nível de zoom (10% a 1000%)
+
+**Arquivos alterados:**
+- `src/components/HelpView.tsx` - Lightbox com Dialog, estado `lightboxImage`, função `openLightbox()`
+- `src/components/BooksListView.tsx` - Grid responsivo e capas sem corte
+
+---
 
 ### Versão 1.4 - Central de Ajuda (23/01/2026):
 
@@ -1220,6 +1247,7 @@ npx cap open android # Abrir no Android Studio
 - Documentação interativa com:
   - Descrição de cada módulo (o que é e para que serve)
   - Passo a passo detalhado para utilização
+  - Imagens contextuais em cada etapa
   - Dicas práticas para cada etapa
   - Solução de problemas comuns
   - Módulos relacionados para navegação rápida
@@ -1229,6 +1257,7 @@ npx cap open android # Abrir no Android Studio
 - `src/components/Sidebar.tsx` - Item de navegação adicionado
 - `src/pages/Index.tsx` - Rota para o módulo de ajuda
 - `src/contexts/AuthContext.tsx` - Módulo sempre acessível (não requer permissão)
+- `src/assets/help/` - Screenshots e ilustrações dos módulos
 
 **Módulos documentados:**
 1. Dashboard
@@ -1240,6 +1269,8 @@ npx cap open android # Abrir no Android Studio
 7. Citações
 8. Progresso Bíblia
 9. Dicionário
+10. Perfil
+11. Administração
 
 ---
 
@@ -1312,6 +1343,23 @@ USING (is_master_user(auth.uid()) AND NOT is_master_user(user_id));
 | **Excluir usuários** | ❌ | ❌ | ✅ |
 | Ser editado por outros | ✅ | ✅ | ❌ |
 | Ser excluído | ✅ | ✅ | ❌ |
+
+---
+
+## 📸 Assets da Central de Ajuda
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `screenshot-dashboard-1.png` | Visão geral do Dashboard |
+| `screenshot-dashboard-2.png` | Cards de estatísticas |
+| `screenshot-dashboard-3.png` | Tabela de status dos livros |
+| `screenshot-cadastrar.png` | Formulário de cadastro de livro |
+| `screenshot-livros.png` | Grid de livros cadastrados |
+| `screenshot-leitura.png` | Formulário de registro de leitura |
+| `screenshot-status.png` | Tabela de status com progresso |
+| `screenshot-metricas-header.png` | Modal de métricas - cabeçalho |
+| `screenshot-metricas-progresso.png` | Modal de métricas - progresso |
+| `screenshot-metricas-citacoes.png` | Modal de métricas - citações |
 
 ---
 
