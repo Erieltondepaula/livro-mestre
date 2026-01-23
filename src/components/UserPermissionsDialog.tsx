@@ -38,6 +38,7 @@ const MODULES = [
   { key: 'status', label: 'Status dos Livros', icon: BookMarked },
   { key: 'avaliacao', label: 'Avaliações', icon: Star },
   { key: 'citacoes', label: 'Citações', icon: Quote },
+  { key: 'biblia', label: 'Progresso Bíblia', icon: Book },
   { key: 'dicionario', label: 'Dicionário', icon: Book },
 ];
 
