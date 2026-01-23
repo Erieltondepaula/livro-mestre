@@ -33,11 +33,13 @@ import {
   ArrowLeft,
   Crown,
   Settings,
-  Trash2
+  Trash2,
+  CreditCard // <--- NOVO ÍCONE
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { UserPermissionsDialog } from '@/components/UserPermissionsDialog';
+import { AdminSubscriptionDialog } from '@/components/AdminSubscriptionDialog'; // <--- NOVO COMPONENTE
 import { useLibrary } from '@/hooks/useLibrary';
 
 interface UserProfile {
@@ -58,15 +60,22 @@ export default function Admin() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Controle do Dialog de Ações (Ativar/Excluir/Admin)
   const [actionDialog, setActionDialog] = useState<{
     open: boolean;
     action: 'activate' | 'deactivate' | 'delete' | 'makeAdmin' | 'removeAdmin';
     user: UserProfile | null;
   }>({ open: false, action: 'activate', user: null });
+
+  // Controle do Dialog de Permissões
   const [permissionsDialog, setPermissionsDialog] = useState<{
     open: boolean;
     user: UserProfile | null;
   }>({ open: false, user: null });
+
+  // Controle do Dialog de Assinatura (NOVO)
+  const [selectedSubUser, setSelectedSubUser] = useState<{id: string, email: string} | null>(null);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -411,6 +420,16 @@ export default function Admin() {
                         <TableCell className="text-right">
                           {editable && (
                             <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                              {/* Botão de Assinatura - NOVO */}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setSelectedSubUser({ id: user.user_id, email: user.email })}
+                                title="Gerenciar Assinatura"
+                              >
+                                <CreditCard className="w-4 h-4 text-green-600" />
+                              </Button>
+
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -539,6 +558,14 @@ export default function Admin() {
         user={permissionsDialog.user}
         onSave={loadUsers}
         isMasterEditing={isMaster}
+      />
+
+      {/* Novo Componente de Dialog de Assinatura */}
+      <AdminSubscriptionDialog 
+        isOpen={!!selectedSubUser}
+        onClose={() => setSelectedSubUser(null)}
+        userId={selectedSubUser?.id || null}
+        userEmail={selectedSubUser?.email || null}
       />
     </div>
   );
