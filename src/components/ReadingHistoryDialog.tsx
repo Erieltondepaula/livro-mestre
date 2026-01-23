@@ -55,9 +55,10 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       setPaginaInicial(reading.paginaInicial.toString());
       setPaginaFinal(reading.paginaFinal.toString());
       
-      // Format time to MM:SS if needed
-      const minutes = Math.floor(reading.tempoGasto);
-      const seconds = Math.round((reading.tempoGasto - minutes) * 60);
+      // tempoGasto is now in SECONDS, format to MM:SS
+      const totalSeconds = reading.tempoGasto;
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = Math.round(totalSeconds % 60);
       setTempoGasto(seconds > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : minutes.toString());
       
       setDataInicio(reading.dataInicio);
@@ -77,8 +78,10 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       setPaginaInicial(reading.paginaInicial.toString());
       setPaginaFinal(reading.paginaFinal.toString());
       
-      const minutes = Math.floor(reading.tempoGasto);
-      const seconds = Math.round((reading.tempoGasto - minutes) * 60);
+      // tempoGasto is now in SECONDS
+      const totalSeconds = reading.tempoGasto;
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = Math.round(totalSeconds % 60);
       setTempoGasto(seconds > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : minutes.toString());
       
       setDataInicio(reading.dataInicio);
@@ -93,15 +96,17 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     }
   };
 
-  const parseTimeToMinutes = (timeStr: string): number => {
+  // Parse time string to SECONDS
+  const parseTimeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
     const parts = timeStr.split(':');
     if (parts.length === 2) {
       const minutes = parseInt(parts[0]) || 0;
       const seconds = parseInt(parts[1]) || 0;
-      return minutes + (seconds / 60);
+      return (minutes * 60) + seconds;
     }
-    return parseInt(timeStr) || 0;
+    // If just a number, treat as minutes
+    return (parseInt(timeStr) || 0) * 60;
   };
 
   const handleSave = () => {
@@ -113,7 +118,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       mes,
       paginaInicial: parseInt(paginaInicial),
       paginaFinal: parseInt(paginaFinal),
-      tempoGasto: parseTimeToMinutes(tempoGasto),
+      tempoGasto: parseTimeToSeconds(tempoGasto),
       quantidadePaginas: parseInt(paginaFinal) - parseInt(paginaInicial),
       dataInicio,
       dataFim,

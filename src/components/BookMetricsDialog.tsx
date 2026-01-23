@@ -85,20 +85,21 @@ export function BookMetricsDialog({
 
   const progress = (totalPagesRead / book.totalPaginas) * 100;
   
-  const calculateTotalTimeMinutes = () => {
-    let totalMinutes = 0;
+  // Now tempoGasto is in SECONDS
+  const calculateTotalTimeSeconds = () => {
+    let totalSeconds = 0;
     for (const reading of bookReadings) {
       if (reading.dataInicio && reading.dataFim) {
         const days = differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
-        totalMinutes += reading.tempoGasto * days;
+        totalSeconds += reading.tempoGasto * days;
       } else {
-        totalMinutes += reading.tempoGasto;
+        totalSeconds += reading.tempoGasto;
       }
     }
-    return totalMinutes;
+    return totalSeconds;
   };
   
-  const totalTimeMinutes = calculateTotalTimeMinutes();
+  const totalTimeSeconds = calculateTotalTimeSeconds();
   
   const calculateReadingDays = () => {
     let totalDays = 0;
@@ -114,15 +115,16 @@ export function BookMetricsDialog({
   
   const readingDays = calculateReadingDays();
   const avgPagesPerDay = readingDays > 0 ? totalPagesRead / readingDays : 0;
-  const pagesPerMinute = totalTimeMinutes > 0 ? totalPagesRead / totalTimeMinutes : 0;
+  const pagesPerMinute = totalTimeSeconds > 0 ? totalPagesRead / (totalTimeSeconds / 60) : 0;
 
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.floor(minutes % 60);
-    const secs = Math.round((minutes % 1) * 60);
+  // Format seconds to display (e.g., "9h 16min 11s")
+  const formatTimeFromSeconds = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.round(seconds % 60);
     
     if (hours > 0) {
-      return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+      return secs > 0 ? `${hours}h ${mins}min ${secs}s` : (mins > 0 ? `${hours}h ${mins}min` : `${hours}h`);
     }
     if (secs > 0) {
       return `${mins}min ${secs}s`;
@@ -140,9 +142,10 @@ export function BookMetricsDialog({
     return `${reading.dia}/${reading.mes}`;
   };
 
-  const formatReadingTime = (minutes: number) => {
-    const mins = Math.floor(minutes);
-    const secs = Math.round((minutes - mins) * 60);
+  // Format seconds for reading history display (MM:SS format)
+  const formatReadingTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
     if (secs > 0) {
       return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
@@ -287,7 +290,7 @@ export function BookMetricsDialog({
             
             <div className="card-library p-4 text-center">
               <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{formatTime(totalTimeMinutes)}</p>
+              <p className="text-2xl font-bold">{formatTimeFromSeconds(totalTimeSeconds)}</p>
               <p className="text-xs text-muted-foreground">Tempo Total</p>
             </div>
             
@@ -305,7 +308,7 @@ export function BookMetricsDialog({
             
             <div className="card-library p-4 text-center">
               <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{formatTime(totalTimeMinutes / (readingDays || 1))}</p>
+              <p className="text-2xl font-bold">{formatTimeFromSeconds(totalTimeSeconds / (readingDays || 1))}</p>
               <p className="text-xs text-muted-foreground">Tempo/Dia</p>
             </div>
             
