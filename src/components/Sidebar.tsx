@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle } from 'lucide-react';
+import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -70,6 +70,10 @@ function UserMenu() {
         <DropdownMenuItem onClick={() => navigate('/profile')}>
           <User className="w-4 h-4 mr-2" />
           Meu Perfil
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/assinatura')}>
+          <Crown className="w-4 h-4 mr-2" />
+          Assinatura
         </DropdownMenuItem>
         {isAdmin && (
           <>
