@@ -436,12 +436,12 @@ export function BookMetricsDialog({
                     key={group.key} 
                     className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm py-2 border-b border-border last:border-0 gap-1 group"
                   >
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium">{group.displayDate}</span>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="font-medium whitespace-nowrap flex-shrink-0">{group.displayDate}</span>
                       {isBibleCategory && group.bibleEntries.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex gap-1 overflow-x-auto scrollbar-thin flex-nowrap min-w-0">
                           {group.bibleEntries.map((entry, idx) => (
-                            <span key={idx} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                            <span key={idx} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded whitespace-nowrap flex-shrink-0">
                               {entry.bibleBook} {entry.bibleChapter}
                               {entry.bibleVerseStart && `:${entry.bibleVerseStart}`}
                               {entry.bibleVerseEnd && entry.bibleVerseEnd !== entry.bibleVerseStart && `-${entry.bibleVerseEnd}`}
@@ -450,20 +450,22 @@ export function BookMetricsDialog({
                         </div>
                       )}
                     </div>
-                    <span className="text-muted-foreground">
-                      Págs {group.paginaInicial} → {group.paginaFinal}
-                    </span>
-                    <span>{group.quantidadePaginas} págs</span>
-                    <span className="text-muted-foreground">{formatReadingTime(group.tempoGasto)}</span>
-                    {onUpdateReading && (
-                      <button
-                        onClick={() => handleEditReading(group.readings[0])}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary/80"
-                        title="Editar leitura"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="text-muted-foreground whitespace-nowrap">
+                        Págs {group.paginaInicial} → {group.paginaFinal}
+                      </span>
+                      <span className="whitespace-nowrap">{group.quantidadePaginas} págs</span>
+                      <span className="text-muted-foreground whitespace-nowrap">{formatReadingTime(group.tempoGasto)}</span>
+                      {onUpdateReading && (
+                        <button
+                          onClick={() => handleEditReading(group.readings[0])}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-primary/80"
+                          title="Editar leitura"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
