@@ -103,8 +103,8 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
         </div>
       ) : (
         /* SETOR 8: Grid de Cartões - Estilo Kindle */
-        /* Grid padronizado com tamanhos fixos para consistência visual */
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+        /* Grid com cards mais largos para evitar quebras de linha */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 md:gap-6">
           {books.map((book) => {
             const status = getBookStatus(book.id);
             const timeEstimate = getReadingTimeEstimate(book, status);
@@ -112,10 +112,10 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
             return (
               <div
                 key={book.id}
-                className="card-library overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 flex flex-col"
+                className="card-library overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 flex flex-col min-w-[200px]"
               >
                 {/* Capa do Livro - Tamanho fixo estilo Kindle */}
-                <div className="w-full h-48 md:h-56 lg:h-64 bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                <div className="w-full h-52 md:h-60 lg:h-72 bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                   {book.coverUrl ? (
                     <img
                       src={book.coverUrl}
@@ -131,7 +131,7 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                 </div>
 
                 {/* Informações do Livro - Layout expandido */}
-                <div className="p-3 space-y-1.5 flex-1 flex flex-col">
+                <div className="p-4 space-y-2 flex-1 flex flex-col">
                   <h3 className="font-display font-semibold text-foreground text-sm leading-tight" title={book.livro}>
                     {book.livro}
                   </h3>
@@ -147,21 +147,21 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
                     {book.categoria && <p>Categoria: {book.categoria}</p>}
                   </div>
 
-                  {/* Exibição do Status Dinâmico */}
+                  {/* Exibição do Status Dinâmico - Em uma única linha */}
                   {(() => {
                     const statusInfo = getStatusInfo(book, status);
                     if (status?.status === 'Concluido') {
-                      return <p className={`text-xs font-medium ${statusInfo.colorClass}`}>{statusInfo.text}</p>;
+                      return <p className={`text-xs font-medium ${statusInfo.colorClass} whitespace-nowrap`}>{statusInfo.text}</p>;
                     }
                     if (timeEstimate) {
                       return (
-                        <p className={`text-xs font-medium ${statusInfo.colorClass}`}>
-                          Tempo para finalizar: {timeEstimate}
+                        <p className={`text-xs font-medium ${statusInfo.colorClass} whitespace-nowrap`}>
+                          Finalizar: {timeEstimate}
                         </p>
                       );
                     }
                     if (status?.status === 'Não iniciado' || !status) {
-                      return <p className={`text-xs font-medium ${statusInfo.colorClass}`}>{statusInfo.text}</p>;
+                      return <p className={`text-xs font-medium ${statusInfo.colorClass} whitespace-nowrap`}>{statusInfo.text}</p>;
                     }
                     return null;
                   })()}
