@@ -59,7 +59,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         subscribed: true,
         productId: 'master_plan_unlimited',
         priceId: 'price_master_key',
-        subscriptionEnd: '2099-12-31T23:59:59.999Z', // Data longínqua
+        subscriptionEnd: '2100-12-31T23:59:00Z', // Data longínqua
         subscriptionStart: new Date().toISOString(),
         cancelAtPeriodEnd: false,
         daysUntilExpiry: 36500, // 100 anos
