@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
-  console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
+  console.log(`[REQUEST-REFUND] ${step}${detailsStr}`);
 };
 
 serve(async (req) => {
@@ -32,11 +32,8 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
-    logStep("Authenticating user with token");
-    
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
@@ -44,61 +41,74 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
+    // Find customer
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {
-      logStep("No customer found, returning unsubscribed state");
-      return new Response(JSON.stringify({ subscribed: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      throw new Error("Nenhuma assinatura encontrada para este usuário");
     }
-
     const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
+    logStep("Found customer", { customerId });
 
+    // Get active subscription
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
-    const hasActiveSub = subscriptions.data.length > 0;
-    let productId = null;
-    let subscriptionEnd = null;
-    let subscriptionStart = null;
-    let priceId = null;
-    let cancelAtPeriodEnd = false;
-    let subscriptionId = null;
 
-    if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
-      subscriptionId = subscription.id;
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      subscriptionStart = new Date(subscription.current_period_start * 1000).toISOString();
-      cancelAtPeriodEnd = subscription.cancel_at_period_end;
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
-      productId = subscription.items.data[0].price.product as string;
-      priceId = subscription.items.data[0].price.id;
-      logStep("Determined subscription details", { productId, priceId, cancelAtPeriodEnd });
-    } else {
-      logStep("No active subscription found");
+    if (subscriptions.data.length === 0) {
+      throw new Error("Nenhuma assinatura ativa encontrada");
     }
 
-    return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
-      product_id: productId,
-      price_id: priceId,
-      subscription_id: subscriptionId,
-      subscription_end: subscriptionEnd,
-      subscription_start: subscriptionStart,
-      cancel_at_period_end: cancelAtPeriodEnd,
+    const subscription = subscriptions.data[0];
+    const subscriptionStart = new Date(subscription.current_period_start * 1000);
+    const now = new Date();
+    const daysSinceStart = Math.floor((now.getTime() - subscriptionStart.getTime()) / (1000 * 60 * 60 * 24));
+
+    logStep("Checking refund eligibility", { daysSinceStart, subscriptionStart: subscriptionStart.toISOString() });
+
+    // Check if within 7-day refund period (Brazilian consumer law - CDC Art. 49)
+    if (daysSinceStart > 7) {
+      throw new Error("O período de 7 dias para reembolso já expirou. Você pode cancelar sua assinatura para não ser cobrado no próximo período.");
+    }
+
+    // Get the latest invoice for this subscription
+    const invoices = await stripe.invoices.list({
+      subscription: subscription.id,
+      limit: 1,
+    });
+
+    if (invoices.data.length === 0 || !invoices.data[0].payment_intent) {
+      throw new Error("Não foi possível encontrar o pagamento para reembolso");
+    }
+
+    const paymentIntentId = invoices.data[0].payment_intent as string;
+    logStep("Found payment intent", { paymentIntentId });
+
+    // Create refund
+    const refund = await stripe.refunds.create({
+      payment_intent: paymentIntentId,
+      reason: "requested_by_customer",
+    });
+    logStep("Refund created", { refundId: refund.id, amount: refund.amount });
+
+    // Cancel the subscription immediately
+    await stripe.subscriptions.cancel(subscription.id);
+    logStep("Subscription cancelled", { subscriptionId: subscription.id });
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: "Reembolso processado com sucesso. Sua assinatura foi cancelada.",
+      refund_id: refund.id,
+      refund_amount: refund.amount / 100,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in check-subscription", { message: errorMessage });
+    logStep("ERROR in request-refund", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

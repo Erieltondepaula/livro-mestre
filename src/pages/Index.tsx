@@ -10,7 +10,9 @@ import { BooksListView } from '@/components/BooksListView';
 import { DictionaryView } from '@/components/DictionaryView';
 import { BibleProgressView } from '@/components/BibleProgressView';
 import { HelpView } from '@/components/HelpView';
+import { SubscriptionBlocker } from '@/components/SubscriptionBlocker';
 import { useLibrary } from '@/hooks/useLibrary';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { toast } from '@/hooks/use-toast';
 import type { Book } from '@/types/library';
 
@@ -18,6 +20,7 @@ type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avali
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const { isExpiringSoon } = useSubscription();
   const {
     books,
     readings,
@@ -152,9 +155,11 @@ const Index = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-      <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 fhd:p-12 4k:p-16 8k:p-20 overflow-auto pt-14 sm:pt-16 lg:pt-4 xl:pt-8 fhd:pt-12 4k:pt-16">
+      <main className={`flex-1 p-3 sm:p-4 md:p-6 lg:p-8 xl:p-10 fhd:p-12 4k:p-16 8k:p-20 overflow-auto pt-14 sm:pt-16 lg:pt-4 xl:pt-8 fhd:pt-12 4k:pt-16 ${isExpiringSoon ? 'mt-12' : ''}`}>
         <div className="content-container">
-          {renderView()}
+          <SubscriptionBlocker>
+            {renderView()}
+          </SubscriptionBlocker>
         </div>
       </main>
     </div>
