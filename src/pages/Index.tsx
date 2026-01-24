@@ -130,7 +130,7 @@ const Index = () => {
       case 'dashboard':
         return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} />;
       case 'cadastrar':
-        return <BookForm onSubmit={handleAddBook} />;
+        return <BookForm onSubmit={handleAddBook} currentBookCount={books.length} />;
       case 'livros':
         return <BooksListView books={books} statuses={statuses} readings={readings} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
       case 'leitura':
