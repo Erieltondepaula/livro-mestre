@@ -62,11 +62,15 @@ const SUBSCRIPTION_TIERS = {
 export default function Subscription() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { subscription, isLoading: isSubscriptionLoading, checkSubscription } = useSubscription();
   const [isCheckingOut, setIsCheckingOut] = useState<string | null>(null);
   const [isTogglingAutoRenew, setIsTogglingAutoRenew] = useState(false);
   const [isRequestingRefund, setIsRequestingRefund] = useState(false);
+
+  // Verificar se é o usuário mestre
+  const MASTER_EMAIL = "erieltondepaulamelo@gmail.com";
+  const isMasterUser = user?.email?.toLowerCase().trim() === MASTER_EMAIL;
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
@@ -271,8 +275,50 @@ export default function Subscription() {
           </div>
         ) : (
           <>
-            {/* Subscription Management Card - Only show if subscribed */}
-            {isSubscribed && (
+            {/* SEÇÃO ESPECIAL PARA USUÁRIO MESTRE */}
+            {isMasterUser && (
+              <Card className="max-w-2xl mx-auto mb-12 border-2 border-primary bg-primary/5">
+                <CardHeader className="text-center">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                    <Crown className="h-8 w-8 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl">Acesso Vitalício</CardTitle>
+                  <CardDescription className="text-base">
+                    Você é o <span className="font-bold text-primary">Usuário Mestre</span> do sistema.
+                    <br />
+                    Seu acesso é permanente e ilimitado - sem cobranças, sem restrições.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <ul className="space-y-3 text-left max-w-sm mx-auto">
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-5 w-5 text-primary" />
+                      <span>Acesso a todos os módulos</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-5 w-5 text-primary" />
+                      <span>Cadastro ilimitado de livros</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-5 w-5 text-primary" />
+                      <span>Painel de administração</span>
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-5 w-5 text-primary" />
+                      <span>Gerenciar assinaturas de outros usuários</span>
+                    </li>
+                  </ul>
+                </CardContent>
+                <CardFooter className="justify-center">
+                  <Button onClick={() => navigate('/')} variant="default">
+                    Voltar ao Dashboard
+                  </Button>
+                </CardFooter>
+              </Card>
+            )}
+
+            {/* Subscription Management Card - Only show if subscribed and NOT master */}
+            {isSubscribed && !isMasterUser && (
               <Card className="max-w-2xl mx-auto mb-12">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -378,7 +424,8 @@ export default function Subscription() {
               </Card>
             )}
 
-            {/* Pricing Cards */}
+            {/* Pricing Cards - Esconde para usuário mestre */}
+            {!isMasterUser && (
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => {
                 const isCurrentPlan = currentTier === key;
@@ -465,9 +512,10 @@ export default function Subscription() {
                 );
               })}
             </div>
+            )}
 
             {/* Guarantee Badge */}
-            {!isSubscribed && (
+            {!isSubscribed && !isMasterUser && (
               <div className="text-center mt-8">
                 <Badge variant="outline" className="text-green-600 border-green-600 py-2 px-4">
                   <Shield className="h-4 w-4 mr-2" />
