@@ -2,17 +2,23 @@ import { useState, useEffect } from 'react';
 import { PlusCircle, Plus, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ManageOptionsDialog } from './ManageOptionsDialog';
 import { ImageUpload } from './ImageUpload';
+import { UpgradePrompt } from './UpgradePrompt';
 import { toast } from '@/hooks/use-toast';
 import type { Book } from '@/types/library';
 
+const FREE_PLAN_BOOK_LIMIT = 3;
+
 interface BookFormProps {
   onSubmit: (book: Omit<Book, 'id' | 'numero'>) => void;
+  currentBookCount?: number;
 }
 
-export function BookForm({ onSubmit }: BookFormProps) {
+export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
   const { isAdmin } = useAuth();
+  const { subscription } = useSubscription();
   const [livro, setLivro] = useState('');
   const [autor, setAutor] = useState('');
   const [ano, setAno] = useState('');
@@ -30,6 +36,7 @@ export function BookForm({ onSubmit }: BookFormProps) {
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [manageTypesOpen, setManageTypesOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   useEffect(() => {
     loadTypesAndCategories();
@@ -100,6 +107,13 @@ export function BookForm({ onSubmit }: BookFormProps) {
     e.preventDefault();
     
     if (!livro.trim() || !totalPaginas) return;
+
+    // Verificar limite de livros no plano gratuito
+    // Mestre e usuários com assinatura ativa podem cadastrar ilimitado
+    if (subscription.isFreePlan && !subscription.isMasterUser && currentBookCount >= FREE_PLAN_BOOK_LIMIT) {
+      setShowUpgradePrompt(true);
+      return;
+    }
 
     onSubmit({
       livro: livro.trim().toUpperCase(),
@@ -360,6 +374,13 @@ export function BookForm({ onSubmit }: BookFormProps) {
         }}
         type="categories"
         title="Gerenciar Categorias"
+      />
+
+      {/* Popup de Upgrade para Plano Gratuito */}
+      <UpgradePrompt
+        isOpen={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        currentBookCount={currentBookCount}
       />
     </div>
   );

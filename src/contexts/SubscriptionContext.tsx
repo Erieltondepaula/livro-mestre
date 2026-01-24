@@ -11,6 +11,8 @@ interface SubscriptionStatus {
   cancelAtPeriodEnd: boolean;
   daysUntilExpiry: number | null;
   isWithinRefundPeriod: boolean;
+  isMasterUser: boolean; // Flag para identificar mestre
+  isFreePlan: boolean;   // Flag para plano gratuito (limite de 3 livros)
 }
 
 interface SubscriptionContextType {
@@ -30,6 +32,8 @@ const defaultSubscription: SubscriptionStatus = {
   cancelAtPeriodEnd: false,
   daysUntilExpiry: null,
   isWithinRefundPeriod: false,
+  isMasterUser: false,
+  isFreePlan: true, // Por padrão, usuários não assinantes estão no plano gratuito
 };
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -48,10 +52,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // 1. REGRA MESTRA (Modo Deus)
+    // 1. REGRA MESTRA (Modo Deus) - ACESSO VITALÍCIO GARANTIDO
     const userEmail = user.email?.toLowerCase().trim();
     if (userEmail === MASTER_EMAIL) {
-      console.log("👑 Modo Deus Ativado");
+      console.log("👑 Modo Deus Ativado - Acesso Vitalício");
       setSubscription({
         subscribed: true,
         productId: 'master_plan_unlimited',
@@ -61,6 +65,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         cancelAtPeriodEnd: false,
         daysUntilExpiry: 36500,
         isWithinRefundPeriod: false,
+        isMasterUser: true,
+        isFreePlan: false, // Mestre nunca está no plano gratuito
       });
       setIsLoading(false);
       return; 
@@ -93,7 +99,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         // Se a data já expirou, bloqueia (mesmo estando 'active' no banco)
         if (daysUntilExpiry !== null && daysUntilExpiry <= 0) {
            console.log("❌ Assinatura local expirada.");
-           setSubscription(defaultSubscription);
+           setSubscription({
+             ...defaultSubscription,
+             isMasterUser: false,
+             isFreePlan: true,
+           });
         } else {
            setSubscription({
             subscribed: true,
@@ -104,6 +114,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             cancelAtPeriodEnd: false,
             daysUntilExpiry,
             isWithinRefundPeriod: false,
+            isMasterUser: false,
+            isFreePlan: false, // Tem assinatura ativa, não está no plano gratuito
           });
         }
         
@@ -145,6 +157,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         cancelAtPeriodEnd: data?.cancel_at_period_end || false,
         daysUntilExpiry,
         isWithinRefundPeriod,
+        isMasterUser: false,
+        isFreePlan: !(data?.subscribed), // Se não tem assinatura Stripe, está no plano gratuito
       });
 
     } catch (error) {

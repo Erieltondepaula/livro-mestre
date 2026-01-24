@@ -319,7 +319,6 @@ export type Database = {
           },
         ]
       }
-      // ADICIONADO AQUI: Tabela de Assinaturas
       subscriptions: {
         Row: {
           created_at: string

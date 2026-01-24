@@ -420,15 +420,17 @@ export default function Admin() {
                         <TableCell className="text-right">
                           {editable && (
                             <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                              {/* Botão de Assinatura - NOVO */}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setSelectedSubUser({ id: user.user_id, email: user.email })}
-                                title="Gerenciar Assinatura"
-                              >
-                                <CreditCard className="w-4 h-4 text-green-600" />
-                              </Button>
+                              {/* Botão de Assinatura - APENAS PARA MESTRE e NÃO para si mesmo */}
+                              {isMaster && !user.is_master && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setSelectedSubUser({ id: user.user_id, email: user.email })}
+                                  title="Gerenciar Assinatura"
+                                >
+                                  <CreditCard className="w-4 h-4 text-green-600" />
+                                </Button>
+                              )}
 
                               <Button
                                 variant="ghost"
