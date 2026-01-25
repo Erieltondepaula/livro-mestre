@@ -1,7 +1,43 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { addDays, format, differenceInDays } from 'date-fns';
 import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats, VocabularyWord } from '@/types/library';
+
+// Tempo médio de leitura por página (em segundos) por categoria
+const READING_TIME_BY_CATEGORY: Record<string, { min: number; max: number }> = {
+  'autoajuda': { min: 150, max: 180 }, // 2.5-3 min
+  'bíblia': { min: 180, max: 300 }, // 3-5 min
+  'biblia': { min: 180, max: 300 },
+  'biografia': { min: 120, max: 150 }, // 2-2.5 min
+  'ciência': { min: 240, max: 360 }, // 4-6 min
+  'ciencia': { min: 240, max: 360 },
+  'espiritualidade': { min: 180, max: 240 }, // 3-4 min
+  'religioso': { min: 180, max: 240 },
+  'fantasia': { min: 108, max: 150 }, // 1.8-2.5 min
+  'ficção': { min: 90, max: 120 }, // 1.5-2 min
+  'ficcao': { min: 90, max: 120 },
+  'finanças': { min: 180, max: 240 }, // 3-4 min
+  'financas': { min: 180, max: 240 },
+  'história': { min: 180, max: 300 }, // 3-5 min
+  'historia': { min: 180, max: 300 },
+  'não-ficção': { min: 180, max: 240 }, // 3-4 min
+  'nao-ficcao': { min: 180, max: 240 },
+  'negócios': { min: 180, max: 240 }, // 3-4 min
+  'negocios': { min: 180, max: 240 },
+  'romance': { min: 90, max: 120 }, // 1.5-2 min
+  'outro': { min: 120, max: 240 }, // 2-4 min
+};
+
+function getAverageReadingTimePerPage(category: string | undefined): number {
+  if (!category) return 150; // default 2.5 min
+  const normalizedCategory = category.toLowerCase().trim();
+  const times = READING_TIME_BY_CATEGORY[normalizedCategory];
+  if (times) {
+    return Math.round((times.min + times.max) / 2);
+  }
+  return 150; // default 2.5 min
+}
 
 export function useLibrary() {
   const { user } = useAuth();
@@ -260,6 +296,7 @@ export function useLibrary() {
   }, [loadData]);
 
   // Add daily reading (with optional retroactive support and Bible mode)
+  // When period mode is used (dataInicio + dataFim), auto-generate daily entries
   const addReading = useCallback(async (reading: Omit<DailyReading, 'id' | 'quantidadePaginas'> & { 
     dataInicio?: Date; 
     dataFim?: Date;
@@ -268,12 +305,102 @@ export function useLibrary() {
     bibleChapter?: number;
     bibleVerseStart?: number;
     bibleVerseEnd?: number;
+    generateDailyEntries?: boolean; // Flag to generate daily entries for period
   }) => {
     if (!user) return null;
 
     const quantidadePaginas = reading.paginaFinal - reading.paginaInicial;
 
-    // Formatar datas para o banco
+    // Get book info for category-based time calculation
+    const { data: bookData } = await supabase
+      .from('books')
+      .select('total_pages, category')
+      .eq('id', reading.livroId)
+      .single();
+
+    const isPeriodMode = reading.dataInicio && reading.dataFim;
+    
+    // If period mode, generate individual daily entries
+    if (isPeriodMode && reading.generateDailyEntries !== false) {
+      const startDate = new Date(reading.dataInicio!);
+      const endDate = new Date(reading.dataFim!);
+      const totalDays = differenceInDays(endDate, startDate) + 1;
+      
+      if (totalDays > 1) {
+        // Calculate pages per day
+        const pagesPerDay = quantidadePaginas / totalDays;
+        
+        // Get average reading time per page based on category
+        const avgTimePerPage = getAverageReadingTimePerPage(bookData?.category);
+        const timePerDay = Math.round(pagesPerDay * avgTimePerPage);
+        
+        const meses = [
+          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        
+        // Generate entries for each day
+        const dailyEntries = [];
+        let currentPage = reading.paginaInicial;
+        
+        for (let i = 0; i < totalDays; i++) {
+          const currentDate = addDays(startDate, i);
+          const day = currentDate.getDate();
+          const month = meses[currentDate.getMonth()];
+          const dateStr = format(currentDate, 'yyyy-MM-dd');
+          
+          const endPageForDay = Math.min(
+            Math.round(reading.paginaInicial + (pagesPerDay * (i + 1))),
+            reading.paginaFinal
+          );
+          
+          dailyEntries.push({
+            book_id: reading.livroId,
+            day: day,
+            month: month,
+            start_page: Math.round(currentPage),
+            end_page: endPageForDay,
+            time_spent: timePerDay.toString(),
+            start_date: dateStr,
+            end_date: dateStr,
+            bible_book: reading.bibleBook || null,
+            bible_chapter: reading.bibleChapter || null,
+            bible_verse_start: reading.bibleVerseStart || null,
+            bible_verse_end: reading.bibleVerseEnd || null,
+            user_id: user.id,
+          });
+          
+          currentPage = endPageForDay;
+        }
+        
+        // Insert all daily entries
+        const { error } = await supabase
+          .from('readings')
+          .insert(dailyEntries as any);
+        
+        if (error) {
+          console.error('Error adding daily readings:', error);
+          return null;
+        }
+        
+        // Update status to final page
+        const newPagesRead = reading.paginaFinal;
+        const newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
+        
+        await supabase
+          .from('statuses')
+          .update({
+            pages_read: newPagesRead,
+            status: newStatus,
+          })
+          .eq('book_id', reading.livroId);
+        
+        await loadData();
+        return { id: 'bulk-insert' };
+      }
+    }
+    
+    // Single entry (daily mode or single day period)
     const startDateStr = reading.dataInicio ? reading.dataInicio.toISOString().split('T')[0] : null;
     const endDateStr = reading.dataFim ? reading.dataFim.toISOString().split('T')[0] : null;
 
@@ -303,12 +430,6 @@ export function useLibrary() {
     }
 
     // Update status
-    const { data: bookData } = await supabase
-      .from('books')
-      .select('total_pages')
-      .eq('id', reading.livroId)
-      .single();
-
     // For retroactive readings, set pages directly to paginaFinal
     // For regular readings, accumulate pages
     let newPagesRead: number;
@@ -342,7 +463,7 @@ export function useLibrary() {
     return newReadingData;
   }, [loadData, user]);
 
-  // Update reading
+  // Update reading and recalculate status
   const updateReading = useCallback(async (reading: DailyReading) => {
     if (!user) return null;
 
@@ -369,6 +490,39 @@ export function useLibrary() {
     if (error) {
       console.error('Error updating reading:', error);
       return null;
+    }
+
+    // Recalculate status based on all readings for this book
+    // Get all readings for this book and find max page reached
+    const { data: allBookReadings } = await supabase
+      .from('readings')
+      .select('end_page')
+      .eq('book_id', reading.livroId);
+    
+    if (allBookReadings) {
+      const maxPageRead = Math.max(...allBookReadings.map(r => r.end_page), 0);
+      
+      // Get book total pages
+      const { data: bookData } = await supabase
+        .from('books')
+        .select('total_pages')
+        .eq('id', reading.livroId)
+        .single();
+      
+      if (bookData) {
+        // Ensure we don't exceed total pages
+        const correctedPagesRead = Math.min(maxPageRead, bookData.total_pages);
+        const newStatus = correctedPagesRead >= bookData.total_pages ? 'Concluido' : 
+                         correctedPagesRead > 0 ? 'Lendo' : 'Não iniciado';
+        
+        await supabase
+          .from('statuses')
+          .update({
+            pages_read: correctedPagesRead,
+            status: newStatus,
+          })
+          .eq('book_id', reading.livroId);
+      }
     }
 
     await loadData();
