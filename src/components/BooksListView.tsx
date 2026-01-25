@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { Edit2, Trash2, BookOpen } from 'lucide-react';
 import type { Book, BookStatus, DailyReading } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
@@ -13,7 +13,7 @@ interface BooksListViewProps {
   onUpdateBook: (book: Book) => void; // Função para atualizar dados de um livro
 }
 
-export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdateBook }: BooksListViewProps) {
+export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(function BooksListView({ books, statuses, readings, onDeleteBook, onUpdateBook }, ref) {
   // SETOR 2: Estados Locais
   // Controla se o modal de edição está aberto e qual livro está sendo editado.
   const [editingBook, setEditingBook] = useState<Book | null>(null);
@@ -86,7 +86,7 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
 
   // SETOR 7: Renderização da Interface (UI)
   return (
-    <div className="space-y-8">
+    <div ref={ref} className="space-y-8">
       {/* Título da Seção */}
       <div className="flex items-center gap-3">
         <BookOpen className="w-8 h-8 text-primary" />
@@ -205,4 +205,4 @@ export function BooksListView({ books, statuses, readings, onDeleteBook, onUpdat
       />
     </div>
   );
-}
+});

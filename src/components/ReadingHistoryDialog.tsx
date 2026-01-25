@@ -100,6 +100,12 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     const pIni = parseInt(paginaInicial) || 0;
     const pFin = parseInt(paginaFinal) || 0;
 
+    // CORREÇÃO: quantidadePaginas = paginaFinal - paginaInicial (não +1)
+    // Porque paginaFinal já representa a página onde parou
+    // Ex: leu da 1 à 20, são 20 páginas lidas (20 - 1 = 19 + a página 1 = 20)
+    // Na verdade, se paginaInicial = 1 e paginaFinal = 20, são 20 páginas
+    const quantidadePaginas = pFin - pIni;
+
     const updatedReading: DailyReading = {
       ...reading,
       dia: parseInt(dia),
@@ -107,8 +113,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       paginaInicial: pIni,
       paginaFinal: pFin,
       tempoGasto: parseTimeToSeconds(tempoGasto),
-      // CORREÇÃO 1: (Fim - Início) + 1 para contar a página inicial corretamente
-      quantidadePaginas: pFin - pIni + 1,
+      quantidadePaginas: quantidadePaginas,
       dataInicio,
       dataFim,
       bibleBook: bibleBook || undefined,
@@ -315,8 +320,8 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
           </div>
 
           <div className="text-xs font-medium text-primary bg-primary/5 p-2 rounded border border-primary/10">
-            {/* CORREÇÃO 3: Exibição dinâmica do cálculo correto */}
-            Total lido: {paginaInicial && paginaFinal ? parseInt(paginaFinal) - parseInt(paginaInicial) + 1 : 0} páginas
+            {/* Exibição dinâmica do cálculo */}
+            Total lido: {paginaInicial && paginaFinal ? parseInt(paginaFinal) - parseInt(paginaInicial) : 0} páginas
           </div>
 
           <div>

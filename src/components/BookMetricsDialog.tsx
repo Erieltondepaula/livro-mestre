@@ -113,6 +113,7 @@ export function BookMetricsDialog({
   
   // Now tempoGasto is in SECONDS
   // For Bible readings, we need to group by day and take max time per day (not sum)
+  // For period-generated entries, tempoGasto already represents time PER DAY, so we just sum
   const calculateTotalTimeSeconds = () => {
     const isBible = book?.categoria?.toLowerCase() === 'bíblia' || 
                     book?.categoria?.toLowerCase() === 'biblia';
@@ -123,26 +124,19 @@ export function BookMetricsDialog({
       for (const reading of bookReadings) {
         const dateKey = `${reading.dia}/${reading.mes}`;
         const currentMax = timeByDay[dateKey] || 0;
-        
-        if (reading.dataInicio && reading.dataFim) {
-          const days = differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
-          timeByDay[dateKey] = Math.max(currentMax, reading.tempoGasto * days);
-        } else {
-          timeByDay[dateKey] = Math.max(currentMax, reading.tempoGasto);
-        }
+        // Para entradas bíblicas, tempoGasto já é o tempo daquela sessão específica
+        timeByDay[dateKey] = Math.max(currentMax, reading.tempoGasto);
       }
       return Object.values(timeByDay).reduce((sum, time) => sum + time, 0);
     }
     
-    // For non-Bible books, sum all readings
+    // For non-Bible books, check if entries are from period generation
+    // If entry has start_date == end_date, it's a period-generated entry, tempoGasto is already per-day
     let totalSeconds = 0;
     for (const reading of bookReadings) {
-      if (reading.dataInicio && reading.dataFim) {
-        const days = differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
-        totalSeconds += reading.tempoGasto * days;
-      } else {
-        totalSeconds += reading.tempoGasto;
-      }
+      // Para entradas geradas por período (start_date == end_date), tempoGasto já é o tempo daquele dia
+      // Para entradas normais com período, NÃO multiplicar - o tempo já está distribuído
+      totalSeconds += reading.tempoGasto;
     }
     return totalSeconds;
   };
@@ -163,16 +157,9 @@ export function BookMetricsDialog({
       return uniqueDays.size;
     }
     
-    // For non-Bible books, count each reading session
-    let totalDays = 0;
-    for (const reading of bookReadings) {
-      if (reading.dataInicio && reading.dataFim) {
-        totalDays += differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
-      } else {
-        totalDays += 1;
-      }
-    }
-    return totalDays;
+    // For non-Bible books, each reading entry is already a unique day
+    // (period entries are now split into individual days)
+    return bookReadings.length;
   };
   
   const readingDays = calculateReadingDays();
@@ -195,9 +182,14 @@ export function BookMetricsDialog({
   };
 
   const formatReadingDate = (reading: DailyReading) => {
+    // Para entradas geradas por período, start_date == end_date, então mostra apenas a data
     if (reading.dataInicio && reading.dataFim) {
       const inicio = format(new Date(reading.dataInicio), "dd/MM", { locale: ptBR });
       const fim = format(new Date(reading.dataFim), "dd/MM/yyyy", { locale: ptBR });
+      const isSameDay = inicio === format(new Date(reading.dataFim), "dd/MM", { locale: ptBR });
+      if (isSameDay) {
+        return fim;
+      }
       const dias = differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
       return `${inicio} a ${fim} (${dias} dias)`;
     }
