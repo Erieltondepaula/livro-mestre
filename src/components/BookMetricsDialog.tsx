@@ -181,19 +181,33 @@ export function BookMetricsDialog({
     return `${mins}min`;
   };
 
+  // Detecta se é uma entrada gerada por período (tem ordem definida)
+  const isPeriodEntry = (reading: DailyReading) => {
+    return typeof (reading as any).ordem === 'number';
+  };
+
   const formatReadingDate = (reading: DailyReading) => {
-    // Para entradas geradas por período, start_date == end_date, então mostra apenas a data
-    if (reading.dataInicio && reading.dataFim) {
-      const inicio = format(new Date(reading.dataInicio), "dd/MM", { locale: ptBR });
-      const fim = format(new Date(reading.dataFim), "dd/MM/yyyy", { locale: ptBR });
-      const isSameDay = inicio === format(new Date(reading.dataFim), "dd/MM", { locale: ptBR });
-      if (isSameDay) {
-        return fim;
-      }
-      const dias = differenceInDays(new Date(reading.dataFim), new Date(reading.dataInicio)) + 1;
-      return `${inicio} a ${fim} (${dias} dias)`;
+    // Para entradas geradas por período, mostrar formato especial com numeração
+    if (isPeriodEntry(reading) && reading.dataInicio && reading.dataFim) {
+      const ordem = (reading as any).ordem || 1;
+      const dataFormatada = format(new Date(reading.dataInicio), "dd/MM/yyyy", { locale: ptBR });
+      const mesAbrev = format(new Date(reading.dataInicio), "MMM", { locale: ptBR });
+      // Capitalizar primeira letra do mês
+      const mesCapitalizado = mesAbrev.charAt(0).toUpperCase() + mesAbrev.slice(1);
+      return `${dataFormatada} a ${dataFormatada} (${ordem}º ${mesCapitalizado}.)`;
     }
-    return `${reading.dia}/${reading.mes}`;
+    
+    // Para entradas diárias normais (não geradas por período)
+    if (reading.dataInicio) {
+      const data = new Date(reading.dataInicio);
+      const dia = format(data, "d", { locale: ptBR });
+      const mesAbrev = format(data, "MMM", { locale: ptBR });
+      // Capitalizar primeira letra do mês
+      const mesCapitalizado = mesAbrev.charAt(0).toUpperCase() + mesAbrev.slice(1);
+      return `${dia} ${mesCapitalizado}.`;
+    }
+    
+    return `${reading.dia} ${reading.mes}`;
   };
 
   // Format seconds for reading history display (MM:SS format)
