@@ -56,7 +56,6 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     [bibleBook, bibleChapter],
   );
 
-  // Populate form when dialog opens
   useState(() => {
     if (reading && isOpen) {
       setDia(reading.dia.toString());
@@ -123,7 +122,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       paginaInicial: parseInt(paginaInicial),
       paginaFinal: parseInt(paginaFinal),
       tempoGasto: parseTimeToSeconds(tempoGasto),
-      // CORREÇÃO: Adicionado +1 para incluir a página inicial no total
+      // CORREÇÃO: Fórmula (Fim - Início) + 1 para incluir a página inicial
       quantidadePaginas: parseInt(paginaFinal) - parseInt(paginaInicial) + 1,
       dataInicio,
       dataFim,
@@ -152,7 +151,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
 
   const isPeriodMode = dataInicio && dataFim;
 
-  // CORREÇÃO: Cálculo de pluralização para o cabeçalho/exibição
+  // CORREÇÃO: Cálculo correto dos dias para pluralização
   const diffDias = isPeriodMode ? differenceInDays(dataFim, dataInicio) + 1 : 1;
 
   if (!reading || !book) return null;
@@ -163,7 +162,6 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
         <DialogHeader>
           <DialogTitle className="flex flex-col gap-1">
             <span className="flex items-center gap-2">📖 Editar Leitura - {book.livro}</span>
-            {/* CORREÇÃO: Exibição profissional do período e dias */}
             <span className="text-sm font-normal text-muted-foreground">
               {isPeriodMode
                 ? `${format(dataInicio, "dd/MM/yyyy")} a ${format(dataFim, "dd/MM/yyyy")} (${diffDias} ${diffDias === 1 ? "dia" : "dias"})`
@@ -354,6 +352,11 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
                 min={paginaInicial || 1}
               />
             </div>
+          </div>
+
+          {/* Contador visual para conferência */}
+          <div className="text-xs font-medium text-primary bg-primary/5 p-2 rounded border border-primary/10">
+            Total lido: {parseInt(paginaFinal) - parseInt(paginaInicial) + 1 || 0} páginas
           </div>
 
           <div>
