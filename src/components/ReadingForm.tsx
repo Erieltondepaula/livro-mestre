@@ -33,6 +33,7 @@ interface ReadingFormProps {
     bibleVerseStart?: number;
     bibleVerseEnd?: number;
     bibleEntries?: BibleEntry[];
+    generateDailyEntries?: boolean; // Flag to generate daily entries for period
   }) => void;
 }
 
@@ -221,6 +222,7 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
           dataInicio,
           dataFim,
           isRetroactive: !!isBookCompleted,
+          generateDailyEntries: true, // Enable auto-generation of daily entries
           ...(isBibleCategory && currentBibleBook && {
             bibleBook: currentBibleBook,
             bibleChapter: currentBibleChapter ? parseInt(currentBibleChapter) : undefined,
