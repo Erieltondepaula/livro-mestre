@@ -135,10 +135,12 @@ export function useLibrary() {
             const [mins, secs] = timeSpentStr.split(':').map(Number);
             tempoGastoSeconds = (mins * 60) + (secs || 0);
           } else {
-            // Legacy: stored as minutes float or seconds
+            // Value is stored as seconds (or legacy minutes for very old data)
             const parsed = parseFloat(timeSpentStr);
-            // If value is small (< 1000), assume it's in minutes and convert
-            tempoGastoSeconds = parsed < 1000 ? Math.round(parsed * 60) : parsed;
+            // Only treat as minutes if value is very small (< 60), which would indicate
+            // old data stored in minutes (e.g., "15" for 15 minutes)
+            // Values >= 60 are assumed to be seconds already
+            tempoGastoSeconds = parsed < 60 ? Math.round(parsed * 60) : Math.round(parsed);
           }
 
           return {
