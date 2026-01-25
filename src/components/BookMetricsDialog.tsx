@@ -243,8 +243,13 @@ export function BookMetricsDialog({
   // Group readings by day for consolidated display
   const groupReadingsByDay = (readings: DailyReading[], isBible: boolean) => {
     if (!isBible) {
-      // For non-Bible books, keep original behavior (no grouping)
-      return [...readings].reverse().map(reading => ({
+      // For non-Bible books, sort by date descending (most recent first)
+      const sortedReadings = [...readings].sort((a, b) => {
+        const dateA = a.dataInicio ? new Date(a.dataInicio).getTime() : 0;
+        const dateB = b.dataInicio ? new Date(b.dataInicio).getTime() : 0;
+        return dateB - dateA; // Descending order (most recent first)
+      });
+      return sortedReadings.map(reading => ({
         key: reading.id,
         displayDate: formatReadingDate(reading),
         paginaInicial: reading.paginaInicial,
