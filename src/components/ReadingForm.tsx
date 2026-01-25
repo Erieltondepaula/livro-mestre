@@ -652,5 +652,3 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
     </div>
   );
 }
-
-ReadingForm.tsx original
