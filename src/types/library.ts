@@ -25,7 +25,7 @@ export interface DailyReading {
   livroLido: string;
   paginaInicial: number;
   paginaFinal: number;
-  tempoGasto: number; // seconds (used to be minutes, now stores seconds for precision)
+  tempoGasto: number; // minutos (decimal, ex: 10.5 = 10min 30seg)
   quantidadePaginas: number; // calculado automaticamente
   dataInicio?: Date; // Data de início do período de leitura
   dataFim?: Date; // Data de fim do período de leitura

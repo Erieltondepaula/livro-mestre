@@ -33,8 +33,7 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
     if (bookReadings.length === 0) return null;
     
     const totalPages = bookReadings.reduce((sum, r) => sum + r.quantidadePaginas, 0);
-    const totalSeconds = bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0);
-    const totalMinutes = totalSeconds / 60; // Convert seconds to minutes
+    const totalMinutes = bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0); // tempoGasto já em minutos
     
     if (totalMinutes === 0) return null;
     

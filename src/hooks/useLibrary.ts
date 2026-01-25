@@ -4,39 +4,40 @@ import { useAuth } from '@/contexts/AuthContext';
 import { addDays, format, differenceInDays } from 'date-fns';
 import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats, VocabularyEntry } from '@/types/library';
 
-// Tempo médio de leitura por página (em segundos) por categoria
+// Tempo médio de leitura por página (em MINUTOS) por categoria
 const READING_TIME_BY_CATEGORY: Record<string, { min: number; max: number }> = {
-  'autoajuda': { min: 150, max: 180 }, // 2.5-3 min
-  'bíblia': { min: 180, max: 300 }, // 3-5 min
-  'biblia': { min: 180, max: 300 },
-  'biografia': { min: 120, max: 150 }, // 2-2.5 min
-  'ciência': { min: 240, max: 360 }, // 4-6 min
-  'ciencia': { min: 240, max: 360 },
-  'espiritualidade': { min: 180, max: 240 }, // 3-4 min
-  'religioso': { min: 180, max: 240 },
-  'fantasia': { min: 108, max: 150 }, // 1.8-2.5 min
-  'ficção': { min: 90, max: 120 }, // 1.5-2 min
-  'ficcao': { min: 90, max: 120 },
-  'finanças': { min: 180, max: 240 }, // 3-4 min
-  'financas': { min: 180, max: 240 },
-  'história': { min: 180, max: 300 }, // 3-5 min
-  'historia': { min: 180, max: 300 },
-  'não-ficção': { min: 180, max: 240 }, // 3-4 min
-  'nao-ficcao': { min: 180, max: 240 },
-  'negócios': { min: 180, max: 240 }, // 3-4 min
-  'negocios': { min: 180, max: 240 },
-  'romance': { min: 90, max: 120 }, // 1.5-2 min
-  'outro': { min: 120, max: 240 }, // 2-4 min
+  'autoajuda': { min: 2.5, max: 3 },
+  'bíblia': { min: 3, max: 5 },
+  'biblia': { min: 3, max: 5 },
+  'biografia': { min: 2, max: 2.5 },
+  'ciência': { min: 4, max: 6 },
+  'ciencia': { min: 4, max: 6 },
+  'espiritualidade': { min: 3, max: 4 },
+  'religioso': { min: 3, max: 4 },
+  'fantasia': { min: 1.8, max: 2.5 },
+  'ficção': { min: 1.5, max: 2 },
+  'ficcao': { min: 1.5, max: 2 },
+  'finanças': { min: 3, max: 4 },
+  'financas': { min: 3, max: 4 },
+  'história': { min: 3, max: 5 },
+  'historia': { min: 3, max: 5 },
+  'não-ficção': { min: 3, max: 4 },
+  'nao-ficcao': { min: 3, max: 4 },
+  'negócios': { min: 3, max: 4 },
+  'negocios': { min: 3, max: 4 },
+  'romance': { min: 1.5, max: 2 },
+  'outro': { min: 2, max: 4 },
 };
 
+// Retorna tempo médio por página em MINUTOS
 function getAverageReadingTimePerPage(category: string | undefined): number {
-  if (!category) return 150; // default 2.5 min
+  if (!category) return 2.5; // default 2.5 min
   const normalizedCategory = category.toLowerCase().trim();
   const times = READING_TIME_BY_CATEGORY[normalizedCategory];
   if (times) {
-    return Math.round((times.min + times.max) / 2);
+    return (times.min + times.max) / 2;
   }
-  return 150; // default 2.5 min
+  return 2.5; // default 2.5 min
 }
 
 export function useLibrary() {
@@ -129,25 +130,20 @@ export function useLibrary() {
       if (readingsData) {
         setReadings(readingsData.map(r => {
           // Parse time_spent - formato correto é MM:SS ou apenas MM (minutos)
-          // Valores sem ":" são tratados SEMPRE como minutos
-          let tempoGastoSeconds = 0;
+          // O campo armazena MINUTOS (ex: "10:30" = 10 minutos e 30 segundos)
+          // O resultado tempoGasto é TAMBÉM em minutos (decimal)
+          let tempoGastoMinutes = 0;
           const timeSpentStr = r.time_spent || '0';
           if (timeSpentStr.includes(':')) {
             const parts = timeSpentStr.split(':').map(Number);
-            if (parts.length === 3) {
-              // Formato HH:MM:SS (dados legados incorretos)
-              // Interpretar como horas:minutos:segundos
-              const [hours, mins, secs] = parts;
-              tempoGastoSeconds = (hours * 3600) + (mins * 60) + (secs || 0);
-            } else if (parts.length === 2) {
-              // Formato MM:SS (correto)
+            if (parts.length === 2) {
+              // Formato MM:SS (ex: "10:30" = 10 minutos e 30 segundos = 10.5 minutos)
               const [mins, secs] = parts;
-              tempoGastoSeconds = (mins * 60) + (secs || 0);
+              tempoGastoMinutes = mins + (secs / 60);
             }
           } else {
-            // Número sem ":" = SEMPRE minutos (formato correto)
-            const minutes = parseFloat(timeSpentStr) || 0;
-            tempoGastoSeconds = Math.round(minutes * 60);
+            // Número sem ":" = SEMPRE minutos (ex: "20" = 20 minutos)
+            tempoGastoMinutes = parseFloat(timeSpentStr) || 0;
           }
 
           return {
@@ -158,7 +154,7 @@ export function useLibrary() {
             livroLido: (r.books as any)?.name || '',
             paginaInicial: r.start_page,
             paginaFinal: r.end_page,
-            tempoGasto: tempoGastoSeconds, // Now always in seconds
+            tempoGasto: tempoGastoMinutes, // Em minutos (decimal)
             quantidadePaginas: r.end_page - r.start_page,
             dataInicio: (r as any).start_date ? new Date((r as any).start_date + 'T12:00:00') : undefined,
             dataFim: (r as any).end_date ? new Date((r as any).end_date + 'T12:00:00') : undefined,
@@ -344,16 +340,17 @@ export function useLibrary() {
         const totalPagesInPeriod = reading.paginaFinal - reading.paginaInicial + 1;
         const pagesPerDay = totalPagesInPeriod / totalDays;
         
-        // Tempo por dia - se o usuário informou o tempo total (em segundos), divide pelos dias
+        // Tempo por dia em MINUTOS
+        // Se o usuário informou o tempo total, divide pelos dias
         // Se não, calcula baseado na categoria
-        let timePerDaySeconds: number;
+        let timePerDayMinutes: number;
         if (reading.tempoGasto > 0) {
           // Usuário informou o tempo total - divide pelos dias
-          timePerDaySeconds = Math.round(reading.tempoGasto / totalDays);
+          timePerDayMinutes = reading.tempoGasto / totalDays;
         } else {
-          // Calcula baseado na categoria
+          // Calcula baseado na categoria (minutos por página * páginas por dia)
           const avgTimePerPage = getAverageReadingTimePerPage(bookData?.category);
-          timePerDaySeconds = Math.round(pagesPerDay * avgTimePerPage);
+          timePerDayMinutes = pagesPerDay * avgTimePerPage;
         }
         
         const meses = [
@@ -370,9 +367,7 @@ export function useLibrary() {
           const month = meses[currentDate.getMonth()];
           const dateStr = format(currentDate, 'yyyy-MM-dd');
           
-          // CORREÇÃO: Cálculo correto de páginas por dia
-          // Dia 1: paginaInicial até paginaInicial + pagesPerDay - 1
-          // Dia 2: continua de onde parou
+          // Cálculo correto de páginas por dia
           const startPageForDay = Math.floor(reading.paginaInicial + (pagesPerDay * i));
           const endPageForDay = Math.min(
             Math.floor(reading.paginaInicial + (pagesPerDay * (i + 1)) - 1),
@@ -382,13 +377,18 @@ export function useLibrary() {
           // Para o último dia, garantir que termine exatamente na página final
           const finalEndPage = i === totalDays - 1 ? reading.paginaFinal : endPageForDay;
           
+          // Converter minutos para formato MM:SS se tiver fração
+          const mins = Math.floor(timePerDayMinutes);
+          const secs = Math.round((timePerDayMinutes % 1) * 60);
+          const timeSpentStr = secs > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${mins}`;
+          
           dailyEntries.push({
             book_id: reading.livroId,
             day: day,
             month: month,
             start_page: startPageForDay,
             end_page: finalEndPage,
-            time_spent: timePerDaySeconds.toString(), // Tempo por dia em segundos
+            time_spent: timeSpentStr, // Tempo em formato MM ou MM:SS
             start_date: dateStr,
             end_date: dateStr,
             bible_book: reading.bibleBook || null,
@@ -438,7 +438,7 @@ export function useLibrary() {
         month: reading.mes,
         start_page: reading.paginaInicial,
         end_page: reading.paginaFinal,
-        time_spent: reading.tempoGasto.toString(), // Now in seconds
+        time_spent: reading.tempoGasto.toString(), // Minutos
         start_date: startDateStr,
         end_date: endDateStr,
         bible_book: reading.bibleBook || null,

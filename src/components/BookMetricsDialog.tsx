@@ -93,44 +93,40 @@ export function BookMetricsDialog({
 
   const progress = (totalPagesRead / book.totalPaginas) * 100;
   
-  // Now tempoGasto is in SECONDS
-  // For Bible readings, we need to group by day and take max time per day (not sum)
-  // For period-generated entries, tempoGasto already represents time PER DAY, so we just sum
-  const calculateTotalTimeSeconds = () => {
+  // tempoGasto agora está em MINUTOS (decimal, ex: 10.5 = 10min 30seg)
+  // Para leituras bíblicas, agrupa por dia e pega o máximo por dia
+  // Para entradas de período, tempoGasto já representa o tempo POR DIA
+  const calculateTotalTimeMinutes = () => {
     const isBible = book?.categoria?.toLowerCase() === 'bíblia' || 
                     book?.categoria?.toLowerCase() === 'biblia';
     
     if (isBible) {
-      // Group by day and take max time per day
+      // Agrupar por dia e pegar o tempo máximo por dia
       const timeByDay: Record<string, number> = {};
       for (const reading of bookReadings) {
         const dateKey = `${reading.dia}/${reading.mes}`;
         const currentMax = timeByDay[dateKey] || 0;
-        // Para entradas bíblicas, tempoGasto já é o tempo daquela sessão específica
         timeByDay[dateKey] = Math.max(currentMax, reading.tempoGasto);
       }
       return Object.values(timeByDay).reduce((sum, time) => sum + time, 0);
     }
     
-    // For non-Bible books, check if entries are from period generation
-    // If entry has start_date == end_date, it's a period-generated entry, tempoGasto is already per-day
-    let totalSeconds = 0;
+    // Para livros não-bíblicos, soma o tempo de todas as leituras
+    let totalMinutes = 0;
     for (const reading of bookReadings) {
-      // Para entradas geradas por período (start_date == end_date), tempoGasto já é o tempo daquele dia
-      // Para entradas normais com período, NÃO multiplicar - o tempo já está distribuído
-      totalSeconds += reading.tempoGasto;
+      totalMinutes += reading.tempoGasto;
     }
-    return totalSeconds;
+    return totalMinutes;
   };
   
-  const totalTimeSeconds = calculateTotalTimeSeconds();
+  const totalTimeMinutes = calculateTotalTimeMinutes();
   
   const calculateReadingDays = () => {
     const isBible = book?.categoria?.toLowerCase() === 'bíblia' || 
                     book?.categoria?.toLowerCase() === 'biblia';
     
     if (isBible) {
-      // Count unique days for Bible readings
+      // Conta dias únicos para leituras bíblicas
       const uniqueDays = new Set<string>();
       for (const reading of bookReadings) {
         const dateKey = `${reading.dia}/${reading.mes}`;
@@ -139,26 +135,21 @@ export function BookMetricsDialog({
       return uniqueDays.size;
     }
     
-    // For non-Bible books, each reading entry is already a unique day
-    // (period entries are now split into individual days)
+    // Para livros não-bíblicos, cada entrada é um dia único
     return bookReadings.length;
   };
   
   const readingDays = calculateReadingDays();
   const avgPagesPerDay = readingDays > 0 ? totalPagesRead / readingDays : 0;
-  const pagesPerMinute = totalTimeSeconds > 0 ? totalPagesRead / (totalTimeSeconds / 60) : 0;
+  const pagesPerMinute = totalTimeMinutes > 0 ? totalPagesRead / totalTimeMinutes : 0;
 
-  // Format seconds to display (e.g., "9h 16min 11s")
-  const formatTimeFromSeconds = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.round(seconds % 60);
+  // Formatar minutos para exibição (ex: "1h 30min" ou "45min")
+  const formatTimeFromMinutes = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
     
     if (hours > 0) {
-      return secs > 0 ? `${hours}h ${mins}min ${secs}s` : (mins > 0 ? `${hours}h ${mins}min` : `${hours}h`);
-    }
-    if (secs > 0) {
-      return `${mins}min ${secs}s`;
+      return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
     }
     return `${mins}min`;
   };
@@ -212,12 +203,12 @@ export function BookMetricsDialog({
     return `${reading.dia} ${reading.mes}`;
   };
 
-  // Format seconds for reading history display (MM:SS format)
-  const formatReadingTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.round(seconds % 60);
+  // Formatar minutos para histórico (ex: "10 min" ou "10:30")
+  const formatReadingTime = (minutes: number) => {
+    const mins = Math.floor(minutes);
+    const secs = Math.round((minutes % 1) * 60);
     if (secs > 0) {
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
+      return `${mins}:${secs.toString().padStart(2, '0')} min`;
     }
     return `${mins} min`;
   };
@@ -366,7 +357,7 @@ export function BookMetricsDialog({
             
             <div className="card-library p-4 text-center">
               <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{formatTimeFromSeconds(totalTimeSeconds)}</p>
+              <p className="text-2xl font-bold">{formatTimeFromMinutes(totalTimeMinutes)}</p>
               <p className="text-xs text-muted-foreground">Tempo Total</p>
             </div>
             
@@ -384,7 +375,7 @@ export function BookMetricsDialog({
             
             <div className="card-library p-4 text-center">
               <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold">{formatTimeFromSeconds(totalTimeSeconds / (readingDays || 1))}</p>
+              <p className="text-2xl font-bold">{formatTimeFromMinutes(totalTimeMinutes / (readingDays || 1))}</p>
               <p className="text-xs text-muted-foreground">Tempo/Dia</p>
             </div>
             

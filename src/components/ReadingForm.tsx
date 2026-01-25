@@ -42,23 +42,24 @@ const meses = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
-// Função para parse MM:SS para SEGUNDOS
-function parseTimeToSeconds(timeStr: string): number {
+// Função para parse MM:SS para MINUTOS (decimal)
+// Ex: "10:30" = 10.5 minutos, "20" = 20 minutos
+function parseTimeToMinutes(timeStr: string): number {
   if (!timeStr) return 0;
   const parts = timeStr.split(':');
   if (parts.length === 2) {
     const minutes = parseInt(parts[0]) || 0;
     const seconds = parseInt(parts[1]) || 0;
-    return (minutes * 60) + seconds;
+    return minutes + (seconds / 60);
   }
   // Se não tiver ":", assume que são apenas minutos
-  return (parseInt(timeStr) || 0) * 60;
+  return parseFloat(timeStr) || 0;
 }
 
-// Formatar segundos para exibição MM:SS
-function formatSecondsToDisplay(totalSeconds: number): string {
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
+// Formatar minutos para exibição MM:SS (se tiver segundos)
+function formatMinutesToDisplay(totalMinutes: number): string {
+  const mins = Math.floor(totalMinutes);
+  const secs = Math.round((totalMinutes % 1) * 60);
   if (secs > 0) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
@@ -108,8 +109,8 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
   const diasLeitura = dataInicio && dataFim ? differenceInDays(dataFim, dataInicio) + 1 : 0;
   const paginasPorDia = diasLeitura > 0 && paginasLidas > 0 ? (paginasLidas / diasLeitura).toFixed(1) : 0;
   
-  const tempoEmSegundos = parseTimeToSeconds(tempoGasto);
-  const tempoMedioPorDiaSegundos = diasLeitura > 0 && tempoEmSegundos ? Math.round(tempoEmSegundos / diasLeitura) : 0;
+  const tempoEmMinutos = parseTimeToMinutes(tempoGasto);
+  const tempoMedioPorDiaMinutos = diasLeitura > 0 && tempoEmMinutos ? tempoEmMinutos / diasLeitura : 0;
 
   const addBibleEntry = () => {
     if (!currentBibleBook || !currentBibleChapter) return;
@@ -143,8 +144,8 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
     const book = books.find(b => b.id === livroId);
     if (!book) return;
 
-    // Salvar o valor em SEGUNDOS
-    const tempoFinal = parseTimeToSeconds(tempoGasto);
+    // Salvar o valor em MINUTOS (decimal)
+    const tempoFinal = parseTimeToMinutes(tempoGasto);
 
     // Para livros bíblicos com múltiplas entradas, submeter cada uma
     if (isBibleCategory && bibleEntries.length > 0) {
@@ -633,7 +634,7 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
               </div>
               <div className="text-center">
                 <Clock className="w-4 h-4 mx-auto mb-1 text-primary" />
-                <p className="text-lg font-bold">{formatSecondsToDisplay(tempoMedioPorDiaSegundos)}</p>
+                <p className="text-lg font-bold">{formatMinutesToDisplay(tempoMedioPorDiaMinutos)}</p>
                 <p className="text-xs text-muted-foreground">Tempo/Dia</p>
               </div>
             </div>
