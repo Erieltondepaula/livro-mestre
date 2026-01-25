@@ -222,19 +222,95 @@ export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSele
             </div>
           )}
 
-          {/* Context Analysis */}
+          {/* Context Analysis - Complete v2 */}
           {entry.analise_contexto && (
             <div className="border-t pt-4">
-              <h4 className="font-semibold text-foreground mb-3">Análise de Contexto</h4>
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
-                <p><span className="font-semibold">Frase original:</span> "{entry.analise_contexto.frase}"</p>
-                <p><span className="font-semibold">Sentido identificado:</span> {entry.analise_contexto.sentidoIdentificado}</p>
-                <p><span className="font-semibold">Explicação:</span> {entry.analise_contexto.explicacao}</p>
-                {entry.analise_contexto.sinonimosAdequados && entry.analise_contexto.sinonimosAdequados.length > 0 && (
-                  <p><span className="font-semibold">Sinônimos adequados:</span> {entry.analise_contexto.sinonimosAdequados.join(', ')}</p>
+              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                📋 Análise de Contexto
+              </h4>
+              <div className="bg-muted/30 rounded-lg p-4 space-y-4 text-sm">
+                {/* Frase original */}
+                <div className="border-l-4 border-primary pl-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Frase original</p>
+                  <p className="text-foreground italic">"{entry.analise_contexto.frase}"</p>
+                </div>
+
+                {/* Palavra-chave e Classe */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Palavra-chave</p>
+                    <p className="text-primary font-bold">{entry.analise_contexto.palavraChave || entry.palavra}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Classe gramatical</p>
+                    <p className="text-foreground">{entry.analise_contexto.classeGramatical || entry.classe}</p>
+                  </div>
+                </div>
+
+                {/* Sentido identificado */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sentido identificado</p>
+                  <p className="text-foreground">{entry.analise_contexto.sentidoIdentificado}</p>
+                </div>
+
+                {/* Explicação */}
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Explicação</p>
+                  <p className="text-foreground">{entry.analise_contexto.explicacao}</p>
+                </div>
+
+                {/* Uso comum vs técnico */}
+                {entry.analise_contexto.usoComumVsTecnico && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Uso comum vs técnico</p>
+                    <p className="text-foreground">{entry.analise_contexto.usoComumVsTecnico}</p>
+                  </div>
                 )}
+
+                {/* Sinônimos adequados */}
+                {entry.analise_contexto.sinonimosAdequados && entry.analise_contexto.sinonimosAdequados.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sinônimos adequados</p>
+                    <div className="flex flex-wrap gap-1">
+                      {entry.analise_contexto.sinonimosAdequados.map((sin, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs">
+                          {sin}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Exemplo simples */}
+                {entry.analise_contexto.exemploSimples && (
+                  <div className="bg-secondary/20 rounded p-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Exemplo simples</p>
+                    <p className="text-foreground">{entry.analise_contexto.exemploSimples}</p>
+                  </div>
+                )}
+
+                {/* Observação de nuance */}
+                {(entry.analise_contexto.observacaoNuance || entry.analise_contexto.observacao) && (
+                  <div className="border-l-4 border-accent pl-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Observação de nuance</p>
+                    <p className="text-foreground">{entry.analise_contexto.observacaoNuance || entry.analise_contexto.observacao}</p>
+                  </div>
+                )}
+
+                {/* Frase reescrita */}
                 {entry.analise_contexto.fraseReescrita && (
-                  <p><span className="font-semibold">Frase reescrita:</span> {entry.analise_contexto.fraseReescrita}</p>
+                  <div className="border-l-4 border-secondary pl-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Frase reescrita</p>
+                    <p className="text-foreground italic">"{entry.analise_contexto.fraseReescrita}"</p>
+                  </div>
+                )}
+
+                {/* Aplicação prática */}
+                {entry.analise_contexto.aplicacaoPratica && (
+                  <div className="bg-primary/5 border border-primary/20 rounded p-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aplicação prática</p>
+                    <p className="text-foreground">{entry.analise_contexto.aplicacaoPratica}</p>
+                  </div>
                 )}
               </div>
             </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,21 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { VocabularyDialog } from './VocabularyDialog';
 import { SavedWordsPanel } from './SavedWordsPanel';
 import { toast } from '@/hooks/use-toast';
-
-interface SinonimoGrupo {
-  sentido: string;
-  palavras: string[];
-}
-
-interface AnaliseContexto {
-  frase: string;
-  sentidoIdentificado: string;
-  explicacao: string;
-  sentidosNaoAplicaveis: string[];
-  sinonimosAdequados: string[];
-  fraseReescrita: string;
-  observacao: string;
-}
+import type { VocabularyEntry, SinonimoGrupo, AnaliseContexto } from '@/types/library';
 
 interface DictionaryResult {
   palavra: string;
@@ -45,29 +32,6 @@ interface BookOption {
   id: string;
   name: string;
   author: string | null;
-}
-
-interface VocabularyEntry {
-  id: string;
-  palavra: string;
-  silabas: string | null;
-  fonetica: string | null;
-  classe: string | null;
-  definicoes: string[];
-  sinonimos: SinonimoGrupo[];
-  antonimos: string[];
-  exemplos: string[];
-  etimologia: string | null;
-  observacoes: string | null;
-  analise_contexto: AnaliseContexto | null;
-  created_at: string;
-  book_id: string | null;
-  source_type: string | null;
-  source_details: {
-    bookName?: string;
-    author?: string;
-    page?: number;
-  } | null;
 }
 
 export function DictionaryView() {
@@ -346,11 +310,11 @@ export function DictionaryView() {
               Você tem uma frase ou trecho real onde essa palavra aparece para que eu possa analisar o contexto e identificar o sentido correto?
             </p>
             <div className="space-y-3">
-              <Input
+              <Textarea
                 placeholder="Digite a frase ou trecho..."
                 value={contextPhrase}
                 onChange={(e) => setContextPhrase(e.target.value)}
-                className="w-full"
+                className="w-full min-h-[100px]"
               />
               <Button 
                 onClick={analyzeContext} 
@@ -367,53 +331,97 @@ export function DictionaryView() {
             </div>
           </div>
 
-          {/* Context Analysis Result */}
+          {/* Context Analysis Result - New Complete Format */}
           {result.analiseContexto && (
-            <div className="mt-8 space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+            <div className="mt-8 border-t pt-6">
+              <h3 className="font-display text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+                📋 Análise de Contexto
+              </h3>
+              
+              <div className="bg-muted/30 rounded-lg p-6 space-y-5">
+                {/* Frase original */}
                 <div className="border-l-4 border-primary pl-4">
-                  <p className="text-sm text-muted-foreground mb-1">Etapa A - Nota da Palavra 📋 03 - Palavras</p>
-                  <h4 className="font-bold text-foreground">{result.palavra}</h4>
-                  <p className="text-sm text-muted-foreground mt-2">{result.definicoes[0]}</p>
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Frase original</p>
+                  <p className="text-foreground italic">"{result.analiseContexto.frase}"</p>
                 </div>
 
-                <div className="border-l-4 border-accent pl-4">
-                  <p className="text-sm text-muted-foreground mb-1">Etapa B - Nota de Conceito 📋 02 - Conceitos</p>
-                  <h4 className="font-semibold text-foreground">Complexidade Decisória</h4>
-                  <p className="text-sm text-muted-foreground">{result.analiseContexto.explicacao}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Palavras ligadas: [[{result.palavra}]]</p>
+                {/* Palavra-chave e Classe */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Palavra-chave</p>
+                    <p className="text-primary font-bold">{result.analiseContexto.palavraChave || result.palavra}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Classe gramatical</p>
+                    <p className="text-foreground">{result.analiseContexto.classeGramatical || result.classe}</p>
+                  </div>
                 </div>
 
-                <div className="border-l-4 border-secondary pl-4">
-                  <p className="text-sm text-muted-foreground mb-1">Etapa C - Nota de Campo Semântico 📋 05 - Campos Semânticos</p>
-                  <h4 className="font-semibold text-foreground">Quantificadores de Magnitude</h4>
-                  <p className="text-sm text-muted-foreground">Grupo de palavras utilizadas para descrever quantidades que fogem ao controle comum ou que sugerem imensidão.</p>
-                  <p className="text-sm text-muted-foreground mt-1">Palavras deste campo: [[{result.palavra}]]</p>
+                {/* Sentido identificado */}
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sentido identificado no contexto</p>
+                  <p className="text-foreground">{result.analiseContexto.sentidoIdentificado}</p>
                 </div>
 
-                <div className="border-l-4 border-muted-foreground pl-4">
-                  <p className="text-sm text-muted-foreground mb-1">Etapa D - Nota de Contexto 📋 04 - Contextos</p>
-                  <p className="text-sm"><span className="font-semibold">Frase original:</span> "{result.analiseContexto.frase}"</p>
-                  <p className="text-sm"><span className="font-semibold">Palavra analisada:</span> [[{result.palavra}]]</p>
-                  <p className="text-sm"><span className="font-semibold">Sentido identificado:</span> {result.analiseContexto.sentidoIdentificado}</p>
-                  <p className="text-sm"><span className="font-semibold">Explicação:</span> {result.analiseContexto.explicacao}</p>
-                  {result.analiseContexto.sentidosNaoAplicaveis && result.analiseContexto.sentidosNaoAplicaveis.length > 0 && (
-                    <p className="text-sm"><span className="font-semibold">Sentidos não aplicáveis:</span> {result.analiseContexto.sentidosNaoAplicaveis.join(', ')}</p>
-                  )}
-                  <p className="text-sm"><span className="font-semibold">Sinônimos adequados:</span> {result.analiseContexto.sinonimosAdequados?.join(', ')}</p>
-                  <p className="text-sm"><span className="font-semibold">Frase reescrita:</span> {result.analiseContexto.fraseReescrita}</p>
-                  <p className="text-sm"><span className="font-semibold">Observação:</span> {result.analiseContexto.observacao}</p>
+                {/* Explicação */}
+                <div className="bg-background/50 rounded-md p-4">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Explicação</p>
+                  <p className="text-foreground">{result.analiseContexto.explicacao}</p>
                 </div>
 
-                <div className="border-l-4 border-primary/50 pl-4">
-                  <p className="text-sm text-muted-foreground mb-1">Etapa E - Nota de Fonte 📋 01 - Fonte</p>
-                  <h4 className="font-semibold text-foreground">Frase sobre Relacionamentos</h4>
-                  <p className="text-sm"><span className="font-semibold">Tipo:</span> Outro</p>
-                  <p className="text-sm"><span className="font-semibold">Autor:</span> Desconhecido (Trecho fornecido pelo usuário)</p>
-                  <p className="text-sm"><span className="font-semibold">Ano:</span></p>
-                  <p className="text-sm"><span className="font-semibold">Página ou local:</span></p>
-                  <p className="text-sm"><span className="font-semibold">Palavras encontradas:</span> [[{result.palavra}]]</p>
-                </div>
+                {/* Uso comum vs técnico */}
+                {result.analiseContexto.usoComumVsTecnico && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Uso comum vs uso técnico</p>
+                    <p className="text-foreground">{result.analiseContexto.usoComumVsTecnico}</p>
+                  </div>
+                )}
+
+                {/* Sinônimos adequados */}
+                {result.analiseContexto.sinonimosAdequados && result.analiseContexto.sinonimosAdequados.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sinônimos adequados ao contexto</p>
+                    <div className="flex flex-wrap gap-2">
+                      {result.analiseContexto.sinonimosAdequados.map((sin, i) => (
+                        <span key={i} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                          {sin}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Exemplo simples */}
+                {result.analiseContexto.exemploSimples && (
+                  <div className="bg-secondary/20 rounded-md p-4">
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Exemplo simples</p>
+                    <p className="text-foreground">{result.analiseContexto.exemploSimples}</p>
+                  </div>
+                )}
+
+                {/* Observação de nuance */}
+                {(result.analiseContexto.observacaoNuance || result.analiseContexto.observacao) && (
+                  <div className="border-l-4 border-accent pl-4">
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Observação de nuance</p>
+                    <p className="text-foreground">{result.analiseContexto.observacaoNuance || result.analiseContexto.observacao}</p>
+                  </div>
+                )}
+
+                {/* Frase reescrita */}
+                {result.analiseContexto.fraseReescrita && (
+                  <div className="border-l-4 border-secondary pl-4">
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Frase reescrita</p>
+                    <p className="text-foreground italic">"{result.analiseContexto.fraseReescrita}"</p>
+                  </div>
+                )}
+
+                {/* Aplicação prática */}
+                {result.analiseContexto.aplicacaoPratica && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-md p-4">
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Aplicação prática</p>
+                    <p className="text-foreground">{result.analiseContexto.aplicacaoPratica}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
