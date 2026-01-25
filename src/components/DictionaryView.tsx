@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save, Clock, Book } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { VocabularyDialog } from './VocabularyDialog';
+import { SavedWordsPanel } from './SavedWordsPanel';
 import { toast } from '@/hooks/use-toast';
 
 interface SinonimoGrupo {
@@ -560,28 +561,12 @@ export function DictionaryView() {
         </Alert>
       )}
 
-      {/* Saved Vocabulary */}
-      {savedWords.length > 0 && (
-        <div className="card-library p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Palavras Salvas</h3>
-            <span className="text-sm text-muted-foreground">({savedWords.length})</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {savedWords.map((entry) => (
-              <button
-                key={entry.id}
-                onClick={() => openWordDetail(entry)}
-                className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-primary hover:text-primary-foreground transition-colors flex items-center gap-1"
-              >
-                {entry.book_id && <Book className="w-3 h-3" />}
-                {entry.palavra}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Saved Vocabulary - Novo componente escalável */}
+      <SavedWordsPanel
+        words={savedWords}
+        books={books}
+        onSelectWord={openWordDetail}
+      />
 
       {/* Empty state */}
       {!result && !error && !isLoading && savedWords.length === 0 && (
@@ -593,11 +578,15 @@ export function DictionaryView() {
         </div>
       )}
 
-      {/* Vocabulary Dialog */}
+      {/* Vocabulary Dialog - Atualizado com conexões */}
       <VocabularyDialog 
         entry={selectedEntry} 
         isOpen={isDialogOpen} 
-        onClose={() => setIsDialogOpen(false)} 
+        onClose={() => setIsDialogOpen(false)}
+        allWords={savedWords}
+        onSelectRelatedWord={(entry) => {
+          setSelectedEntry(entry);
+        }}
       />
     </div>
   );

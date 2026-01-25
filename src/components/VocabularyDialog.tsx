@@ -1,51 +1,17 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Book } from 'lucide-react';
-
-interface SinonimoGrupo {
-  sentido: string;
-  palavras: string[];
-}
-
-interface AnaliseContexto {
-  frase: string;
-  sentidoIdentificado: string;
-  explicacao: string;
-  sentidosNaoAplicaveis: string[];
-  sinonimosAdequados: string[];
-  fraseReescrita: string;
-  observacao: string;
-}
-
-interface VocabularyEntry {
-  id: string;
-  palavra: string;
-  silabas: string | null;
-  fonetica: string | null;
-  classe: string | null;
-  definicoes: string[];
-  sinonimos: SinonimoGrupo[];
-  antonimos: string[];
-  exemplos: string[];
-  etimologia: string | null;
-  observacoes: string | null;
-  analise_contexto: AnaliseContexto | null;
-  created_at: string;
-  book_id?: string | null;
-  source_type?: string | null;
-  source_details?: {
-    bookName?: string;
-    author?: string;
-    page?: number;
-  } | null;
-}
+import { Book, Link2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import type { VocabularyEntry } from '@/types/library';
 
 interface VocabularyDialogProps {
   entry: VocabularyEntry | null;
   isOpen: boolean;
   onClose: () => void;
+  allWords?: VocabularyEntry[];
+  onSelectRelatedWord?: (entry: VocabularyEntry) => void;
 }
 
-export function VocabularyDialog({ entry, isOpen, onClose }: VocabularyDialogProps) {
+export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSelectRelatedWord }: VocabularyDialogProps) {
   if (!entry) return null;
 
   const getSourceLabel = (type: string | null | undefined) => {
@@ -54,6 +20,76 @@ export function VocabularyDialog({ entry, isOpen, onClose }: VocabularyDialogPro
       case 'artigo': return '📄 Artigo';
       case 'site': return '🌐 Site/Web';
       default: return '📝 Outro';
+    }
+  };
+
+  // Encontrar palavras relacionadas
+  const findRelatedWords = (): VocabularyEntry[] => {
+    if (!allWords || allWords.length <= 1) return [];
+    
+    const related: Set<string> = new Set();
+    const currentWordLower = entry.palavra.toLowerCase();
+    
+    // Por sinônimos compartilhados
+    entry.sinonimos?.forEach(grupo => {
+      grupo.palavras?.forEach(sinonimo => {
+        const sinonimoLower = sinonimo.toLowerCase();
+        allWords.forEach(word => {
+          if (word.id !== entry.id && word.palavra.toLowerCase() === sinonimoLower) {
+            related.add(word.id);
+          }
+          // Também verificar se outras palavras têm este sinônimo
+          word.sinonimos?.forEach(g => {
+            g.palavras?.forEach(s => {
+              if (s.toLowerCase() === currentWordLower && word.id !== entry.id) {
+                related.add(word.id);
+              }
+            });
+          });
+        });
+      });
+    });
+
+    // Por antônimos compartilhados
+    entry.antonimos?.forEach(antonimo => {
+      const antonimoLower = antonimo.toLowerCase();
+      allWords.forEach(word => {
+        if (word.id !== entry.id && word.palavra.toLowerCase() === antonimoLower) {
+          related.add(word.id);
+        }
+      });
+    });
+
+    // Por campo semântico similar (via análise de contexto)
+    if (entry.analise_contexto?.sentidoIdentificado) {
+      const sentido = entry.analise_contexto.sentidoIdentificado.toLowerCase();
+      allWords.forEach(word => {
+        if (word.id !== entry.id && 
+            word.analise_contexto?.sentidoIdentificado?.toLowerCase() === sentido) {
+          related.add(word.id);
+        }
+      });
+    }
+
+    // Por classe gramatical similar E mesma fonte
+    if (entry.classe && entry.book_id) {
+      allWords.forEach(word => {
+        if (word.id !== entry.id && 
+            word.classe === entry.classe && 
+            word.book_id === entry.book_id) {
+          related.add(word.id);
+        }
+      });
+    }
+
+    return allWords.filter(w => related.has(w.id)).slice(0, 10);
+  };
+
+  const relatedWords = findRelatedWords();
+
+  const handleRelatedWordClick = (relatedEntry: VocabularyEntry) => {
+    if (onSelectRelatedWord) {
+      onSelectRelatedWord(relatedEntry);
     }
   };
 
@@ -74,6 +110,32 @@ export function VocabularyDialog({ entry, isOpen, onClose }: VocabularyDialogPro
             {entry.fonetica && <span>{entry.fonetica}</span>}
             {entry.classe && <span>/ {entry.classe}</span>}
           </div>
+
+          {/* Related Words - Nova seção de conexões */}
+          {relatedWords.length > 0 && (
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+              <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-primary" />
+                Palavras Relacionadas
+                <Badge variant="secondary" className="text-xs">{relatedWords.length}</Badge>
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {relatedWords.map((related) => (
+                  <button
+                    key={related.id}
+                    onClick={() => handleRelatedWordClick(related)}
+                    className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded-full text-sm hover:bg-primary hover:text-primary-foreground transition-colors flex items-center gap-1"
+                  >
+                    {related.book_id && <Book className="w-3 h-3 opacity-60" />}
+                    {related.palavra}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Clique para ver os detalhes de uma palavra relacionada
+              </p>
+            </div>
+          )}
 
           {/* Source Info */}
           {(entry.source_type || entry.source_details) && (

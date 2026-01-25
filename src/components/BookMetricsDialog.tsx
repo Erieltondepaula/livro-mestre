@@ -7,7 +7,7 @@ import { QuotesListDialog } from '@/components/QuotesListDialog';
 import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare, Book, Pencil } from 'lucide-react';
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { Book as BookType, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType, VocabularyWord } from '@/types/library';
+import type { Book as BookType, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType, VocabularyEntry } from '@/types/library';
 
 interface BookMetricsDialogProps {
   book: BookType | null;
@@ -15,7 +15,7 @@ interface BookMetricsDialogProps {
   readings: DailyReading[];
   evaluation: BookEvaluation | null;
   quotes: QuoteType[];
-  vocabulary: VocabularyWord[];
+  vocabulary: VocabularyEntry[];
   isOpen: boolean;
   onClose: () => void;
   onUpdateReading?: (reading: DailyReading) => void;
@@ -32,7 +32,7 @@ export function BookMetricsDialog({
   onClose,
   onUpdateReading,
 }: BookMetricsDialogProps) {
-  const [selectedWord, setSelectedWord] = useState<VocabularyWord | null>(null);
+  const [selectedWord, setSelectedWord] = useState<VocabularyEntry | null>(null);
   const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
   const [editingReading, setEditingReading] = useState<DailyReading | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -41,7 +41,7 @@ export function BookMetricsDialog({
 
   const bookReadings = book ? readings.filter(r => r.livroId === book.id) : [];
   const bookQuotes = book ? quotes.filter(q => q.livroId === book.id) : [];
-  const bookVocabulary = book ? vocabulary.filter(v => v.bookId === book.id) : [];
+  const bookVocabulary = book ? vocabulary.filter(v => v.book_id === book.id) : [];
 
   // Group quotes by Bible book for the button display
   const quotesByBibleBook = useMemo(() => {
@@ -68,7 +68,7 @@ export function BookMetricsDialog({
     setIsQuotesDialogOpen(true);
   };
 
-  const handleWordClick = (word: VocabularyWord) => {
+  const handleWordClick = (word: VocabularyEntry) => {
     setSelectedWord(word);
     setIsVocabDialogOpen(true);
   };
@@ -86,24 +86,6 @@ export function BookMetricsDialog({
     setEditingReading(null);
   };
 
-  const mapWordToEntry = (word: VocabularyWord) => ({
-    id: word.id,
-    palavra: word.palavra,
-    silabas: word.silabas || null,
-    fonetica: word.fonetica || null,
-    classe: word.classe || null,
-    definicoes: word.definicoes || [],
-    sinonimos: word.sinonimos || [],
-    antonimos: word.antonimos || [],
-    exemplos: word.exemplos || [],
-    etimologia: word.etimologia || null,
-    observacoes: word.observacoes || null,
-    analise_contexto: word.analise_contexto || null,
-    created_at: word.createdAt,
-    book_id: word.bookId,
-    source_type: word.source_type,
-    source_details: word.source_details,
-  });
   
   const totalPagesRead = bookReadings.length > 0 
     ? Math.max(...bookReadings.map(r => r.paginaFinal)) 
@@ -560,7 +542,7 @@ export function BookMetricsDialog({
         </div>
 
         <VocabularyDialog
-          entry={selectedWord ? mapWordToEntry(selectedWord) : null}
+          entry={selectedWord}
           isOpen={isVocabDialogOpen}
           onClose={() => {
             setIsVocabDialogOpen(false);
