@@ -97,19 +97,26 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
   const handleSave = () => {
     if (!reading) return;
 
-    onst pIni = parseInt(paginaInicial) || 0;
-const pFin = parseInt(paginaFinal) || 0;
+    const pIni = parseInt(paginaInicial) || 0;
+    const pFin = parseInt(paginaFinal) || 0;
 
-const updatedReading: DailyReading = {
-  ...reading,
-  // ... outros campos
-  paginaInicial: pIni,
-  paginaFinal: pFin,
-  // CORREÇÃO: Fim - Início + 1 garante 142 páginas se for de 1 a 142
-  quantidadePaginas: (pFin - pIni) + 1, 
-  tempoGasto: parseTimeToSeconds(tempoGasto),
-  // ...
-};
+    const updatedReading: DailyReading = {
+      ...reading,
+      dia: parseInt(dia),
+      mes,
+      paginaInicial: pIni,
+      paginaFinal: pFin,
+      tempoGasto: parseTimeToSeconds(tempoGasto),
+      // CORREÇÃO 1: (Fim - Início) + 1 para contar a página inicial corretamente
+      quantidadePaginas: pFin - pIni + 1,
+      dataInicio,
+      dataFim,
+      bibleBook: bibleBook || undefined,
+      bibleChapter: bibleChapter ? parseInt(bibleChapter) : undefined,
+      bibleVerseStart: bibleVerseStart ? parseInt(bibleVerseStart) : undefined,
+      bibleVerseEnd: bibleVerseEnd ? parseInt(bibleVerseEnd) : undefined,
+      ordem: (reading as any).ordem,
+    };
 
     onSave(updatedReading);
     onClose();
