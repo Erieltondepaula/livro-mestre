@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Trash2, Edit2, BarChart3 } from 'lucide-react';
-import type { BookStatus, Book, DailyReading, BookEvaluation, Quote, VocabularyWord } from '@/types/library';
+import type { BookStatus, Book, DailyReading, BookEvaluation, Quote, VocabularyEntry } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
 import { BookMetricsDialog } from './BookMetricsDialog';
 
@@ -10,7 +10,7 @@ interface StatusViewProps {
   readings: DailyReading[];
   evaluations: BookEvaluation[];
   quotes: Quote[];
-  vocabulary: VocabularyWord[];
+  vocabulary: VocabularyEntry[];
   onDeleteBook: (id: string) => void;
   onUpdateBook: (book: Book) => void;
   onUpdateReading?: (reading: DailyReading) => void;

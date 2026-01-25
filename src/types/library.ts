@@ -86,7 +86,7 @@ export interface AnaliseContexto {
   observacao: string;
 }
 
-export interface VocabularyWord {
+export interface VocabularyEntry {
   id: string;
   palavra: string;
   silabas: string | null;
@@ -99,17 +99,20 @@ export interface VocabularyWord {
   etimologia: string | null;
   observacoes: string | null;
   analise_contexto: AnaliseContexto | null;
-  bookId: string | null;
-  bookName: string | null;
-  pagina: number | null;
+  book_id: string | null;
+  bookName?: string | null;
+  pagina?: number | null;
   source_type: string | null;
   source_details: {
     bookName?: string;
     author?: string;
     page?: number;
   } | null;
-  createdAt: string;
+  created_at: string;
 }
+
+// Alias para compatibilidade retroativa
+export type VocabularyWord = VocabularyEntry;
 
 export interface DashboardStats {
   totalPaginas: number;

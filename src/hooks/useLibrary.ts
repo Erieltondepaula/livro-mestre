@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { addDays, format, differenceInDays } from 'date-fns';
-import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats, VocabularyWord } from '@/types/library';
+import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats, VocabularyEntry } from '@/types/library';
 
 // Tempo médio de leitura por página (em segundos) por categoria
 const READING_TIME_BY_CATEGORY: Record<string, { min: number; max: number }> = {
@@ -46,7 +46,7 @@ export function useLibrary() {
   const [statuses, setStatuses] = useState<BookStatus[]>([]);
   const [evaluations, setEvaluations] = useState<BookEvaluation[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [vocabulary, setVocabulary] = useState<VocabularyWord[]>([]);
+  const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load data from database
@@ -213,12 +213,12 @@ export function useLibrary() {
             etimologia: v.etimologia || null,
             observacoes: v.observacoes || null,
             analise_contexto: v.analise_contexto as { frase: string; sentidoIdentificado: string; explicacao: string; sentidosNaoAplicaveis: string[]; sinonimosAdequados: string[]; fraseReescrita: string; observacao: string } | null,
-            bookId: v.book_id,
+            book_id: v.book_id,
             bookName: (v.books as any)?.name || null,
             pagina,
             source_type: v.source_type || null,
             source_details: sourceDetails || null,
-            createdAt: v.created_at,
+            created_at: v.created_at,
           };
         }));
       }
