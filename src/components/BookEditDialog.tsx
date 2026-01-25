@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { X, Save, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +14,7 @@ interface BookEditDialogProps {
   onDelete: (id: string) => void;
 }
 
-export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: BookEditDialogProps) {
+export const BookEditDialog = forwardRef<HTMLDivElement, BookEditDialogProps>(function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }, ref) {
   const { isAdmin } = useAuth();
   const [livro, setLivro] = useState('');
   const [autor, setAutor] = useState('');
@@ -127,7 +127,7 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div ref={ref} className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" onClick={onClose} />
       
       <div className="relative bg-card rounded-xl border border-border shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
@@ -344,4 +344,4 @@ export function BookEditDialog({ book, isOpen, onClose, onSave, onDelete }: Book
       </div>
     </div>
   );
-}
+});

@@ -324,15 +324,28 @@ export function useLibrary() {
     if (isPeriodMode && reading.generateDailyEntries !== false) {
       const startDate = new Date(reading.dataInicio!);
       const endDate = new Date(reading.dataFim!);
-      const totalDays = differenceInDays(endDate, startDate) + 1;
+      // CORREÇÃO: differenceInDays conta dias de diferença, então para incluir ambos os extremos,
+      // somamos 1 apenas se as datas forem diferentes
+      const daysDiff = differenceInDays(endDate, startDate);
+      const totalDays = daysDiff + 1; // Inclui o dia inicial e final
       
-      if (totalDays > 1) {
-        // Calculate pages per day
-        const pagesPerDay = quantidadePaginas / totalDays;
+      if (totalDays >= 1) {
+        // Cálculo correto de páginas por dia
+        // Se leu da página 1 até 142, são 142 páginas (incluindo a página 1)
+        const totalPagesInPeriod = reading.paginaFinal - reading.paginaInicial + 1;
+        const pagesPerDay = totalPagesInPeriod / totalDays;
         
-        // Get average reading time per page based on category
-        const avgTimePerPage = getAverageReadingTimePerPage(bookData?.category);
-        const timePerDay = Math.round(pagesPerDay * avgTimePerPage);
+        // Tempo por dia - se o usuário informou o tempo total (em segundos), divide pelos dias
+        // Se não, calcula baseado na categoria
+        let timePerDaySeconds: number;
+        if (reading.tempoGasto > 0) {
+          // Usuário informou o tempo total - divide pelos dias
+          timePerDaySeconds = Math.round(reading.tempoGasto / totalDays);
+        } else {
+          // Calcula baseado na categoria
+          const avgTimePerPage = getAverageReadingTimePerPage(bookData?.category);
+          timePerDaySeconds = Math.round(pagesPerDay * avgTimePerPage);
+        }
         
         const meses = [
           'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -341,7 +354,6 @@ export function useLibrary() {
         
         // Generate entries for each day
         const dailyEntries = [];
-        let currentPage = reading.paginaInicial;
         
         for (let i = 0; i < totalDays; i++) {
           const currentDate = addDays(startDate, i);
@@ -349,18 +361,25 @@ export function useLibrary() {
           const month = meses[currentDate.getMonth()];
           const dateStr = format(currentDate, 'yyyy-MM-dd');
           
+          // CORREÇÃO: Cálculo correto de páginas por dia
+          // Dia 1: paginaInicial até paginaInicial + pagesPerDay - 1
+          // Dia 2: continua de onde parou
+          const startPageForDay = Math.floor(reading.paginaInicial + (pagesPerDay * i));
           const endPageForDay = Math.min(
-            Math.round(reading.paginaInicial + (pagesPerDay * (i + 1))),
+            Math.floor(reading.paginaInicial + (pagesPerDay * (i + 1)) - 1),
             reading.paginaFinal
           );
+          
+          // Para o último dia, garantir que termine exatamente na página final
+          const finalEndPage = i === totalDays - 1 ? reading.paginaFinal : endPageForDay;
           
           dailyEntries.push({
             book_id: reading.livroId,
             day: day,
             month: month,
-            start_page: Math.round(currentPage),
-            end_page: endPageForDay,
-            time_spent: timePerDay.toString(),
+            start_page: startPageForDay,
+            end_page: finalEndPage,
+            time_spent: timePerDaySeconds.toString(), // Tempo por dia em segundos
             start_date: dateStr,
             end_date: dateStr,
             bible_book: reading.bibleBook || null,
@@ -369,8 +388,6 @@ export function useLibrary() {
             bible_verse_end: reading.bibleVerseEnd || null,
             user_id: user.id,
           });
-          
-          currentPage = endPageForDay;
         }
         
         // Insert all daily entries
