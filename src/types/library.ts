@@ -2,7 +2,7 @@
 export type BookType = string;
 export type BookCategory = string;
 
-export type ReadingStatus = 'Não iniciado' | 'Lendo' | 'Concluido';
+export type ReadingStatus = "Não iniciado" | "Lendo" | "Concluido";
 
 export interface Book {
   id: string;
@@ -29,6 +29,7 @@ export interface DailyReading {
   quantidadePaginas: number; // calculado automaticamente
   dataInicio?: Date; // Data de início do período de leitura
   dataFim?: Date; // Data de fim do período de leitura
+  ordem?: number; // Propriedade adicionada para controle de sequência e correção de build
   // Bible-specific fields
   bibleBook?: string;
   bibleChapter?: number;
