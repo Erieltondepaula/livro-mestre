@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -41,14 +41,15 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     [bibleBook, bibleChapter],
   );
 
-  useState(() => {
+  // Preencher todos os campos quando o dialog abrir
+  useEffect(() => {
     if (reading && isOpen) {
       setDia(reading.dia.toString());
       setMes(reading.mes);
       setPaginaInicial(reading.paginaInicial.toString());
       setPaginaFinal(reading.paginaFinal.toString());
 
-      // CORREÇÃO: Formatação de tempo consistente com o que foi digitado
+      // Formatação de tempo consistente com o que foi digitado
       const totalSeconds = reading.tempoGasto;
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = Math.round(totalSeconds % 60);
@@ -61,7 +62,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       setBibleVerseStart(reading.bibleVerseStart?.toString() || "");
       setBibleVerseEnd(reading.bibleVerseEnd?.toString() || "");
     }
-  });
+  }, [reading, isOpen]);
 
   const handleOpenChange = (open: boolean) => {
     if (open && reading) {
@@ -237,6 +238,43 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
               )}
             </div>
           )}
+
+          {/* Campos de Dia e Mês (para leituras sem data específica) */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Dia</label>
+              <input
+                type="number"
+                value={dia}
+                onChange={(e) => setDia(e.target.value)}
+                className="input-library"
+                min="1"
+                max="31"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Mês</label>
+              <select
+                value={mes}
+                onChange={(e) => setMes(e.target.value)}
+                className="input-library"
+              >
+                <option value="">Selecione</option>
+                <option value="Janeiro">Janeiro</option>
+                <option value="Fevereiro">Fevereiro</option>
+                <option value="Março">Março</option>
+                <option value="Abril">Abril</option>
+                <option value="Maio">Maio</option>
+                <option value="Junho">Junho</option>
+                <option value="Julho">Julho</option>
+                <option value="Agosto">Agosto</option>
+                <option value="Setembro">Setembro</option>
+                <option value="Outubro">Outubro</option>
+                <option value="Novembro">Novembro</option>
+                <option value="Dezembro">Dezembro</option>
+              </select>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
