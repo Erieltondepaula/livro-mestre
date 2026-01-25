@@ -80,10 +80,18 @@ export interface AnaliseContexto {
   frase: string;
   sentidoIdentificado: string;
   explicacao: string;
-  sentidosNaoAplicaveis: string[];
-  sinonimosAdequados: string[];
   fraseReescrita: string;
-  observacao: string;
+  sinonimosAdequados: string[];
+  // Novos campos v2 - opcionais para compatibilidade com dados existentes
+  palavraChave?: string;
+  classeGramatical?: string;
+  usoComumVsTecnico?: string;
+  exemploSimples?: string;
+  observacaoNuance?: string;
+  aplicacaoPratica?: string;
+  // Campos legados para compatibilidade
+  sentidosNaoAplicaveis?: string[];
+  observacao?: string;
 }
 
 export interface VocabularyEntry {

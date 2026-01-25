@@ -1363,4 +1363,66 @@ USING (is_master_user(auth.uid()) AND NOT is_master_user(user_id));
 
 ---
 
+## 11. Módulo de Análise de Contexto (v2)
+
+### 11.1 Descrição
+O módulo de Análise de Contexto é acionado quando o usuário fornece uma frase ou trecho real onde uma palavra aparece. O objetivo é aprofundar a compreensão semântica, unindo léxico, semântica, intenção e aplicação prática.
+
+### 11.2 Fluxo de Uso
+1. Usuário busca uma palavra no Dicionário
+2. Sistema exibe definição completa
+3. Usuário insere frase/trecho onde a palavra aparece
+4. Sistema gera análise de contexto completa
+
+### 11.3 Estrutura da Análise de Contexto (analise_contexto JSONB)
+
+```typescript
+interface AnaliseContexto {
+  frase: string;                    // Frase original fornecida
+  palavraChave?: string;            // Palavra analisada
+  classeGramatical?: string;        // Classe gramatical no contexto
+  sentidoIdentificado: string;      // Definição contextualizada
+  explicacao: string;               // Como a palavra funciona na frase
+  usoComumVsTecnico?: string;       // Diferença entre uso popular e técnico
+  sinonimosAdequados: string[];     // Sinônimos que mantêm o sentido
+  exemploSimples?: string;          // Explicação acessível
+  observacaoNuance?: string;        // Limites de uso da palavra
+  fraseReescrita: string;           // Frase com sinônimo substituído
+  aplicacaoPratica?: string;        // Por que entender melhora a leitura
+  // Campos legados (compatibilidade)
+  sentidosNaoAplicaveis?: string[];
+  observacao?: string;
+}
+```
+
+### 11.4 Regras do Módulo
+- A análise considera SOMENTE o contexto fornecido
+- Não generaliza além da frase analisada
+- Linguagem clara, progressiva e precisa
+- Profundidade sem complicação desnecessária
+- Complementa o registro em dicionário, não o substitui
+
+### 11.5 Query SQL para Atualização do Banco Local
+
+O campo `analise_contexto` é do tipo JSONB e não requer alteração de schema. Os novos campos são adicionados dinamicamente ao JSON. Para atualizar palavras existentes com análise de contexto no novo formato, use a edge function `dictionary` com o parâmetro `context`.
+
+**Nota:** Não é necessária migração de banco de dados. A estrutura JSONB aceita os novos campos automaticamente.
+
+---
+
+## 12. Changelog
+
+### v1.6 (25 Janeiro 2026)
+- **Análise de Contexto v2**: Novo módulo completo com 11 campos de análise
+  - Adicionados campos: `palavraChave`, `classeGramatical`, `usoComumVsTecnico`, `exemploSimples`, `observacaoNuance`, `aplicacaoPratica`
+  - UI atualizada para exibir todos os campos de forma clara
+  - Edge function `dictionary` atualizada com novo prompt
+
+### v1.5 (23 Janeiro 2026)
+- Sistema de vocabulário com conexões semânticas
+- Painel de palavras salvas com navegação A-Z
+- Filtros e paginação para escalabilidade
+
+---
+
 > 📌 **Mantenha este documento atualizado** sempre que fizer alterações significativas no projeto!

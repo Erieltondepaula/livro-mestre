@@ -123,42 +123,46 @@ Formato de resposta JSON:
     let userPrompt = `Defina a palavra: "${cleanWord}"`;
 
     // Validate and sanitize context
-    const cleanContext = context?.trim().slice(0, 500);
+    const cleanContext = context?.trim().slice(0, 1000);
     
     if (cleanContext) {
       systemPrompt += `
 
-IMPORTANTE: O usuário forneceu uma frase/contexto para análise. Você DEVE incluir o campo "analiseContexto" na resposta com TODOS os campos preenchidos.
+IMPORTANTE: O usuário forneceu uma frase/contexto para análise profunda. Você DEVE incluir o campo "analiseContexto" na resposta.
 
-Quando fornecido um contexto/frase, analise:
-1. Qual o sentido específico da palavra nesse contexto
-2. Explicação detalhada de por que esse sentido se aplica
-3. Quais definições NÃO se aplicam a esse contexto
-4. Sinônimos adequados para o contexto específico
-5. Frase reescrita substituindo a palavra por sinônimo adequado
-6. Observação adicional sobre o uso da palavra nesse contexto
+Este módulo de Análise de Contexto complementa o dicionário. O objetivo é aprofundar a compreensão semântica da palavra, unindo léxico, semântica, intenção e aplicação prática, de forma clara tanto para iniciantes quanto para leitores avançados.
 
-O JSON DEVE incluir o campo analiseContexto com esta estrutura EXATA:
+REGRAS OBRIGATÓRIAS:
+- A análise deve considerar SOMENTE o contexto fornecido
+- Não generalizar além da frase analisada
+- Linguagem clara, progressiva e precisa
+- Profundidade sem complicação desnecessária
+
+O JSON DEVE incluir o campo analiseContexto com esta estrutura EXATA e TODOS os campos preenchidos:
 {
-  ...campos anteriores...,
+  ...campos anteriores do dicionário...,
   "analiseContexto": {
-    "frase": "a frase original fornecida pelo usuário",
-    "sentidoIdentificado": "qual definição se aplica neste contexto",
-    "explicacao": "explicação detalhada de por que esse sentido se aplica ao contexto",
-    "sentidosNaoAplicaveis": ["lista de sentidos/definições que não se aplicam"],
-    "sinonimosAdequados": ["lista de sinônimos que funcionam neste contexto específico"],
-    "fraseReescrita": "frase original reescrita com um sinônimo adequado substituindo a palavra",
-    "observacao": "nota adicional sobre o uso neste contexto"
+    "frase": "a frase original fornecida pelo usuário (copie exatamente)",
+    "palavraChave": "a palavra analisada",
+    "classeGramatical": "a classe gramatical da palavra neste contexto (substantivo, adjetivo, verbo, etc.)",
+    "sentidoIdentificado": "definição clara, objetiva e contextualizada do sentido usado (sem copiar literalmente o dicionário)",
+    "explicacao": "explique COMO a palavra funciona dentro da frase, POR QUE foi usada ali e O QUE ela comunica naquele contexto específico",
+    "usoComumVsTecnico": "diferencie, se aplicável, o sentido popular do sentido técnico, histórico ou acadêmico",
+    "sinonimosAdequados": ["liste APENAS sinônimos que podem substituir a palavra SEM alterar o sentido da frase"],
+    "exemploSimples": "explique o sentido com uma frase curta, concreta e acessível, compreensível por uma criança",
+    "observacaoNuance": "indique limites do uso da palavra, o que ela NÃO quer dizer ou possíveis confusões",
+    "fraseReescrita": "reescreva a frase original substituindo a palavra por um sinônimo adequado, mantendo o sentido",
+    "aplicacaoPratica": "explique por que compreender corretamente essa palavra melhora a leitura, a comunicação ou a interpretação do texto"
   }
 }
 
-TODOS os campos de analiseContexto são OBRIGATÓRIOS quando um contexto é fornecido. Não deixe nenhum campo vazio.`;
+TODOS os campos de analiseContexto são OBRIGATÓRIOS. Não deixe nenhum campo vazio ou null.`;
 
       userPrompt = `Defina a palavra: "${cleanWord}"
 
 CONTEXTO/FRASE PARA ANÁLISE OBRIGATÓRIA: "${cleanContext}"
 
-IMPORTANTE: Inclua o campo "analiseContexto" com TODOS os campos preenchidos na resposta.`;
+IMPORTANTE: Inclua o campo "analiseContexto" com TODOS os 11 campos preenchidos na resposta. Este é um módulo de análise profunda, não apenas definição.`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -178,6 +182,18 @@ IMPORTANTE: Inclua o campo "analiseContexto" com TODOS os campos preenchidos na 
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Créditos esgotados. Adicione fundos à sua conta Lovable." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       throw new Error("Erro ao processar requisição");
     }
 
