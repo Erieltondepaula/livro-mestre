@@ -10,21 +10,6 @@ import { cn } from "@/lib/utils";
 import { getBibleBookNames, getChaptersArray, getVersesArray } from "@/data/bibleData";
 import type { DailyReading, Book } from "@/types/library";
 
-const meses = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
-
 interface ReadingHistoryDialogProps {
   reading: DailyReading | null;
   book: Book | null;
@@ -63,10 +48,11 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       setPaginaInicial(reading.paginaInicial.toString());
       setPaginaFinal(reading.paginaFinal.toString());
 
+      // CORREÇÃO: Formatação de tempo consistente com o que foi digitado
       const totalSeconds = reading.tempoGasto;
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = Math.round(totalSeconds % 60);
-      setTempoGasto(seconds > 0 ? `${minutes}:${seconds.toString().padStart(2, "0")}` : minutes.toString());
+      setTempoGasto(`${minutes}:${seconds.toString().padStart(2, "0")}`);
 
       setDataInicio(reading.dataInicio);
       setDataFim(reading.dataFim);
@@ -87,7 +73,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       const totalSeconds = reading.tempoGasto;
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = Math.round(totalSeconds % 60);
-      setTempoGasto(seconds > 0 ? `${minutes}:${seconds.toString().padStart(2, "0")}` : minutes.toString());
+      setTempoGasto(`${minutes}:${seconds.toString().padStart(2, "0")}`);
 
       setDataInicio(reading.dataInicio);
       setDataFim(reading.dataFim);
@@ -96,18 +82,14 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       setBibleVerseStart(reading.bibleVerseStart?.toString() || "");
       setBibleVerseEnd(reading.bibleVerseEnd?.toString() || "");
     }
-    if (!open) {
-      onClose();
-    }
+    if (!open) onClose();
   };
 
   const parseTimeToSeconds = (timeStr: string): number => {
     if (!timeStr) return 0;
     const parts = timeStr.split(":");
     if (parts.length === 2) {
-      const minutes = parseInt(parts[0]) || 0;
-      const seconds = parseInt(parts[1]) || 0;
-      return minutes * 60 + seconds;
+      return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
     }
     return (parseInt(timeStr) || 0) * 60;
   };
@@ -115,24 +97,25 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
   const handleSave = () => {
     if (!reading) return;
 
-    const pInicial = parseInt(paginaInicial) || 1;
-    const pFinalCalculada = pInicial + 2;
+    const pIni = parseInt(paginaInicial) || 0;
+    const pFin = parseInt(paginaFinal) || 0;
 
     const updatedReading: DailyReading = {
       ...reading,
       dia: parseInt(dia),
       mes,
-      paginaInicial: pInicial,
-      paginaFinal: pFinalCalculada,
+      paginaInicial: pIni,
+      paginaFinal: pFin,
       tempoGasto: parseTimeToSeconds(tempoGasto),
-      quantidadePaginas: 3,
+      // CORREÇÃO 1: (Fim - Início) + 1 para contar a página inicial corretamente
+      quantidadePaginas: pFin - pIni + 1,
       dataInicio,
-      dataFim: dataInicio,
+      dataFim,
       bibleBook: bibleBook || undefined,
       bibleChapter: bibleChapter ? parseInt(bibleChapter) : undefined,
       bibleVerseStart: bibleVerseStart ? parseInt(bibleVerseStart) : undefined,
       bibleVerseEnd: bibleVerseEnd ? parseInt(bibleVerseEnd) : undefined,
-      ordem: reading.ordem, // Mantém a ordem original
+      ordem: (reading as any).ordem,
     };
 
     onSave(updatedReading);
@@ -152,7 +135,8 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     setBibleVerseEnd("");
   };
 
-  // CORREÇÃO DO ERRO DE BUILD: Verificação segura para 'ordem'
+  // CORREÇÃO 2: Diferença de dias + 1 para incluir o dia de início
+  const diasTotais = dataInicio && dataFim ? differenceInDays(dataFim, dataInicio) + 1 : 1;
   const numeroOrdem = (reading as any)?.ordem || 1;
 
   if (!reading || !book) return null;
@@ -164,14 +148,15 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
           <DialogTitle className="flex flex-col gap-1">
             <span className="flex items-center gap-2">📖 Editar Leitura - {book.livro}</span>
             <span className="text-sm font-normal text-muted-foreground">
-              {dataInicio
-                ? `${format(dataInicio, "dd/MM/yyyy")} a ${format(dataInicio, "dd/MM/yyyy")} (${numeroOrdem} dia)`
+              {dataInicio && dataFim
+                ? `${format(dataInicio, "dd/MM/yyyy")} a ${format(dataFim, "dd/MM/yyyy")} (${diasTotais} dias)`
                 : `${dia} de ${mes} (1 dia)`}
             </span>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
+          {/* Campos Bíblicos */}
           {isBibleCategory && (
             <div className="space-y-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
               <h4 className="font-medium text-sm text-primary">Referência Bíblica</h4>
@@ -250,7 +235,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Data da Leitura</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Data Início</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -270,20 +255,39 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
                     selected={dataInicio}
                     onSelect={setDataInicio}
                     initialFocus
-                    className={cn("p-3 pointer-events-auto")}
+                    className="p-3 pointer-events-auto"
                     locale={ptBR}
                   />
                 </PopoverContent>
               </Popover>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Duração (Plano)</label>
-              <input
-                type="text"
-                value={`(${numeroOrdem} dia)`}
-                readOnly
-                className="input-library bg-muted cursor-not-allowed"
-              />
+              <label className="block text-sm font-medium text-foreground mb-2">Data Fim</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal input-library",
+                      !dataFim && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataFim ? format(dataFim, "dd/MM/yyyy", { locale: ptBR }) : <span>dd/mm/aaaa</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dataFim}
+                    onSelect={setDataFim}
+                    disabled={(date) => (dataInicio ? date < dataInicio : false)}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -299,18 +303,20 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Página Final (Auto)</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Página Final</label>
               <input
                 type="number"
-                value={paginaInicial ? parseInt(paginaInicial) + 2 : ""}
-                readOnly
-                className="input-library bg-muted cursor-not-allowed"
+                value={paginaFinal}
+                onChange={(e) => setPaginaFinal(e.target.value)}
+                className="input-library"
+                min={paginaInicial || 1}
               />
             </div>
           </div>
 
           <div className="text-xs font-medium text-primary bg-primary/5 p-2 rounded border border-primary/10">
-            Total lido: 3 páginas (padrão solicitado)
+            {/* CORREÇÃO 3: Exibição dinâmica do cálculo correto */}
+            Total lido: {paginaInicial && paginaFinal ? parseInt(paginaFinal) - parseInt(paginaInicial) + 1 : 0} páginas
           </div>
 
           <div>
