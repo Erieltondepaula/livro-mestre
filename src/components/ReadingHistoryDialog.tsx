@@ -115,7 +115,6 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
   const handleSave = () => {
     if (!reading) return;
 
-    // FORÇA O INTERVALO DE 3 PÁGINAS (Início + 2)
     const pInicial = parseInt(paginaInicial) || 1;
     const pFinalCalculada = pInicial + 2;
 
@@ -126,13 +125,14 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       paginaInicial: pInicial,
       paginaFinal: pFinalCalculada,
       tempoGasto: parseTimeToSeconds(tempoGasto),
-      quantidadePaginas: 3, // Força 3 páginas lidas
+      quantidadePaginas: 3,
       dataInicio,
-      dataFim: dataInicio, // Repete a data para o formato dd/mm/aaaa a dd/mm/aaaa
+      dataFim: dataInicio,
       bibleBook: bibleBook || undefined,
       bibleChapter: bibleChapter ? parseInt(bibleChapter) : undefined,
       bibleVerseStart: bibleVerseStart ? parseInt(bibleVerseStart) : undefined,
       bibleVerseEnd: bibleVerseEnd ? parseInt(bibleVerseEnd) : undefined,
+      ordem: reading.ordem, // Mantém a ordem original
     };
 
     onSave(updatedReading);
@@ -152,8 +152,8 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     setBibleVerseEnd("");
   };
 
-  // Pega o número da ordem da leitura para o contador acumulado (Ex: 47 dia)
-  const numeroOrdem = reading?.ordem || 1;
+  // CORREÇÃO DO ERRO DE BUILD: Verificação segura para 'ordem'
+  const numeroOrdem = (reading as any)?.ordem || 1;
 
   if (!reading || !book) return null;
 
