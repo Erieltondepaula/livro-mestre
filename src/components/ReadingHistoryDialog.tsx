@@ -115,17 +115,20 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
   const handleSave = () => {
     if (!reading) return;
 
+    // FORÇA O INTERVALO DE 3 PÁGINAS (Início + 2)
+    const pInicial = parseInt(paginaInicial) || 1;
+    const pFinalCalculada = pInicial + 2;
+
     const updatedReading: DailyReading = {
       ...reading,
       dia: parseInt(dia),
       mes,
-      paginaInicial: parseInt(paginaInicial),
-      paginaFinal: parseInt(paginaFinal),
+      paginaInicial: pInicial,
+      paginaFinal: pFinalCalculada,
       tempoGasto: parseTimeToSeconds(tempoGasto),
-      // CORREÇÃO: Fórmula (Fim - Início) + 1 para incluir a página inicial
-      quantidadePaginas: parseInt(paginaFinal) - parseInt(paginaInicial) + 1,
+      quantidadePaginas: 3, // Força 3 páginas lidas
       dataInicio,
-      dataFim,
+      dataFim: dataInicio, // Repete a data para o formato dd/mm/aaaa a dd/mm/aaaa
       bibleBook: bibleBook || undefined,
       bibleChapter: bibleChapter ? parseInt(bibleChapter) : undefined,
       bibleVerseStart: bibleVerseStart ? parseInt(bibleVerseStart) : undefined,
@@ -149,10 +152,8 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     setBibleVerseEnd("");
   };
 
-  const isPeriodMode = dataInicio && dataFim;
-
-  // CORREÇÃO: Cálculo correto dos dias para pluralização
-  const diffDias = isPeriodMode ? differenceInDays(dataFim, dataInicio) + 1 : 1;
+  // Pega o número da ordem da leitura para o contador acumulado (Ex: 47 dia)
+  const numeroOrdem = reading?.ordem || 1;
 
   if (!reading || !book) return null;
 
@@ -163,8 +164,8 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
           <DialogTitle className="flex flex-col gap-1">
             <span className="flex items-center gap-2">📖 Editar Leitura - {book.livro}</span>
             <span className="text-sm font-normal text-muted-foreground">
-              {isPeriodMode
-                ? `${format(dataInicio, "dd/MM/yyyy")} a ${format(dataFim, "dd/MM/yyyy")} (${diffDias} ${diffDias === 1 ? "dia" : "dias"})`
+              {dataInicio
+                ? `${format(dataInicio, "dd/MM/yyyy")} a ${format(dataInicio, "dd/MM/yyyy")} (${numeroOrdem} dia)`
                 : `${dia} de ${mes} (1 dia)`}
             </span>
           </DialogTitle>
@@ -247,89 +248,44 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
             </div>
           )}
 
-          {isPeriodMode ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Data Início</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal input-library",
-                        !dataInicio && "text-muted-foreground",
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dataInicio ? format(dataInicio, "dd/MM/yyyy", { locale: ptBR }) : <span>dd/mm/aaaa</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dataInicio}
-                      onSelect={setDataInicio}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Data Fim</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal input-library",
-                        !dataFim && "text-muted-foreground",
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dataFim ? format(dataFim, "dd/MM/yyyy", { locale: ptBR }) : <span>dd/mm/aaaa</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dataFim}
-                      onSelect={setDataFim}
-                      disabled={(date) => (dataInicio ? date < dataInicio : false)}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Data da Leitura</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal input-library",
+                      !dataInicio && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dataInicio ? format(dataInicio, "dd/MM/yyyy", { locale: ptBR }) : <span>dd/mm/aaaa</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dataInicio}
+                    onSelect={setDataInicio}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Dia</label>
-                <input
-                  type="number"
-                  value={dia}
-                  onChange={(e) => setDia(e.target.value)}
-                  className="input-library"
-                  min="1"
-                  max="31"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Mês</label>
-                <select value={mes} onChange={(e) => setMes(e.target.value)} className="input-library">
-                  {meses.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Duração (Plano)</label>
+              <input
+                type="text"
+                value={`(${numeroOrdem} dia)`}
+                readOnly
+                className="input-library bg-muted cursor-not-allowed"
+              />
             </div>
-          )}
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -343,20 +299,18 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Página Final</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Página Final (Auto)</label>
               <input
                 type="number"
-                value={paginaFinal}
-                onChange={(e) => setPaginaFinal(e.target.value)}
-                className="input-library"
-                min={paginaInicial || 1}
+                value={paginaInicial ? parseInt(paginaInicial) + 2 : ""}
+                readOnly
+                className="input-library bg-muted cursor-not-allowed"
               />
             </div>
           </div>
 
-          {/* Contador visual para conferência */}
           <div className="text-xs font-medium text-primary bg-primary/5 p-2 rounded border border-primary/10">
-            Total lido: {parseInt(paginaFinal) - parseInt(paginaInicial) + 1 || 0} páginas
+            Total lido: 3 páginas (padrão solicitado)
           </div>
 
           <div>
@@ -366,7 +320,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
               value={tempoGasto}
               onChange={(e) => setTempoGasto(e.target.value)}
               className="input-library"
-              placeholder="Ex: 42:11 ou 45"
+              placeholder="Ex: 10:30"
             />
           </div>
 
