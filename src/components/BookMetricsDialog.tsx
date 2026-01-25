@@ -181,15 +181,35 @@ export function BookMetricsDialog({
     return `${mins}min`;
   };
 
-  // Detecta se é uma entrada gerada por período (tem ordem definida)
-  const isPeriodEntry = (reading: DailyReading) => {
-    return typeof (reading as any).ordem === 'number';
+  // Detecta se é uma entrada gerada por período (start_date == end_date e múltiplas entradas para o mesmo livro)
+  // Para entradas de período, start_date sempre igual a end_date (cada entrada é 1 dia)
+  const isPeriodEntry = (reading: DailyReading, allReadings: DailyReading[]) => {
+    if (!reading.dataInicio || !reading.dataFim) return false;
+    const startStr = format(new Date(reading.dataInicio), "yyyy-MM-dd");
+    const endStr = format(new Date(reading.dataFim), "yyyy-MM-dd");
+    // Se start == end E há múltiplas entradas do mesmo livro, é entrada de período
+    if (startStr === endStr) {
+      const sameBookEntries = allReadings.filter(r => r.livroId === reading.livroId && r.dataInicio && r.dataFim);
+      return sameBookEntries.length > 1;
+    }
+    return false;
+  };
+
+  // Calcula a ordem de uma entrada de período dentro do conjunto
+  const getPeriodOrder = (reading: DailyReading, allReadings: DailyReading[]) => {
+    const sameBookEntries = allReadings
+      .filter(r => r.livroId === reading.livroId && r.dataInicio)
+      .sort((a, b) => new Date(a.dataInicio!).getTime() - new Date(b.dataInicio!).getTime());
+    const index = sameBookEntries.findIndex(r => r.id === reading.id);
+    return index + 1;
   };
 
   const formatReadingDate = (reading: DailyReading) => {
+    const isPeriod = isPeriodEntry(reading, bookReadings);
+    
     // Para entradas geradas por período, mostrar formato especial com numeração
-    if (isPeriodEntry(reading) && reading.dataInicio && reading.dataFim) {
-      const ordem = (reading as any).ordem || 1;
+    if (isPeriod && reading.dataInicio) {
+      const ordem = getPeriodOrder(reading, bookReadings);
       const dataFormatada = format(new Date(reading.dataInicio), "dd/MM/yyyy", { locale: ptBR });
       const mesAbrev = format(new Date(reading.dataInicio), "MMM", { locale: ptBR });
       // Capitalizar primeira letra do mês

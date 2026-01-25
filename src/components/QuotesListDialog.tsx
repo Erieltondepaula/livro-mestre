@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Quote as QuoteIcon, Trash2 } from 'lucide-react';
 import type { Quote } from '@/types/library';
@@ -10,13 +11,13 @@ interface QuotesListDialogProps {
   onDelete?: (id: string) => void;
 }
 
-export function QuotesListDialog({ 
+export const QuotesListDialog = forwardRef<HTMLDivElement, QuotesListDialogProps>(({ 
   isOpen, 
   onClose, 
   title, 
   quotes,
   onDelete 
-}: QuotesListDialogProps) {
+}, ref) => {
   const formatBibleReference = (quote: Quote) => {
     if (quote.bibleBook) {
       let ref = quote.bibleBook;
@@ -83,4 +84,6 @@ export function QuotesListDialog({
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+QuotesListDialog.displayName = 'QuotesListDialog';
