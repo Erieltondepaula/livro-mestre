@@ -1,0 +1,24 @@
+-- =====================================================
+-- MIGRAÇÃO v1.9 - Unificação de Unidade de Tempo
+-- Data: 2026-01-25
+-- Status: REFERÊNCIA (lógica aplicada no código)
+-- =====================================================
+-- 
+-- MUDANÇA IMPLEMENTADA:
+-- - tempoGasto agora armazena MINUTOS (decimal)
+-- - Formato no banco: MM:SS ou apenas MM
+-- - Ex: "10:30" = 10.5 minutos (10 min e 30 seg)
+-- - Ex: "20" = 20 minutos
+--
+-- LÓGICA DE CONVERSÃO (no código):
+-- - MM:SS → minutos + (segundos / 60)
+-- - MM → parseFloat(valor)
+--
+-- IMPACTO NAS MÉTRICAS:
+-- - Tempo Total: soma dos minutos
+-- - Tempo/Dia: minutos dividido por dias de leitura
+-- - Págs/Min: páginas dividido por minutos
+--
+-- NOTA: Não é necessária migração de dados no banco.
+-- Os valores MM:SS são interpretados corretamente pelo código.
+-- =====================================================
