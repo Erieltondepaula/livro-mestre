@@ -128,19 +128,26 @@ export function useLibrary() {
 
       if (readingsData) {
         setReadings(readingsData.map(r => {
-          // Parse time_spent - can be "MM:SS" format or seconds number
+          // Parse time_spent - formato correto é MM:SS ou apenas MM (minutos)
+          // Valores sem ":" são tratados SEMPRE como minutos
           let tempoGastoSeconds = 0;
           const timeSpentStr = r.time_spent || '0';
           if (timeSpentStr.includes(':')) {
-            const [mins, secs] = timeSpentStr.split(':').map(Number);
-            tempoGastoSeconds = (mins * 60) + (secs || 0);
+            const parts = timeSpentStr.split(':').map(Number);
+            if (parts.length === 3) {
+              // Formato HH:MM:SS (dados legados incorretos)
+              // Interpretar como horas:minutos:segundos
+              const [hours, mins, secs] = parts;
+              tempoGastoSeconds = (hours * 3600) + (mins * 60) + (secs || 0);
+            } else if (parts.length === 2) {
+              // Formato MM:SS (correto)
+              const [mins, secs] = parts;
+              tempoGastoSeconds = (mins * 60) + (secs || 0);
+            }
           } else {
-            // Value is stored as seconds (or legacy minutes for very old data)
-            const parsed = parseFloat(timeSpentStr);
-            // Only treat as minutes if value is very small (< 60), which would indicate
-            // old data stored in minutes (e.g., "15" for 15 minutes)
-            // Values >= 60 are assumed to be seconds already
-            tempoGastoSeconds = parsed < 60 ? Math.round(parsed * 60) : Math.round(parsed);
+            // Número sem ":" = SEMPRE minutos (formato correto)
+            const minutes = parseFloat(timeSpentStr) || 0;
+            tempoGastoSeconds = Math.round(minutes * 60);
           }
 
           return {
