@@ -41,7 +41,6 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     [bibleBook, bibleChapter],
   );
 
-  // Inicialização do formulário
   useState(() => {
     if (reading && isOpen) {
       setDia(reading.dia.toString());
@@ -49,7 +48,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       setPaginaInicial(reading.paginaInicial.toString());
       setPaginaFinal(reading.paginaFinal.toString());
 
-      // CORREÇÃO: Formata o tempo gasto para MM:SS mantendo a precisão original
+      // CORREÇÃO: Formatação de tempo consistente com o que foi digitado
       const totalSeconds = reading.tempoGasto;
       const minutes = Math.floor(totalSeconds / 60);
       const seconds = Math.round(totalSeconds % 60);
@@ -108,7 +107,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
       paginaInicial: pIni,
       paginaFinal: pFin,
       tempoGasto: parseTimeToSeconds(tempoGasto),
-      // CORREÇÃO 1: (Fim - Início) + 1 para contar as páginas inclusive (1 a 142 = 142)
+      // CORREÇÃO 1: (Fim - Início) + 1 para contar a página inicial corretamente
       quantidadePaginas: pFin - pIni + 1,
       dataInicio,
       dataFim,
@@ -136,7 +135,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
     setBibleVerseEnd("");
   };
 
-  // CORREÇÃO 2: Diferença de dias + 1 para contar o dia de início como Dia 1
+  // CORREÇÃO 2: Diferença de dias + 1 para incluir o dia de início
   const diasTotais = dataInicio && dataFim ? differenceInDays(dataFim, dataInicio) + 1 : 1;
   const numeroOrdem = (reading as any)?.ordem || 1;
 
@@ -316,7 +315,7 @@ export function ReadingHistoryDialog({ reading, book, isOpen, onClose, onSave }:
           </div>
 
           <div className="text-xs font-medium text-primary bg-primary/5 p-2 rounded border border-primary/10">
-            {/* CORREÇÃO 3: Exibição dinâmica do cálculo correto inclusive */}
+            {/* CORREÇÃO 3: Exibição dinâmica do cálculo correto */}
             Total lido: {paginaInicial && paginaFinal ? parseInt(paginaFinal) - parseInt(paginaInicial) + 1 : 0} páginas
           </div>
 
