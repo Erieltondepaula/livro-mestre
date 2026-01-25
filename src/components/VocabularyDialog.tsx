@@ -1,7 +1,20 @@
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Book, Link2 } from 'lucide-react';
+import { Book, Link2, Pencil, Loader2, Unlink, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import type { VocabularyEntry } from '@/types/library';
+
+interface BookOption {
+  id: string;
+  name: string;
+  author: string | null;
+}
 
 interface VocabularyDialogProps {
   entry: VocabularyEntry | null;
@@ -9,9 +22,92 @@ interface VocabularyDialogProps {
   onClose: () => void;
   allWords?: VocabularyEntry[];
   onSelectRelatedWord?: (entry: VocabularyEntry) => void;
+  onEntryUpdated?: () => void;
 }
 
-export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSelectRelatedWord }: VocabularyDialogProps) {
+export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSelectRelatedWord, onEntryUpdated }: VocabularyDialogProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [books, setBooks] = useState<BookOption[]>([]);
+  const [selectedBookId, setSelectedBookId] = useState<string>('');
+  const [sourcePage, setSourcePage] = useState<string>('');
+
+  // Reset edit state when entry changes
+  useEffect(() => {
+    if (entry) {
+      setIsEditing(false);
+      setSelectedBookId(entry.book_id || '');
+      setSourcePage(entry.source_details?.page?.toString() || '');
+    }
+  }, [entry]);
+
+  // Load books when editing starts
+  useEffect(() => {
+    if (isEditing) {
+      loadBooks();
+    }
+  }, [isEditing]);
+
+  const loadBooks = async () => {
+    const { data } = await supabase
+      .from('books')
+      .select('id, name, author')
+      .order('name', { ascending: true });
+    
+    if (data) {
+      setBooks(data as BookOption[]);
+    }
+  };
+
+  const handleSaveBookLink = async () => {
+    if (!entry) return;
+    
+    setIsSaving(true);
+    try {
+      const selectedBook = books.find(b => b.id === selectedBookId);
+      
+      const sourceDetails = selectedBookId && selectedBook ? {
+        bookName: selectedBook.name,
+        author: selectedBook.author,
+        page: sourcePage ? parseInt(sourcePage) : null,
+      } : {};
+
+      const { error } = await supabase
+        .from('vocabulary')
+        .update({
+          book_id: selectedBookId || null,
+          source_type: selectedBookId ? 'livro' : entry.source_type === 'livro' ? 'outro' : entry.source_type,
+          source_details: selectedBookId ? sourceDetails : {},
+        })
+        .eq('id', entry.id);
+
+      if (error) throw error;
+
+      toast({
+        title: selectedBookId ? "Livro vinculado!" : "Vínculo removido!",
+        description: selectedBookId 
+          ? `"${entry.palavra}" agora está vinculada a "${selectedBook?.name}".`
+          : `"${entry.palavra}" não está mais vinculada a nenhum livro.`,
+      });
+
+      setIsEditing(false);
+      onEntryUpdated?.();
+    } catch (err: any) {
+      toast({
+        title: "Erro ao salvar",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemoveBookLink = () => {
+    setSelectedBookId('');
+    setSourcePage('');
+  };
+
   if (!entry) return null;
 
   const getSourceLabel = (type: string | null | undefined) => {
@@ -137,27 +233,102 @@ export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSele
             </div>
           )}
 
-          {/* Source Info */}
-          {(entry.source_type || entry.source_details) && (
-            <div className="bg-muted/50 rounded-lg p-4">
-              <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+          {/* Source Info / Edit Book Link */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold text-foreground flex items-center gap-2">
                 <Book className="w-4 h-4" />
                 Fonte
               </h4>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsEditing(!isEditing)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Pencil className="w-4 h-4 mr-1" />
+                {isEditing ? 'Cancelar' : 'Editar vínculo'}
+              </Button>
+            </div>
+
+            {isEditing ? (
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>Vincular a um livro</Label>
+                  <Select value={selectedBookId} onValueChange={setSelectedBookId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um livro (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum livro</SelectItem>
+                      {books.map(book => (
+                        <SelectItem key={book.id} value={book.id}>
+                          📖 {book.name} {book.author && `- ${book.author}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedBookId && selectedBookId !== 'none' && (
+                  <div className="space-y-2">
+                    <Label>Página (opcional)</Label>
+                    <Input
+                      type="number"
+                      placeholder="Número da página"
+                      value={sourcePage}
+                      onChange={(e) => setSourcePage(e.target.value)}
+                      min="1"
+                    />
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Button 
+                    onClick={handleSaveBookLink} 
+                    disabled={isSaving}
+                    size="sm"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-1" />
+                    )}
+                    Salvar
+                  </Button>
+                  {entry.book_id && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleRemoveBookLink}
+                    >
+                      <Unlink className="w-4 h-4 mr-1" />
+                      Remover vínculo
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : (
               <div className="space-y-1 text-sm">
                 <p><span className="text-muted-foreground">Tipo:</span> {getSourceLabel(entry.source_type)}</p>
-                {entry.source_details?.bookName && (
-                  <p><span className="text-muted-foreground">Livro:</span> {entry.source_details.bookName}</p>
-                )}
-                {entry.source_details?.author && (
-                  <p><span className="text-muted-foreground">Autor:</span> {entry.source_details.author}</p>
-                )}
-                {entry.source_details?.page && (
-                  <p><span className="text-muted-foreground">Página:</span> {entry.source_details.page}</p>
+                {entry.source_details?.bookName ? (
+                  <>
+                    <p><span className="text-muted-foreground">Livro:</span> {entry.source_details.bookName}</p>
+                    {entry.source_details.author && (
+                      <p><span className="text-muted-foreground">Autor:</span> {entry.source_details.author}</p>
+                    )}
+                    {entry.source_details.page && (
+                      <p><span className="text-muted-foreground">Página:</span> {entry.source_details.page}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    Nenhum livro vinculado. Clique em "Editar vínculo" para associar esta palavra a um livro.
+                  </p>
                 )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Definitions */}
           {entry.definicoes && entry.definicoes.length > 0 && (
