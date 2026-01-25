@@ -586,7 +586,7 @@ export function DictionaryView() {
         </div>
       )}
 
-      {/* Vocabulary Dialog - Atualizado com conexões */}
+      {/* Vocabulary Dialog - Atualizado com conexões e edição de vínculo */}
       <VocabularyDialog 
         entry={selectedEntry} 
         isOpen={isDialogOpen} 
@@ -594,6 +594,22 @@ export function DictionaryView() {
         allWords={savedWords}
         onSelectRelatedWord={(entry) => {
           setSelectedEntry(entry);
+        }}
+        onEntryUpdated={() => {
+          loadVocabulary();
+          // Atualizar o entry selecionado com os novos dados
+          if (selectedEntry) {
+            supabase
+              .from('vocabulary')
+              .select('*')
+              .eq('id', selectedEntry.id)
+              .maybeSingle()
+              .then(({ data }) => {
+                if (data) {
+                  setSelectedEntry(data as unknown as VocabularyEntry);
+                }
+              });
+          }
         }}
       />
     </div>
