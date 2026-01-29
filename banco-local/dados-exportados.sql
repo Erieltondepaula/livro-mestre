@@ -1,6 +1,7 @@
 -- =====================================================
 -- SCRIPT DE EXPORTAÇÃO DE DADOS - Lovable Cloud
 -- Gerado em: 29/01/2026
+-- User ID: bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5
 -- =====================================================
 -- IMPORTANTE: Execute este script no seu banco local Supabase
 -- Certifique-se de que o schema já foi criado antes de executar
@@ -39,9 +40,6 @@ ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 -- =====================================================
 -- 4. LIVROS (books)
 -- =====================================================
--- IMPORTANTE: Substitua 'SEU_USER_ID' pelo seu user_id real
--- Para encontrar seu user_id, execute: SELECT id FROM auth.users WHERE email = 'seu@email.com';
-
 INSERT INTO books (id, name, author, year, total_pages, type, category, paid_value, cover_url, user_id, created_at) VALUES
   ('9b49a41c-1cda-4a30-82f5-917494be0fac', 
    'CASAMENTO LIVRE DE CONFLITOS FINANCEIROS', 
@@ -52,7 +50,7 @@ INSERT INTO books (id, name, author, year, total_pages, type, category, paid_val
    'Finanças', 
    46.20, 
    'https://gkihrunmbaiogextsicb.supabase.co/storage/v1/object/public/book-covers/covers/1768996113926-3ha9ig.jpeg',
-   'SEU_USER_ID', -- SUBSTITUA AQUI
+   'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5',
    '2026-01-18 16:57:50.675952+00'),
    
   ('af77e6ab-a156-4c96-8938-24ef9bbc3359', 
@@ -64,7 +62,7 @@ INSERT INTO books (id, name, author, year, total_pages, type, category, paid_val
    'Biblia', 
    289.90, 
    'https://gkihrunmbaiogextsicb.supabase.co/storage/v1/object/public/book-covers/covers/1769014475597-or81o.jpeg',
-   'SEU_USER_ID', -- SUBSTITUA AQUI
+   'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5',
    '2026-01-21 16:57:51.143171+00'),
    
   ('0fd6e43d-201d-43d4-b642-27528bb2f1bb', 
@@ -76,7 +74,7 @@ INSERT INTO books (id, name, author, year, total_pages, type, category, paid_val
    'Finanças', 
    46.20, 
    'https://gkihrunmbaiogextsicb.supabase.co/storage/v1/object/public/book-covers/covers/1769260898218-z5pdl2.jpeg',
-   'SEU_USER_ID', -- SUBSTITUA AQUI
+   'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5',
    '2026-01-24 13:22:36.093411+00')
 ON CONFLICT (id) DO UPDATE SET 
   name = EXCLUDED.name,
@@ -92,9 +90,9 @@ ON CONFLICT (id) DO UPDATE SET
 -- 5. STATUS DOS LIVROS (statuses)
 -- =====================================================
 INSERT INTO statuses (id, book_id, status, pages_read, user_id, created_at) VALUES
-  ('057dd514-9516-4c0f-b507-fda61353e905', '9b49a41c-1cda-4a30-82f5-917494be0fac', 'Lendo', 27, 'SEU_USER_ID', '2026-01-18 16:57:50.922263+00'),
-  ('6bb3e5b8-da88-4a1b-81ed-0a1c9ea53260', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 'Lendo', 158, 'SEU_USER_ID', '2026-01-21 16:57:51.39815+00'),
-  ('68f94876-7f8e-472a-9153-c2569c409b7d', '0fd6e43d-201d-43d4-b642-27528bb2f1bb', 'Concluido', 142, 'SEU_USER_ID', '2026-01-24 13:22:36.331499+00')
+  ('057dd514-9516-4c0f-b507-fda61353e905', '9b49a41c-1cda-4a30-82f5-917494be0fac', 'Lendo', 27, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-18 16:57:50.922263+00'),
+  ('6bb3e5b8-da88-4a1b-81ed-0a1c9ea53260', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 'Lendo', 158, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 16:57:51.39815+00'),
+  ('68f94876-7f8e-472a-9153-c2569c409b7d', '0fd6e43d-201d-43d4-b642-27528bb2f1bb', 'Concluido', 142, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-24 13:22:36.331499+00')
 ON CONFLICT (id) DO UPDATE SET 
   status = EXCLUDED.status,
   pages_read = EXCLUDED.pages_read;
@@ -104,22 +102,22 @@ ON CONFLICT (id) DO UPDATE SET
 -- =====================================================
 INSERT INTO readings (id, book_id, day, month, start_page, end_page, time_spent, start_date, end_date, bible_book, bible_chapter, bible_verse_start, bible_verse_end, user_id, created_at) VALUES
   -- Casamento Livre de Conflitos Financeiros
-  ('9f72b624-51f5-4488-aae2-a0e77fbdea8b', '9b49a41c-1cda-4a30-82f5-917494be0fac', 16, 'Janeiro', 1, 20, '30', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-18 17:03:33.505511+00'),
+  ('9f72b624-51f5-4488-aae2-a0e77fbdea8b', '9b49a41c-1cda-4a30-82f5-917494be0fac', 16, 'Janeiro', 1, 20, '30', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-18 17:03:33.505511+00'),
   
   -- Bíblia McChene - Leituras diárias
-  ('7fd1e42d-8a7f-4754-96d8-325860d90680', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 1, 'Janeiro', 1, 19, '17:52', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:08:29.501685+00'),
-  ('d1423ca7-2f89-486b-93b9-4ecf0cec9faa', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 2, 'Janeiro', 20, 24, '23:34', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:09:31.910209+00'),
-  ('0fd7e348-19dc-4819-94c2-6edef65a3415', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 3, 'Janeiro', 24, 27, '16:27', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:10:22.646736+00'),
-  ('1cf83646-745f-4e7d-86b0-99f3beaf3b07', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 4, 'Janeiro', 27, 30, '21:39', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:10:57.237231+00'),
-  ('1e7a333b-eb67-4f92-aaa2-b786e437b686', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 5, 'Janeiro', 31, 35, '23:47', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:12:24.498807+00'),
-  ('eea15eba-f963-4217-9ca2-6e9f23746f30', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 6, 'Janeiro', 35, 38, '19:27', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:13:22.961572+00'),
-  ('2ca43d5d-4608-4752-b5a4-019b93d20fb1', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 7, 'Janeiro', 38, 43, '24:22', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:20:20.565497+00'),
-  ('7e748ced-81a7-43e6-979f-5b0fd86a6ad7', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 8, 'Janeiro', 43, 47, '23:18', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:20:49.607836+00'),
-  ('6f195b61-a84d-4c93-9bb0-f1e0f481abe0', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 9, 'Janeiro', 47, 52, '27:34', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:22:01.713749+00'),
-  ('c468500d-e5d0-4a4f-ba2f-9b7c7f3f01e1', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 10, 'Janeiro', 52, 56, '26:43', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:22:40.766444+00'),
-  ('eee800ae-e86d-4888-8997-cdbf051c6dcb', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 11, 'Janeiro', 57, 59, '17:17', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:23:48.051279+00'),
-  ('1db55a82-8580-4297-8ec5-c482a70cc2a8', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 12, 'Janeiro', 60, 63, '21:41', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:38:04.623023+00'),
-  ('4c1c923c-69d0-42ed-8de2-ae977bb7e541', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 13, 'Janeiro', 63, 68, '20:00', NULL, NULL, NULL, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 17:38:45.012771+00')
+  ('7fd1e42d-8a7f-4754-96d8-325860d90680', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 1, 'Janeiro', 1, 19, '17:52', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:08:29.501685+00'),
+  ('d1423ca7-2f89-486b-93b9-4ecf0cec9faa', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 2, 'Janeiro', 20, 24, '23:34', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:09:31.910209+00'),
+  ('0fd7e348-19dc-4819-94c2-6edef65a3415', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 3, 'Janeiro', 24, 27, '16:27', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:10:22.646736+00'),
+  ('1cf83646-745f-4e7d-86b0-99f3beaf3b07', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 4, 'Janeiro', 27, 30, '21:39', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:10:57.237231+00'),
+  ('1e7a333b-eb67-4f92-aaa2-b786e437b686', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 5, 'Janeiro', 31, 35, '23:47', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:12:24.498807+00'),
+  ('eea15eba-f963-4217-9ca2-6e9f23746f30', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 6, 'Janeiro', 35, 38, '19:27', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:13:22.961572+00'),
+  ('2ca43d5d-4608-4752-b5a4-019b93d20fb1', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 7, 'Janeiro', 38, 43, '24:22', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:20:20.565497+00'),
+  ('7e748ced-81a7-43e6-979f-5b0fd86a6ad7', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 8, 'Janeiro', 43, 47, '23:18', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:20:49.607836+00'),
+  ('6f195b61-a84d-4c93-9bb0-f1e0f481abe0', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 9, 'Janeiro', 47, 52, '27:34', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:22:01.713749+00'),
+  ('c468500d-e5d0-4a4f-ba2f-9b7c7f3f01e1', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 10, 'Janeiro', 52, 56, '26:43', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:22:40.766444+00'),
+  ('eee800ae-e86d-4888-8997-cdbf051c6dcb', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 11, 'Janeiro', 57, 59, '17:17', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:23:48.051279+00'),
+  ('1db55a82-8580-4297-8ec5-c482a70cc2a8', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 12, 'Janeiro', 60, 63, '21:41', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:38:04.623023+00'),
+  ('4c1c923c-69d0-42ed-8de2-ae977bb7e541', 'af77e6ab-a156-4c96-8938-24ef9bbc3359', 13, 'Janeiro', 63, 68, '20:00', NULL, NULL, NULL, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 17:38:45.012771+00')
 ON CONFLICT (id) DO UPDATE SET 
   day = EXCLUDED.day,
   month = EXCLUDED.month,
@@ -134,29 +132,29 @@ INSERT INTO quotes (id, book_id, quote, page, bible_book, bible_chapter, bible_v
   ('459472aa-1c11-4ef6-952d-eaa2c2e997df', 
    '9b49a41c-1cda-4a30-82f5-917494be0fac', 
    '"A *miríade* de decisões e escolhas enfrentadas pelos casais cria um potencial infindável para conflitos"', 
-   18, NULL, NULL, NULL, 'SEU_USER_ID', '2026-01-21 12:38:55.878351+00'),
+   18, NULL, NULL, NULL, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-21 12:38:55.878351+00'),
    
   ('9d631701-72b6-4aba-8b5a-0d88bd70d368', 
    'af77e6ab-a156-4c96-8938-24ef9bbc3359', 
    '¹⁴ Por isto, Deus meu, lembra-te de mim e não risques as beneficências que eu fiz à casa de meu Deus e às suas observâncias. 
 
 Neemias 13:14', 
-   110, 'Neemias', 13, 14, 'SEU_USER_ID', '2026-01-23 12:48:33.339776+00'),
+   110, 'Neemias', 13, 14, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-23 12:48:33.339776+00'),
    
   ('b84d2a6e-598f-4951-9963-1ab13ac344db', 
    'af77e6ab-a156-4c96-8938-24ef9bbc3359', 
    '²² Nisto também, Deus meu, lembra-te de mim e perdoa-me segundo a abundância da tua benignidade.', 
-   110, 'Neemias', 13, 22, 'SEU_USER_ID', '2026-01-23 12:50:01.907888+00'),
+   110, 'Neemias', 13, 22, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-23 12:50:01.907888+00'),
    
   ('fd11c416-bea8-4623-95b7-34177063ce9c', 
    'af77e6ab-a156-4c96-8938-24ef9bbc3359', 
    '²⁹ Lembra-te deles, Deus meu, pois contaminaram o sacerdócio, como também a aliança do sacerdócio e dos levitas.', 
-   111, 'Neemias', 13, 29, 'SEU_USER_ID', '2026-01-23 12:51:12.32761+00'),
+   111, 'Neemias', 13, 29, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-23 12:51:12.32761+00'),
    
   ('dc0d2fc7-daf6-43fa-bb04-15b8c3f27510', 
    'af77e6ab-a156-4c96-8938-24ef9bbc3359', 
    '³¹ lembra-te de mim, Deus meu, para bem.', 
-   111, 'Neemias', 13, 31, 'SEU_USER_ID', '2026-01-23 12:51:51.997123+00')
+   111, 'Neemias', 13, 31, 'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5', '2026-01-23 12:51:51.997123+00')
 ON CONFLICT (id) DO UPDATE SET 
   quote = EXCLUDED.quote,
   page = EXCLUDED.page;
@@ -180,7 +178,7 @@ INSERT INTO vocabulary (id, palavra, silabas, fonetica, classe, definicoes, sino
    '9b49a41c-1cda-4a30-82f5-917494be0fac',
    'livro',
    '{"author": "CHUCK BENTLEY E ANN BENTLEY", "bookName": "CASAMENTO LIVRE DE CONFLITOS FINANCEIROS", "page": 18}'::jsonb,
-   'SEU_USER_ID',
+   'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5',
    '2026-01-21 13:59:25.024659+00',
    '2026-01-21 13:59:25.024659+00'),
    
@@ -199,7 +197,7 @@ INSERT INTO vocabulary (id, palavra, silabas, fonetica, classe, definicoes, sino
    'af77e6ab-a156-4c96-8938-24ef9bbc3359',
    'livro',
    '{"author": "pastor Robert Murray McCheyne", "bookName": "BÍBLIA MCCHEYNE", "page": 26}'::jsonb,
-   'SEU_USER_ID',
+   'bb7f3c8a-8ac9-434e-89ba-83c6afc1f0a5',
    '2026-01-21 17:47:35.802249+00',
    '2026-01-21 17:47:35.802249+00')
 ON CONFLICT (id) DO UPDATE SET 
@@ -209,7 +207,4 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- =====================================================
 -- FIM DO SCRIPT
--- =====================================================
--- LEMBRE-SE: Substitua todas as ocorrências de 'SEU_USER_ID' 
--- pelo ID do usuário no seu banco local antes de executar!
 -- =====================================================
