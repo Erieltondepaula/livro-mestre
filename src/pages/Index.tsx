@@ -142,7 +142,7 @@ const Index = () => {
       case 'citacoes':
         return <QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} />;
       case 'biblia':
-        return <BibleProgressView readings={readings} />;
+        return <BibleProgressView readings={readings} books={books} />;
       case 'dicionario':
         return <DictionaryView />;
       case 'ajuda':
