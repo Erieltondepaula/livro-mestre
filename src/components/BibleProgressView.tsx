@@ -1,12 +1,14 @@
-import { useMemo } from 'react';
-import { BookOpen, CheckCircle, Circle, TrendingUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BookOpen, CheckCircle, Circle, TrendingUp, Book } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { bibleBooks, bibleCategories } from '@/data/bibleData';
-import type { DailyReading } from '@/types/library';
+import type { Book as BookType, DailyReading } from '@/types/library';
 
 interface BibleProgressViewProps {
   readings: DailyReading[];
+  books: BookType[];
 }
 
 interface BookProgress {
@@ -16,12 +18,30 @@ interface BookProgress {
   progress: number;
 }
 
-export function BibleProgressView({ readings }: BibleProgressViewProps) {
-  // Filter only Bible readings
-  const bibleReadings = useMemo(() => 
-    readings.filter(r => r.bibleBook && r.bibleChapter),
-    [readings]
+export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
+  // Filter Bible books from the library
+  const bibleLibraryBooks = useMemo(() => 
+    books.filter(b => 
+      b.categoria?.toLowerCase() === 'bíblia' || 
+      b.categoria?.toLowerCase() === 'biblia'
+    ),
+    [books]
   );
+
+  // State for selected Bible book (use 'all' to show combined, or book ID for specific)
+  const [selectedBibleId, setSelectedBibleId] = useState<string>('all');
+
+  // Filter readings based on selected Bible book
+  const filteredReadings = useMemo(() => {
+    if (selectedBibleId === 'all') {
+      // All Bible readings
+      return readings.filter(r => r.bibleBook && r.bibleChapter);
+    }
+    // Readings for specific Bible book
+    return readings.filter(r => 
+      r.livroId === selectedBibleId && r.bibleBook && r.bibleChapter
+    );
+  }, [readings, selectedBibleId]);
 
   // Calculate progress for each Bible book
   const bookProgress = useMemo(() => {
@@ -38,7 +58,7 @@ export function BibleProgressView({ readings }: BibleProgressViewProps) {
     });
 
     // Mark chapters as read
-    bibleReadings.forEach(reading => {
+    filteredReadings.forEach(reading => {
       if (reading.bibleBook && reading.bibleChapter) {
         const bookData = progress[reading.bibleBook];
         if (bookData) {
@@ -55,7 +75,7 @@ export function BibleProgressView({ readings }: BibleProgressViewProps) {
     });
 
     return progress;
-  }, [bibleReadings]);
+  }, [filteredReadings]);
 
   // Group by testament
   const oldTestamentBooks = bibleBooks.filter(b => b.testament === 'old').map(b => bookProgress[b.name]);
@@ -68,6 +88,13 @@ export function BibleProgressView({ readings }: BibleProgressViewProps) {
 
   const completedBooks = Object.values(bookProgress).filter(b => b.progress === 100).length;
 
+  // Get the selected Bible book name for display
+  const selectedBibleName = useMemo(() => {
+    if (selectedBibleId === 'all') return 'Todas as Bíblias';
+    const book = bibleLibraryBooks.find(b => b.id === selectedBibleId);
+    return book?.livro || 'Bíblia';
+  }, [selectedBibleId, bibleLibraryBooks]);
+
   const renderBookList = (books: BookProgress[], categoryName?: string) => {
     return (
       <div className="space-y-3">
@@ -78,7 +105,7 @@ export function BibleProgressView({ readings }: BibleProgressViewProps) {
           <div key={book.name} className="flex items-center gap-3">
           <div className="flex-shrink-0">
             {book.progress === 100 ? (
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
+              <CheckCircle className="w-4 h-4 text-success" />
             ) : book.progress > 0 ? (
               <TrendingUp className="w-4 h-4 text-primary" />
               ) : (
@@ -120,15 +147,46 @@ export function BibleProgressView({ readings }: BibleProgressViewProps) {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div>
-        <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2 flex items-center gap-3">
-          <BookOpen className="w-8 h-8 text-primary" />
-          Progresso de Leitura Bíblica
-        </h2>
-        <p className="text-sm md:text-base text-muted-foreground">
-          Acompanhe seu progresso na leitura da Bíblia Sagrada
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-1 md:mb-2 flex items-center gap-3">
+            <BookOpen className="w-8 h-8 text-primary" />
+            Progresso de Leitura Bíblica
+          </h2>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Acompanhe seu progresso na leitura da Bíblia Sagrada
+          </p>
+        </div>
+
+        {/* Bible selector */}
+        {bibleLibraryBooks.length > 1 && (
+          <div className="flex items-center gap-2">
+            <Book className="w-4 h-4 text-muted-foreground" />
+            <Select value={selectedBibleId} onValueChange={setSelectedBibleId}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Selecionar Bíblia" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as Bíblias (Combinado)</SelectItem>
+                {bibleLibraryBooks.map(book => (
+                  <SelectItem key={book.id} value={book.id}>
+                    {book.livro}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
+
+      {/* Selected Bible indicator */}
+      {bibleLibraryBooks.length > 1 && selectedBibleId !== 'all' && (
+        <div className="card-library p-3 bg-primary/5 border-primary/20">
+          <p className="text-sm text-muted-foreground">
+            Mostrando progresso de: <span className="font-semibold text-primary">{selectedBibleName}</span>
+          </p>
+        </div>
+      )}
 
       {/* Overall Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -145,7 +203,7 @@ export function BibleProgressView({ readings }: BibleProgressViewProps) {
           <p className="text-xs text-muted-foreground">Total de Capítulos</p>
         </div>
         <div className="card-library p-4 text-center">
-          <p className="text-2xl font-bold text-emerald-500">{completedBooks}</p>
+          <p className="text-2xl font-bold text-success">{completedBooks}</p>
           <p className="text-xs text-muted-foreground">Livros Completos</p>
         </div>
       </div>
@@ -153,7 +211,9 @@ export function BibleProgressView({ readings }: BibleProgressViewProps) {
       {/* Overall Progress Bar */}
       <div className="card-library p-6">
         <div className="flex items-center justify-between mb-3">
-          <span className="font-medium">Progresso Geral da Bíblia</span>
+          <span className="font-medium">
+            Progresso Geral {selectedBibleId !== 'all' && `- ${selectedBibleName}`}
+          </span>
           <span className="text-sm text-muted-foreground">{overallProgress.toFixed(1)}%</span>
         </div>
         <Progress value={overallProgress} className="h-4" />
