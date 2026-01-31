@@ -92,7 +92,7 @@ export function useLibrary() {
       const { data: quotesData } = await supabase
         .from('quotes')
         .select('*, books(name)')
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       // Load vocabulary with book info
       const { data: vocabularyData } = await supabase
