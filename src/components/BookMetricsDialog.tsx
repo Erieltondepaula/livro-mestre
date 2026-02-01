@@ -213,13 +213,38 @@ export function BookMetricsDialog({
     return `${mins} min`;
   };
 
+  // Helper to parse month name to number for proper date comparison
+  const parseMonthToNumber = (monthName: string): number => {
+    const months: Record<string, number> = {
+      'janeiro': 0, 'fevereiro': 1, 'março': 2, 'abril': 3,
+      'maio': 4, 'junho': 5, 'julho': 6, 'agosto': 7,
+      'setembro': 8, 'outubro': 9, 'novembro': 10, 'dezembro': 11,
+      'jan': 0, 'fev': 1, 'mar': 2, 'abr': 3,
+      'mai': 4, 'jun': 5, 'jul': 6, 'ago': 7,
+      'set': 8, 'out': 9, 'nov': 10, 'dez': 11,
+    };
+    return months[monthName.toLowerCase()] ?? 0;
+  };
+
+  // Helper to get a sortable timestamp from a reading
+  const getReadingTimestamp = (reading: DailyReading): number => {
+    // Priority 1: Use dataInicio if available
+    if (reading.dataInicio) {
+      return new Date(reading.dataInicio).getTime();
+    }
+    // Priority 2: Parse dia/mes fields
+    const currentYear = new Date().getFullYear();
+    const monthNum = parseMonthToNumber(reading.mes);
+    return new Date(currentYear, monthNum, reading.dia).getTime();
+  };
+
   // Group readings by day for consolidated display
   const groupReadingsByDay = (readings: DailyReading[], isBible: boolean) => {
     if (!isBible) {
       // For non-Bible books, sort by date descending (most recent first)
       const sortedReadings = [...readings].sort((a, b) => {
-        const dateA = a.dataInicio ? new Date(a.dataInicio).getTime() : 0;
-        const dateB = b.dataInicio ? new Date(b.dataInicio).getTime() : 0;
+        const dateA = getReadingTimestamp(a);
+        const dateB = getReadingTimestamp(b);
         return dateB - dateA; // Descending order (most recent first)
       });
       return sortedReadings.map(reading => ({
@@ -247,6 +272,7 @@ export function BookMetricsDialog({
       paginaFinal: number;
       quantidadePaginas: number;
       tempoGasto: number;
+      timestamp: number; // Added for sorting
       bibleEntries: Array<{
         bibleBook?: string;
         bibleChapter?: number;
@@ -258,6 +284,7 @@ export function BookMetricsDialog({
 
     for (const reading of readings) {
       const dateKey = `${reading.dia}/${reading.mes}`;
+      const timestamp = getReadingTimestamp(reading);
       
       if (!groups[dateKey]) {
         groups[dateKey] = {
@@ -267,6 +294,7 @@ export function BookMetricsDialog({
           paginaFinal: reading.paginaFinal,
           quantidadePaginas: reading.quantidadePaginas,
           tempoGasto: reading.tempoGasto,
+          timestamp,
           bibleEntries: [],
           readings: [],
         };
@@ -277,6 +305,8 @@ export function BookMetricsDialog({
         groups[dateKey].quantidadePaginas += reading.quantidadePaginas;
         // For time, use the maximum (only one reading per day should have time set)
         groups[dateKey].tempoGasto = Math.max(groups[dateKey].tempoGasto, reading.tempoGasto);
+        // Update timestamp if this reading has a more recent one
+        groups[dateKey].timestamp = Math.max(groups[dateKey].timestamp, timestamp);
       }
 
       groups[dateKey].readings.push(reading);
@@ -291,18 +321,8 @@ export function BookMetricsDialog({
       }
     }
 
-    // Sort by actual date descending (most recent first)
-    // Use the first reading's dataInicio for proper date comparison
-    return Object.values(groups).sort((a, b) => {
-      const readingA = a.readings[0];
-      const readingB = b.readings[0];
-      
-      // Use dataInicio for proper date comparison
-      const dateA = readingA?.dataInicio ? new Date(readingA.dataInicio).getTime() : 0;
-      const dateB = readingB?.dataInicio ? new Date(readingB.dataInicio).getTime() : 0;
-      
-      return dateB - dateA; // Descending order (most recent first)
-    });
+    // Sort by timestamp descending (most recent first)
+    return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
   };
 
   const isBibleCategory = book.categoria?.toLowerCase() === 'bíblia' || 

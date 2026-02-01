@@ -244,6 +244,96 @@
   .text-small {
     @apply text-xs sm:text-sm lg:text-base fhd:text-lg 4k:text-xl 8k:text-2xl;
   }
+
+  /* Ajustes para celulares de alta resolução (1080x2400, 1220x2712, 1320x2868) */
+  @media (min-resolution: 2.5dppx) and (max-width: 600px) {
+    .stat-card {
+      @apply p-4;
+    }
+    
+    .status-badge {
+      @apply px-3 py-1.5 text-sm;
+    }
+    
+    .nav-item {
+      @apply gap-3 px-4 py-3 text-base;
+    }
+    
+    .table-library th,
+    .table-library td {
+      @apply p-3 text-sm;
+    }
+    
+    .input-library {
+      @apply px-4 py-3 text-base;
+    }
+    
+    .btn-primary,
+    .btn-secondary {
+      @apply px-5 py-3 text-base;
+    }
+    
+    .text-heading {
+      @apply text-2xl;
+    }
+    
+    .text-subheading {
+      @apply text-lg;
+    }
+    
+    .text-body {
+      @apply text-base;
+    }
+    
+    .text-small {
+      @apply text-sm;
+    }
+  }
+  
+  /* Celulares ultra-alta resolução (2712+, 2868+) */
+  @media (min-resolution: 3dppx) and (max-width: 600px) {
+    .stat-card {
+      @apply p-5;
+    }
+    
+    .status-badge {
+      @apply px-4 py-2 text-base;
+    }
+    
+    .nav-item {
+      @apply gap-4 px-5 py-4 text-lg;
+    }
+    
+    .table-library th,
+    .table-library td {
+      @apply p-4 text-base;
+    }
+    
+    .input-library {
+      @apply px-5 py-4 text-lg;
+    }
+    
+    .btn-primary,
+    .btn-secondary {
+      @apply px-6 py-4 text-lg;
+    }
+    
+    .text-heading {
+      @apply text-3xl;
+    }
+    
+    .text-subheading {
+      @apply text-xl;
+    }
+    
+    .text-body {
+      @apply text-lg;
+    }
+    
+    .text-small {
+      @apply text-base;
+    }
+  }
 }
 
 @layer utilities {
