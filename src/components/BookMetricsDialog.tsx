@@ -291,12 +291,17 @@ export function BookMetricsDialog({
       }
     }
 
-    // Sort by date descending
+    // Sort by actual date descending (most recent first)
+    // Use the first reading's dataInicio for proper date comparison
     return Object.values(groups).sort((a, b) => {
-      const [dayA, monthA] = a.key.split('/');
-      const [dayB, monthB] = b.key.split('/');
-      if (monthA !== monthB) return monthB.localeCompare(monthA);
-      return parseInt(dayB) - parseInt(dayA);
+      const readingA = a.readings[0];
+      const readingB = b.readings[0];
+      
+      // Use dataInicio for proper date comparison
+      const dateA = readingA?.dataInicio ? new Date(readingA.dataInicio).getTime() : 0;
+      const dateB = readingB?.dataInicio ? new Date(readingB.dataInicio).getTime() : 0;
+      
+      return dateB - dateA; // Descending order (most recent first)
     });
   };
 

@@ -50,9 +50,10 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
     
     // Sort by creation date descending (newest first) and take only 4
     filtered.sort((a, b) => {
-      // Use id as fallback since quotes don't have created_at in the type
-      // UUIDs are time-based, so newer ones are "greater"
-      return b.id.localeCompare(a.id);
+      // Use created_at for proper chronological ordering
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return dateB - dateA;
     });
     
     return filtered.slice(0, 4);
