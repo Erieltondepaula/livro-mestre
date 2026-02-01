@@ -188,6 +188,7 @@ export function useLibrary() {
           livroId: q.book_id,
           livro: (q.books as any)?.name || '',
           pagina: q.page || 0,
+          created_at: q.created_at || undefined,
           bibleBook: (q as any).bible_book || undefined,
           bibleChapter: (q as any).bible_chapter || undefined,
           bibleVerse: (q as any).bible_verse || undefined,
