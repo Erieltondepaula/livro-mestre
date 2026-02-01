@@ -12,7 +12,11 @@ export default {
       'lg': '1024px',
       'xl': '1200px',
       '2xl': '1400px',
-      // Resoluções de alta definição
+      // Resoluções de alta definição para mobile
+      'mobile-hd': { 'raw': '(min-width: 360px) and (max-width: 480px) and (min-resolution: 2dppx)' },
+      'mobile-fhd': { 'raw': '(min-width: 360px) and (max-width: 550px) and (min-resolution: 2.5dppx)' },
+      'mobile-qhd': { 'raw': '(min-width: 360px) and (max-width: 600px) and (min-resolution: 3dppx)' },
+      // Resoluções de alta definição desktop
       'fhd': '1920px',   // Full HD 1920x1080
       '2k': '2048px',    // 2K 2048x1080
       'qhd': '2560px',   // QHD 2560x1440
