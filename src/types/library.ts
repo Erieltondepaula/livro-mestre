@@ -134,3 +134,15 @@ export interface DashboardStats {
   livrosLendo: number;
   livrosConcluidos: number;
 }
+
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  bookId: string | null;
+  bookName?: string | null;
+  linkedBooks: { id: string; name: string }[];
+  created_at: string;
+  updated_at: string;
+}
