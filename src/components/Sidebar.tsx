@@ -13,12 +13,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'ajuda';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'ajuda';
 
 interface SidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
 }
+
+import { StickyNote } from 'lucide-react';
 
 const navItems = [
   { id: 'dashboard' as View, label: 'Dashboard', icon: LayoutDashboard },
@@ -28,6 +30,7 @@ const navItems = [
   { id: 'status' as View, label: 'Status dos Livros', icon: BookMarked },
   { id: 'avaliacao' as View, label: 'Avaliações', icon: Star },
   { id: 'citacoes' as View, label: 'Citações', icon: Quote },
+  { id: 'notas' as View, label: 'Notas', icon: StickyNote },
   { id: 'biblia' as View, label: 'Progresso Bíblia', icon: Book },
   { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
   { id: 'ajuda' as View, label: 'Ajuda', icon: HelpCircle },

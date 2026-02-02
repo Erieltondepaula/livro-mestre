@@ -10,16 +10,18 @@ import { BooksListView } from '@/components/BooksListView';
 import { DictionaryView } from '@/components/DictionaryView';
 import { BibleProgressView } from '@/components/BibleProgressView';
 import { HelpView } from '@/components/HelpView';
+import { NotesView } from '@/components/NotesView';
 import { SubscriptionBlocker } from '@/components/SubscriptionBlocker';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { toast } from '@/hooks/use-toast';
-import type { Book } from '@/types/library';
+import type { Book, Note } from '@/types/library';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'ajuda';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'ajuda';
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [booksFilter, setBooksFilter] = useState<'all' | 'reading' | 'completed'>('all');
   const { isExpiringSoon } = useSubscription();
   const {
     books,
@@ -28,6 +30,7 @@ const Index = () => {
     evaluations,
     quotes,
     vocabulary,
+    notes,
     isLoaded,
     addBook,
     updateBook,
@@ -37,6 +40,9 @@ const Index = () => {
     addQuote,
     deleteBook,
     deleteQuote,
+    addNote,
+    updateNote,
+    deleteNote,
     clearAllData,
     getDashboardStats,
   } = useLibrary();
@@ -125,14 +131,43 @@ const Index = () => {
     });
   };
 
+  const handleAddNote = (note: Parameters<typeof addNote>[0]) => {
+    addNote(note);
+    toast({
+      title: "Nota criada!",
+      description: "A nota foi adicionada à sua coleção.",
+    });
+  };
+
+  const handleUpdateNote = (note: Note & { linkedBookIds?: string[] }) => {
+    updateNote(note);
+    toast({
+      title: "Nota atualizada!",
+      description: "A nota foi atualizada com sucesso.",
+    });
+  };
+
+  const handleDeleteNote = (id: string) => {
+    deleteNote(id);
+    toast({
+      title: "Nota removida",
+      description: "A nota foi removida da sua coleção.",
+    });
+  };
+
+  const handleNavigateToBooks = (filter?: 'all' | 'reading' | 'completed') => {
+    setBooksFilter(filter || 'all');
+    setCurrentView('livros');
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} />;
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onNavigateToBooks={handleNavigateToBooks} />;
       case 'cadastrar':
         return <BookForm onSubmit={handleAddBook} currentBookCount={books.length} />;
       case 'livros':
-        return <BooksListView books={books} statuses={statuses} readings={readings} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} />;
+        return <BooksListView books={books} statuses={statuses} readings={readings} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} initialFilter={booksFilter} />;
       case 'leitura':
         return <ReadingForm books={books} onSubmit={handleAddReading} />;
       case 'status':
@@ -141,6 +176,8 @@ const Index = () => {
         return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
       case 'citacoes':
         return <QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} />;
+      case 'notas':
+        return <NotesView books={books} notes={notes} onAddNote={handleAddNote} onUpdateNote={handleUpdateNote} onDeleteNote={handleDeleteNote} />;
       case 'biblia':
         return <BibleProgressView readings={readings} books={books} />;
       case 'dicionario':
@@ -148,7 +185,7 @@ const Index = () => {
       case 'ajuda':
         return <HelpView />;
       default:
-        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} />;
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onNavigateToBooks={handleNavigateToBooks} />;
     }
   };
 

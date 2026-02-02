@@ -5,9 +5,10 @@ interface DashboardProps {
   stats: DashboardStats;
   recentStatuses: BookStatus[];
   books: Book[];
+  onNavigateToBooks?: (filter?: 'all' | 'reading' | 'completed') => void;
 }
 
-export function Dashboard({ stats, recentStatuses, books }: DashboardProps) {
+export function Dashboard({ stats, recentStatuses, books, onNavigateToBooks }: DashboardProps) {
   // Calcular a percentagem de leitura para cada status
   const getReadPercentage = (status: BookStatus) => {
     const book = books.find(b => b.id === status.livroId);
@@ -54,7 +55,10 @@ export function Dashboard({ stats, recentStatuses, books }: DashboardProps) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-        <div className="stat-card">
+        <button
+          onClick={() => onNavigateToBooks?.('all')}
+          className="stat-card text-left hover:ring-2 hover:ring-primary/20 transition-all cursor-pointer"
+        >
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
               <Library className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
@@ -64,9 +68,12 @@ export function Dashboard({ stats, recentStatuses, books }: DashboardProps) {
               <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.livrosCadastrados}</p>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="stat-card">
+        <button
+          onClick={() => onNavigateToBooks?.('reading')}
+          className="stat-card text-left hover:ring-2 hover:ring-reading/20 transition-all cursor-pointer"
+        >
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-reading/10 flex items-center justify-center flex-shrink-0">
               <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-reading" />
@@ -76,9 +83,12 @@ export function Dashboard({ stats, recentStatuses, books }: DashboardProps) {
               <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.livrosLendo}</p>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="stat-card">
+        <button
+          onClick={() => onNavigateToBooks?.('completed')}
+          className="stat-card text-left hover:ring-2 hover:ring-success/20 transition-all cursor-pointer"
+        >
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
               <BookCheck className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
@@ -88,7 +98,7 @@ export function Dashboard({ stats, recentStatuses, books }: DashboardProps) {
               <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.livrosConcluidos}</p>
             </div>
           </div>
-        </div>
+        </button>
 
         <div className="stat-card">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { addDays, format, differenceInDays } from 'date-fns';
-import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats, VocabularyEntry } from '@/types/library';
+import type { Book, DailyReading, BookStatus, BookEvaluation, Quote, DashboardStats, VocabularyEntry, Note } from '@/types/library';
 
 // Tempo médio de leitura por página (em MINUTOS) por categoria
 const READING_TIME_BY_CATEGORY: Record<string, { min: number; max: number }> = {
@@ -48,6 +48,7 @@ export function useLibrary() {
   const [evaluations, setEvaluations] = useState<BookEvaluation[]>([]);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load data from database
@@ -59,6 +60,7 @@ export function useLibrary() {
       setEvaluations([]);
       setQuotes([]);
       setVocabulary([]);
+      setNotes([]);
       setIsLoaded(true);
       return;
     }
@@ -100,7 +102,17 @@ export function useLibrary() {
         .select('*, books(name)')
         .order('created_at', { ascending: false });
 
-      // Transform to app format
+      // Load notes with book info and linked books
+      const { data: notesData } = await supabase
+        .from('notes')
+        .select('*, books(name)')
+        .order('created_at', { ascending: false });
+
+      // Load note book links
+      const { data: noteLinksData } = await supabase
+        .from('note_book_links')
+        .select('*, books(name)');
+
       if (booksData) {
         setBooks(booksData.map((b, index) => ({
           id: b.id,
@@ -223,6 +235,30 @@ export function useLibrary() {
             source_type: v.source_type || null,
             source_details: sourceDetails || null,
             created_at: v.created_at,
+          };
+        }));
+      }
+
+      // Transform notes
+      if (notesData) {
+        setNotes(notesData.map(n => {
+          // Find linked books for this note
+          const links = noteLinksData?.filter(link => link.note_id === n.id) || [];
+          const linkedBooks = links.map(link => ({
+            id: link.book_id,
+            name: (link.books as any)?.name || '',
+          }));
+
+          return {
+            id: n.id,
+            title: n.title,
+            content: n.content,
+            tags: Array.isArray(n.tags) ? n.tags : [],
+            bookId: n.book_id,
+            bookName: (n.books as any)?.name || null,
+            linkedBooks,
+            created_at: n.created_at,
+            updated_at: n.updated_at,
           };
         }));
       }
@@ -664,6 +700,89 @@ export function useLibrary() {
     await loadData();
   }, [loadData, user]);
 
+  // Add note
+  const addNote = useCallback(async (note: Omit<Note, 'id' | 'created_at' | 'updated_at' | 'linkedBooks'> & { linkedBookIds?: string[] }) => {
+    if (!user) return null;
+
+    const { data: newNoteData, error } = await supabase
+      .from('notes')
+      .insert({
+        title: note.title,
+        content: note.content,
+        tags: note.tags,
+        book_id: note.bookId,
+        user_id: user.id,
+      } as any)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding note:', error);
+      return null;
+    }
+
+    // Add linked books
+    if (note.linkedBookIds && note.linkedBookIds.length > 0) {
+      const links = note.linkedBookIds.map(bookId => ({
+        note_id: newNoteData.id,
+        book_id: bookId,
+        user_id: user.id,
+      }));
+
+      await supabase.from('note_book_links').insert(links as any);
+    }
+
+    await loadData();
+    return newNoteData;
+  }, [loadData, user]);
+
+  // Update note
+  const updateNote = useCallback(async (note: Note & { linkedBookIds?: string[] }) => {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('notes')
+      .update({
+        title: note.title,
+        content: note.content,
+        tags: note.tags,
+        book_id: note.bookId,
+      } as any)
+      .eq('id', note.id);
+
+    if (error) {
+      console.error('Error updating note:', error);
+      return;
+    }
+
+    // Update linked books - delete existing and re-create
+    await supabase.from('note_book_links').delete().eq('note_id', note.id);
+
+    if (note.linkedBookIds && note.linkedBookIds.length > 0) {
+      const links = note.linkedBookIds.map(bookId => ({
+        note_id: note.id,
+        book_id: bookId,
+        user_id: user.id,
+      }));
+
+      await supabase.from('note_book_links').insert(links as any);
+    }
+
+    await loadData();
+  }, [loadData, user]);
+
+  // Delete note
+  const deleteNote = useCallback(async (id: string) => {
+    const { error } = await supabase.from('notes').delete().eq('id', id);
+
+    if (error) {
+      console.error('Error deleting note:', error);
+      return;
+    }
+
+    await loadData();
+  }, [loadData]);
+
   // Calculate dashboard stats
   const getDashboardStats = useCallback((): DashboardStats => {
     const totalPaginas = books.reduce((sum, book) => sum + book.totalPaginas, 0);
@@ -694,6 +813,7 @@ export function useLibrary() {
     evaluations,
     quotes,
     vocabulary,
+    notes,
     isLoaded,
     addBook,
     updateBook,
@@ -703,6 +823,9 @@ export function useLibrary() {
     addQuote,
     deleteBook,
     deleteQuote,
+    addNote,
+    updateNote,
+    deleteNote,
     clearAllData,
     getDashboardStats,
   };
