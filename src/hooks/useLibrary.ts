@@ -253,12 +253,20 @@ export function useLibrary() {
             id: n.id,
             title: n.title,
             content: n.content,
+            contentHtml: n.content_html || undefined,
+            contentJson: (n.content_json && typeof n.content_json === 'object') ? n.content_json as object : null,
             tags: Array.isArray(n.tags) ? n.tags : [],
+            noteType: (n.note_type as Note['noteType']) || 'permanent',
+            folderId: n.folder_id || null,
             bookId: n.book_id,
             bookName: (n.books as any)?.name || null,
             linkedBooks,
+            isPinned: n.is_pinned || false,
+            archived: n.archived || false,
+            wordCount: n.word_count || 0,
             created_at: n.created_at,
             updated_at: n.updated_at,
+            lastEditedAt: n.last_edited_at || undefined,
           };
         }));
       }

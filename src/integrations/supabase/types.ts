@@ -142,6 +142,57 @@ export type Database = {
           },
         ]
       }
+      external_book_references: {
+        Row: {
+          book_author: string | null
+          book_title: string
+          book_year: number | null
+          converted_book_id: string | null
+          created_at: string
+          id: string
+          note_id: string
+          page_reference: string | null
+          user_id: string
+        }
+        Insert: {
+          book_author?: string | null
+          book_title: string
+          book_year?: number | null
+          converted_book_id?: string | null
+          created_at?: string
+          id?: string
+          note_id: string
+          page_reference?: string | null
+          user_id: string
+        }
+        Update: {
+          book_author?: string | null
+          book_title?: string
+          book_year?: number | null
+          converted_book_id?: string | null
+          created_at?: string
+          id?: string
+          note_id?: string
+          page_reference?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_book_references_converted_book_id_fkey"
+            columns: ["converted_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_book_references_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_book_links: {
         Row: {
           book_id: string
@@ -181,36 +232,146 @@ export type Database = {
           },
         ]
       }
-      notes: {
+      note_folders: {
         Row: {
-          book_id: string | null
-          content: string
+          color: string | null
           created_at: string
+          icon: string | null
           id: string
-          tags: string[] | null
-          title: string
+          name: string
+          parent_id: string | null
+          sort_order: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          book_id?: string | null
-          content: string
+          color?: string | null
           created_at?: string
+          icon?: string | null
           id?: string
-          tags?: string[] | null
-          title: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          book_id?: string | null
-          content?: string
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "note_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      note_links: {
+        Row: {
+          created_at: string
+          id: string
+          link_text: string | null
+          source_note_id: string
+          target_note_id: string
+          user_id: string
+        }
+        Insert: {
           created_at?: string
           id?: string
+          link_text?: string | null
+          source_note_id: string
+          target_note_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_text?: string | null
+          source_note_id?: string
+          target_note_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_links_source_note_id_fkey"
+            columns: ["source_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_links_target_note_id_fkey"
+            columns: ["target_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          archived: boolean | null
+          book_id: string | null
+          content: string
+          content_html: string | null
+          content_json: Json | null
+          created_at: string
+          folder_id: string | null
+          id: string
+          is_pinned: boolean | null
+          last_edited_at: string | null
+          note_type: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+          word_count: number | null
+        }
+        Insert: {
+          archived?: boolean | null
+          book_id?: string | null
+          content: string
+          content_html?: string | null
+          content_json?: Json | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          last_edited_at?: string | null
+          note_type?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+          word_count?: number | null
+        }
+        Update: {
+          archived?: boolean | null
+          book_id?: string | null
+          content?: string
+          content_html?: string | null
+          content_json?: Json | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          is_pinned?: boolean | null
+          last_edited_at?: string | null
+          note_type?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
           user_id?: string
+          word_count?: number | null
         }
         Relationships: [
           {
@@ -218,6 +379,13 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "note_folders"
             referencedColumns: ["id"]
           },
         ]
@@ -579,6 +747,15 @@ export type Database = {
       }
     }
     Functions: {
+      get_note_backlinks: {
+        Args: { target_note_id: string }
+        Returns: {
+          created_at: string
+          link_text: string
+          source_id: string
+          source_title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
