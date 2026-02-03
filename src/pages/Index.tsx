@@ -10,7 +10,7 @@ import { BooksListView } from '@/components/BooksListView';
 import { DictionaryView } from '@/components/DictionaryView';
 import { BibleProgressView } from '@/components/BibleProgressView';
 import { HelpView } from '@/components/HelpView';
-import { NotesView } from '@/components/NotesView';
+import { EnhancedNotesView } from '@/components/notes/EnhancedNotesView';
 import { SubscriptionBlocker } from '@/components/SubscriptionBlocker';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -177,7 +177,7 @@ const Index = () => {
       case 'citacoes':
         return <QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} />;
       case 'notas':
-        return <NotesView books={books} notes={notes} onAddNote={handleAddNote} onUpdateNote={handleUpdateNote} onDeleteNote={handleDeleteNote} />;
+        return <EnhancedNotesView books={books} />;
       case 'biblia':
         return <BibleProgressView readings={readings} books={books} />;
       case 'dicionario':

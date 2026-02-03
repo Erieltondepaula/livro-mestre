@@ -139,10 +139,18 @@ export interface Note {
   id: string;
   title: string;
   content: string;
+  contentHtml?: string;
+  contentJson?: object | null;
   tags: string[];
+  noteType: 'fleeting' | 'permanent' | 'literature' | 'reference';
+  folderId: string | null;
   bookId: string | null;
   bookName?: string | null;
   linkedBooks: { id: string; name: string }[];
+  isPinned: boolean;
+  archived: boolean;
+  wordCount: number;
   created_at: string;
   updated_at: string;
+  lastEditedAt?: string;
 }
