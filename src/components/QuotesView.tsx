@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Quote as QuoteIcon, Save, Trash2 } from 'lucide-react';
+import { Quote as QuoteIcon, Save, Trash2, Calendar } from 'lucide-react';
 import type { Book, Quote } from '@/types/library';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface QuotesViewProps {
   books: Book[];
@@ -273,6 +275,7 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
           {/* Display only the 4 most recent quotes */}
           {displayedQuotes.map((quote) => {
             const bibleRef = formatBibleReference(quote);
+            const createdDate = quote.created_at ? format(new Date(quote.created_at), "dd 'de' MMM 'de' yyyy", { locale: ptBR }) : null;
             
             return (
               <div key={quote.id} className="card-library p-6 relative group">
@@ -297,6 +300,12 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
                         <span>Página {quote.pagina}</span>
                       )}
                     </div>
+                    {createdDate && (
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground/70">
+                        <Calendar className="w-3 h-3" />
+                        <span>{createdDate}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

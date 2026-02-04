@@ -1,6 +1,6 @@
 import { useState, forwardRef, useMemo } from 'react';
-import { Edit2, Trash2, BookOpen, ChevronDown, ChevronRight, Filter } from 'lucide-react';
-import type { Book, BookStatus, DailyReading } from '@/types/library';
+import { Edit2, Trash2, BookOpen, ChevronDown, ChevronRight, Filter, Star } from 'lucide-react';
+import type { Book, BookStatus, DailyReading, BookEvaluation } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,12 +11,13 @@ interface BooksListViewProps {
   books: Book[];            // Lista de todos os livros cadastrados
   statuses: BookStatus[];   // Status de leitura de cada livro (lido, lendo, etc)
   readings: DailyReading[]; // Histórico de todas as sessões de leitura
+  evaluations: BookEvaluation[]; // Avaliações dos livros
   onDeleteBook: (id: string) => void; // Função para deletar um livro
   onUpdateBook: (book: Book) => void; // Função para atualizar dados de um livro
   initialFilter?: 'all' | 'reading' | 'completed'; // Filtro inicial vindo do Dashboard
 }
 
-export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(function BooksListView({ books, statuses, readings, onDeleteBook, onUpdateBook, initialFilter = 'all' }, ref) {
+export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(function BooksListView({ books, statuses, readings, evaluations, onDeleteBook, onUpdateBook, initialFilter = 'all' }, ref) {
   // SETOR 2: Estados Locais
   // Controla se o modal de edição está aberto e qual livro está sendo editado.
   const [editingBook, setEditingBook] = useState<Book | null>(null);
@@ -28,6 +29,11 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
   // Procura no array de statuses o status específico de um livro usando o ID.
   const getBookStatus = (bookId: string) => {
     return statuses.find(s => s.livroId === bookId);
+  };
+
+  // Busca a avaliação de um livro
+  const getBookEvaluation = (bookId: string) => {
+    return evaluations.find(e => e.livroId === bookId);
   };
 
   // SETOR 4: Lógica de Velocidade de Leitura
@@ -125,15 +131,33 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
 
   const renderBookCard = (book: Book) => {
     const status = getBookStatus(book.id);
+    const evaluation = getBookEvaluation(book.id);
     const timeEstimate = getReadingTimeEstimate(book, status);
     const statusInfo = getStatusInfo(book, status);
 
     return (
       <div
         key={book.id}
-        className="card-library overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 flex flex-col"
+        className="card-library overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 flex flex-col relative"
         style={{ minWidth: 'clamp(200px, 100%, 280px)' }}
       >
+        {/* Badge de Avaliação no topo */}
+        {evaluation && (
+          <div className="absolute top-2 left-2 z-10">
+            <div className="flex items-center gap-1 bg-amber-500 text-white px-2 py-1 rounded-md shadow-md">
+              <span className="font-bold text-sm">{evaluation.notaFinal.toFixed(1)}</span>
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`w-3 h-3 ${star <= Math.round(evaluation.notaFinal / 2) ? 'fill-white' : 'fill-white/30'}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Capa do Livro - Proporção preservada sem corte */}
         <div className="w-full aspect-[2/3] bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
           {book.coverUrl ? (
