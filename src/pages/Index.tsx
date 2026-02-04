@@ -167,7 +167,7 @@ const Index = () => {
       case 'cadastrar':
         return <BookForm onSubmit={handleAddBook} currentBookCount={books.length} />;
       case 'livros':
-        return <BooksListView books={books} statuses={statuses} readings={readings} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} initialFilter={booksFilter} />;
+        return <BooksListView books={books} statuses={statuses} readings={readings} evaluations={evaluations} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} initialFilter={booksFilter} />;
       case 'leitura':
         return <ReadingForm books={books} onSubmit={handleAddReading} />;
       case 'status':
