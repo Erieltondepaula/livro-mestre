@@ -23,7 +23,8 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [groupByCategory, setGroupByCategory] = useState(true);
   const [statusFilter, setStatusFilter] = useState<'all' | 'reading' | 'completed'>(initialFilter);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  // null = todas expandidas por padrão, Set = controle manual
+  const [expandedCategories, setExpandedCategories] = useState<Set<string> | null>(null);
 
   // SETOR 3: Funções de Busca de Dados
   // Procura no array de statuses o status específico de um livro usando o ID.
@@ -120,13 +121,20 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
   }, [filteredBooks]);
 
   const toggleCategory = (category: string) => {
-    const newExpanded = new Set(expandedCategories);
-    if (newExpanded.has(category)) {
-      newExpanded.delete(category);
+    // Se é a primeira interação (todas expandidas), cria set com todas menos a clicada
+    if (expandedCategories === null) {
+      const allCategories = Object.keys(booksByCategory);
+      const newExpanded = new Set(allCategories.filter(c => c !== category));
+      setExpandedCategories(newExpanded);
     } else {
-      newExpanded.add(category);
+      const newExpanded = new Set(expandedCategories);
+      if (newExpanded.has(category)) {
+        newExpanded.delete(category);
+      } else {
+        newExpanded.add(category);
+      }
+      setExpandedCategories(newExpanded);
     }
-    setExpandedCategories(newExpanded);
   };
 
   const renderBookCard = (book: Book) => {
@@ -296,8 +304,9 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
       ) : groupByCategory ? (
         /* Visualização agrupada por categoria */
         <div className="space-y-4">
-          {Object.entries(booksByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryBooks]) => {
-            const isExpanded = expandedCategories.has(category) || expandedCategories.size === 0;
+        {Object.entries(booksByCategory).sort(([a], [b]) => a.localeCompare(b)).map(([category, categoryBooks]) => {
+            // null = todas expandidas, Set = verifica se está no Set
+            const isExpanded = expandedCategories === null || expandedCategories.has(category);
             
             return (
               <div key={category} className="card-library overflow-hidden">
@@ -316,7 +325,7 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
                   </div>
                 </button>
                 
-                {(isExpanded || expandedCategories.size === 0) && (
+                {isExpanded && (
                   <div className="p-4 pt-0">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                       {categoryBooks.map(renderBookCard)}
