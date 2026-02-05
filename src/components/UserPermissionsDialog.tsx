@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked, Star, Quote, Book } from 'lucide-react';
+import { Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked, Star, Quote, Book, StickyNote } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -30,6 +30,7 @@ interface UserPermissionsDialogProps {
   isMasterEditing?: boolean;
 }
 
+// Lista completa de módulos incluindo Notas
 const MODULES = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'cadastrar', label: 'Cadastrar Livro', icon: PlusCircle },
@@ -38,6 +39,7 @@ const MODULES = [
   { key: 'status', label: 'Status dos Livros', icon: BookMarked },
   { key: 'avaliacao', label: 'Avaliações', icon: Star },
   { key: 'citacoes', label: 'Citações', icon: Quote },
+  { key: 'notas', label: 'Notas', icon: StickyNote },
   { key: 'biblia', label: 'Progresso Bíblia', icon: Book },
   { key: 'dicionario', label: 'Dicionário', icon: Book },
 ];
@@ -47,7 +49,6 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
-  // Check if editing a master user (only show info, no permission changes)
   const isEditingMaster = user?.is_master ?? false;
 
   useEffect(() => {
@@ -143,7 +144,7 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditingMaster ? 'Perfil do Usuário Mestre' : 'Permissões de Módulos'}
@@ -161,7 +162,6 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : isEditingMaster ? (
-          // Master user info view
           <div className="space-y-6">
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
               <p className="text-sm text-foreground font-medium mb-2">Acesso Total</p>
@@ -199,7 +199,6 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
             </div>
           </div>
         ) : (
-          // Regular user permissions view
           <div className="space-y-6">
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleSelectAll}>
