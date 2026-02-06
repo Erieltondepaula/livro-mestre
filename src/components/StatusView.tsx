@@ -1,8 +1,13 @@
-import { useState } from 'react';
-import { Trash2, Edit2, BarChart3 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Trash2, Edit2, BarChart3, Search, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
 import type { BookStatus, Book, DailyReading, BookEvaluation, Quote, VocabularyEntry } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
 import { BookMetricsDialog } from './BookMetricsDialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 
 interface StatusViewProps {
   statuses: BookStatus[];
@@ -16,9 +21,14 @@ interface StatusViewProps {
   onUpdateReading?: (reading: DailyReading) => void;
 }
 
+type StatusFilter = 'all' | 'Lendo' | 'Concluido' | 'Não iniciado';
+
 export function StatusView({ statuses, books, readings, evaluations, quotes, vocabulary, onDeleteBook, onUpdateBook, onUpdateReading }: StatusViewProps) {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
+  // Filtro padrão: "Lendo"
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('Lendo');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const getBookProgress = (status: BookStatus) => {
     const book = books.find(b => b.id === status.livroId);
@@ -53,11 +63,97 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
     return evaluations.find(e => e.livroId === bookId) || null;
   };
 
+  // Aplicar filtros
+  const filteredStatuses = useMemo(() => {
+    let result = [...statuses];
+
+    // Filtro por status
+    if (statusFilter !== 'all') {
+      result = result.filter(s => s.status === statusFilter);
+    }
+
+    // Filtro por busca (nome do livro)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(s => s.livro.toLowerCase().includes(query));
+    }
+
+    return result;
+  }, [statuses, statusFilter, searchQuery]);
+
+  // Contadores por status
+  const statusCounts = useMemo(() => {
+    const counts = { all: statuses.length, Lendo: 0, Concluido: 0, 'Não iniciado': 0 };
+    for (const s of statuses) {
+      if (s.status in counts) {
+        counts[s.status as keyof typeof counts]++;
+      }
+    }
+    return counts;
+  }, [statuses]);
+
+  // Calcular projeção para um livro
+  const getProjection = (status: BookStatus) => {
+    const book = books.find(b => b.id === status.livroId);
+    if (!book) return null;
+    return calculateReadingProjection(book, status, readings);
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-2">Status dos Livros</h2>
         <p className="text-sm sm:text-base text-muted-foreground">Clique num livro para visualizar métricas detalhadas</p>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Filtro por Status */}
+        <div className="flex gap-1 bg-muted p-1 rounded-lg flex-shrink-0">
+          <Button
+            variant={statusFilter === 'Lendo' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 text-xs"
+            onClick={() => setStatusFilter('Lendo')}
+          >
+            Lendo ({statusCounts.Lendo})
+          </Button>
+          <Button
+            variant={statusFilter === 'Concluido' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 text-xs"
+            onClick={() => setStatusFilter('Concluido')}
+          >
+            Concluídos ({statusCounts.Concluido})
+          </Button>
+          <Button
+            variant={statusFilter === 'Não iniciado' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 text-xs"
+            onClick={() => setStatusFilter('Não iniciado')}
+          >
+            Não iniciado ({statusCounts['Não iniciado']})
+          </Button>
+          <Button
+            variant={statusFilter === 'all' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 text-xs"
+            onClick={() => setStatusFilter('all')}
+          >
+            Todos ({statusCounts.all})
+          </Button>
+        </div>
+
+        {/* Campo de Busca */}
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar livro..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-10"
+          />
+        </div>
       </div>
 
       <div className="card-library p-3 sm:p-4 lg:p-6">
@@ -71,14 +167,16 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                 <th className="hidden sm:table-cell">Status</th>
                 <th>Progresso</th>
                 <th className="hidden lg:table-cell">Quantidade Lida</th>
+                {statusFilter === 'Lendo' && <th className="hidden xl:table-cell">Previsão</th>}
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {statuses.map((status) => {
+              {filteredStatuses.map((status) => {
                 const progress = getBookProgress(status);
                 const total = getBookTotal(status);
                 const book = books.find(b => b.id === status.livroId);
+                const projection = getProjection(status);
                 
                 return (
                   <tr 
@@ -116,6 +214,25 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                         }`}>
                           {status.status}
                         </span>
+                        {/* Mobile: show projection */}
+                        {projection?.canShow && projection.estimatedDate && (
+                          <div className="xl:hidden mt-1 flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Calendar className="w-3 h-3" />
+                            <span>{formatProjectedDateCompact(projection.estimatedDate)}</span>
+                            {projection.isDelayed && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <AlertCircle className="w-3 h-3 text-amber-500" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Atrasado em {projection.delayDays} dia(s)</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="hidden sm:table-cell">
@@ -144,6 +261,49 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                       <span className="font-medium">{status.quantidadeLida}</span>
                       <span className="text-muted-foreground"> / {total} pág</span>
                     </td>
+                    {statusFilter === 'Lendo' && (
+                      <td className="hidden xl:table-cell">
+                        {projection?.canShow && projection.estimatedDate ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-1 text-xs font-medium">
+                                      <Calendar className="w-3 h-3 text-primary" />
+                                      <span>{formatProjectedDateCompact(projection.estimatedDate)}</span>
+                                      {projection.isDelayed && (
+                                        <AlertCircle className="w-3 h-3 text-amber-500" />
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {projection.pagesPerDay} págs/dia • {projection.daysRemaining} dias
+                                    </span>
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-[200px]">
+                                <div className="space-y-1 text-xs">
+                                  <p className="font-semibold">Projeção de Conclusão</p>
+                                  <p>Ritmo: {projection.pagesPerDay} páginas/dia</p>
+                                  <p>Dias de leitura: {projection.readingDays}</p>
+                                  <p>Dias restantes: {projection.daysRemaining}</p>
+                                  {projection.isDelayed && (
+                                    <p className="text-amber-500">⚠️ Atrasado em {projection.delayDays} dia(s)</p>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : projection?.readingDays !== undefined && projection.readingDays < 3 ? (
+                          <span className="text-[10px] text-muted-foreground italic">
+                            Precisa de 3+ dias de leitura
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    )}
                     <td onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-0.5 sm:gap-1">
                         <button
@@ -176,10 +336,15 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                   </tr>
                 );
               })}
-              {statuses.length === 0 && (
+              {filteredStatuses.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-muted-foreground py-8">
-                    Nenhum livro cadastrado ainda.
+                  <td colSpan={statusFilter === 'Lendo' ? 8 : 7} className="text-center text-muted-foreground py-8">
+                    {searchQuery.trim() 
+                      ? `Nenhum livro encontrado para "${searchQuery}"`
+                      : statusFilter === 'all'
+                        ? 'Nenhum livro cadastrado ainda.'
+                        : `Nenhum livro com status "${statusFilter}".`
+                    }
                   </td>
                 </tr>
               )}

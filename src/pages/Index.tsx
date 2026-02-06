@@ -163,7 +163,7 @@ const Index = () => {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onNavigateToBooks={handleNavigateToBooks} />;
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} readings={readings} onNavigateToBooks={handleNavigateToBooks} />;
       case 'cadastrar':
         return <BookForm onSubmit={handleAddBook} currentBookCount={books.length} />;
       case 'livros':
@@ -185,7 +185,7 @@ const Index = () => {
       case 'ajuda':
         return <HelpView />;
       default:
-        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} onNavigateToBooks={handleNavigateToBooks} />;
+        return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} readings={readings} onNavigateToBooks={handleNavigateToBooks} />;
     }
   };
 

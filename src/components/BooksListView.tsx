@@ -1,14 +1,17 @@
 import { useState, forwardRef, useMemo } from 'react';
-import { Edit2, Trash2, BookOpen, ChevronDown, ChevronRight, Filter, Star, Clock, Calendar, CheckCircle } from 'lucide-react';
+import { Edit2, Trash2, BookOpen, ChevronDown, ChevronRight, Filter, Star, Clock, Calendar, CheckCircle, AlertCircle, Search } from 'lucide-react';
 import type { Book, BookStatus, DailyReading, BookEvaluation } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 
 interface BooksListViewProps {
   books: Book[];
@@ -26,6 +29,7 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
   const [groupByCategory, setGroupByCategory] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'reading' | 'completed'>(initialFilter);
   const [expandedCategories, setExpandedCategories] = useState<Set<string> | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const getBookStatus = (bookId: string) => {
     return statuses.find(s => s.livroId === bookId);
@@ -35,22 +39,26 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
     return evaluations.find(e => e.livroId === bookId);
   };
 
-  const getAverageReadingSpeed = (bookId: string): number | null => {
-    const bookReadings = readings.filter(r => r.livroId === bookId && r.tempoGasto > 0);
-    if (bookReadings.length === 0) return null;
-    const totalPages = bookReadings.reduce((sum, r) => sum + r.quantidadePaginas, 0);
-    const totalMinutes = bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0);
-    if (totalMinutes === 0) return null;
-    return totalPages / totalMinutes;
+  const getReadingProjection = (book: Book, status: BookStatus | undefined) => {
+    return calculateReadingProjection(book, status, readings);
   };
 
   const getReadingTimeMinutes = (book: Book, status: BookStatus | undefined): number | null => {
     if (!status) return null;
     const pagesRemaining = book.totalPaginas - status.quantidadeLida;
     if (pagesRemaining <= 0) return null;
-    const avgSpeed = getAverageReadingSpeed(book.id);
-    const minutesPerPage = avgSpeed ? (1 / avgSpeed) : 2;
-    return Math.round(pagesRemaining * minutesPerPage);
+    
+    // Usar projeção dinâmica
+    const projection = getReadingProjection(book, status);
+    if (projection.canShow && projection.pagesPerDay > 0) {
+      // Calcular minutos baseado no ritmo real
+      const daysRemaining = projection.daysRemaining;
+      // Estimar 30 min/dia como média
+      return daysRemaining * 30;
+    }
+    
+    // Fallback para livros sem histórico suficiente
+    return Math.round(pagesRemaining * 2);
   };
 
   const formatTimeEstimate = (totalMinutes: number): string => {
@@ -62,41 +70,8 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
     return `${minutes}m`;
   };
 
-  const getEstimatedCompletionDate = (book: Book, status: BookStatus | undefined): Date | null => {
-    if (!status) return null;
-    const pagesRemaining = book.totalPaginas - status.quantidadeLida;
-    if (pagesRemaining <= 0) return null;
-
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const recentReadings = readings.filter(r => {
-      const readDate = new Date(r.mes + '-' + String(r.dia).padStart(2, '0'));
-      return r.livroId === book.id && readDate >= thirtyDaysAgo;
-    });
-
-    if (recentReadings.length === 0) {
-      const daysNeeded = Math.ceil(pagesRemaining / 10);
-      const estimatedDate = new Date();
-      estimatedDate.setDate(estimatedDate.getDate() + daysNeeded);
-      return estimatedDate;
-    }
-
-    const totalPagesRead = recentReadings.reduce((sum, r) => sum + r.quantidadePaginas, 0);
-    const uniqueDays = new Set(recentReadings.map(r => `${r.mes}-${r.dia}`)).size;
-    const avgPagesPerDay = totalPagesRead / uniqueDays;
-    const daysNeeded = Math.ceil(pagesRemaining / avgPagesPerDay);
-
-    const estimatedDate = new Date();
-    estimatedDate.setDate(estimatedDate.getDate() + daysNeeded);
-    return estimatedDate;
-  };
-
   const formatCompletionDate = (date: Date): string => {
-    const day = date.getDate();
-    const month = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
+    return formatProjectedDateCompact(date);
   };
 
   const getStatusInfo = (book: Book, status: BookStatus | undefined): { colorClass: string } => {
@@ -114,14 +89,26 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
   };
 
   const filteredBooks = useMemo(() => {
-    return books.filter(book => {
-      const status = getBookStatus(book.id);
-      if (statusFilter === 'all') return true;
-      if (statusFilter === 'reading') return status?.status === 'Lendo';
-      if (statusFilter === 'completed') return status?.status === 'Concluido';
-      return true;
-    });
-  }, [books, statuses, statusFilter]);
+    let result = books;
+    
+    // Filtro por status
+    if (statusFilter !== 'all') {
+      result = result.filter(book => {
+        const status = getBookStatus(book.id);
+        if (statusFilter === 'reading') return status?.status === 'Lendo';
+        if (statusFilter === 'completed') return status?.status === 'Concluido';
+        return true;
+      });
+    }
+    
+    // Filtro por busca
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(book => book.livro.toLowerCase().includes(query));
+    }
+    
+    return result;
+  }, [books, statuses, statusFilter, searchQuery]);
 
   const booksByCategory = useMemo(() => {
     const grouped: Record<string, Book[]> = {};
@@ -154,8 +141,8 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
   const renderBookCard = (book: Book) => {
     const status = getBookStatus(book.id);
     const evaluation = getBookEvaluation(book.id);
+    const projection = getReadingProjection(book, status);
     const totalMinutes = getReadingTimeMinutes(book, status);
-    const completionDate = getEstimatedCompletionDate(book, status);
     const statusInfo = getStatusInfo(book, status);
     const isCompleted = status?.status === 'Concluido';
 
@@ -243,10 +230,13 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
                         <span>{formatTimeEstimate(totalMinutes)}</span>
                       </div>
                     )}
-                    {completionDate && (
+                    {projection.canShow && projection.estimatedDate && (
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <Calendar className="w-3 h-3" />
-                        <span>{formatCompletionDate(completionDate)}</span>
+                        <span>{formatCompletionDate(projection.estimatedDate)}</span>
+                        {projection.isDelayed && (
+                          <AlertCircle className="w-3 h-3 text-amber-500" />
+                        )}
                       </div>
                     )}
                   </>
@@ -311,18 +301,35 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
             </div>
 
             {/* Tempo e Data de Conclusão */}
-            {!isCompleted && totalMinutes && (
+            {!isCompleted && projection.canShow && (
               <div className="pt-2 border-t space-y-1">
-                <div className={`flex items-center gap-2 text-sm font-medium ${statusInfo.colorClass}`}>
-                  <Clock className="w-4 h-4" />
-                  <span>Tempo restante: {formatTimeEstimate(totalMinutes)}</span>
-                </div>
-                {completionDate && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    <span>Previsão: {formatCompletionDate(completionDate)}</span>
+                {totalMinutes && (
+                  <div className={`flex items-center gap-2 text-sm font-medium ${statusInfo.colorClass}`}>
+                    <Clock className="w-4 h-4" />
+                    <span>Tempo restante: {formatTimeEstimate(totalMinutes)}</span>
                   </div>
                 )}
+                {projection.estimatedDate && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    <span>Previsão: {formatCompletionDate(projection.estimatedDate)}</span>
+                    {projection.isDelayed && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <AlertCircle className="w-4 h-4 text-amber-500" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Atrasado em {projection.delayDays} dia(s)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground">
+                  Ritmo: {projection.pagesPerDay} págs/dia • {projection.daysRemaining} dias restantes
+                </p>
               </div>
             )}
 
@@ -354,7 +361,18 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
           <h2 className="font-display text-xl md:text-2xl font-bold text-foreground">Livros Cadastrados</h2>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Campo de Busca */}
+          <div className="relative flex-shrink-0">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-7 w-32 text-xs"
+            />
+          </div>
+
           <div className="flex gap-1 bg-muted p-0.5 rounded-lg">
             <Button
               variant={statusFilter === 'all' ? 'default' : 'ghost'}
