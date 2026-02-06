@@ -506,21 +506,19 @@ export function useLibrary() {
     let newPagesRead: number;
     let newStatus: string;
 
-    if (reading.isRetroactive) {
-      // Retroactive: set pages directly to the final page
-      newPagesRead = reading.paginaFinal;
-      newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
-    } else {
-      // Regular: accumulate pages
-      const { data: currentStatus } = await supabase
-        .from('statuses')
-        .select('pages_read')
-        .eq('book_id', reading.livroId)
-        .maybeSingle();
-
-      newPagesRead = (currentStatus?.pages_read || 0) + quantidadePaginas;
-      newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
-    }
+    // CORREÇÃO: Para evitar acumulação incorreta de páginas (especialmente para Bíblia),
+    // Sempre recalcular baseado em MAX(end_page) de todas as leituras
+    const { data: allBookReadings } = await supabase
+      .from('readings')
+      .select('end_page')
+      .eq('book_id', reading.livroId);
+    
+    // O valor correto é o maior end_page entre todas as leituras OU a página final atual
+    const maxFromExisting = allBookReadings && allBookReadings.length > 0 
+      ? Math.max(...allBookReadings.map(r => r.end_page)) 
+      : 0;
+    newPagesRead = Math.max(maxFromExisting, reading.paginaFinal);
+    newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
 
     await supabase
       .from('statuses')

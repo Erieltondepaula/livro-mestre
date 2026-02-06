@@ -1,19 +1,65 @@
-import { BookOpen, BookCheck, Clock, TrendingUp, Library, Target } from 'lucide-react';
-import type { DashboardStats, BookStatus, Book } from '@/types/library';
+import { useState, useMemo } from 'react';
+import { BookOpen, BookCheck, Clock, TrendingUp, Library, Target, Search, Calendar, AlertCircle } from 'lucide-react';
+import type { DashboardStats, BookStatus, Book, DailyReading } from '@/types/library';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 
 interface DashboardProps {
   stats: DashboardStats;
   recentStatuses: BookStatus[];
   books: Book[];
+  readings: DailyReading[];
   onNavigateToBooks?: (filter?: 'all' | 'reading' | 'completed') => void;
 }
 
-export function Dashboard({ stats, recentStatuses, books, onNavigateToBooks }: DashboardProps) {
+type StatusFilter = 'all' | 'Lendo' | 'Concluido' | 'Não iniciado';
+
+export function Dashboard({ stats, recentStatuses, books, readings, onNavigateToBooks }: DashboardProps) {
+  // Filtro padrão: "Lendo"
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('Lendo');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filtrar statuses
+  const filteredStatuses = useMemo(() => {
+    let result = [...recentStatuses];
+    
+    if (statusFilter !== 'all') {
+      result = result.filter(s => s.status === statusFilter);
+    }
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(s => s.livro.toLowerCase().includes(query));
+    }
+    
+    return result;
+  }, [recentStatuses, statusFilter, searchQuery]);
+
+  // Contadores
+  const statusCounts = useMemo(() => {
+    const counts = { all: recentStatuses.length, Lendo: 0, Concluido: 0, 'Não iniciado': 0 };
+    for (const s of recentStatuses) {
+      if (s.status in counts) {
+        counts[s.status as keyof typeof counts]++;
+      }
+    }
+    return counts;
+  }, [recentStatuses]);
+
   // Calcular a percentagem de leitura para cada status
   const getReadPercentage = (status: BookStatus) => {
     const book = books.find(b => b.id === status.livroId);
     if (!book || book.totalPaginas === 0) return 0;
     return Math.min(100, (status.quantidadeLida / book.totalPaginas) * 100);
+  };
+
+  // Obter projeção de conclusão
+  const getProjection = (status: BookStatus) => {
+    const book = books.find(b => b.id === status.livroId);
+    if (!book) return null;
+    return calculateReadingProjection(book, status, readings);
   };
 
   return (
@@ -139,16 +185,73 @@ export function Dashboard({ stats, recentStatuses, books, onNavigateToBooks }: D
         </div>
       </div>
 
-      {/* Recent Status */}
+      {/* Recent Status with Filters */}
       <div className="card-library p-4 md:p-6">
-        <h3 className="font-display text-lg md:text-xl font-semibold text-foreground mb-4">Status dos Livros</h3>
-        {recentStatuses.length === 0 ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <h3 className="font-display text-lg md:text-xl font-semibold text-foreground">Status dos Livros</h3>
+          
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* Campo de Busca */}
+            <div className="relative flex-shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 w-32 text-xs"
+              />
+            </div>
+
+            {/* Filtros de Status */}
+            <div className="flex gap-1 bg-muted p-0.5 rounded-lg">
+              <Button
+                variant={statusFilter === 'Lendo' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setStatusFilter('Lendo')}
+              >
+                Lendo ({statusCounts.Lendo})
+              </Button>
+              <Button
+                variant={statusFilter === 'Concluido' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setStatusFilter('Concluido')}
+              >
+                Concluídos ({statusCounts.Concluido})
+              </Button>
+              <Button
+                variant={statusFilter === 'Não iniciado' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setStatusFilter('Não iniciado')}
+              >
+                Não iniciado ({statusCounts['Não iniciado']})
+              </Button>
+              <Button
+                variant={statusFilter === 'all' ? 'default' : 'ghost'}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setStatusFilter('all')}
+              >
+                Todos
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {filteredStatuses.length === 0 ? (
           <p className="text-muted-foreground text-center py-8 text-sm md:text-base">
-            Nenhum livro cadastrado ainda. Comece cadastrando o seu primeiro livro!
+            {searchQuery.trim() 
+              ? `Nenhum livro encontrado para "${searchQuery}"`
+              : recentStatuses.length === 0
+                ? 'Nenhum livro cadastrado ainda. Comece cadastrando o seu primeiro livro!'
+                : `Nenhum livro com status "${statusFilter}".`
+            }
           </p>
         ) : (
           <div className="overflow-x-auto -mx-4 md:mx-0">
-            <div className="min-w-[600px] md:min-w-0 px-4 md:px-0">
+            <div className="min-w-[700px] md:min-w-0 px-4 md:px-0">
               <table className="table-library w-full">
                 <thead>
                   <tr>
@@ -157,11 +260,14 @@ export function Dashboard({ stats, recentStatuses, books, onNavigateToBooks }: D
                     <th className="text-xs md:text-sm">Livro</th>
                     <th className="text-xs md:text-sm">Status</th>
                     <th className="text-xs md:text-sm">Lido</th>
+                    {statusFilter === 'Lendo' && <th className="text-xs md:text-sm">Previsão</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {recentStatuses.map((status) => {
+                  {filteredStatuses.map((status) => {
                     const book = books.find(b => b.id === status.livroId);
+                    const projection = getProjection(status);
+                    
                     return (
                       <tr key={status.id}>
                         <td className="font-medium text-sm">{status.numero}</td>
@@ -189,6 +295,38 @@ export function Dashboard({ stats, recentStatuses, books, onNavigateToBooks }: D
                           </span>
                         </td>
                         <td className="text-sm">{getReadPercentage(status).toFixed(0)}%</td>
+                        {statusFilter === 'Lendo' && (
+                          <td className="text-xs">
+                            {projection?.canShow && projection.estimatedDate ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="w-3 h-3 text-primary" />
+                                      <span className="font-medium">{formatProjectedDateCompact(projection.estimatedDate)}</span>
+                                      {projection.isDelayed && (
+                                        <AlertCircle className="w-3 h-3 text-amber-500" />
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div className="text-xs space-y-1">
+                                      <p>Ritmo: {projection.pagesPerDay} págs/dia</p>
+                                      <p>Dias restantes: {projection.daysRemaining}</p>
+                                      {projection.isDelayed && (
+                                        <p className="text-amber-500">Atrasado em {projection.delayDays} dia(s)</p>
+                                      )}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : projection?.readingDays !== undefined && projection.readingDays < 3 ? (
+                              <span className="text-muted-foreground italic">3+ dias necessários</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
