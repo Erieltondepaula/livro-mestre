@@ -59,6 +59,7 @@ export type Database = {
           id: string
           name: string
           paid_value: number | null
+          target_completion_date: string | null
           total_pages: number
           type: string
           user_id: string | null
@@ -72,6 +73,7 @@ export type Database = {
           id?: string
           name: string
           paid_value?: number | null
+          target_completion_date?: string | null
           total_pages?: number
           type?: string
           user_id?: string | null
@@ -85,6 +87,7 @@ export type Database = {
           id?: string
           name?: string
           paid_value?: number | null
+          target_completion_date?: string | null
           total_pages?: number
           type?: string
           user_id?: string | null
