@@ -125,6 +125,7 @@ export function useLibrary() {
           categoria: b.category as Book['categoria'],
           valorPago: Number(b.paid_value) || 0,
           coverUrl: (b as any).cover_url || undefined,
+          targetCompletionDate: (b as any).target_completion_date || undefined,
         })));
       }
 
@@ -321,7 +322,6 @@ export function useLibrary() {
     return newBookData;
   }, [loadData, user]);
 
-  // Update book
   const updateBook = useCallback(async (updatedBook: Book) => {
     const { error } = await supabase
       .from('books')
@@ -334,6 +334,7 @@ export function useLibrary() {
         category: updatedBook.categoria,
         paid_value: updatedBook.valorPago,
         cover_url: updatedBook.coverUrl,
+        target_completion_date: updatedBook.targetCompletionDate || null,
       } as any)
       .eq('id', updatedBook.id);
 

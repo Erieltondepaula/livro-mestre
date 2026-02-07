@@ -27,6 +27,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
   const [categoria, setCategoria] = useState('Ficção');
   const [valorPago, setValorPago] = useState('');
   const [coverUrl, setCoverUrl] = useState<string | undefined>();
+  const [targetCompletionDate, setTargetCompletionDate] = useState('');
   
   const [bookTypes, setBookTypes] = useState<string[]>([]);
   const [bookCategories, setBookCategories] = useState<string[]>([]);
@@ -124,6 +125,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
       categoria: categoria as Book['categoria'],
       valorPago: parseFloat(valorPago) || 0,
       coverUrl,
+      targetCompletionDate: targetCompletionDate || undefined,
     });
 
     // Reset form
@@ -135,6 +137,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
     setCategoria('Ficção');
     setValorPago('');
     setCoverUrl(undefined);
+    setTargetCompletionDate('');
   };
 
   return (
@@ -347,6 +350,21 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
                 step="0.01"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Data Prevista para Conclusão (Opcional)
+            </label>
+            <input
+              type="date"
+              value={targetCompletionDate}
+              onChange={(e) => setTargetCompletionDate(e.target.value)}
+              className="input-library"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Define uma meta para finalizar a leitura. Útil para planos de leitura devocionais ou metas pessoais.
+            </p>
           </div>
 
           <button type="submit" className="btn-primary w-full">

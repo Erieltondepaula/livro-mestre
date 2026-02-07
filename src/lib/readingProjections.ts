@@ -1,4 +1,4 @@
-import { differenceInDays, format, addDays, parseISO, isToday, isYesterday, startOfDay } from 'date-fns';
+import { differenceInDays, format, addDays, parseISO, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Book, BookStatus, DailyReading } from '@/types/library';
 
@@ -10,6 +10,8 @@ export interface ReadingProjection {
   isDelayed: boolean;
   delayDays: number;
   canShow: boolean; // Mostrar apenas se status == "Lendo" e dias_leitura >= 3
+  hasTargetDate: boolean; // Se está usando data alvo manual
+  targetDate: Date | null; // Data alvo definida pelo usuário
 }
 
 /**
@@ -31,6 +33,8 @@ export function calculateReadingProjection(
     isDelayed: false,
     delayDays: 0,
     canShow: false,
+    hasTargetDate: false,
+    targetDate: null,
   };
 
   // Condição 1: Só mostrar para livros "Lendo"
@@ -38,10 +42,36 @@ export function calculateReadingProjection(
     return defaultResult;
   }
 
+  // Verificar se existe data alvo manual
+  const hasTargetDate = !!book.targetCompletionDate;
+  let targetDate: Date | null = null;
+  
+  if (hasTargetDate && book.targetCompletionDate) {
+    targetDate = parseISO(book.targetCompletionDate);
+  }
+
   // Obter todas as leituras deste livro
   const bookReadings = readings.filter(r => r.livroId === book.id);
   
   if (bookReadings.length === 0) {
+    // Se tem data alvo manual mas sem leituras, ainda mostrar a data alvo
+    if (hasTargetDate && targetDate) {
+      const daysRemaining = differenceInDays(targetDate, new Date());
+      const pagesRemaining = book.totalPaginas - (status?.quantidadeLida || 0);
+      const pagesPerDay = daysRemaining > 0 ? pagesRemaining / daysRemaining : 0;
+      
+      return {
+        estimatedDate: targetDate,
+        daysRemaining: Math.max(0, daysRemaining),
+        pagesPerDay: Number(pagesPerDay.toFixed(1)),
+        readingDays: 0,
+        isDelayed: daysRemaining < 0,
+        delayDays: daysRemaining < 0 ? Math.abs(daysRemaining) : 0,
+        canShow: true,
+        hasTargetDate: true,
+        targetDate,
+      };
+    }
     return defaultResult;
   }
 
@@ -58,15 +88,38 @@ export function calculateReadingProjection(
   
   const readingDays = uniqueDays.size;
 
+  // Se tem data alvo manual, usar ela como referência principal
+  if (hasTargetDate && targetDate) {
+    const pagesRemaining = book.totalPaginas - status.quantidadeLida;
+    const daysUntilTarget = differenceInDays(targetDate, new Date());
+    const pagesPerDayNeeded = daysUntilTarget > 0 ? pagesRemaining / daysUntilTarget : 0;
+    
+    // Verificar se está atrasado baseado na data alvo
+    const isDelayed = daysUntilTarget < 0;
+    
+    return {
+      estimatedDate: targetDate,
+      daysRemaining: Math.max(0, daysUntilTarget),
+      pagesPerDay: Number(pagesPerDayNeeded.toFixed(1)),
+      readingDays,
+      isDelayed,
+      delayDays: isDelayed ? Math.abs(daysUntilTarget) : 0,
+      canShow: true,
+      hasTargetDate: true,
+      targetDate,
+    };
+  }
+
+  // Sem data alvo manual: usar cálculo dinâmico baseado no ritmo
   // Condição 2: Só mostrar se tiver 3+ dias de leitura
   if (readingDays < 3) {
-    return { ...defaultResult, readingDays };
+    return { ...defaultResult, readingDays, hasTargetDate: false, targetDate: null };
   }
 
   // Calcular páginas restantes
   const pagesRemaining = book.totalPaginas - status.quantidadeLida;
   if (pagesRemaining <= 0) {
-    return { ...defaultResult, readingDays, canShow: false };
+    return { ...defaultResult, readingDays, canShow: false, hasTargetDate: false, targetDate: null };
   }
 
   // Calcular ritmo médio baseado nos últimos 30 dias
@@ -108,7 +161,7 @@ export function calculateReadingProjection(
   const daysWithReading = dayEntries.length;
   
   if (daysWithReading === 0) {
-    return { ...defaultResult, readingDays, canShow: true };
+    return { ...defaultResult, readingDays, canShow: true, hasTargetDate: false, targetDate: null };
   }
 
   // Calcular páginas por dia (usando o progresso máximo atingido)
@@ -116,7 +169,7 @@ export function calculateReadingProjection(
   const avgPagesPerDay = totalPagesInPeriod / daysWithReading;
 
   if (avgPagesPerDay <= 0) {
-    return { ...defaultResult, readingDays, canShow: true, pagesPerDay: 0 };
+    return { ...defaultResult, readingDays, canShow: true, pagesPerDay: 0, hasTargetDate: false, targetDate: null };
   }
 
   // Calcular dias restantes
@@ -157,6 +210,8 @@ export function calculateReadingProjection(
     isDelayed,
     delayDays,
     canShow: true,
+    hasTargetDate: false,
+    targetDate: null,
   };
 }
 
