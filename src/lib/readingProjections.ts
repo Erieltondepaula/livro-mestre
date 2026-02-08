@@ -271,12 +271,13 @@ export function calculateReadingProjection(
   // Calcular dias restantes
   const daysRemaining = Math.ceil(pagesRemaining / avgPagesPerDay);
 
-  // Calcular data estimada considerando atrasos
-  const estimatedDate = addDays(new Date(), daysRemaining + delayDays);
+  // Calcular data estimada - NÃO somar atraso, pois isso distorce a previsão
+  // O atraso é apenas um indicador visual, não altera o ritmo real do usuário
+  const estimatedDate = addDays(new Date(), daysRemaining);
 
   return {
     estimatedDate,
-    daysRemaining: daysRemaining + delayDays,
+    daysRemaining,
     pagesPerDay: Number(avgPagesPerDay.toFixed(1)),
     readingDays,
     isDelayed,
