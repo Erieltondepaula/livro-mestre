@@ -1,8 +1,42 @@
 # 📚 Documentação Completa do Projeto - Biblioteca de Leitura
 
-> **Última atualização:** 25 Janeiro 2026  
-> **Versão:** 1.7  
+> **Última atualização:** 07 Fevereiro 2026  
+> **Versão:** 2.0  
 > **Autor:** Documentação gerada via Lovable
+
+## 🆕 Changelog v2.0 (07/02/2026)
+
+### Novas Funcionalidades
+
+1. **Data Prevista de Conclusão Manual**
+   - Campo opcional `target_completion_date` na tabela `books`
+   - Permite definir uma meta de conclusão para livros com plano de leitura
+   - Integrado aos formulários de cadastro e edição de livros
+   - Usado como referência prioritária no cálculo de projeções
+
+2. **Sistema de Projeções Dinâmicas Aprimorado**
+   - Prioriza data alvo manual quando definida
+   - Cálculo automático baseado no ritmo real dos últimos 30 dias
+   - Suporte a atrasos (+1 dia por dia sem leitura) e reposições
+   - Indicador visual de atraso na interface
+
+3. **Correções de Bugs**
+   - Correção no cálculo de páginas para livros com múltiplas entradas por dia (Bíblia)
+   - Uso de `MAX(end_page)` ao invés de soma de páginas
+
+### Arquivos Modificados
+- `src/types/library.ts` - Adicionado campo `targetCompletionDate`
+- `src/hooks/useLibrary.ts` - Suporte ao novo campo
+- `src/lib/readingProjections.ts` - Lógica de projeção com data alvo
+- `src/components/BookForm.tsx` - Campo de data prevista no cadastro
+- `src/components/BookEditDialog.tsx` - Campo de data prevista na edição
+
+### Migração de Banco de Dados
+```sql
+ALTER TABLE public.books 
+ADD COLUMN IF NOT EXISTS target_completion_date DATE;
+```
+
 
 ---
 
@@ -357,6 +391,7 @@ CREATE TABLE public.books (
   year INTEGER,
   cover_url TEXT,
   paid_value NUMERIC DEFAULT 0,
+  target_completion_date DATE,  -- v2.0: Data prevista de conclusão (opcional)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
