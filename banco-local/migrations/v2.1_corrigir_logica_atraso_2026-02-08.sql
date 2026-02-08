@@ -1,0 +1,41 @@
+-- =============================================
+-- MIGRAÇÃO v2.1 - Correção da Lógica de Atraso
+-- Data: 2026-02-08
+-- =============================================
+-- Esta migração NÃO faz alterações no banco de dados.
+-- As correções são apenas no código TypeScript.
+-- 
+-- CORREÇÕES IMPLEMENTADAS:
+-- =============================================
+-- 
+-- 1. DETECÇÃO DE ATRASO COM FORMATO DIA/MÊS
+--    - O sistema agora detecta atraso mesmo quando as leituras
+--      usam o formato antigo (dia + mês em texto) sem datas ISO
+--    - Converte automaticamente "25/Janeiro" para Date para calcular
+-- 
+-- 2. EXIBIÇÃO DE ATRASO MESMO SEM 3 DIAS DE LEITURA
+--    - Livros iniciados que estão parados agora mostram status
+--      de atraso, mesmo sem atingir 3 dias de histórico
+--    - Prioriza mostrar o alerta de atraso para o usuário
+-- 
+-- 3. CÁLCULO DE DIAS DE ATRASO
+--    - Se a última leitura foi há mais de 1 dia, o livro é
+--      marcado como atrasado
+--    - delayDays = diasDesdeUltimaLeitura - 1
+-- 
+-- ARQUIVOS MODIFICADOS:
+-- =============================================
+-- - src/lib/readingProjections.ts
+--   - Adicionada lógica para inferir data a partir de dia/mês
+--   - Movida verificação de atraso para antes da condição de 3 dias
+--   - Atualizado retorno para incluir isDelayed mesmo sem projeção
+-- 
+-- EXEMPLO DE COMPORTAMENTO:
+-- =============================================
+-- Livro: "Casamento Livre de Conflitos Financeiros"
+-- - Última leitura: 25/Janeiro/2026
+-- - Data atual: 08/Fevereiro/2026
+-- - Dias sem leitura: 14 dias
+-- - Status: Em atraso (delayDays: 13)
+-- 
+-- =============================================

@@ -1,8 +1,44 @@
 # 📚 Documentação Completa do Projeto - Biblioteca de Leitura
 
-> **Última atualização:** 25 Janeiro 2026  
-> **Versão:** 1.7  
+> **Última atualização:** 08 Fevereiro 2026  
+> **Versão:** 2.1  
 > **Autor:** Documentação gerada via Lovable
+
+## 🆕 Changelog v2.1 (08/02/2026)
+
+### Correções de Bugs
+1. **Detecção de Atraso Aprimorada**
+   - O sistema agora detecta atraso mesmo quando as leituras usam o formato antigo (dia + mês em texto) sem datas ISO
+   - Converte automaticamente "25/Janeiro" para Date para calcular dias de atraso
+   - Livros iniciados que estão parados agora mostram status de atraso, mesmo sem 3 dias de histórico
+
+2. **Cálculo de Dias de Atraso**
+   - Se a última leitura foi há mais de 1 dia, o livro é marcado como atrasado
+   - Fórmula: `delayDays = diasDesdeUltimaLeitura - 1`
+
+### Arquivos Modificados
+- `src/lib/readingProjections.ts` - Lógica de atraso com suporte a formato dia/mês
+
+### Migração de Banco de Dados
+Nenhuma migração necessária - correções apenas no código TypeScript.
+
+---
+
+## 🆕 Changelog v2.0 (07/02/2026)
+
+### Novas Funcionalidades
+1. **Data Prevista de Conclusão Manual**
+   - Campo opcional `target_completion_date` na tabela `books`
+   - Permite definir uma meta de conclusão para livros com plano de leitura
+   - Integrado aos formulários de cadastro e edição de livros
+
+### Migração de Banco de Dados
+```sql
+ALTER TABLE public.books 
+ADD COLUMN IF NOT EXISTS target_completion_date DATE;
+```
+
+---
 
 ---
 

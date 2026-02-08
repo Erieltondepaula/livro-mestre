@@ -1,8 +1,20 @@
 # 📚 Documentação Completa do Projeto - Biblioteca de Leitura
 
-> **Última atualização:** 07 Fevereiro 2026  
-> **Versão:** 2.0  
+> **Última atualização:** 08 Fevereiro 2026  
+> **Versão:** 2.1  
 > **Autor:** Documentação gerada via Lovable
+
+## 🆕 Changelog v2.1 (08/02/2026)
+
+### Correções de Bugs
+1. **Detecção de Atraso Aprimorada**
+   - Sistema detecta atraso mesmo com leituras no formato antigo (dia + mês sem data ISO)
+   - Livros iniciados e parados mostram status de atraso mesmo sem 3 dias de histórico
+
+### Arquivos Modificados
+- `src/lib/readingProjections.ts` - Lógica de atraso com suporte a formato dia/mês
+
+---
 
 ## 🆕 Changelog v2.0 (07/02/2026)
 
