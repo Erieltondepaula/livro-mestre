@@ -110,9 +110,71 @@ export function calculateReadingProjection(
     };
   }
 
+  // Calcular a última data de leitura (para verificar atraso)
+  // Precisamos inferir a data a partir de dia/mês ou usar dataInicio se disponível
+  let lastReadingDate: Date | null = null;
+  
+  for (const reading of bookReadings) {
+    let readDate: Date | null = null;
+    
+    if (reading.dataInicio) {
+      readDate = new Date(reading.dataInicio);
+    } else if (reading.dataFim) {
+      readDate = new Date(reading.dataFim);
+    } else if (reading.dia && reading.mes) {
+      // Inferir data a partir de dia/mês - usar o ano do created_at ou ano atual
+      const monthMap: Record<string, number> = {
+        'Janeiro': 0, 'Fevereiro': 1, 'Março': 2, 'Abril': 3,
+        'Maio': 4, 'Junho': 5, 'Julho': 6, 'Agosto': 7,
+        'Setembro': 8, 'Outubro': 9, 'Novembro': 10, 'Dezembro': 11
+      };
+      const monthNum = monthMap[reading.mes];
+      if (monthNum !== undefined) {
+        const year = new Date().getFullYear();
+        readDate = new Date(year, monthNum, reading.dia);
+        
+        // Se a data inferida está no futuro, usar ano anterior
+        if (readDate > new Date()) {
+          readDate = new Date(year - 1, monthNum, reading.dia);
+        }
+      }
+    }
+    
+    if (readDate && (!lastReadingDate || readDate > lastReadingDate)) {
+      lastReadingDate = readDate;
+    }
+  }
+
+  // Verificar atraso - se passou mais de 1 dia desde a última leitura
+  let isDelayed = false;
+  let delayDays = 0;
+  
+  if (lastReadingDate) {
+    const today = startOfDay(new Date());
+    const daysSinceLastReading = differenceInDays(today, startOfDay(lastReadingDate));
+    
+    // Se passou mais de 1 dia desde a última leitura, está atrasado
+    if (daysSinceLastReading > 1) {
+      isDelayed = true;
+      delayDays = daysSinceLastReading - 1; // Desconta o dia atual
+    }
+  }
+
   // Sem data alvo manual: usar cálculo dinâmico baseado no ritmo
   // Condição 2: Só mostrar se tiver 3+ dias de leitura
   if (readingDays < 3) {
+    // Mesmo sem 3 dias de leitura, mostrar se estiver atrasado
+    if (isDelayed) {
+      return { 
+        ...defaultResult, 
+        readingDays, 
+        isDelayed, 
+        delayDays, 
+        canShow: true,
+        hasTargetDate: false, 
+        targetDate: null 
+      };
+    }
     return { ...defaultResult, readingDays, hasTargetDate: false, targetDate: null };
   }
 
@@ -131,6 +193,23 @@ export function calculateReadingProjection(
     if (r.dataInicio) {
       const readDate = new Date(r.dataInicio);
       return readDate >= thirtyDaysAgo && readDate <= now;
+    }
+    // Também verificar por dia/mês
+    if (r.dia && r.mes) {
+      const monthMap: Record<string, number> = {
+        'Janeiro': 0, 'Fevereiro': 1, 'Março': 2, 'Abril': 3,
+        'Maio': 4, 'Junho': 5, 'Julho': 6, 'Agosto': 7,
+        'Setembro': 8, 'Outubro': 9, 'Novembro': 10, 'Dezembro': 11
+      };
+      const monthNum = monthMap[r.mes];
+      if (monthNum !== undefined) {
+        const year = new Date().getFullYear();
+        let readDate = new Date(year, monthNum, r.dia);
+        if (readDate > now) {
+          readDate = new Date(year - 1, monthNum, r.dia);
+        }
+        return readDate >= thirtyDaysAgo && readDate <= now;
+      }
     }
     return false;
   });
@@ -161,7 +240,15 @@ export function calculateReadingProjection(
   const daysWithReading = dayEntries.length;
   
   if (daysWithReading === 0) {
-    return { ...defaultResult, readingDays, canShow: true, hasTargetDate: false, targetDate: null };
+    return { 
+      ...defaultResult, 
+      readingDays, 
+      canShow: true, 
+      isDelayed, 
+      delayDays, 
+      hasTargetDate: false, 
+      targetDate: null 
+    };
   }
 
   // Calcular páginas por dia (usando o progresso máximo atingido)
@@ -169,35 +256,20 @@ export function calculateReadingProjection(
   const avgPagesPerDay = totalPagesInPeriod / daysWithReading;
 
   if (avgPagesPerDay <= 0) {
-    return { ...defaultResult, readingDays, canShow: true, pagesPerDay: 0, hasTargetDate: false, targetDate: null };
+    return { 
+      ...defaultResult, 
+      readingDays, 
+      canShow: true, 
+      pagesPerDay: 0, 
+      isDelayed, 
+      delayDays, 
+      hasTargetDate: false, 
+      targetDate: null 
+    };
   }
 
   // Calcular dias restantes
   const daysRemaining = Math.ceil(pagesRemaining / avgPagesPerDay);
-
-  // Verificar atraso - se não leu ontem nem hoje
-  const sortedDates = Object.keys(pagesByDay)
-    .filter(k => k.includes('-')) // Apenas datas ISO
-    .sort((a, b) => b.localeCompare(a));
-  
-  let lastReadingDate: Date | null = null;
-  if (sortedDates.length > 0) {
-    lastReadingDate = parseISO(sortedDates[0]);
-  }
-
-  let isDelayed = false;
-  let delayDays = 0;
-  
-  if (lastReadingDate) {
-    const today = startOfDay(new Date());
-    const daysSinceLastReading = differenceInDays(today, startOfDay(lastReadingDate));
-    
-    // Se passou mais de 1 dia desde a última leitura, está atrasado
-    if (daysSinceLastReading > 1) {
-      isDelayed = true;
-      delayDays = daysSinceLastReading - 1; // Desconta o dia atual
-    }
-  }
 
   // Calcular data estimada considerando atrasos
   const estimatedDate = addDays(new Date(), daysRemaining + delayDays);
