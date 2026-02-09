@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { BookForm } from '@/components/BookForm';
@@ -19,9 +19,23 @@ import type { Book, Note } from '@/types/library';
 
 type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'ajuda';
 
+// Keys for session persistence
+const STORAGE_KEYS = {
+  currentView: 'library_currentView',
+  scrollPosition: 'library_scrollPosition',
+  booksFilter: 'library_booksFilter',
+};
+
 const Index = () => {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [booksFilter, setBooksFilter] = useState<'all' | 'reading' | 'completed'>('all');
+  // Restore state from sessionStorage on mount
+  const [currentView, setCurrentView] = useState<View>(() => {
+    const saved = sessionStorage.getItem(STORAGE_KEYS.currentView);
+    return (saved as View) || 'dashboard';
+  });
+  const [booksFilter, setBooksFilter] = useState<'all' | 'reading' | 'completed'>(() => {
+    const saved = sessionStorage.getItem(STORAGE_KEYS.booksFilter);
+    return (saved as 'all' | 'reading' | 'completed') || 'all';
+  });
   const { isExpiringSoon } = useSubscription();
   const {
     books,
@@ -46,6 +60,54 @@ const Index = () => {
     clearAllData,
     getDashboardStats,
   } = useLibrary();
+
+  // Persist current view to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEYS.currentView, currentView);
+  }, [currentView]);
+
+  // Persist books filter to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEYS.booksFilter, booksFilter);
+  }, [booksFilter]);
+
+  // Save scroll position before page unload/hide
+  useEffect(() => {
+    const saveScrollPosition = () => {
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        sessionStorage.setItem(STORAGE_KEYS.scrollPosition, String(mainElement.scrollTop));
+      }
+    };
+
+    // Save on visibility change (when app goes to background on mobile)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveScrollPosition();
+      }
+    };
+
+    // Save before unload
+    window.addEventListener('beforeunload', saveScrollPosition);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Restore scroll position on mount
+    const savedScroll = sessionStorage.getItem(STORAGE_KEYS.scrollPosition);
+    if (savedScroll) {
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+          mainElement.scrollTop = parseInt(savedScroll, 10);
+        }, 100);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', saveScrollPosition);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   if (!isLoaded) {
     return (
