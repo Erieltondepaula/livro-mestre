@@ -1,5 +1,5 @@
 -- =============================================
--- MIGRAÇÃO v2.2 - Correção do Cálculo de Ritmo
+-- MIGRAÇÃO v2.2 - Correção do Cálculo de Ritmo + Persistência
 -- Data: 2026-02-09
 -- =============================================
 -- Esta migração NÃO faz alterações no banco de dados.
@@ -13,22 +13,16 @@
 --    - Agora: calcula dividindo páginas lidas pelo intervalo total
 --      (dias entre primeira e última leitura)
 -- 
--- 2. EXEMPLO DO PROBLEMA ANTERIOR:
---    - Livro: 169 páginas, 27 lidas
---    - Histórico: 9 dias únicos de leitura
---    - Cálculo antigo: 27/9 = 3 págs/dia → 47 dias restantes
---    - Problema: ignorava que o usuário parou de ler por 14 dias
+-- 2. BARRA DE PROGRESSO VISUAL (Progress Component)
+--    - Componente Progress melhorado com indicatorClassName
+--    - Suporta customização de cores do indicador
+--    - Animação suave de transição
 -- 
--- 3. NOVO CÁLCULO:
---    - Primeira leitura: 25/Janeiro
---    - Última leitura: 25/Janeiro (mesmo dia)
---    - Dias corridos desde início: 16 dias (até 09/Fev)
---    - Ritmo real: 27/16 = 1.7 págs/dia
---    - Previsão correta: 142 dias restantes
--- 
--- 4. BARRA DE PROGRESSO VISUAL
---    - Substituída a barra CSS simples pelo componente Progress
---    - Mais consistente com o design system
+-- 3. PERSISTÊNCIA DE ESTADO EM DISPOSITIVOS MÓVEIS
+--    - Salva view atual no sessionStorage
+--    - Salva posição de scroll ao minimizar/fechar
+--    - Restaura estado ao retornar à página
+--    - Usa visibilitychange API para detectar background
 -- 
 -- ARQUIVOS MODIFICADOS:
 -- =============================================
@@ -37,8 +31,14 @@
 --   - Calcula totalDaysElapsed = diferença entre datas + 1
 --   - avgPagesPerDay = quantidadeLida / totalDaysElapsed
 -- 
--- - src/components/StatusView.tsx
---   - Importação do componente Progress
---   - Substituição da barra manual pelo Progress
+-- - src/components/ui/progress.tsx
+--   - Adicionada prop indicatorClassName
+--   - Melhorada animação com duration-300
+-- 
+-- - src/pages/Index.tsx
+--   - Estado inicial lido do sessionStorage
+--   - useEffect para persistir currentView e booksFilter
+--   - Listeners para visibilitychange e beforeunload
+--   - Restaura scroll position no mount
 -- 
 -- =============================================
