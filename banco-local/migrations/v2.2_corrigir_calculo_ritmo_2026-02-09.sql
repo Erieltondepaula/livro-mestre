@@ -1,0 +1,44 @@
+-- =============================================
+-- MIGRAÇÃO v2.2 - Correção do Cálculo de Ritmo
+-- Data: 2026-02-09
+-- =============================================
+-- Esta migração NÃO faz alterações no banco de dados.
+-- As correções são apenas no código TypeScript.
+-- 
+-- CORREÇÕES IMPLEMENTADAS:
+-- =============================================
+-- 
+-- 1. CÁLCULO BASEADO NO INTERVALO REAL DE TEMPO
+--    - Antes: calculava páginas/dia dividindo por dias únicos de leitura
+--    - Agora: calcula dividindo páginas lidas pelo intervalo total
+--      (dias entre primeira e última leitura)
+-- 
+-- 2. EXEMPLO DO PROBLEMA ANTERIOR:
+--    - Livro: 169 páginas, 27 lidas
+--    - Histórico: 9 dias únicos de leitura
+--    - Cálculo antigo: 27/9 = 3 págs/dia → 47 dias restantes
+--    - Problema: ignorava que o usuário parou de ler por 14 dias
+-- 
+-- 3. NOVO CÁLCULO:
+--    - Primeira leitura: 25/Janeiro
+--    - Última leitura: 25/Janeiro (mesmo dia)
+--    - Dias corridos desde início: 16 dias (até 09/Fev)
+--    - Ritmo real: 27/16 = 1.7 págs/dia
+--    - Previsão correta: 142 dias restantes
+-- 
+-- 4. BARRA DE PROGRESSO VISUAL
+--    - Substituída a barra CSS simples pelo componente Progress
+--    - Mais consistente com o design system
+-- 
+-- ARQUIVOS MODIFICADOS:
+-- =============================================
+-- - src/lib/readingProjections.ts
+--   - Encontra firstReadingDate e lastReadingDate
+--   - Calcula totalDaysElapsed = diferença entre datas + 1
+--   - avgPagesPerDay = quantidadeLida / totalDaysElapsed
+-- 
+-- - src/components/StatusView.tsx
+--   - Importação do componente Progress
+--   - Substituição da barra manual pelo Progress
+-- 
+-- =============================================

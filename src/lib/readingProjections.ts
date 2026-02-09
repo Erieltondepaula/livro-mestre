@@ -161,6 +161,38 @@ export function calculateReadingProjection(
   }
 
   // Sem data alvo manual: usar cálculo dinâmico baseado no ritmo
+
+  // Encontrar a primeira data de leitura (data de início do livro)
+  let firstReadingDate: Date | null = null;
+  
+  for (const reading of bookReadings) {
+    let readDate: Date | null = null;
+    
+    if (reading.dataInicio) {
+      readDate = new Date(reading.dataInicio);
+    } else if (reading.dataFim) {
+      readDate = new Date(reading.dataFim);
+    } else if (reading.dia && reading.mes) {
+      const monthMap: Record<string, number> = {
+        'Janeiro': 0, 'Fevereiro': 1, 'Março': 2, 'Abril': 3,
+        'Maio': 4, 'Junho': 5, 'Julho': 6, 'Agosto': 7,
+        'Setembro': 8, 'Outubro': 9, 'Novembro': 10, 'Dezembro': 11
+      };
+      const monthNum = monthMap[reading.mes];
+      if (monthNum !== undefined) {
+        const year = new Date().getFullYear();
+        readDate = new Date(year, monthNum, reading.dia);
+        if (readDate > new Date()) {
+          readDate = new Date(year - 1, monthNum, reading.dia);
+        }
+      }
+    }
+    
+    if (readDate && (!firstReadingDate || readDate < firstReadingDate)) {
+      firstReadingDate = readDate;
+    }
+  }
+
   // Condição 2: Só mostrar se tiver 3+ dias de leitura
   if (readingDays < 3) {
     // Mesmo sem 3 dias de leitura, mostrar se estiver atrasado
@@ -184,76 +216,24 @@ export function calculateReadingProjection(
     return { ...defaultResult, readingDays, canShow: false, hasTargetDate: false, targetDate: null };
   }
 
-  // Calcular ritmo médio baseado nos últimos 30 dias
-  const now = new Date();
-  const thirtyDaysAgo = addDays(now, -30);
+  // NOVO CÁLCULO: Usar intervalo de tempo real entre primeira e última leitura
+  // Isso dá uma previsão mais precisa baseada no comportamento real do usuário
   
-  // Obter leituras dos últimos 30 dias com datas válidas
-  const recentReadings = bookReadings.filter(r => {
-    if (r.dataInicio) {
-      const readDate = new Date(r.dataInicio);
-      return readDate >= thirtyDaysAgo && readDate <= now;
-    }
-    // Também verificar por dia/mês
-    if (r.dia && r.mes) {
-      const monthMap: Record<string, number> = {
-        'Janeiro': 0, 'Fevereiro': 1, 'Março': 2, 'Abril': 3,
-        'Maio': 4, 'Junho': 5, 'Julho': 6, 'Agosto': 7,
-        'Setembro': 8, 'Outubro': 9, 'Novembro': 10, 'Dezembro': 11
-      };
-      const monthNum = monthMap[r.mes];
-      if (monthNum !== undefined) {
-        const year = new Date().getFullYear();
-        let readDate = new Date(year, monthNum, r.dia);
-        if (readDate > now) {
-          readDate = new Date(year - 1, monthNum, r.dia);
-        }
-        return readDate >= thirtyDaysAgo && readDate <= now;
-      }
-    }
-    return false;
-  });
-
-  // Se não houver leituras recentes com data, usar todas
-  const readingsForCalc = recentReadings.length >= 3 ? recentReadings : bookReadings;
-
-  // Para livros da Bíblia com múltiplas entradas por dia, calcular páginas por dia único
-  const pagesByDay: Record<string, { maxPage: number; minPage: number }> = {};
-  for (const reading of readingsForCalc) {
-    let dateKey: string;
-    if (reading.dataInicio) {
-      dateKey = format(new Date(reading.dataInicio), 'yyyy-MM-dd');
-    } else {
-      dateKey = `${reading.dia}/${reading.mes}`;
-    }
+  let avgPagesPerDay = 0;
+  
+  if (firstReadingDate && lastReadingDate) {
+    const totalDaysElapsed = differenceInDays(startOfDay(lastReadingDate), startOfDay(firstReadingDate)) + 1;
     
-    if (!pagesByDay[dateKey]) {
-      pagesByDay[dateKey] = { maxPage: reading.paginaFinal, minPage: reading.paginaInicial };
-    } else {
-      pagesByDay[dateKey].maxPage = Math.max(pagesByDay[dateKey].maxPage, reading.paginaFinal);
-      pagesByDay[dateKey].minPage = Math.min(pagesByDay[dateKey].minPage, reading.paginaInicial);
+    if (totalDaysElapsed > 0) {
+      // Ritmo = páginas lidas / dias totais desde o início
+      avgPagesPerDay = status.quantidadeLida / totalDaysElapsed;
     }
   }
 
-  // Calcular total de páginas lidas no período
-  const dayEntries = Object.values(pagesByDay);
-  const daysWithReading = dayEntries.length;
-  
-  if (daysWithReading === 0) {
-    return { 
-      ...defaultResult, 
-      readingDays, 
-      canShow: true, 
-      isDelayed, 
-      delayDays, 
-      hasTargetDate: false, 
-      targetDate: null 
-    };
+  // Fallback: se não conseguiu calcular pelo intervalo, usar dias únicos de leitura
+  if (avgPagesPerDay <= 0) {
+    avgPagesPerDay = status.quantidadeLida / readingDays;
   }
-
-  // Calcular páginas por dia (usando o progresso máximo atingido)
-  const totalPagesInPeriod = status.quantidadeLida;
-  const avgPagesPerDay = totalPagesInPeriod / daysWithReading;
 
   if (avgPagesPerDay <= 0) {
     return { 
@@ -268,11 +248,10 @@ export function calculateReadingProjection(
     };
   }
 
-  // Calcular dias restantes
+  // Calcular dias restantes baseado no ritmo real
   const daysRemaining = Math.ceil(pagesRemaining / avgPagesPerDay);
 
-  // Calcular data estimada - NÃO somar atraso, pois isso distorce a previsão
-  // O atraso é apenas um indicador visual, não altera o ritmo real do usuário
+  // Calcular data estimada a partir de HOJE (não da última leitura)
   const estimatedDate = addDays(new Date(), daysRemaining);
 
   return {

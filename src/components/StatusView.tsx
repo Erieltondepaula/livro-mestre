@@ -6,6 +6,7 @@ import { BookMetricsDialog } from './BookMetricsDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 
@@ -245,14 +246,12 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                       </span>
                     </td>
                     <td>
-                      <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 min-w-[80px] sm:min-w-[120px] lg:min-w-[150px]">
-                        <div className="progress-bar-container flex-1 h-1.5 sm:h-2">
-                          <div 
-                            className="progress-bar-fill" 
-                            style={{ width: `${Math.min(progress, 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground whitespace-nowrap">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-[100px] sm:min-w-[140px] lg:min-w-[180px]">
+                        <Progress 
+                          value={Math.min(progress, 100)} 
+                          className="flex-1 h-2 sm:h-2.5"
+                        />
+                        <span className="text-[10px] sm:text-xs lg:text-sm text-muted-foreground whitespace-nowrap font-medium">
                           {progress.toFixed(0)}%
                         </span>
                       </div>
