@@ -147,9 +147,9 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
         <p className="text-muted-foreground">Adicione um novo livro à sua biblioteca</p>
       </div>
 
-      <div className="card-library-elevated p-8 max-w-2xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex gap-6">
+      <div className="card-library-elevated p-4 sm:p-6 lg:p-8 max-w-2xl">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
             <ImageUpload
               value={coverUrl}
               onChange={setCoverUrl}
@@ -185,7 +185,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Ano
@@ -275,7 +275,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Categoria

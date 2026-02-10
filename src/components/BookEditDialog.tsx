@@ -145,7 +145,7 @@ export const BookEditDialog = forwardRef<HTMLDivElement, BookEditDialogProps>(fu
         </div>
 
         <form onSubmit={handleSave} className="p-6 space-y-5">
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <ImageUpload
               value={coverUrl}
               onChange={setCoverUrl}
@@ -180,7 +180,7 @@ export const BookEditDialog = forwardRef<HTMLDivElement, BookEditDialogProps>(fu
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Ano
@@ -261,7 +261,7 @@ export const BookEditDialog = forwardRef<HTMLDivElement, BookEditDialogProps>(fu
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Categoria
