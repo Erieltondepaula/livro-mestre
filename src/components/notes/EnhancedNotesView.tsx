@@ -69,8 +69,8 @@ export function EnhancedNotesView({ books }: EnhancedNotesViewProps) {
     refetch,
   } = useNotes(books);
 
-  // UI State
-  const [showSidebar, setShowSidebar] = useState(true);
+  // UI State - hide sidebar by default on mobile
+  const [showSidebar, setShowSidebar] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isEditing, setIsEditing] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteCardData | null>(null);
@@ -198,10 +198,10 @@ export function EnhancedNotesView({ books }: EnhancedNotesViewProps) {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] flex">
+    <div className="h-[calc(100vh-120px)] flex relative overflow-hidden">
       {/* Sidebar */}
       {showSidebar && (
-        <div className="w-64 border-r bg-muted/20 flex flex-col shrink-0">
+        <div className="absolute md:relative z-30 w-64 h-full border-r bg-card md:bg-muted/20 flex flex-col shrink-0 shadow-lg md:shadow-none">
           <div className="p-4 border-b">
             <Button onClick={handleNewNote} className="w-full gap-2">
               <Plus className="h-4 w-4" />
@@ -353,7 +353,7 @@ export function EnhancedNotesView({ books }: EnhancedNotesViewProps) {
 
           {/* Filters */}
           <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[200px] max-w-md">
+            <div className="relative flex-1 min-w-0 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar notas, tags, conteúdo..."
@@ -364,7 +364,7 @@ export function EnhancedNotesView({ books }: EnhancedNotesViewProps) {
             </div>
 
             <Select value={filterBook || 'all'} onValueChange={(v) => setFilterBook(v === 'all' ? null : v)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <Book className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Livro" />
               </SelectTrigger>
