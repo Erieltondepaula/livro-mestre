@@ -70,7 +70,7 @@ export function EnhancedNotesView({ books }: EnhancedNotesViewProps) {
   } = useNotes(books);
 
   // UI State - hide sidebar by default on mobile
-  const [showSidebar, setShowSidebar] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isEditing, setIsEditing] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteCardData | null>(null);
@@ -201,7 +201,13 @@ export function EnhancedNotesView({ books }: EnhancedNotesViewProps) {
     <div className="h-[calc(100vh-120px)] flex relative overflow-hidden">
       {/* Sidebar */}
       {showSidebar && (
-        <div className="absolute md:relative z-30 w-64 h-full border-r bg-card md:bg-muted/20 flex flex-col shrink-0 shadow-lg md:shadow-none">
+        <>
+          {/* Backdrop for mobile */}
+          <div className="fixed inset-0 z-20 bg-black/40 md:hidden" onClick={() => setShowSidebar(false)} />
+        </>
+      )}
+      {showSidebar && (
+        <div className="fixed md:relative z-30 w-64 h-full border-r bg-card md:bg-muted/20 flex flex-col shrink-0 shadow-lg md:shadow-none top-0 left-0 md:top-auto md:left-auto">
           <div className="p-4 border-b">
             <Button onClick={handleNewNote} className="w-full gap-2">
               <Plus className="h-4 w-4" />

@@ -185,7 +185,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Ano
@@ -214,6 +214,9 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
                 required
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Tipo
@@ -224,21 +227,21 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
                     type="text"
                     value={newType}
                     onChange={(e) => setNewType(e.target.value)}
-                    className="input-library flex-1"
+                    className="input-library flex-1 min-w-0"
                     placeholder="Novo tipo..."
                     autoFocus
                   />
                   <button
                     type="button"
                     onClick={handleAddType}
-                    className="px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                    className="px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 shrink-0"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowNewType(false)}
-                    className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                    className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 shrink-0"
                   >
                     ✕
                   </button>
@@ -248,7 +251,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
                   <select
                     value={tipo}
                     onChange={(e) => setTipo(e.target.value)}
-                    className="input-library flex-1"
+                    className="input-library flex-1 min-w-0"
                   >
                     {bookTypes.map((t) => (
                       <option key={t} value={t}>{t}</option>
@@ -257,7 +260,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
                   <button
                     type="button"
                     onClick={() => setShowNewType(true)}
-                    className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                    className="px-2 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 shrink-0"
                     title="Adicionar novo tipo"
                   >
                     <Plus className="w-4 h-4" />
@@ -265,7 +268,7 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
                   <button
                     type="button"
                     onClick={() => setManageTypesOpen(true)}
-                    className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80"
+                    className="px-2 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 shrink-0"
                     title="Gerenciar tipos"
                   >
                     <Settings className="w-4 h-4" />
