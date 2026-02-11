@@ -11,13 +11,14 @@ import { DictionaryView } from '@/components/DictionaryView';
 import { BibleProgressView } from '@/components/BibleProgressView';
 import { HelpView } from '@/components/HelpView';
 import { EnhancedNotesView } from '@/components/notes/EnhancedNotesView';
+import { ReadingReportsView } from '@/components/ReadingReportsView';
 import { SubscriptionBlocker } from '@/components/SubscriptionBlocker';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { toast } from '@/hooks/use-toast';
 import type { Book, Note } from '@/types/library';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'ajuda';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'ajuda';
 
 // Keys for session persistence
 const STORAGE_KEYS = {
@@ -244,6 +245,8 @@ const Index = () => {
         return <BibleProgressView readings={readings} books={books} />;
       case 'dicionario':
         return <DictionaryView />;
+      case 'relatorios':
+        return <ReadingReportsView books={books} readings={readings} statuses={statuses} />;
       case 'ajuda':
         return <HelpView />;
       default:

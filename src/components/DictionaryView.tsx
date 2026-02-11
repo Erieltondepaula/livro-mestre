@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save, Book } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ArrowLeft, BookOpen, Save, Book, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,12 +7,36 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { VocabularyDialog } from './VocabularyDialog';
 import { SavedWordsPanel } from './SavedWordsPanel';
 import { toast } from '@/hooks/use-toast';
 import type { VocabularyEntry, SinonimoGrupo, AnaliseContexto } from '@/types/library';
+
+interface BiblicalOriginal {
+  hebraico?: {
+    palavra: string;
+    transliteracao: string;
+    strongNumber: string;
+    significado: string;
+    raiz: string;
+    usosBiblicos: string[];
+    observacoes: string;
+  };
+  grego?: {
+    palavra: string;
+    transliteracao: string;
+    strongNumber: string;
+    significado: string;
+    raiz: string;
+    usosBiblicos: string[];
+    observacoes: string;
+  };
+  notasTeologicas?: string;
+  variacoesTraducao?: string[];
+}
 
 interface DictionaryResult {
   palavra: string;
@@ -26,6 +50,7 @@ interface DictionaryResult {
   etimologia: string;
   observacoes: string;
   analiseContexto?: AnaliseContexto;
+  originalBiblico?: BiblicalOriginal;
 }
 
 interface BookOption {
@@ -56,6 +81,7 @@ export function DictionaryView() {
   const [savedWords, setSavedWords] = useState<VocabularyEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<VocabularyEntry | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isBiblical, setIsBiblical] = useState(false);
 
   // Load saved vocabulary and books
   useEffect(() => {
@@ -94,7 +120,7 @@ export function DictionaryView() {
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('dictionary', {
-        body: { word: wordToSearch, context },
+        body: { word: wordToSearch, context, isBiblical },
       });
 
       if (fnError) {
@@ -222,6 +248,12 @@ export function DictionaryView() {
     setIsDialogOpen(true);
   };
 
+  // Clickable synonym - search it in dictionary
+  const handleSynonymClick = (word: string) => {
+    setSearchWord(word);
+    searchDictionary(word);
+  };
+
   if (showResult && result) {
     return (
       <div className="space-y-6 max-w-4xl mx-auto">
@@ -257,11 +289,22 @@ export function DictionaryView() {
           {result.sinonimos && result.sinonimos.length > 0 && (
             <div className="mb-6">
               <h3 className="font-semibold text-foreground mb-2">Sinônimos</h3>
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {result.sinonimos.map((grupo, i) => (
-                  <li key={i} className="flex gap-2">
-                    <span className="text-muted-foreground">• {grupo.sentido}:</span>
-                    <span className="text-primary">{grupo.palavras.join(', ')}</span>
+                  <li key={i}>
+                    <span className="text-muted-foreground text-sm">• {grupo.sentido}:</span>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {grupo.palavras.map((palavra, j) => (
+                        <button
+                          key={j}
+                          onClick={() => handleSynonymClick(palavra)}
+                          className="px-2.5 py-1 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+                          title={`Buscar "${palavra}" no dicionário`}
+                        >
+                          {palavra}
+                        </button>
+                      ))}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -301,6 +344,121 @@ export function DictionaryView() {
             <div className="mb-6">
               <h3 className="font-semibold text-foreground mb-1">Observações linguísticas</h3>
               <p className="text-primary">{result.observacoes}</p>
+            </div>
+          )}
+
+          {/* Biblical Original - Hebrew/Greek */}
+          {result.originalBiblico && (
+            <div className="mb-6 border-t pt-6">
+              <h3 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+                <Languages className="w-5 h-5 text-primary" />
+                Original Bíblico (Hebraico / Grego)
+              </h3>
+              <div className="space-y-4">
+                {result.originalBiblico.hebraico && (
+                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      📜 Hebraico (Antigo Testamento)
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Palavra:</span>{' '}
+                        <span className="text-2xl font-bold text-primary" dir="rtl">{result.originalBiblico.hebraico.palavra}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Transliteração:</span>{' '}
+                        <span className="text-foreground italic">{result.originalBiblico.hebraico.transliteracao}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Strong:</span>{' '}
+                        <span className="text-primary font-mono">{result.originalBiblico.hebraico.strongNumber}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Raiz:</span>{' '}
+                        <span className="text-foreground">{result.originalBiblico.hebraico.raiz}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-sm">Significado:</span>
+                      <p className="text-foreground">{result.originalBiblico.hebraico.significado}</p>
+                    </div>
+                    {result.originalBiblico.hebraico.usosBiblicos?.length > 0 && (
+                      <div>
+                        <span className="text-muted-foreground text-sm">Usos bíblicos:</span>
+                        <ul className="text-sm space-y-0.5 mt-1">
+                          {result.originalBiblico.hebraico.usosBiblicos.map((uso, i) => (
+                            <li key={i} className="text-foreground">• {uso}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {result.originalBiblico.hebraico.observacoes && (
+                      <p className="text-sm text-muted-foreground italic">{result.originalBiblico.hebraico.observacoes}</p>
+                    )}
+                  </div>
+                )}
+
+                {result.originalBiblico.grego && (
+                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      📖 Grego (Novo Testamento)
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Palavra:</span>{' '}
+                        <span className="text-2xl font-bold text-primary">{result.originalBiblico.grego.palavra}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Transliteração:</span>{' '}
+                        <span className="text-foreground italic">{result.originalBiblico.grego.transliteracao}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Strong:</span>{' '}
+                        <span className="text-primary font-mono">{result.originalBiblico.grego.strongNumber}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Raiz:</span>{' '}
+                        <span className="text-foreground">{result.originalBiblico.grego.raiz}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-sm">Significado:</span>
+                      <p className="text-foreground">{result.originalBiblico.grego.significado}</p>
+                    </div>
+                    {result.originalBiblico.grego.usosBiblicos?.length > 0 && (
+                      <div>
+                        <span className="text-muted-foreground text-sm">Usos bíblicos:</span>
+                        <ul className="text-sm space-y-0.5 mt-1">
+                          {result.originalBiblico.grego.usosBiblicos.map((uso, i) => (
+                            <li key={i} className="text-foreground">• {uso}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {result.originalBiblico.grego.observacoes && (
+                      <p className="text-sm text-muted-foreground italic">{result.originalBiblico.grego.observacoes}</p>
+                    )}
+                  </div>
+                )}
+
+                {result.originalBiblico.notasTeologicas && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-md p-4">
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notas Teológicas</p>
+                    <p className="text-foreground text-sm">{result.originalBiblico.notasTeologicas}</p>
+                  </div>
+                )}
+
+                {result.originalBiblico.variacoesTraducao && result.originalBiblico.variacoesTraducao.length > 0 && (
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Variações de Tradução</p>
+                    <div className="flex flex-wrap gap-2">
+                      {result.originalBiblico.variacoesTraducao.map((v, i) => (
+                        <span key={i} className="px-2.5 py-1 bg-secondary text-secondary-foreground rounded-full text-xs">{v}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -377,15 +535,20 @@ export function DictionaryView() {
                   </div>
                 )}
 
-                {/* Sinônimos adequados */}
+                {/* Sinônimos adequados - clicáveis */}
                 {result.analiseContexto.sinonimosAdequados && result.analiseContexto.sinonimosAdequados.length > 0 && (
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sinônimos adequados ao contexto</p>
                     <div className="flex flex-wrap gap-2">
                       {result.analiseContexto.sinonimosAdequados.map((sin, i) => (
-                        <span key={i} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                        <button
+                          key={i}
+                          onClick={() => handleSynonymClick(sin)}
+                          className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer"
+                          title={`Buscar "${sin}" no dicionário`}
+                        >
                           {sin}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -541,23 +704,36 @@ export function DictionaryView() {
       </div>
 
       {/* Search */}
-      <div className="card-library p-6">
-        <div className="flex gap-4 max-w-xl">
-          <Input
-            placeholder="Digite uma palavra em português..."
-            value={searchWord}
-            onChange={(e) => setSearchWord(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="flex-1"
-          />
-          <Button onClick={() => searchDictionary()} disabled={isLoading || !searchWord.trim()}>
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-            <span className="ml-2">Buscar</span>
-          </Button>
+      <div className="card-library p-4 sm:p-6">
+        <div className="flex flex-col gap-3 max-w-xl">
+          <div className="flex gap-2 sm:gap-4">
+            <Input
+              placeholder="Digite uma palavra em português..."
+              value={searchWord}
+              onChange={(e) => setSearchWord(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="flex-1 min-w-0"
+            />
+            <Button onClick={() => searchDictionary()} disabled={isLoading || !searchWord.trim()} className="shrink-0">
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+              <span className="ml-2 hidden sm:inline">Buscar</span>
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="biblical-mode"
+              checked={isBiblical}
+              onCheckedChange={setIsBiblical}
+            />
+            <Label htmlFor="biblical-mode" className="text-sm flex items-center gap-1.5 cursor-pointer">
+              <Languages className="w-4 h-4 text-primary" />
+              Incluir original hebraico/grego (bíblico)
+            </Label>
+          </div>
         </div>
       </div>
 
@@ -594,6 +770,10 @@ export function DictionaryView() {
         allWords={savedWords}
         onSelectRelatedWord={(entry) => {
           setSelectedEntry(entry);
+        }}
+        onSearchWord={(word) => {
+          setIsDialogOpen(false);
+          handleSynonymClick(word);
         }}
         onEntryUpdated={() => {
           loadVocabulary();

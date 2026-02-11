@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle, Crown } from 'lucide-react';
+import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle, Crown, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'ajuda';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'ajuda';
 
 interface SidebarProps {
   currentView: View;
@@ -33,6 +33,7 @@ const navItems = [
   { id: 'notas' as View, label: 'Notas', icon: StickyNote },
   { id: 'biblia' as View, label: 'Progresso Bíblia', icon: Book },
   { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
+  { id: 'relatorios' as View, label: 'Relatórios', icon: BarChart3 },
   { id: 'ajuda' as View, label: 'Ajuda', icon: HelpCircle },
 ];
 
