@@ -23,9 +23,10 @@ interface VocabularyDialogProps {
   allWords?: VocabularyEntry[];
   onSelectRelatedWord?: (entry: VocabularyEntry) => void;
   onEntryUpdated?: () => void;
+  onSearchWord?: (word: string) => void;
 }
 
-export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSelectRelatedWord, onEntryUpdated }: VocabularyDialogProps) {
+export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSelectRelatedWord, onEntryUpdated, onSearchWord }: VocabularyDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [books, setBooks] = useState<BookOption[]>([]);
@@ -342,15 +343,31 @@ export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSele
             </div>
           )}
 
-          {/* Synonyms */}
+          {/* Synonyms - clickable */}
           {entry.sinonimos && entry.sinonimos.length > 0 && (
             <div>
               <h4 className="font-semibold text-foreground mb-2">Sinônimos</h4>
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {entry.sinonimos.map((grupo, i) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <span className="text-muted-foreground">• {grupo.sentido}:</span>
-                    <span className="text-primary">{grupo.palavras.join(', ')}</span>
+                  <li key={i}>
+                    <span className="text-muted-foreground text-sm">• {grupo.sentido}:</span>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {grupo.palavras.map((palavra, j) => (
+                        <button
+                          key={j}
+                          onClick={() => {
+                            if (onSearchWord) {
+                              onClose();
+                              onSearchWord(palavra);
+                            }
+                          }}
+                          className={`px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary hover:text-primary-foreground transition-colors ${onSearchWord ? 'cursor-pointer' : 'cursor-default'}`}
+                          title={onSearchWord ? `Buscar "${palavra}" no dicionário` : undefined}
+                        >
+                          {palavra}
+                        </button>
+                      ))}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -438,15 +455,25 @@ export function VocabularyDialog({ entry, isOpen, onClose, allWords = [], onSele
                   </div>
                 )}
 
-                {/* Sinônimos adequados */}
+                {/* Sinônimos adequados - clicáveis */}
                 {entry.analise_contexto.sinonimosAdequados && entry.analise_contexto.sinonimosAdequados.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Sinônimos adequados</p>
                     <div className="flex flex-wrap gap-1">
                       {entry.analise_contexto.sinonimosAdequados.map((sin, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs">
+                        <button
+                          key={i}
+                          onClick={() => {
+                            if (onSearchWord) {
+                              onClose();
+                              onSearchWord(sin);
+                            }
+                          }}
+                          className={`px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs hover:bg-primary hover:text-primary-foreground transition-colors ${onSearchWord ? 'cursor-pointer' : 'cursor-default'}`}
+                          title={onSearchWord ? `Buscar "${sin}" no dicionário` : undefined}
+                        >
                           {sin}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   </div>

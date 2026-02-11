@@ -2,7 +2,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// CORS headers - allow all origins for flexibility
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -12,16 +11,15 @@ const corsHeaders = {
 interface DictionaryRequest {
   word: string;
   context?: string;
+  isBiblical?: boolean;
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verify authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
@@ -41,7 +39,6 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Validate the JWT token
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
 
@@ -60,7 +57,7 @@ serve(async (req) => {
       );
     }
 
-    const { word, context } = (await req.json()) as DictionaryRequest;
+    const { word, context, isBiblical } = (await req.json()) as DictionaryRequest;
 
     if (!word) {
       return new Response(
@@ -69,7 +66,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate word input
     const cleanWord = word.trim().slice(0, 100);
     if (!cleanWord || cleanWord.length < 1) {
       return new Response(
@@ -82,6 +78,47 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY not configured");
     }
+
+    // Biblical Hebrew/Greek section for the prompt
+    const biblicalSection = isBiblical ? `
+
+IMPORTANTE: Esta palavra tem contexto bíblico. Você DEVE incluir o campo "originalBiblico" na resposta com informações do hebraico e/ou grego bíblico.
+
+Siga o padrão de léxicos como Strong's Concordance, Dicionário Vine e Champlin para fornecer:
+- A palavra original em hebraico (se Antigo Testamento) e/ou grego (se Novo Testamento)
+- Transliteração
+- Número de Strong (se aplicável)
+- Significado original na língua bíblica
+- Raiz etimológica na língua original
+- Usos no texto bíblico com referências
+- Variações de tradução em diferentes versões
+
+O campo "originalBiblico" deve ter esta estrutura:
+{
+  "hebraico": {
+    "palavra": "a palavra em caracteres hebraicos",
+    "transliteracao": "transliteração latina",
+    "strongNumber": "H1234 (número de Strong)",
+    "significado": "significado original em hebraico",
+    "raiz": "raiz etimológica hebraica",
+    "usosBiblicos": ["Gn 1:1 - contexto de uso", "Sl 23:1 - contexto de uso"],
+    "observacoes": "notas sobre uso no AT"
+  },
+  "grego": {
+    "palavra": "a palavra em caracteres gregos",
+    "transliteracao": "transliteração latina",
+    "strongNumber": "G1234 (número de Strong)",
+    "significado": "significado original em grego",
+    "raiz": "raiz etimológica grega",
+    "usosBiblicos": ["Jo 3:16 - contexto de uso", "Rm 8:28 - contexto de uso"],
+    "observacoes": "notas sobre uso no NT"
+  },
+  "notasTeologicas": "observações teológicas sobre o uso e evolução do termo nas Escrituras",
+  "variacoesTraducao": ["como aparece na ARA", "como aparece na NVI", "como aparece na ARC"]
+}
+
+Se a palavra existe apenas no AT, preencha apenas "hebraico". Se apenas no NT, apenas "grego". Se em ambos, preencha os dois.
+Se não encontrar número de Strong específico, use "N/A" mas forneça as demais informações.` : '';
 
     let systemPrompt = `Você é um dicionário de língua portuguesa brasileiro especializado. Responda SEMPRE em JSON válido.
 
@@ -118,11 +155,14 @@ Formato de resposta JSON:
   ],
   "etimologia": "Do latim amor, -ōris.",
   "observacoes": "Pode ser usado em diversas formas: romântico, fraternal, platônico, etc."
-}`;
+}${biblicalSection}`;
 
     let userPrompt = `Defina a palavra: "${cleanWord}"`;
 
-    // Validate and sanitize context
+    if (isBiblical) {
+      userPrompt += `\n\nEsta é uma palavra com contexto BÍBLICO. Inclua obrigatoriamente o campo "originalBiblico" com os termos originais em hebraico e/ou grego, seguindo o padrão de léxicos bíblicos como Strong's Concordance.`;
+    }
+
     const cleanContext = context?.trim().slice(0, 1000);
     
     if (cleanContext) {
@@ -163,6 +203,10 @@ TODOS os campos de analiseContexto são OBRIGATÓRIOS. Não deixe nenhum campo v
 CONTEXTO/FRASE PARA ANÁLISE OBRIGATÓRIA: "${cleanContext}"
 
 IMPORTANTE: Inclua o campo "analiseContexto" com TODOS os 11 campos preenchidos na resposta. Este é um módulo de análise profunda, não apenas definição.`;
+
+      if (isBiblical) {
+        userPrompt += `\n\nEsta é uma palavra com contexto BÍBLICO. Inclua também o campo "originalBiblico" com os termos originais em hebraico e/ou grego.`;
+      }
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -204,7 +248,6 @@ IMPORTANTE: Inclua o campo "analiseContexto" com TODOS os 11 campos preenchidos 
       throw new Error("Resposta vazia do serviço");
     }
 
-    // Parse JSON from response (handle markdown code blocks)
     let jsonContent = content;
     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
