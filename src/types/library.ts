@@ -15,6 +15,7 @@ export interface Book {
   categoria: BookCategory;
   valorPago: number;
   coverUrl?: string;
+  created_at?: string;
   targetCompletionDate?: string; // Data prevista de conclusão definida manualmente (YYYY-MM-DD)
 }
 

@@ -126,6 +126,7 @@ export function useLibrary() {
           valorPago: Number(b.paid_value) || 0,
           coverUrl: (b as any).cover_url || undefined,
           targetCompletionDate: (b as any).target_completion_date || undefined,
+          created_at: b.created_at || undefined,
         })));
       }
 
