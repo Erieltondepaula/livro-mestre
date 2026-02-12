@@ -69,7 +69,7 @@ export function BookTimelineDialog({
     // 1. Cadastro do livro
     events.push({
       id: `cadastro-${book.id}`,
-      date: new Date(book.id), // Using ID as fallback, real date would come from created_at
+      date: new Date(), // fallback to now since Book type doesn't have created_at
       type: 'cadastro',
       title: 'Livro cadastrado na biblioteca',
       subtitle: `${book.livro} • ${book.totalPaginas} páginas`,
@@ -199,7 +199,9 @@ export function BookTimelineDialog({
   const groupedEvents = useMemo(() => {
     const groups = new Map<string, TimelineEvent[]>();
     timelineEvents.forEach(event => {
-      const key = format(event.date, 'MMMM yyyy', { locale: ptBR });
+      const d = event.date;
+      if (!d || isNaN(d.getTime())) return;
+      const key = format(d, 'MMMM yyyy', { locale: ptBR });
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(event);
     });
@@ -305,7 +307,7 @@ export function BookTimelineDialog({
                                     {EVENT_CONFIG[event.type].label}
                                   </span>
                                   <span className="text-[10px] text-muted-foreground">
-                                    {format(event.date, "dd MMM yyyy 'às' HH:mm", { locale: ptBR })}
+                                    {!isNaN(event.date.getTime()) ? format(event.date, "dd MMM yyyy 'às' HH:mm", { locale: ptBR }) : '—'}
                                   </span>
                                 </div>
                                 <p className="font-medium text-sm text-foreground mt-1 truncate">{event.title}</p>
