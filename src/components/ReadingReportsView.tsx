@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend } from 'recharts';
 import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,13 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   const [period, setPeriod] = useState<Period>('all');
   const [activeTab, setActiveTab] = useState<ChartTab>('pages');
 
+  // Helper: check if a book is Bible category
+  const isBibleBook = useCallback((bookId: string) => {
+    const book = books.find(b => b.id === bookId);
+    const cat = book?.categoria?.toLowerCase();
+    return cat === 'bíblia' || cat === 'biblia';
+  }, [books]);
+
   const filteredReadings = useMemo(() => {
     if (period === 'all') return readings;
     const now = new Date();
@@ -55,31 +62,147 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     return readings.filter(r => r.dataInicio ? new Date(r.dataInicio) >= cutoff : true);
   }, [readings, period]);
 
-  const pagesPerMonth = useMemo(() => {
+  // Pre-calculate correct pages per book using same logic as BookMetricsDialog
+  // Bible: MAX(end_page), Non-Bible: SUM(quantidadePaginas)
+  const correctPagesPerBook = useMemo(() => {
     const map = new Map<string, number>();
+    const bookReadingsMap = new Map<string, DailyReading[]>();
+
+    // Group readings by book
+    filteredReadings.forEach(r => {
+      if (!bookReadingsMap.has(r.livroId)) bookReadingsMap.set(r.livroId, []);
+      bookReadingsMap.get(r.livroId)!.push(r);
+    });
+
+    bookReadingsMap.forEach((bookReadings, bookId) => {
+      if (isBibleBook(bookId)) {
+        // Bible: MAX(end_page) is the total pages read
+        map.set(bookId, bookReadings.length > 0 ? Math.max(...bookReadings.map(r => r.paginaFinal)) : 0);
+      } else {
+        // Non-Bible: SUM
+        map.set(bookId, bookReadings.reduce((sum, r) => sum + r.quantidadePaginas, 0));
+      }
+    });
+    return map;
+  }, [filteredReadings, isBibleBook]);
+
+  // Calculate correct time per book (Bible: group by day, MAX per day)
+  const correctTimePerBook = useMemo(() => {
+    const map = new Map<string, number>();
+    const bookReadingsMap = new Map<string, DailyReading[]>();
+
+    filteredReadings.forEach(r => {
+      if (!bookReadingsMap.has(r.livroId)) bookReadingsMap.set(r.livroId, []);
+      bookReadingsMap.get(r.livroId)!.push(r);
+    });
+
+    bookReadingsMap.forEach((bookReadings, bookId) => {
+      if (isBibleBook(bookId)) {
+        // Group by day, take MAX time per day
+        const timeByDay: Record<string, number> = {};
+        for (const reading of bookReadings) {
+          const dateKey = reading.dataInicio 
+            ? new Date(reading.dataInicio).toISOString().split('T')[0]
+            : `${reading.dia}/${reading.mes}`;
+          timeByDay[dateKey] = Math.max(timeByDay[dateKey] || 0, reading.tempoGasto);
+        }
+        map.set(bookId, Object.values(timeByDay).reduce((sum, t) => sum + t, 0));
+      } else {
+        map.set(bookId, bookReadings.reduce((sum, r) => sum + r.tempoGasto, 0));
+      }
+    });
+    return map;
+  }, [filteredReadings, isBibleBook]);
+
+  // Pages per month — correct for Bible (incremental MAX per month)
+  const pagesPerMonth = useMemo(() => {
+    const monthMap = new Map<string, number>();
+
+    // Group all readings by bookId
+    const bookReadingsMap = new Map<string, DailyReading[]>();
     filteredReadings.forEach(r => {
       if (!r.dataInicio) return;
-      const d = new Date(r.dataInicio);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      map.set(key, (map.get(key) || 0) + r.quantidadePaginas);
+      if (!bookReadingsMap.has(r.livroId)) bookReadingsMap.set(r.livroId, []);
+      bookReadingsMap.get(r.livroId)!.push(r);
     });
-    return Array.from(map.entries())
+
+    bookReadingsMap.forEach((bookReadings, bookId) => {
+      if (isBibleBook(bookId)) {
+        // For Bible: group readings by month, compute incremental MAX
+        const readingsByMonth = new Map<string, DailyReading[]>();
+        bookReadings.filter(r => r.dataInicio).forEach(r => {
+          const d = new Date(r.dataInicio!);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          if (!readingsByMonth.has(key)) readingsByMonth.set(key, []);
+          readingsByMonth.get(key)!.push(r);
+        });
+
+        // Sort months chronologically
+        const sortedMonths = [...readingsByMonth.keys()].sort();
+        let prevMax = 0;
+        for (const monthKey of sortedMonths) {
+          const monthReadings = readingsByMonth.get(monthKey)!;
+          const monthMax = Math.max(...monthReadings.map(r => r.paginaFinal));
+          const pagesThisMonth = Math.max(0, monthMax - prevMax);
+          monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + pagesThisMonth);
+          prevMax = monthMax;
+        }
+      } else {
+        // Non-Bible: sum quantidadePaginas per month
+        bookReadings.filter(r => r.dataInicio).forEach(r => {
+          const d = new Date(r.dataInicio!);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          monthMap.set(key, (monthMap.get(key) || 0) + r.quantidadePaginas);
+        });
+      }
+    });
+
+    return Array.from(monthMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, pages]) => {
         const [year, month] = key.split('-');
         return { name: `${MONTHS_PT[parseInt(month) - 1]} ${year.slice(2)}`, pages };
       });
-  }, [filteredReadings]);
+  }, [filteredReadings, isBibleBook]);
 
+  // Time per month — correct for Bible (group by day, MAX per day)
   const timePerMonth = useMemo(() => {
-    const map = new Map<string, number>();
+    const monthMap = new Map<string, number>();
+
+    // Group by book first
+    const bookReadingsMap = new Map<string, DailyReading[]>();
     filteredReadings.forEach(r => {
       if (!r.dataInicio) return;
-      const d = new Date(r.dataInicio);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      map.set(key, (map.get(key) || 0) + r.tempoGasto);
+      if (!bookReadingsMap.has(r.livroId)) bookReadingsMap.set(r.livroId, []);
+      bookReadingsMap.get(r.livroId)!.push(r);
     });
-    return Array.from(map.entries())
+
+    bookReadingsMap.forEach((bookReadings, bookId) => {
+      if (isBibleBook(bookId)) {
+        // Group by day, MAX per day, then aggregate to month
+        const timeByDay = new Map<string, { month: string; time: number }>();
+        bookReadings.filter(r => r.dataInicio).forEach(r => {
+          const d = new Date(r.dataInicio!);
+          const dayKey = d.toISOString().split('T')[0];
+          const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const existing = timeByDay.get(dayKey);
+          if (!existing || r.tempoGasto > existing.time) {
+            timeByDay.set(dayKey, { month: monthKey, time: r.tempoGasto });
+          }
+        });
+        timeByDay.forEach(({ month, time }) => {
+          monthMap.set(month, (monthMap.get(month) || 0) + time);
+        });
+      } else {
+        bookReadings.filter(r => r.dataInicio).forEach(r => {
+          const d = new Date(r.dataInicio!);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          monthMap.set(key, (monthMap.get(key) || 0) + r.tempoGasto);
+        });
+      }
+    });
+
+    return Array.from(monthMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, minutes]) => {
         const [year, month] = key.split('-');
@@ -91,7 +214,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
           label: hours > 0 ? `${hours}h ${mins}m` : `${mins}m`,
         };
       });
-  }, [filteredReadings]);
+  }, [filteredReadings, isBibleBook]);
 
   const booksByStatus = useMemo(() => {
     const counts = { 'Lendo': 0, 'Concluido': 0, 'Não iniciado': 0 };
@@ -118,22 +241,25 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   }, [books]);
 
   const summaryStats = useMemo(() => {
-    const totalPages = filteredReadings.reduce((sum, r) => sum + r.quantidadePaginas, 0);
-    const totalMinutes = filteredReadings.reduce((sum, r) => sum + r.tempoGasto, 0);
+    // Total pages: sum of correct per-book totals
+    const totalPages = Array.from(correctPagesPerBook.values()).reduce((sum, p) => sum + p, 0);
+    
+    // Total time: sum of correct per-book totals
+    const totalMinutes = Array.from(correctTimePerBook.values()).reduce((sum, t) => sum + t, 0);
     const totalHours = Math.floor(totalMinutes / 60);
     const totalMins = Math.round(totalMinutes % 60);
     const timeFormatted = totalHours > 0 ? `${totalHours}h ${totalMins}m` : `${totalMins}m`;
 
-    // Calculate unique days for average
-    const uniqueDays = new Set(
-      filteredReadings.filter(r => r.dataInicio).map(r => new Date(r.dataInicio!).toISOString().split('T')[0])
-    ).size;
-    const avgPagesPerDay = uniqueDays > 0 ? totalPages / uniqueDays : 0;
+    // Unique reading days (considering Bible grouping)
+    const uniqueDays = new Set<string>();
+    filteredReadings.forEach(r => {
+      if (!r.dataInicio) return;
+      uniqueDays.add(new Date(r.dataInicio).toISOString().split('T')[0]);
+    });
+    const avgPagesPerDay = uniqueDays.size > 0 ? totalPages / uniqueDays.size : 0;
 
-    // Calculate streak
-    const sortedDates = [...new Set(
-      filteredReadings.filter(r => r.dataInicio).map(r => new Date(r.dataInicio!).toISOString().split('T')[0])
-    )].sort().reverse();
+    // Streak
+    const sortedDates = [...uniqueDays].sort().reverse();
     let streak = 0;
     if (sortedDates.length > 0) {
       const today = new Date().toISOString().split('T')[0];
@@ -149,8 +275,8 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     }
 
     const booksCompleted = statuses.filter(s => s.status === 'Concluido').length;
-    return { totalPages, timeFormatted, uniqueDays, avgPagesPerDay, booksCompleted, streak };
-  }, [filteredReadings, statuses]);
+    return { totalPages, timeFormatted, uniqueDays: uniqueDays.size, avgPagesPerDay, booksCompleted, streak };
+  }, [filteredReadings, statuses, correctPagesPerBook, correctTimePerBook]);
 
   const cumulativePages = useMemo(() => {
     if (pagesPerMonth.length === 0) return [];
@@ -162,15 +288,23 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   }, [pagesPerMonth]);
 
   const pagesPerBook = useMemo(() => {
-    const map = new Map<string, number>();
+    // Use correct per-book totals
+    const bookNames = new Map<string, string>();
     filteredReadings.forEach(r => {
-      map.set(r.livroLido, (map.get(r.livroLido) || 0) + r.quantidadePaginas);
+      if (!bookNames.has(r.livroId)) bookNames.set(r.livroId, r.livroLido);
     });
-    return Array.from(map.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([name, pages]) => ({ name: name.length > 18 ? name.slice(0, 18) + '…' : name, pages }));
-  }, [filteredReadings]);
+
+    return Array.from(correctPagesPerBook.entries())
+      .map(([bookId, pages]) => ({
+        name: (bookNames.get(bookId) || 'Desconhecido').length > 18 
+          ? (bookNames.get(bookId) || 'Desconhecido').slice(0, 18) + '…' 
+          : bookNames.get(bookId) || 'Desconhecido',
+        pages,
+      }))
+      .filter(d => d.pages > 0)
+      .sort((a, b) => b.pages - a.pages)
+      .slice(0, 8);
+  }, [correctPagesPerBook, filteredReadings]);
 
   const tabs = [
     { id: 'pages' as ChartTab, label: 'Páginas', icon: BarChart3, color: '#6366f1' },
