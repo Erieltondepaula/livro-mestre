@@ -60,6 +60,18 @@ function safeDate(value: any): Date | null {
   return isValid(d) ? d : null;
 }
 
+// Build a date from day + month string (e.g., 12, "Fevereiro") when start_date is null
+const MONTH_MAP: Record<string, number> = {
+  'janeiro': 0, 'fevereiro': 1, 'março': 2, 'marco': 2, 'abril': 3,
+  'maio': 4, 'junho': 5, 'julho': 6, 'agosto': 7,
+  'setembro': 8, 'outubro': 9, 'novembro': 10, 'dezembro': 11,
+};
+function dateFromDayMonth(dia: number, mes: string): Date {
+  const monthIdx = MONTH_MAP[mes.toLowerCase().trim()] ?? 0;
+  const year = new Date().getFullYear();
+  return new Date(year, monthIdx, dia, 12, 0, 0);
+}
+
 function formatSafeDate(d: Date | null, fmt: string): string {
   if (!d) return '—';
   try { return format(d, fmt, { locale: ptBR }); } catch { return '—'; }
@@ -205,15 +217,15 @@ export function BookTimelineDialog({
       // Group readings by day
       const dayGroups = new Map<string, DailyReading[]>();
       bookReadings.forEach(r => {
-        const d = safeDate(r.dataInicio) || safeDate(r.dataFim);
-        const key = d ? format(d, 'yyyy-MM-dd') : `day-${r.dia}-${r.mes}`;
+        // Use day+month as grouping key so readings on the same day are always grouped
+        const key = `${r.dia}-${r.mes}`;
         if (!dayGroups.has(key)) dayGroups.set(key, []);
         dayGroups.get(key)!.push(r);
       });
 
       dayGroups.forEach((group, key) => {
         const firstReading = group[0];
-        const date = safeDate(firstReading.dataInicio) || safeDate(firstReading.dataFim) || new Date();
+        const date = safeDate(firstReading.dataInicio) || safeDate(firstReading.dataFim) || dateFromDayMonth(firstReading.dia, firstReading.mes);
         const totalPages = group.reduce((sum, r) => sum + (r.quantidadePaginas || (r.paginaFinal - r.paginaInicial)), 0);
         const totalTime = group.reduce((sum, r) => sum + (r.tempoGasto || 0), 0);
         const startPage = Math.min(...group.map(r => r.paginaInicial));
@@ -264,7 +276,7 @@ export function BookTimelineDialog({
     } else {
       // Non-Bible: one event per reading
       bookReadings.forEach(r => {
-        const date = safeDate(r.dataInicio) || safeDate(r.dataFim) || new Date();
+        const date = safeDate(r.dataInicio) || safeDate(r.dataFim) || dateFromDayMonth(r.dia, r.mes);
         const pagesRead = r.quantidadePaginas || (r.paginaFinal - r.paginaInicial);
         const details: string[] = [];
         details.push(`📄 Páginas ${r.paginaInicial} → ${r.paginaFinal} (${pagesRead} págs)`);
