@@ -78,7 +78,7 @@ function formatSafeDate(d: Date | null, fmt: string): string {
 }
 
 // ========== MIND MAP COMPONENT ==========
-function MindMapView({ book, readings, quotes, vocabulary, notes, evaluations, isBible }: {
+function MindMapView({ book, readings, quotes, vocabulary, notes, evaluations, isBible, onNavigateToNotes, onClose }: {
   book: Book;
   readings: DailyReading[];
   quotes: Quote[];
@@ -86,6 +86,8 @@ function MindMapView({ book, readings, quotes, vocabulary, notes, evaluations, i
   notes: Note[];
   evaluations: BookEvaluation[];
   isBible: boolean;
+  onNavigateToNotes?: () => void;
+  onClose: () => void;
 }) {
   const bookReadings = readings.filter(r => r.livroId === book.id);
   const bookQuotes = quotes.filter(q => q.livroId === book.id);
@@ -162,6 +164,16 @@ function MindMapView({ book, readings, quotes, vocabulary, notes, evaluations, i
               </Badge>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Action: create note from mind map */}
+      {onNavigateToNotes && (
+        <div className="pt-4 border-t">
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs w-full" onClick={() => { onClose(); onNavigateToNotes(); }}>
+            <Plus className="w-3.5 h-3.5" />
+            Criar Nova Nota sobre este livro
+          </Button>
         </div>
       )}
     </div>
@@ -348,24 +360,56 @@ export function BookTimelineDialog({
       });
     });
 
-    // 5. Vocabulário
+    // 5. Vocabulário — show ALL info
     const bookVocab = vocabulary.filter(v => v.book_id === book.id);
     bookVocab.forEach(v => {
       const defs = Array.isArray(v.definicoes) ? v.definicoes : [];
+      const sinonimos = Array.isArray(v.sinonimos) ? v.sinonimos : [];
+      const antonimos = Array.isArray(v.antonimos) ? v.antonimos : [];
+      const exemplos = Array.isArray(v.exemplos) ? v.exemplos : [];
+      const analise = v.analise_contexto;
+
+      const details: string[] = [
+        v.silabas ? `📏 Sílabas: ${v.silabas}` : '',
+        v.classe ? `📗 Classe: ${v.classe}` : '',
+        v.fonetica ? `🔊 Fonética: ${v.fonetica}` : '',
+        ...defs.map((d, i) => `${i + 1}. ${typeof d === 'string' ? d : JSON.stringify(d)}`),
+        v.etimologia ? `📜 Etimologia: ${v.etimologia}` : '',
+        v.source_details?.page ? `📄 Página: ${v.source_details.page}` : '',
+        v.observacoes ? `📝 ${v.observacoes}` : '',
+      ].filter(Boolean);
+
+      if (sinonimos.length > 0) {
+        details.push(`🔄 Sinônimos:`);
+        sinonimos.forEach(sg => {
+          if (typeof sg === 'object' && sg.sentido) {
+            details.push(`  • ${sg.sentido}: ${sg.palavras?.join(', ') || ''}`);
+          } else {
+            details.push(`  • ${typeof sg === 'string' ? sg : JSON.stringify(sg)}`);
+          }
+        });
+      }
+      if (antonimos.length > 0) {
+        details.push(`↔️ Antônimos: ${antonimos.join(', ')}`);
+      }
+      if (exemplos.length > 0) {
+        details.push(`💡 Exemplos:`);
+        exemplos.slice(0, 3).forEach(ex => details.push(`  "${typeof ex === 'string' ? ex : JSON.stringify(ex)}"`));
+      }
+      if (analise) {
+        details.push(`🔍 Análise de Contexto:`);
+        if (analise.frase) details.push(`  Frase: "${analise.frase}"`);
+        if (analise.sentidoIdentificado) details.push(`  Sentido: ${analise.sentidoIdentificado}`);
+        if (analise.explicacao) details.push(`  ${analise.explicacao}`);
+      }
+
       events.push({
         id: `vocabulario-${v.id}`,
         date: safeDate(v.created_at) || new Date(),
         type: 'vocabulario',
         title: `"${v.palavra}"`,
         subtitle: v.classe ? `${v.classe}${v.fonetica ? ` • ${v.fonetica}` : ''}` : (defs[0] || undefined),
-        details: [
-          v.classe ? `📗 Classe: ${v.classe}` : '',
-          v.fonetica ? `🔊 Fonética: ${v.fonetica}` : '',
-          ...defs.slice(0, 3).map((d, i) => `${i + 1}. ${typeof d === 'string' ? d : JSON.stringify(d)}`),
-          v.etimologia ? `📜 Etimologia: ${v.etimologia}` : '',
-          v.source_details?.page ? `📄 Página: ${v.source_details.page}` : '',
-          v.observacoes ? `📝 ${v.observacoes}` : '',
-        ].filter(Boolean),
+        details,
         ...EVENT_CONFIG.vocabulario,
         data: v,
       });
@@ -394,7 +438,8 @@ export function BookTimelineDialog({
       });
     });
 
-    events.sort((a, b) => b.date.getTime() - a.date.getTime());
+    // Ascending: oldest first (cadastro at top, most recent at bottom)
+    events.sort((a, b) => a.date.getTime() - b.date.getTime());
     return events;
   }, [book, readings, evaluations, quotes, vocabulary, notes, isBible]);
 
@@ -516,6 +561,8 @@ export function BookTimelineDialog({
                 notes={notes}
                 evaluations={evaluations}
                 isBible={isBible}
+                onNavigateToNotes={onNavigateToNotes}
+                onClose={onClose}
               />
             </ScrollArea>
           </div>
