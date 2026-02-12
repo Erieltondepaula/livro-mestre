@@ -1,11 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
-import { format, isValid } from 'date-fns';
+import { format, isValid, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
   BookOpen, Clock, Star, FileText, 
   ChevronDown, ChevronRight, Plus, CalendarDays, BookMarked, 
-  Sparkles, Quote as QuoteIcon, Brain, Eye, EyeOff,
-  MessageSquare, Filter, ExternalLink
+  Sparkles, Quote as QuoteIcon, Brain, Eye,
+  MessageSquare, Filter, ExternalLink, Network, X, Minus
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ interface TimelineEvent {
   gradientTo: string;
   icon: typeof BookOpen;
   data?: any;
+  bibleRefs?: { book: string; chapter?: number; verseStart?: number; verseEnd?: number }[];
 }
 
 const EVENT_CONFIG: Record<EventType, { color: string; gradientFrom: string; gradientTo: string; icon: typeof BookOpen; label: string; emoji: string }> = {
@@ -64,12 +65,105 @@ function formatSafeDate(d: Date | null, fmt: string): string {
   try { return format(d, fmt, { locale: ptBR }); } catch { return '—'; }
 }
 
+// ========== MIND MAP COMPONENT ==========
+function MindMapView({ book, readings, quotes, vocabulary, notes, evaluations, isBible }: {
+  book: Book;
+  readings: DailyReading[];
+  quotes: Quote[];
+  vocabulary: VocabularyEntry[];
+  notes: Note[];
+  evaluations: BookEvaluation[];
+  isBible: boolean;
+}) {
+  const bookReadings = readings.filter(r => r.livroId === book.id);
+  const bookQuotes = quotes.filter(q => q.livroId === book.id);
+  const bookVocab = vocabulary.filter(v => v.book_id === book.id);
+  const bookNotes = notes.filter(n => n.bookId === book.id || n.linkedBooks?.some(lb => lb.id === book.id));
+  const bookEvals = evaluations.filter(e => e.livroId === book.id);
+
+  // For Bible: group unique bible books
+  const bibleBooks = useMemo(() => {
+    if (!isBible) return [];
+    const map = new Map<string, { chapters: Set<number>; count: number }>();
+    bookReadings.forEach(r => {
+      if (r.bibleBook) {
+        if (!map.has(r.bibleBook)) map.set(r.bibleBook, { chapters: new Set(), count: 0 });
+        const entry = map.get(r.bibleBook)!;
+        if (r.bibleChapter) entry.chapters.add(r.bibleChapter);
+        entry.count++;
+      }
+    });
+    return Array.from(map.entries()).map(([name, data]) => ({ name, chapters: data.chapters.size, readings: data.count }));
+  }, [bookReadings, isBible]);
+
+  const totalPages = bookReadings.reduce((sum, r) => sum + (r.quantidadePaginas || (r.paginaFinal - r.paginaInicial)), 0);
+  const totalTime = bookReadings.reduce((sum, r) => sum + (r.tempoGasto || 0), 0);
+  const hours = Math.floor(totalTime / 60);
+  const mins = Math.round(totalTime % 60);
+
+  const branches = [
+    { label: '📖 Leituras', count: bookReadings.length, color: '#3b82f6', items: [`${totalPages} páginas`, `${hours > 0 ? `${hours}h ` : ''}${mins}min`] },
+    { label: '⭐ Avaliações', count: bookEvals.length, color: '#f59e0b', items: bookEvals.map(e => `Nota ${e.notaFinal.toFixed(1)}/10`) },
+    { label: '💬 Citações', count: bookQuotes.length, color: '#10b981', items: bookQuotes.slice(0, 5).map(q => `"${q.citacao.slice(0, 40)}${q.citacao.length > 40 ? '…' : ''}"`) },
+    { label: '🧠 Vocabulário', count: bookVocab.length, color: '#8b5cf6', items: bookVocab.slice(0, 8).map(v => v.palavra) },
+    { label: '📝 Notas', count: bookNotes.length, color: '#ec4899', items: bookNotes.slice(0, 5).map(n => n.title) },
+  ];
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Center node */}
+      <div className="text-center mb-6">
+        <div className="inline-block bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white rounded-2xl px-5 py-3 shadow-lg">
+          <p className="font-bold text-sm">{book.livro}</p>
+          <p className="text-[10px] text-white/70">{book.autor}</p>
+        </div>
+      </div>
+
+      {/* Branches */}
+      <div className="space-y-3">
+        {branches.map((branch, idx) => (
+          <div key={idx} className="rounded-xl border overflow-hidden" style={{ borderColor: branch.color + '40' }}>
+            <div className="flex items-center gap-2 px-3 py-2" style={{ background: branch.color + '10' }}>
+              <div className="w-3 h-3 rounded-full" style={{ background: branch.color }} />
+              <span className="font-semibold text-xs">{branch.label}</span>
+              <Badge variant="secondary" className="text-[10px] ml-auto">{branch.count}</Badge>
+            </div>
+            {branch.items.length > 0 && (
+              <div className="px-3 py-2 flex flex-wrap gap-1.5">
+                {branch.items.map((item, i) => (
+                  <span key={i} className="text-[11px] bg-muted/60 rounded-lg px-2 py-0.5 text-muted-foreground">{item}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Bible books map */}
+      {isBible && bibleBooks.length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-xs font-bold text-muted-foreground mb-2">📖 Livros Bíblicos Lidos</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {bibleBooks.map((bb, i) => (
+              <Badge key={i} variant="outline" className="text-[10px] gap-1" style={{ borderColor: '#3b82f6' + '60' }}>
+                {bb.name} <span className="text-muted-foreground">({bb.chapters} caps)</span>
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== MAIN COMPONENT ==========
 export function BookTimelineDialog({
   book, isOpen, onClose, readings, statuses, evaluations, quotes, vocabulary, notes, onNavigateToNotes
 }: BookTimelineDialogProps) {
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
   const [activeFilter, setActiveFilter] = useState<EventType | 'all'>('all');
   const [showAllOfType, setShowAllOfType] = useState<EventType | null>(null);
+  const [showMindMap, setShowMindMap] = useState(false);
   const isMobile = useIsMobile();
 
   const toggleEvent = useCallback((id: string) => {
@@ -86,7 +180,7 @@ export function BookTimelineDialog({
     if (!book) return [];
     const events: TimelineEvent[] = [];
 
-    // 1. Cadastro — use created_at if available (raw data might have it)
+    // 1. Cadastro
     const cadastroDate = safeDate((book as any).created_at) || new Date();
     events.push({
       id: `cadastro-${book.id}`,
@@ -104,44 +198,100 @@ export function BookTimelineDialog({
       ...EVENT_CONFIG.cadastro,
     });
 
-    // 2. Leituras
+    // 2. Leituras — GROUP by same day for Bible
     const bookReadings = readings.filter(r => r.livroId === book.id);
-    bookReadings.forEach(r => {
-      const date = safeDate(r.dataInicio) || safeDate(r.dataFim) || new Date();
-      const pagesRead = r.quantidadePaginas || (r.paginaFinal - r.paginaInicial);
-      const details: string[] = [];
-      
-      details.push(`📄 Páginas ${r.paginaInicial} → ${r.paginaFinal} (${pagesRead} págs)`);
-      
-      if (r.tempoGasto > 0) {
-        const hours = Math.floor(r.tempoGasto / 60);
-        const mins = Math.round(r.tempoGasto % 60);
-        details.push(`⏱️ Tempo: ${hours > 0 ? `${hours}h ` : ''}${mins}min`);
-      }
-      
-      if (isBible && r.bibleBook) {
-        details.push(`📖 ${r.bibleBook} ${r.bibleChapter || ''}${r.bibleVerseStart ? `:${r.bibleVerseStart}` : ''}${r.bibleVerseEnd ? `-${r.bibleVerseEnd}` : ''}`);
-      }
-
-      if (r.dataFim && r.dataInicio) {
-        const startD = safeDate(r.dataInicio);
-        const endD = safeDate(r.dataFim);
-        if (startD && endD) {
-          details.push(`📅 Período: ${formatSafeDate(startD, 'dd/MM/yyyy')} → ${formatSafeDate(endD, 'dd/MM/yyyy')}`);
-        }
-      }
-
-      events.push({
-        id: `leitura-${r.id}`,
-        date: date!,
-        type: 'leitura',
-        title: isBible && r.bibleBook ? `${r.bibleBook} ${r.bibleChapter || ''}` : `Sessão de leitura`,
-        subtitle: `${pagesRead} páginas lidas${r.tempoGasto > 0 ? ` • ${Math.round(r.tempoGasto)}min` : ''}`,
-        details,
-        ...EVENT_CONFIG.leitura,
-        data: r,
+    
+    if (isBible) {
+      // Group readings by day
+      const dayGroups = new Map<string, DailyReading[]>();
+      bookReadings.forEach(r => {
+        const d = safeDate(r.dataInicio) || safeDate(r.dataFim);
+        const key = d ? format(d, 'yyyy-MM-dd') : `day-${r.dia}-${r.mes}`;
+        if (!dayGroups.has(key)) dayGroups.set(key, []);
+        dayGroups.get(key)!.push(r);
       });
-    });
+
+      dayGroups.forEach((group, key) => {
+        const firstReading = group[0];
+        const date = safeDate(firstReading.dataInicio) || safeDate(firstReading.dataFim) || new Date();
+        const totalPages = group.reduce((sum, r) => sum + (r.quantidadePaginas || (r.paginaFinal - r.paginaInicial)), 0);
+        const totalTime = group.reduce((sum, r) => sum + (r.tempoGasto || 0), 0);
+        const startPage = Math.min(...group.map(r => r.paginaInicial));
+        const endPage = Math.max(...group.map(r => r.paginaFinal));
+
+        const bibleRefs: TimelineEvent['bibleRefs'] = [];
+        const details: string[] = [];
+
+        details.push(`📄 Páginas ${startPage} → ${endPage} (${totalPages}p)`);
+
+        if (totalTime > 0) {
+          const hours = Math.floor(totalTime / 60);
+          const mins = Math.round(totalTime % 60);
+          const secs = Math.round((totalTime % 1) * 60);
+          details.push(`⏱️ Tempo: ${hours > 0 ? `${hours}h ` : ''}${mins}:${secs.toString().padStart(2, '0')} min`);
+        }
+
+        group.forEach(r => {
+          if (r.bibleBook) {
+            const ref = {
+              book: r.bibleBook,
+              chapter: r.bibleChapter,
+              verseStart: r.bibleVerseStart,
+              verseEnd: r.bibleVerseEnd,
+            };
+            bibleRefs.push(ref);
+            const refStr = `${r.bibleBook} ${r.bibleChapter || ''}${r.bibleVerseStart ? `:${r.bibleVerseStart}` : ''}${r.bibleVerseEnd ? `-${r.bibleVerseEnd}` : ''}`;
+            details.push(`📖 ${refStr}`);
+          }
+        });
+
+        const refSummary = bibleRefs.map(ref => 
+          `${ref.book} ${ref.chapter || ''}${ref.verseStart ? `:${ref.verseStart}` : ''}${ref.verseEnd ? `-${ref.verseEnd}` : ''}`
+        );
+
+        events.push({
+          id: `leitura-group-${key}`,
+          date: date!,
+          type: 'leitura',
+          title: `Sessão de leitura`,
+          subtitle: `${startPage} → ${endPage}  ${totalPages}p  ${totalTime > 0 ? `${Math.floor(totalTime)}:${Math.round((totalTime % 1) * 60).toString().padStart(2, '0')} min` : ''}`,
+          details,
+          bibleRefs,
+          ...EVENT_CONFIG.leitura,
+          data: group,
+        });
+      });
+    } else {
+      // Non-Bible: one event per reading
+      bookReadings.forEach(r => {
+        const date = safeDate(r.dataInicio) || safeDate(r.dataFim) || new Date();
+        const pagesRead = r.quantidadePaginas || (r.paginaFinal - r.paginaInicial);
+        const details: string[] = [];
+        details.push(`📄 Páginas ${r.paginaInicial} → ${r.paginaFinal} (${pagesRead} págs)`);
+        if (r.tempoGasto > 0) {
+          const mins = Math.floor(r.tempoGasto);
+          const secs = Math.round((r.tempoGasto % 1) * 60);
+          details.push(`⏱️ Tempo: ${mins}:${secs.toString().padStart(2, '0')} min`);
+        }
+        if (r.dataFim && r.dataInicio) {
+          const startD = safeDate(r.dataInicio);
+          const endD = safeDate(r.dataFim);
+          if (startD && endD) {
+            details.push(`📅 Período: ${formatSafeDate(startD, 'dd/MM/yyyy')} → ${formatSafeDate(endD, 'dd/MM/yyyy')}`);
+          }
+        }
+        events.push({
+          id: `leitura-${r.id}`,
+          date: date!,
+          type: 'leitura',
+          title: `Sessão de leitura`,
+          subtitle: `${pagesRead} páginas lidas${r.tempoGasto > 0 ? ` • ${Math.round(r.tempoGasto)}min` : ''}`,
+          details,
+          ...EVENT_CONFIG.leitura,
+          data: r,
+        });
+      });
+    }
 
     // 3. Avaliações
     const bookEvals = evaluations.filter(e => e.livroId === book.id);
@@ -202,13 +352,14 @@ export function BookTimelineDialog({
           ...defs.slice(0, 3).map((d, i) => `${i + 1}. ${typeof d === 'string' ? d : JSON.stringify(d)}`),
           v.etimologia ? `📜 Etimologia: ${v.etimologia}` : '',
           v.source_details?.page ? `📄 Página: ${v.source_details.page}` : '',
+          v.observacoes ? `📝 ${v.observacoes}` : '',
         ].filter(Boolean),
         ...EVENT_CONFIG.vocabulario,
         data: v,
       });
     });
 
-    // 6. Notas vinculadas
+    // 6. Notas
     const bookNotes = notes.filter(n => 
       n.bookId === book.id || n.linkedBooks?.some(lb => lb.id === book.id)
     );
@@ -235,20 +386,17 @@ export function BookTimelineDialog({
     return events;
   }, [book, readings, evaluations, quotes, vocabulary, notes, isBible]);
 
-  // Counts per type
   const typeCounts = useMemo(() => {
     const counts: Record<EventType, number> = { cadastro: 0, leitura: 0, avaliacao: 0, citacao: 0, vocabulario: 0, nota: 0 };
     timelineEvents.forEach(e => { counts[e.type]++; });
     return counts;
   }, [timelineEvents]);
 
-  // Filtered events
   const filteredEvents = useMemo(() => {
     if (activeFilter === 'all') return timelineEvents;
     return timelineEvents.filter(e => e.type === activeFilter);
   }, [timelineEvents, activeFilter]);
 
-  // Group events by month
   const groupedEvents = useMemo(() => {
     const groups = new Map<string, TimelineEvent[]>();
     filteredEvents.forEach(event => {
@@ -264,7 +412,6 @@ export function BookTimelineDialog({
   const status = statuses.find(s => s.livroId === book?.id);
   const progress = book ? Math.min(((status?.quantidadeLida || 0) / book.totalPaginas) * 100, 100) : 0;
 
-  // Items to show in "show all" overlay
   const showAllItems = useMemo(() => {
     if (!showAllOfType) return [];
     return timelineEvents.filter(e => e.type === showAllOfType);
@@ -281,11 +428,11 @@ export function BookTimelineDialog({
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => { onClose(); setActiveFilter('all'); setShowAllOfType(null); setExpandedEvents(new Set()); }}>
+    <Dialog open={isOpen} onOpenChange={() => { onClose(); setActiveFilter('all'); setShowAllOfType(null); setExpandedEvents(new Set()); setShowMindMap(false); }}>
       <DialogContent className={`${isMobile ? 'max-w-[95vw]' : 'max-w-2xl'} max-h-[92vh] p-0 overflow-hidden`}>
         
         {/* ===== SHOW ALL OVERLAY ===== */}
-        {showAllOfType && (
+        {showAllOfType && !showMindMap && (
           <div className="absolute inset-0 z-20 bg-background flex flex-col">
             <div className="flex items-center gap-3 p-4 border-b" style={{ borderColor: EVENT_CONFIG[showAllOfType].gradientFrom + '40' }}>
               <Button variant="ghost" size="sm" onClick={() => setShowAllOfType(null)} className="gap-1">
@@ -309,6 +456,16 @@ export function BookTimelineDialog({
                         {formatSafeDate(event.date, "dd/MM/yyyy HH:mm")}
                       </span>
                     </div>
+                    {/* Bible reference badges */}
+                    {event.bibleRefs && event.bibleRefs.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {event.bibleRefs.map((ref, i) => (
+                          <Badge key={i} variant="secondary" className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                            {ref.book} {ref.chapter || ''}{ref.verseStart ? `:${ref.verseStart}` : ''}{ref.verseEnd ? `-${ref.verseEnd}` : ''}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                     {event.details && (
                       <div className="space-y-1 pt-2 border-t" style={{ borderColor: event.gradientFrom + '20' }}>
                         {event.details.map((detail, i) => (
@@ -322,6 +479,32 @@ export function BookTimelineDialog({
                   <p className="text-center text-muted-foreground py-8">Nenhum registro encontrado</p>
                 )}
               </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {/* ===== MIND MAP OVERLAY ===== */}
+        {showMindMap && (
+          <div className="absolute inset-0 z-20 bg-background flex flex-col">
+            <div className="flex items-center gap-3 p-4 border-b">
+              <Button variant="ghost" size="sm" onClick={() => setShowMindMap(false)} className="gap-1">
+                <ChevronRight className="w-4 h-4 rotate-180" /> Voltar
+              </Button>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                <h3 className="font-bold text-base">Mapa Mental</h3>
+              </div>
+            </div>
+            <ScrollArea className="flex-1">
+              <MindMapView 
+                book={book} 
+                readings={readings} 
+                quotes={quotes} 
+                vocabulary={vocabulary} 
+                notes={notes}
+                evaluations={evaluations}
+                isBible={isBible}
+              />
             </ScrollArea>
           </div>
         )}
@@ -343,7 +526,6 @@ export function BookTimelineDialog({
             </Badge>
           </div>
 
-          {/* Progress */}
           <div className="mt-3">
             <div className="flex justify-between text-[11px] text-white/70 mb-1">
               <span>{status?.quantidadeLida || 0} de {book.totalPaginas} págs</span>
@@ -358,7 +540,6 @@ export function BookTimelineDialog({
           <div className="grid grid-cols-5 gap-1.5 mt-3">
             {statCards.map(({ type, label, emoji }) => {
               const count = typeCounts[type];
-              const isActive = activeFilter === type;
               return (
                 <button
                   key={type}
@@ -367,7 +548,7 @@ export function BookTimelineDialog({
                     count > 0 
                       ? 'bg-white/15 hover:bg-white/25 cursor-pointer active:scale-95' 
                       : 'bg-white/5 opacity-50 cursor-default'
-                  } ${isActive ? 'ring-2 ring-white/50' : ''}`}
+                  }`}
                 >
                   <p className="text-base font-bold leading-tight">{count}</p>
                   <p className="text-[9px] text-white/70 leading-tight">{label}</p>
@@ -420,12 +601,10 @@ export function BookTimelineDialog({
               </div>
             ) : (
               <div className="relative">
-                {/* Vertical gradient line */}
                 <div className="absolute left-[18px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-indigo-400 via-purple-400 to-pink-400 dark:from-indigo-600 dark:via-purple-600 dark:to-pink-600 rounded-full" />
 
                 {Array.from(groupedEvents.entries()).map(([monthLabel, events]) => (
                   <div key={monthLabel} className="mb-5">
-                    {/* Month header */}
                     <div className="flex items-center gap-2 mb-2.5 ml-10">
                       <Badge variant="outline" className="text-[10px] font-bold capitalize bg-background shadow-sm">
                         📅 {monthLabel}
@@ -439,7 +618,6 @@ export function BookTimelineDialog({
                       
                       return (
                         <div key={event.id} className="relative flex gap-2.5 mb-2.5 group">
-                          {/* Colored dot */}
                           <div 
                             className="relative z-10 w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl"
                             style={{ background: `linear-gradient(135deg, ${event.gradientFrom}, ${event.gradientTo})` }}
@@ -447,7 +625,6 @@ export function BookTimelineDialog({
                             <Icon className="w-4 h-4 text-white" />
                           </div>
 
-                          {/* Card */}
                           <div
                             className={`flex-1 rounded-xl border bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md ${
                               isExpanded ? 'shadow-lg' : ''
@@ -458,7 +635,6 @@ export function BookTimelineDialog({
                             }}
                             onClick={() => toggleEvent(event.id)}
                           >
-                            {/* Color accent bar */}
                             <div className="h-0.5" style={{ background: `linear-gradient(90deg, ${event.gradientFrom}, ${event.gradientTo})` }} />
                             
                             <div className="p-2.5">
@@ -479,6 +655,17 @@ export function BookTimelineDialog({
                                   {event.subtitle && !isExpanded && (
                                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{event.subtitle}</p>
                                   )}
+                                  
+                                  {/* Bible reference badges - always visible for reading events */}
+                                  {event.bibleRefs && event.bibleRefs.length > 0 && !isExpanded && (
+                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                      {event.bibleRefs.map((ref, i) => (
+                                        <Badge key={i} variant="secondary" className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                          {ref.book} {ref.chapter || ''}{ref.verseStart ? `:${ref.verseStart}` : ''}{ref.verseEnd ? `-${ref.verseEnd}` : ''}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                                 {event.details && event.details.length > 0 && (
                                   <div className="flex-shrink-0 mt-1 transition-transform duration-200" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
@@ -487,16 +674,24 @@ export function BookTimelineDialog({
                                 )}
                               </div>
 
-                              {/* Expanded content */}
                               {isExpanded && event.details && (
                                 <div className="mt-2.5 pt-2.5 border-t space-y-1.5" style={{ borderColor: event.gradientFrom + '20' }}>
-                                  {event.details.map((detail, i) => (
+                                  {/* Bible refs expanded with bigger badges */}
+                                  {event.bibleRefs && event.bibleRefs.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 mb-2">
+                                      {event.bibleRefs.map((ref, i) => (
+                                        <Badge key={i} className="text-[11px] bg-blue-500 text-white border-blue-400">
+                                          📖 {ref.book} {ref.chapter || ''}{ref.verseStart ? `:${ref.verseStart}` : ''}{ref.verseEnd ? `-${ref.verseEnd}` : ''}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {event.details.filter(d => !d.startsWith('📖')).map((detail, i) => (
                                     <p key={i} className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
                                       {detail}
                                     </p>
                                   ))}
                                   
-                                  {/* Contextual action */}
                                   {event.type === 'citacao' && (
                                     <div className="pt-2">
                                       <Badge variant="outline" className="text-[10px] cursor-default">
@@ -506,7 +701,7 @@ export function BookTimelineDialog({
                                   )}
                                   {event.type === 'vocabulario' && event.data && (
                                     <div className="pt-2 flex flex-wrap gap-1">
-                                      {(event.data.sinonimos || []).slice(0, 3).map((sg: any, i: number) => (
+                                      {(event.data.sinonimos || []).slice(0, 5).map((sg: any, i: number) => (
                                         <Badge key={i} variant="secondary" className="text-[10px]">
                                           {typeof sg === 'object' ? sg.sentido || sg.palavras?.[0] : sg}
                                         </Badge>
@@ -535,9 +730,14 @@ export function BookTimelineDialog({
               Nova Nota
             </Button>
           )}
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs text-muted-foreground" disabled>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="gap-1.5 text-xs"
+            onClick={() => setShowMindMap(true)}
+          >
             <Sparkles className="w-3.5 h-3.5" />
-            Mapa Mental (em breve)
+            Mapa Mental
           </Button>
         </div>
       </DialogContent>
