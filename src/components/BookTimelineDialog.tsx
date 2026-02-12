@@ -439,7 +439,12 @@ export function BookTimelineDialog({
     });
 
     // Descending: most recent first (like reading history)
-    events.sort((a, b) => b.date.getTime() - a.date.getTime());
+    // Cadastro is ALWAYS last (oldest logically) regardless of its actual date
+    events.sort((a, b) => {
+      if (a.type === 'cadastro') return 1;  // push cadastro to end (bottom)
+      if (b.type === 'cadastro') return -1;
+      return b.date.getTime() - a.date.getTime();
+    });
     return events;
   }, [book, readings, evaluations, quotes, vocabulary, notes, isBible]);
 
