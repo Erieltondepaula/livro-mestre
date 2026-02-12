@@ -1,7 +1,8 @@
 import { useState, forwardRef, useMemo } from 'react';
-import { Edit2, Trash2, BookOpen, ChevronDown, ChevronRight, Filter, Star, Clock, Calendar, CheckCircle, AlertCircle, Search } from 'lucide-react';
-import type { Book, BookStatus, DailyReading, BookEvaluation } from '@/types/library';
+import { Edit2, Trash2, BookOpen, ChevronDown, ChevronRight, Filter, Star, Clock, Calendar, CheckCircle, AlertCircle, Search, History } from 'lucide-react';
+import type { Book, BookStatus, DailyReading, BookEvaluation, Quote, VocabularyEntry, Note } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
+import { BookTimelineDialog } from './BookTimelineDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,21 +11,30 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from '@/components/ui/hover-card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BooksListViewProps {
   books: Book[];
   statuses: BookStatus[];
   readings: DailyReading[];
   evaluations: BookEvaluation[];
+  quotes?: Quote[];
+  vocabulary?: VocabularyEntry[];
+  notes?: Note[];
   onDeleteBook: (id: string) => void;
   onUpdateBook: (book: Book) => void;
   initialFilter?: 'all' | 'reading' | 'completed';
+  onNavigateToNotes?: () => void;
 }
 
-export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(function BooksListView({ books, statuses, readings, evaluations, onDeleteBook, onUpdateBook, initialFilter = 'all' }, ref) {
+export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(function BooksListView({ books, statuses, readings, evaluations, quotes = [], vocabulary = [], notes = [], onDeleteBook, onUpdateBook, initialFilter = 'all', onNavigateToNotes }, ref) {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [mobileInfoBook, setMobileInfoBook] = useState<Book | null>(null);
+  const [timelineBook, setTimelineBook] = useState<Book | null>(null);
+  const isMobile = useIsMobile();
   // Inicia DESAGRUPADO por padrão
   const [groupByCategory, setGroupByCategory] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'reading' | 'completed'>(initialFilter);
@@ -151,7 +161,7 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
         <HoverCardTrigger asChild>
           <div
             className="card-library overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 flex flex-col cursor-pointer group"
-            onClick={() => setEditingBook(book)}
+            onClick={() => isMobile ? setMobileInfoBook(book) : setEditingBook(book)}
           >
             {/* Capa do Livro */}
             <div className="w-full aspect-[2/3] bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 relative">
@@ -342,6 +352,13 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
               </div>
             )}
 
+            {/* Actions */}
+            <div className="flex gap-2 pt-2 border-t">
+              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs h-7" onClick={(e) => { e.stopPropagation(); setTimelineBook(book); }}>
+                <History className="w-3 h-3" /> Timeline
+              </Button>
+            </div>
+
             {/* Dica */}
             <p className="text-[10px] text-muted-foreground italic">
               Clique para editar este livro
@@ -468,6 +485,73 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
         onClose={() => setEditingBook(null)}
         onSave={onUpdateBook}
         onDelete={onDeleteBook}
+      />
+
+      {/* Mobile Info Dialog */}
+      {mobileInfoBook && (() => {
+        const s = getBookStatus(mobileInfoBook.id);
+        const ev = getBookEvaluation(mobileInfoBook.id);
+        const proj = getReadingProjection(mobileInfoBook, s);
+        const tm = getReadingTimeMinutes(mobileInfoBook, s);
+        const si = getStatusInfo(mobileInfoBook, s);
+        const completed = s?.status === 'Concluido';
+        return (
+          <Dialog open={!!mobileInfoBook} onOpenChange={() => setMobileInfoBook(null)}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="text-base leading-tight">{mobileInfoBook.livro}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {mobileInfoBook.autor && <p className="text-sm text-muted-foreground">{mobileInfoBook.autor}</p>}
+                {ev && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{ev.notaFinal.toFixed(1)}</span>
+                    <div className="flex">{[1,2,3,4,5].map(star => (
+                      <Star key={star} className={`w-4 h-4 ${star <= Math.round(ev.notaFinal / 2) ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`} />
+                    ))}</div>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                  {mobileInfoBook.ano && <div><span className="font-medium text-foreground">Ano:</span> {mobileInfoBook.ano}</div>}
+                  <div><span className="font-medium text-foreground">Tipo:</span> {mobileInfoBook.tipo}</div>
+                  {mobileInfoBook.categoria && <div className="col-span-2"><span className="font-medium text-foreground">Categoria:</span> {mobileInfoBook.categoria}</div>}
+                  <div><span className="font-medium text-foreground">Páginas:</span> {mobileInfoBook.totalPaginas}</div>
+                  {s && <div><span className="font-medium text-foreground">Lidas:</span> {s.quantidadeLida}</div>}
+                </div>
+                {!completed && proj.canShow && (
+                  <div className="pt-2 border-t space-y-1">
+                    {tm && <div className={`flex items-center gap-2 text-sm font-medium ${si.colorClass}`}><Clock className="w-4 h-4" /><span>Tempo restante: {formatTimeEstimate(tm)}</span></div>}
+                    {proj.estimatedDate && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="w-4 h-4" /><span>Previsão: {formatCompletionDate(proj.estimatedDate)}</span></div>}
+                    <p className="text-[10px] text-muted-foreground">Ritmo: {proj.pagesPerDay} págs/dia • {proj.daysRemaining} dias restantes</p>
+                  </div>
+                )}
+                {completed && <div className="flex items-center gap-2 text-sm font-medium text-green-600 pt-2 border-t"><CheckCircle className="w-4 h-4" /><span>Leitura concluída!</span></div>}
+                <div className="flex gap-2 pt-2">
+                  <Button size="sm" className="flex-1 gap-1.5" onClick={() => { setMobileInfoBook(null); setEditingBook(mobileInfoBook); }}>
+                    <Edit2 className="w-3.5 h-3.5" /> Editar
+                  </Button>
+                  <Button size="sm" variant="outline" className="flex-1 gap-1.5" onClick={() => { setMobileInfoBook(null); setTimelineBook(mobileInfoBook); }}>
+                    <History className="w-3.5 h-3.5" /> Timeline
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
+
+      {/* Timeline Dialog */}
+      <BookTimelineDialog
+        book={timelineBook}
+        isOpen={!!timelineBook}
+        onClose={() => setTimelineBook(null)}
+        readings={readings}
+        statuses={statuses}
+        evaluations={evaluations}
+        quotes={quotes}
+        vocabulary={vocabulary}
+        notes={notes}
+        onNavigateToNotes={onNavigateToNotes}
       />
     </div>
   );
