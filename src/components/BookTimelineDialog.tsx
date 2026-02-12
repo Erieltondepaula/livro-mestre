@@ -204,11 +204,12 @@ export function BookTimelineDialog({
     if (!book) return [];
     const events: TimelineEvent[] = [];
 
-    // 1. Cadastro
-    const cadastroDate = safeDate((book as any).created_at) || new Date();
-    events.push({
+    // 1. Cadastro — date will be adjusted after all events are collected
+    // to ensure it's always the oldest event in the timeline
+    const realCadastroDate = safeDate((book as any).created_at) || new Date();
+    const cadastroEvent: TimelineEvent = {
       id: `cadastro-${book.id}`,
-      date: cadastroDate,
+      date: realCadastroDate, // will be adjusted below
       type: 'cadastro',
       title: 'Livro cadastrado na biblioteca',
       subtitle: `${book.livro} • ${book.totalPaginas} páginas`,
@@ -220,7 +221,8 @@ export function BookTimelineDialog({
         book.valorPago ? `💰 Valor: R$ ${book.valorPago.toFixed(2)}` : '',
       ].filter(Boolean),
       ...EVENT_CONFIG.cadastro,
-    });
+    };
+    // Don't push yet — we'll add it after adjusting the date
 
     // 2. Leituras — GROUP by same day for Bible
     const bookReadings = readings.filter(r => r.livroId === book.id);
@@ -437,6 +439,17 @@ export function BookTimelineDialog({
         data: n,
       });
     });
+
+    // Adjust cadastro date: it must be the oldest event
+    // If there are events with dates older than the real cadastro date,
+    // set cadastro date to 1 second before the oldest event
+    if (events.length > 0) {
+      const oldestEventDate = events.reduce((min, e) => e.date.getTime() < min ? e.date.getTime() : min, events[0].date.getTime());
+      if (oldestEventDate <= realCadastroDate.getTime()) {
+        cadastroEvent.date = new Date(oldestEventDate - 1000); // 1 second before oldest
+      }
+    }
+    events.push(cadastroEvent);
 
     // Descending: most recent first (like reading history)
     // Cadastro is ALWAYS last (oldest logically) regardless of its actual date
