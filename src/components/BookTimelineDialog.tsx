@@ -438,8 +438,8 @@ export function BookTimelineDialog({
       });
     });
 
-    // Ascending: oldest first (cadastro at top, most recent at bottom)
-    events.sort((a, b) => a.date.getTime() - b.date.getTime());
+    // Descending: most recent first (like reading history)
+    events.sort((a, b) => b.date.getTime() - a.date.getTime());
     return events;
   }, [book, readings, evaluations, quotes, vocabulary, notes, isBible]);
 
