@@ -294,6 +294,20 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+                        ) : projection?.canShow && projection.isDelayed ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                                  <AlertCircle className="w-3.5 h-3.5" />
+                                  <span>Atrasado {projection.delayDays}d</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="left">
+                                <p className="text-xs">⚠️ Sem leitura há {projection.delayDays + 1} dia(s)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         ) : projection?.readingDays !== undefined && projection.readingDays < 3 ? (
                           <span className="text-[10px] text-muted-foreground italic">
                             Precisa de 3+ dias de leitura

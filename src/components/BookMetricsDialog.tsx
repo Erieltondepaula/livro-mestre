@@ -292,7 +292,7 @@ export function BookMetricsDialog({
           displayDate: formatReadingDate(reading),
           paginaInicial: reading.paginaInicial,
           paginaFinal: reading.paginaFinal,
-          quantidadePaginas: reading.quantidadePaginas,
+          quantidadePaginas: reading.paginaFinal - reading.paginaInicial,
           tempoGasto: reading.tempoGasto,
           timestamp,
           bibleEntries: [],
@@ -302,7 +302,8 @@ export function BookMetricsDialog({
         // Merge data
         groups[dateKey].paginaInicial = Math.min(groups[dateKey].paginaInicial, reading.paginaInicial);
         groups[dateKey].paginaFinal = Math.max(groups[dateKey].paginaFinal, reading.paginaFinal);
-        groups[dateKey].quantidadePaginas += reading.quantidadePaginas;
+        // Para Bíblia agrupada: quantidade = MAX(paginaFinal) - MIN(paginaInicial)
+        groups[dateKey].quantidadePaginas = groups[dateKey].paginaFinal - groups[dateKey].paginaInicial;
         // For time, use the maximum (only one reading per day should have time set)
         groups[dateKey].tempoGasto = Math.max(groups[dateKey].tempoGasto, reading.tempoGasto);
         // Update timestamp if this reading has a more recent one
