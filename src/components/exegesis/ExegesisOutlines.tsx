@@ -1,0 +1,238 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
+import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
+import type { ExegesisOutline } from '@/hooks/useExegesis';
+
+type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic';
+
+interface Props {
+  outlines: ExegesisOutline[];
+  onFetch: () => void;
+  onSave: (outline: { passage: string; outline_type: string; content: string }) => Promise<ExegesisOutline | null>;
+  onUpdateNotes: (id: string, notes: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}
+
+const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] = [
+  { id: 'outline_expository', label: '📖 Expositivo', description: 'Divisão natural do texto com aplicações progressivas' },
+  { id: 'outline_textual', label: '📝 Textual', description: 'Baseado em palavras/expressões-chave do texto' },
+  { id: 'outline_thematic', label: '🎯 Temático', description: 'Tema central com desenvolvimento doutrinário' },
+];
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
+
+export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onDelete }: Props) {
+  const [bibleBook, setBibleBook] = useState('');
+  const [chapter, setChapter] = useState('');
+  const [verseStart, setVerseStart] = useState('');
+  const [verseEnd, setVerseEnd] = useState('');
+  const [customPassage, setCustomPassage] = useState('');
+  const [selectedType, setSelectedType] = useState<OutlineType>('outline_expository');
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentStream, setCurrentStream] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [notesValue, setNotesValue] = useState('');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => { onFetch(); }, [onFetch]);
+
+  const bibleBookNames = getBibleBookNames();
+  const chapters = bibleBook ? getChaptersArray(bibleBook) : [];
+  const verses = bibleBook && chapter ? getVersesArray(bibleBook, parseInt(chapter)) : [];
+
+  const getPassageText = () => {
+    if (customPassage.trim()) return customPassage.trim();
+    if (!bibleBook) return '';
+    let p = bibleBook;
+    if (chapter) { p += ` ${chapter}`; if (verseStart) { p += `:${verseStart}`; if (verseEnd && verseEnd !== verseStart) p += `-${verseEnd}`; } }
+    return p;
+  };
+
+  const handleGenerate = useCallback(async () => {
+    const passage = getPassageText();
+    if (!passage) { toast({ title: "Selecione uma passagem", variant: "destructive" }); return; }
+
+    setIsLoading(true);
+    setCurrentStream('');
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({ passage, type: selectedType }),
+        signal: controller.signal,
+      });
+      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
+      if (!resp.body) throw new Error("Sem resposta");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "", full = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ")) continue;
+          const j = line.slice(6).trim();
+          if (j === "[DONE]") break;
+          try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) { full += c; setCurrentStream(full); } } catch { buf = line + "\n" + buf; break; }
+        }
+      }
+      for (let raw of buf.split("\n")) {
+        if (!raw?.startsWith("data: ")) continue;
+        const j = raw.slice(6).trim(); if (j === "[DONE]") continue;
+        try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) full += c; } catch {}
+      }
+
+      setCurrentStream('');
+      const saved = await onSave({ passage, outline_type: selectedType, content: full });
+      if (saved) toast({ title: "Esboço salvo!" });
+    } catch (e: any) {
+      if (e.name !== 'AbortError') toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally { setIsLoading(false); abortRef.current = null; }
+  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, onSave]);
+
+  const renderMarkdown = (text: string) => {
+    let html = text
+      .replace(/^### (.*$)/gm, '<h3 class="text-base font-bold mt-4 mb-2 text-foreground">$1</h3>')
+      .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-5 mb-2 text-foreground">$1</h2>')
+      .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-sm">$1</li>')
+      .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4 list-decimal text-sm">$2</li>')
+      .replace(/\n\n/g, '</p><p class="text-sm leading-relaxed text-foreground/90 mb-2">')
+      .replace(/\n/g, '<br/>');
+    return `<p class="text-sm leading-relaxed text-foreground/90 mb-2">${html}</p>`;
+  };
+
+  const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático' };
+
+  return (
+    <div className="space-y-6">
+      {/* Generator */}
+      <div className="card-library p-4 sm:p-6 space-y-4">
+        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <FileText className="w-4 h-4" /> Gerar Esboço de Sermão
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="col-span-2 sm:col-span-1">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Livro</label>
+            <select value={bibleBook} onChange={(e) => { setBibleBook(e.target.value); setChapter(''); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm">
+              <option value="">Selecione</option>
+              {bibleBookNames.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Capítulo</label>
+            <select value={chapter} onChange={(e) => { setChapter(e.target.value); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm" disabled={!bibleBook}>
+              <option value="">-</option>
+              {chapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">V. Início</label>
+            <select value={verseStart} onChange={(e) => setVerseStart(e.target.value)} className="input-library w-full text-sm" disabled={!chapter}>
+              <option value="">-</option>
+              {verses.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">V. Fim</label>
+            <select value={verseEnd} onChange={(e) => setVerseEnd(e.target.value)} className="input-library w-full text-sm" disabled={!verseStart}>
+              <option value="">-</option>
+              {verses.filter(v => !verseStart || v >= parseInt(verseStart)).map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1">Ou digite a passagem</label>
+          <input type="text" value={customPassage} onChange={(e) => setCustomPassage(e.target.value)} className="input-library w-full text-sm" placeholder="Ex: João 3:16" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {OUTLINE_TYPES.map(t => (
+            <button key={t.id} onClick={() => setSelectedType(t.id)}
+              className={`p-3 rounded-lg border text-left transition-all ${selectedType === t.id ? 'bg-primary/10 border-primary/30' : 'bg-card border-border hover:bg-muted/50'}`}>
+              <span className="text-sm font-medium">{t.label}</span>
+              <p className="text-xs text-muted-foreground mt-1">{t.description}</p>
+            </button>
+          ))}
+        </div>
+
+        <Button onClick={handleGenerate} disabled={isLoading || !getPassageText()} className="btn-library-primary">
+          {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</> : <><Send className="w-4 h-4 mr-2" /> Gerar Esboço</>}
+        </Button>
+      </div>
+
+      {/* Streaming */}
+      {isLoading && currentStream && (
+        <div className="card-library p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-3"><Loader2 className="w-4 h-4 animate-spin text-primary" /><span className="text-sm font-medium text-primary">Gerando esboço...</span></div>
+          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(currentStream) }} />
+        </div>
+      )}
+
+      {/* Saved Outlines */}
+      {outlines.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Esboços Salvos</h3>
+          {outlines.map(o => {
+            const isExp = expandedId === o.id;
+            return (
+              <div key={o.id} className="card-library overflow-hidden">
+                <div className="p-4 flex items-start justify-between gap-2 cursor-pointer" onClick={() => setExpandedId(isExp ? null : o.id)}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">{typeLabels[o.outline_type] || o.outline_type}</span>
+                      <span className="text-xs text-muted-foreground truncate">📖 {o.passage}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{new Date(o.created_at).toLocaleDateString('pt-BR')}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(o.content); setCopiedId(o.id); setTimeout(() => setCopiedId(null), 2000); toast({ title: "Copiado!" }); }}>
+                      {copiedId === o.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(o.id); }}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                    {isExp ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                  </div>
+                </div>
+                {isExp && (
+                  <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
+                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(o.content) }} />
+                    <div className="border-t border-border pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Anotações</span>
+                        <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => {
+                          if (editingNotesId === o.id) { onUpdateNotes(o.id, notesValue); setEditingNotesId(null); toast({ title: "Salvo!" }); } else { setEditingNotesId(o.id); setNotesValue(o.notes || ''); }
+                        }}>{editingNotesId === o.id ? 'Salvar' : 'Editar'}</Button>
+                      </div>
+                      {editingNotesId === o.id ? (
+                        <Textarea value={notesValue} onChange={(e) => setNotesValue(e.target.value)} placeholder="Anotações..." className="min-h-[80px] text-sm" />
+                      ) : o.notes ? (
+                        <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-muted/30 p-3 rounded">{o.notes}</p>
+                      ) : <p className="text-xs text-muted-foreground italic">Sem anotações</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
