@@ -145,6 +145,108 @@ export type Database = {
           },
         ]
       }
+      exegesis_analyses: {
+        Row: {
+          analysis_type: string
+          content: string
+          created_at: string
+          id: string
+          notes: string | null
+          passage: string
+          question: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          analysis_type: string
+          content: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          passage: string
+          question?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          analysis_type?: string
+          content?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          passage?: string
+          question?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exegesis_materials: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_path: string | null
+          id: string
+          material_type: string
+          title: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          material_type?: string
+          title: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          material_type?: string
+          title?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exegesis_outlines: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          notes: string | null
+          outline_type: string
+          passage: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          outline_type?: string
+          passage: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          outline_type?: string
+          passage?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       external_book_references: {
         Row: {
           book_author: string | null
