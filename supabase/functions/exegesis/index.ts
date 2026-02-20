@@ -240,62 +240,251 @@ Mantenha a fidelidade exegética mesmo na devoção.`;
         break;
 
       case "outline_expository":
-        userPrompt = `Gere um ESBOÇO DE SERMÃO EXPOSITIVO baseado no seguinte texto:
+        userPrompt = `Gere um ESBOÇO DE SERMÃO EXPOSITIVO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
 ${materialsSection}
-Conforme Hernandes Dias Lopes e Presley Camargo:
 
-📖 **SERMÃO EXPOSITIVO** (divisão natural do texto)
+## TIPO DE PREGAÇÃO: EXPOSITIVA
+A pregação expositiva expõe o significado de um texto bíblico específico, submetendo as ideias do pregador à autoridade da Escritura. Foca em explicar o contexto histórico, gramatical e literário para aplicá-lo à vida do ouvinte. O texto bíblico fala, e o pregador se submete a ele. As divisões seguem a estrutura natural do texto.
 
-1. **TÍTULO** — atraente e fiel ao texto
-2. **INTRODUÇÃO** — contextualização e gancho
-3. **PROPOSIÇÃO** — ideia central em uma frase
-4. **DIVISÕES** — baseadas na estrutura natural do texto (2 a 4 pontos)
-   - Cada ponto com: explicação do texto → ilustração → aplicação
-5. **CONCLUSÃO** — recapitulação e apelo
-6. **APLICAÇÕES PRÁTICAS** — ações concretas para a igreja
+## ESTRUTURA OBRIGATÓRIA DO ESBOÇO:
 
-O esboço deve ser claro, progressivo e fiel ao significado original.`;
+# **TÍTULO**
+(Atraente, fiel ao texto, comunicativo)
+
+## **Tipo:** Expositivo
+
+## **Texto Base:** ${passage}
+
+---
+
+## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
+(Sugestão de abertura pastoral)
+
+## **INTRODUÇÃO:**
+(Contextualização do texto, gancho para prender atenção, relevância do tema para hoje)
+
+## **TRANSIÇÃO:**
+(Ponte da introdução para o primeiro ponto)
+
+---
+
+## **1.**
+**Texto:** (versículo ou trecho base deste ponto)
+**Desenvolvimento:** (explicação exegética do texto — contexto, palavras-chave, significado original)
+**Aplicação:** (como isso se aplica à vida do ouvinte)
+**Referências:** (textos bíblicos cruzados que sustentam o ponto)
+**Frase:** (frase de impacto para fixar o ponto)
+**Aplicação Prática:** (ação concreta para o ouvinte)
+
+## **TRANSIÇÃO:**
+(Ponte do ponto 1 para o ponto 2 — expandindo, não mudando de assunto)
+
+## **2.**
+**Texto:** (versículo ou trecho base)
+**Desenvolvimento:** (explicação exegética)
+**Aplicação Prática:** (ação concreta)
+
+## **TRANSIÇÃO:**
+(Ponte do ponto 2 para o ponto 3)
+
+## **3.**
+**Texto:** (versículo ou trecho base)
+**Desenvolvimento:** (explicação exegética)
+**Ilustração:** (exemplo concreto, história ou analogia)
+**Frase:** (frase de impacto)
+**Aplicação Prática:** (ação concreta)
+
+## **TRANSIÇÃO:**
+(Ponte do ponto 3 para o ponto 4)
+
+## **4.**
+**Texto:** (versículo ou trecho base)
+**Desenvolvimento:** (explicação exegética mais confrontativa)
+**Ilustração:** (exemplo profundo e pessoal)
+**Frase:** (frase de impacto máxima)
+**Aplicação Prática:** (ação transformadora)
+
+## **TRANSIÇÃO PARA A CONCLUSÃO**
+
+## **Conclusão**
+(Recapitulação dos pontos, síntese do ensino, altamente pessoal)
+
+## **Apelo**
+(Chamado à decisão, emocionalmente máximo, cristocêntrico)
+
+---
+
+## REGRAS DE ENGENHARIA DO SERMÃO:
+
+1. **Estrutura Progressiva Relacional**: Os pontos formam uma escada espiritual crescente — aproximação → recebimento → aprofundamento → formação. Cada ponto amplia o anterior, não o substitui.
+
+2. **Transições encadeadas**: As transições expandem o estágio anterior (Se eu fui → então recebo → então descubro → então aprendo). Criam encadeamento lógico inevitável.
+
+3. **Padrão interno de cada ponto**: Declaração conceitual → Expansão explicativa → Correção de entendimento errado → Ampliação pastoral → Aplicação direta.
+
+4. **Curva de intensidade crescente**:
+   - 1º ponto → Didático
+   - 2º ponto → Pastoral
+   - 3º ponto → Confrontativo leve
+   - 4º ponto → Confrontativo profundo
+   - Conclusão → Altamente pessoal
+   - Apelo → Emocionalmente máximo
+
+5. **Palavra-chave central**: Trabalhe UMA palavra/conceito central e desenvolva em 4 dimensões. Aprofundamento, não multiplicação de ideias.
+
+6. **Cristocentricidade arquitetônica**: Cristo aparece como início, meio, aprofundamento e formação — fio condutor estrutural, não apenas menção final.
+
+7. **Acessibilidade**: Frases curtas de impacto, repetições intencionais, uma ideia por ponto.
+
+8. **Clímax guardado**: Não há clímax prematuro. A tensão narrativa é mantida até o apelo final.`;
         break;
 
       case "outline_textual":
-        userPrompt = `Gere um ESBOÇO DE SERMÃO TEXTUAL baseado no seguinte texto:
+        userPrompt = `Gere um ESBOÇO DE SERMÃO TEXTUAL completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
 ${materialsSection}
-Conforme Presley Camargo:
 
-📖 **SERMÃO TEXTUAL** (baseado em palavras/expressões-chave do texto)
+## TIPO DE PREGAÇÃO: TEXTUAL
+A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3 versículos), onde o tema e os pontos principais são extraídos diretamente do texto. O esqueleto do sermão vem de palavras ou expressões-chave do próprio texto. Foca na aplicação direta de uma única passagem.
 
-1. **TÍTULO** — extraído do texto
-2. **INTRODUÇÃO** — apresentação do texto e tema
-3. **PROPOSIÇÃO** — verdade central
-4. **DIVISÕES** — derivadas de palavras ou frases-chave do próprio texto
-   - Cada divisão explora uma expressão do texto
-   - Explicação → Ilustração → Aplicação
-5. **CONCLUSÃO** — síntese e chamado à ação
-6. **REFERÊNCIAS CRUZADAS** — textos que apoiam cada ponto`;
+## ESTRUTURA OBRIGATÓRIA DO ESBOÇO:
+
+# **TÍTULO**
+(Extraído diretamente do texto)
+
+## **Tipo:** Textual
+
+## **Texto Base:** ${passage}
+
+---
+
+## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
+
+## **INTRODUÇÃO:**
+(Apresentação do texto, contexto breve, relevância)
+
+## **TRANSIÇÃO:**
+
+---
+
+## **1.**
+**Texto:** (palavra ou expressão-chave extraída do versículo)
+**Desenvolvimento:** (exploração exegética dessa expressão)
+**Aplicação:** (significado prático)
+**Referências:** (textos cruzados)
+**Frase:** (frase de impacto)
+**Aplicação Prática:**
+
+## **TRANSIÇÃO:**
+
+## **2.**
+**Texto:** (próxima palavra/expressão-chave do versículo)
+**Desenvolvimento:**
+**Aplicação Prática:**
+
+## **TRANSIÇÃO:**
+
+## **3.**
+**Texto:** (próxima palavra/expressão-chave)
+**Desenvolvimento:**
+**Ilustração:**
+**Frase:**
+**Aplicação Prática:**
+
+## **TRANSIÇÃO:**
+
+## **4.**
+**Texto:** (última palavra/expressão-chave)
+**Desenvolvimento:**
+**Ilustração:**
+**Frase:**
+**Aplicação Prática:**
+
+## **TRANSIÇÃO PARA A CONCLUSÃO**
+
+## **Conclusão**
+
+## **Apelo**
+
+---
+
+Aplique as mesmas regras de engenharia: estrutura progressiva relacional, curva de intensidade crescente (didático → pastoral → confrontativo → profundo), cristocentricidade arquitetônica, transições encadeadas, palavra-chave central, e clímax guardado para o apelo final.`;
         break;
 
       case "outline_thematic":
-        userPrompt = `Gere um ESBOÇO DE SERMÃO TEMÁTICO baseado no seguinte texto:
+        userPrompt = `Gere um ESBOÇO DE SERMÃO TEMÁTICO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
 ${materialsSection}
-Conforme Presley Camargo e Hernandes:
 
-📖 **SERMÃO TEMÁTICO** (tema central extraído do texto)
+## TIPO DE PREGAÇÃO: TEMÁTICA
+A pregação temática é estruturada em torno de um assunto/tópico específico extraído do texto. Utiliza diversas passagens bíblicas que abordam o mesmo tema. O tema central governa o sermão, e as divisões derivam dele. Requer cuidado para não impor ideias próprias — o tema deve emergir do texto, não ser imposto a ele.
 
-1. **TEMA CENTRAL** — extraído do texto, não imposto
-2. **TÍTULO** — comunicativo e bíblico
-3. **INTRODUÇÃO** — relevância do tema
-4. **PROPOSIÇÃO** — declaração clara do tema
-5. **DIVISÕES** — diferentes aspectos do tema, cada um apoiado por textos bíblicos
-   - Ponto + texto base + explicação + aplicação
-6. **DESENVOLVIMENTO DOUTRINÁRIO** — fundamentação teológica
-7. **APLICAÇÕES PASTORAIS** — para a vida da igreja
-8. **CONCLUSÃO** — síntese e desafio`;
+## ESTRUTURA OBRIGATÓRIA DO ESBOÇO:
+
+# **TÍTULO**
+(Comunicativo e bíblico)
+
+## **Tipo:** Temático
+
+## **Texto Base:** ${passage}
+
+---
+
+## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
+
+## **INTRODUÇÃO:**
+(Relevância do tema, conexão com a realidade do ouvinte)
+
+## **TRANSIÇÃO:**
+
+---
+
+## **1.**
+**Texto:** (passagem bíblica que sustenta este aspecto do tema)
+**Desenvolvimento:** (explicação do aspecto temático à luz do texto)
+**Aplicação:** (como este aspecto se aplica)
+**Referências:** (outros textos sobre o mesmo aspecto)
+**Frase:** (frase de impacto)
+**Aplicação Prática:**
+
+## **TRANSIÇÃO:**
+
+## **2.**
+**Texto:** (outra passagem que amplia o tema)
+**Desenvolvimento:**
+**Aplicação Prática:**
+
+## **TRANSIÇÃO:**
+
+## **3.**
+**Texto:** (passagem que confronta sobre o tema)
+**Desenvolvimento:**
+**Ilustração:**
+**Frase:**
+**Aplicação Prática:**
+
+## **TRANSIÇÃO:**
+
+## **4.**
+**Texto:** (passagem climática sobre o tema)
+**Desenvolvimento:**
+**Ilustração:**
+**Frase:**
+**Aplicação Prática:**
+
+## **TRANSIÇÃO PARA A CONCLUSÃO**
+
+## **Conclusão**
+
+## **Apelo**
+
+---
+
+Aplique as mesmas regras de engenharia: estrutura progressiva relacional, curva de intensidade crescente, cristocentricidade arquitetônica, transições encadeadas, conceito central em 4 dimensões, e clímax guardado para o apelo final. Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.`;
         break;
 
       case "question":
