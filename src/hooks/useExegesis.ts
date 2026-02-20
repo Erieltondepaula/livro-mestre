@@ -126,18 +126,22 @@ export function useExegesis() {
     if (!user) return null;
     setLoading(true);
     try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+      const materialType = ['doc', 'docx'].includes(ext) ? 'doc' : 'pdf';
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage.from('exegesis-materials').upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from('exegesis-materials').upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
       if (uploadError) throw uploadError;
 
       const { data, error } = await supabase
         .from('exegesis_materials')
-        .insert({ user_id: user.id, title, material_type: 'pdf', file_path: filePath, description } as any)
+        .insert({ user_id: user.id, title, material_type: materialType, file_path: filePath, description } as any)
         .select()
         .single();
       if (error) throw error;
       setMaterials(prev => [data as ExegesisMaterial, ...prev]);
-      toast({ title: 'Material enviado!', description: `"${title}" adicionado à biblioteca.` });
       return data as ExegesisMaterial;
     } catch (e: any) {
       toast({ title: 'Erro no upload', description: e.message, variant: 'destructive' });
