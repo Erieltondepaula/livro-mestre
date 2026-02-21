@@ -13,6 +13,7 @@ export type AnalysisType =
 
 interface Props {
   onSave: (analysis: { passage: string; analysis_type: string; question?: string; content: string }) => Promise<ExegesisAnalysis | null>;
+  getMaterialsContext?: () => string | undefined;
 }
 
 const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType; description: string }[] = [
@@ -30,7 +31,7 @@ const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisAnalyzer({ onSave }: Props) {
+export function ExegesisAnalyzer({ onSave, getMaterialsContext }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
   const [verseStart, setVerseStart] = useState('');
@@ -79,7 +80,7 @@ export function ExegesisAnalyzer({ onSave }: Props) {
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ passage, type: selectedType, question: question.trim() || undefined }),
+        body: JSON.stringify({ passage, type: selectedType, question: question.trim() || undefined, materials_context: getMaterialsContext?.() }),
         signal: controller.signal,
       });
 

@@ -187,6 +187,7 @@ export type Database = {
           description: string | null
           file_path: string | null
           id: string
+          material_category: string
           material_type: string
           title: string
           url: string | null
@@ -197,6 +198,7 @@ export type Database = {
           description?: string | null
           file_path?: string | null
           id?: string
+          material_category?: string
           material_type?: string
           title: string
           url?: string | null
@@ -207,6 +209,7 @@ export type Database = {
           description?: string | null
           file_path?: string | null
           id?: string
+          material_category?: string
           material_type?: string
           title?: string
           url?: string | null

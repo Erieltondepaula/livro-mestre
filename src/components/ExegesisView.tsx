@@ -5,6 +5,7 @@ import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
 import { ExegesisHistory } from '@/components/exegesis/ExegesisHistory';
 import { ExegesisOutlines } from '@/components/exegesis/ExegesisOutlines';
 import { ExegesisMaterials } from '@/components/exegesis/ExegesisMaterials';
+import { useEffect } from 'react';
 
 export function ExegesisView() {
   const {
@@ -12,7 +13,11 @@ export function ExegesisView() {
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
     fetchOutlines, saveOutline, updateOutlineNotes, deleteOutline,
     fetchMaterials, uploadMaterial, addLink, deleteMaterial,
+    getMaterialsContext,
   } = useExegesis();
+
+  // Pre-fetch materials so context is available for analyzer/outlines
+  useEffect(() => { fetchMaterials(); }, [fetchMaterials]);
 
   return (
     <div className="space-y-6">
@@ -40,7 +45,7 @@ export function ExegesisView() {
         </TabsList>
 
         <TabsContent value="analyze">
-          <ExegesisAnalyzer onSave={saveAnalysis} />
+          <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} />
         </TabsContent>
 
         <TabsContent value="history">
@@ -48,7 +53,7 @@ export function ExegesisView() {
         </TabsContent>
 
         <TabsContent value="outlines">
-          <ExegesisOutlines outlines={outlines} onFetch={fetchOutlines} onSave={saveOutline} onUpdateNotes={updateOutlineNotes} onDelete={deleteOutline} />
+          <ExegesisOutlines outlines={outlines} onFetch={fetchOutlines} onSave={saveOutline} onUpdateNotes={updateOutlineNotes} onDelete={deleteOutline} getMaterialsContext={getMaterialsContext} />
         </TabsContent>
 
         <TabsContent value="materials">
