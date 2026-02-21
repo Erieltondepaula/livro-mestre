@@ -26,11 +26,14 @@ export interface ExegesisOutline {
   updated_at: string;
 }
 
+export type MaterialCategory = 'livro' | 'comentario' | 'dicionario';
+
 export interface ExegesisMaterial {
   id: string;
   user_id: string;
   title: string;
   material_type: string;
+  material_category: MaterialCategory;
   url: string | null;
   file_path: string | null;
   description: string | null;
@@ -122,7 +125,7 @@ export function useExegesis() {
     setMaterials((data || []) as ExegesisMaterial[]);
   }, [user]);
 
-  const uploadMaterial = useCallback(async (file: File, title: string, description?: string) => {
+  const uploadMaterial = useCallback(async (file: File, title: string, category: MaterialCategory, description?: string) => {
     if (!user) return null;
     setLoading(true);
     try {
@@ -137,7 +140,7 @@ export function useExegesis() {
 
       const { data, error } = await supabase
         .from('exegesis_materials')
-        .insert({ user_id: user.id, title, material_type: materialType, file_path: filePath, description } as any)
+        .insert({ user_id: user.id, title, material_type: materialType, material_category: category, file_path: filePath, description } as any)
         .select()
         .single();
       if (error) throw error;
@@ -155,7 +158,7 @@ export function useExegesis() {
     if (!user) return null;
     const { data, error } = await supabase
       .from('exegesis_materials')
-      .insert({ user_id: user.id, title, material_type: materialType, url, description } as any)
+      .insert({ user_id: user.id, title, material_type: materialType, material_category: 'comentario', url, description } as any)
       .select()
       .single();
     if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return null; }
@@ -173,10 +176,31 @@ export function useExegesis() {
     setMaterials(prev => prev.filter(m => m.id !== id));
   }, []);
 
+  const getMaterialsContext = useCallback(() => {
+    if (materials.length === 0) return undefined;
+    const grouped = {
+      livro: materials.filter(m => m.material_category === 'livro'),
+      comentario: materials.filter(m => m.material_category === 'comentario'),
+      dicionario: materials.filter(m => m.material_category === 'dicionario'),
+    };
+    let context = '';
+    if (grouped.comentario.length > 0) {
+      context += `\n### Comentários Bíblicos disponíveis:\n${grouped.comentario.map(m => `- ${m.title}${m.description ? ` (${m.description})` : ''}`).join('\n')}`;
+    }
+    if (grouped.dicionario.length > 0) {
+      context += `\n### Dicionários disponíveis:\n${grouped.dicionario.map(m => `- ${m.title}${m.description ? ` (${m.description})` : ''}`).join('\n')}`;
+    }
+    if (grouped.livro.length > 0) {
+      context += `\n### Livros Teológicos disponíveis:\n${grouped.livro.map(m => `- ${m.title}${m.description ? ` (${m.description})` : ''}`).join('\n')}`;
+    }
+    return context.trim() || undefined;
+  }, [materials]);
+
   return {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
     fetchOutlines, saveOutline, updateOutlineNotes, deleteOutline,
     fetchMaterials, uploadMaterial, addLink, deleteMaterial,
+    getMaterialsContext,
   };
 }

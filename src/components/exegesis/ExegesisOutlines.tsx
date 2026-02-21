@@ -14,6 +14,7 @@ interface Props {
   onSave: (outline: { passage: string; outline_type: string; content: string }) => Promise<ExegesisOutline | null>;
   onUpdateNotes: (id: string, notes: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  getMaterialsContext?: () => string | undefined;
 }
 
 const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] = [
@@ -24,7 +25,7 @@ const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] =
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onDelete }: Props) {
+export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onDelete, getMaterialsContext }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
   const [verseStart, setVerseStart] = useState('');
@@ -66,7 +67,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onD
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ passage, type: selectedType }),
+        body: JSON.stringify({ passage, type: selectedType, materials_context: getMaterialsContext?.() }),
         signal: controller.signal,
       });
       if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
