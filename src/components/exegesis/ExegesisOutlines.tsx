@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
+import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
+import { ExegesisRichEditor } from './ExegesisRichEditor';
 import type { ExegesisOutline } from '@/hooks/useExegesis';
 
 type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic';
@@ -13,8 +14,10 @@ interface Props {
   onFetch: () => void;
   onSave: (outline: { passage: string; outline_type: string; content: string }) => Promise<ExegesisOutline | null>;
   onUpdateNotes: (id: string, notes: string) => Promise<void>;
+  onUpdateContent: (id: string, content: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   getMaterialsContext?: () => string | undefined;
+  materialsCount?: number;
 }
 
 const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] = [
@@ -25,7 +28,84 @@ const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] =
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onDelete, getMaterialsContext }: Props) {
+// Convert markdown to HTML for the rich editor
+function markdownToHtml(md: string): string {
+  return md
+    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^- (.*$)/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/^(\d+)\. (.*$)/gm, '<li>$2</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br/>')
+    .replace(/^(.+)$/gm, (match) => {
+      if (match.startsWith('<')) return match;
+      return `<p>${match}</p>`;
+    });
+}
+
+// Export helpers
+function exportAsTxt(content: string, passage: string) {
+  const text = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.txt`);
+}
+
+function exportAsMd(content: string, passage: string) {
+  // If content is HTML, convert basic HTML back to markdown
+  let md = content
+    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+    .replace(/<strong>(.*?)<\/strong>/gi, '**$1**')
+    .replace(/<em>(.*?)<\/em>/gi, '*$1*')
+    .replace(/<li>(.*?)<\/li>/gi, '- $1\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&');
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.md`);
+}
+
+function exportAsDocx(content: string, passage: string) {
+  const htmlContent = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="utf-8"><title>Esboço - ${passage}</title>
+    <style>body{font-family:Calibri,sans-serif;font-size:12pt;line-height:1.6;margin:2cm}
+    h1{font-size:18pt;color:#1a1a1a}h2{font-size:15pt;color:#333}h3{font-size:13pt;color:#555}
+    strong{font-weight:bold}em{font-style:italic}blockquote{border-left:3px solid #ccc;padding-left:12px;color:#555}</style>
+    </head><body>${content}</body></html>`;
+  const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
+  downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.doc`);
+}
+
+function exportAsPdf(content: string, passage: string) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) { toast({ title: 'Erro', description: 'Permita pop-ups para exportar PDF', variant: 'destructive' }); return; }
+  printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Esboço - ${passage}</title>
+    <style>body{font-family:Georgia,serif;font-size:12pt;line-height:1.8;margin:2cm;color:#1a1a1a}
+    h1{font-size:20pt;text-align:center;margin-bottom:8pt}h2{font-size:15pt;margin-top:16pt;border-bottom:1px solid #ddd;padding-bottom:4pt}
+    h3{font-size:13pt;margin-top:12pt}strong{font-weight:bold}em{font-style:italic}
+    blockquote{border-left:3px solid #666;padding-left:12px;color:#555;margin:8pt 0}
+    @media print{body{margin:1.5cm}}</style></head><body>${content}</body></html>`);
+  printWindow.document.close();
+  setTimeout(() => { printWindow.print(); }, 500);
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onUpdateContent, onDelete, getMaterialsContext, materialsCount = 0 }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
   const [verseStart, setVerseStart] = useState('');
@@ -35,6 +115,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onD
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesValue, setNotesValue] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -102,7 +184,13 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onD
     } catch (e: any) {
       if (e.name !== 'AbortError') toast({ title: "Erro", description: e.message, variant: "destructive" });
     } finally { setIsLoading(false); abortRef.current = null; }
-  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, onSave]);
+  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, onSave, getMaterialsContext]);
+
+  const handleSaveEdit = async (id: string) => {
+    await onUpdateContent(id, editContent);
+    setEditingId(null);
+    toast({ title: "Esboço atualizado!" });
+  };
 
   const renderMarkdown = (text: string) => {
     let html = text
@@ -120,6 +208,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onD
 
   const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático' };
 
+  // Determine if content is HTML (from rich editor) or markdown (from AI)
+  const isHtml = (content: string) => content.includes('<h1') || content.includes('<h2') || content.includes('<p>') || content.includes('<strong>');
+
   return (
     <div className="space-y-6">
       {/* Generator */}
@@ -127,6 +218,17 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onD
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           <FileText className="w-4 h-4" /> Gerar Esboço de Sermão
         </h3>
+
+        {/* Materials indicator */}
+        {materialsCount > 0 && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            <span className="text-xs text-primary font-medium">
+              📚 {materialsCount} materiais disponíveis na Base de Conhecimento — serão consultados automaticamente
+            </span>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="col-span-2 sm:col-span-1">
             <label className="block text-xs font-medium text-muted-foreground mb-1">Livro</label>
@@ -191,6 +293,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onD
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Esboços Salvos</h3>
           {outlines.map(o => {
             const isExp = expandedId === o.id;
+            const isEditing = editingId === o.id;
             return (
               <div key={o.id} className="card-library overflow-hidden">
                 <div className="p-4 flex items-start justify-between gap-2 cursor-pointer" onClick={() => setExpandedId(isExp ? null : o.id)}>
@@ -202,7 +305,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onD
                     <p className="text-[10px] text-muted-foreground">{new Date(o.created_at).toLocaleDateString('pt-BR')}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(o.content); setCopiedId(o.id); setTimeout(() => setCopiedId(null), 2000); toast({ title: "Copiado!" }); }}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(o.content.replace(/<[^>]+>/g, '')); setCopiedId(o.id); setTimeout(() => setCopiedId(null), 2000); toast({ title: "Copiado!" }); }}>
                       {copiedId === o.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(o.id); }}>
@@ -213,7 +316,50 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onD
                 </div>
                 {isExp && (
                   <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
-                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(o.content) }} />
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
+                        if (isEditing) { handleSaveEdit(o.id); } else {
+                          const htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
+                          setEditContent(htmlContent);
+                          setEditingId(o.id);
+                        }
+                      }}>
+                        {isEditing ? <><Save className="w-3.5 h-3.5" /> Salvar</> : <><Edit3 className="w-3.5 h-3.5" /> Editar</>}
+                      </Button>
+                      {isEditing && (
+                        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setEditingId(null)}>
+                          <Eye className="w-3.5 h-3.5" /> Cancelar
+                        </Button>
+                      )}
+                      <div className="flex-1" />
+                      {/* Export buttons */}
+                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPdf(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
+                        <Download className="w-3 h-3" /> PDF
+                      </Button>
+                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsDocx(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
+                        <Download className="w-3 h-3" /> Word
+                      </Button>
+                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsTxt(o.content, o.passage)}>
+                        <Download className="w-3 h-3" /> TXT
+                      </Button>
+                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsMd(o.content, o.passage)}>
+                        <Download className="w-3 h-3" /> MD
+                      </Button>
+                    </div>
+
+                    {/* Content */}
+                    {isEditing ? (
+                      <ExegesisRichEditor content={editContent} onChange={setEditContent} placeholder="Edite o esboço..." minHeight="400px" />
+                    ) : (
+                      isHtml(o.content) ? (
+                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: o.content }} />
+                      ) : (
+                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(o.content) }} />
+                      )
+                    )}
+
+                    {/* Notes */}
                     <div className="border-t border-border pt-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Anotações</span>

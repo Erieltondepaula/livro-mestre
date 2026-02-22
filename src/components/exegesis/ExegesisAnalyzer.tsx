@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Trash2, Save, BookText, GitCompare, Heart } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ export type AnalysisType =
 interface Props {
   onSave: (analysis: { passage: string; analysis_type: string; question?: string; content: string }) => Promise<ExegesisAnalysis | null>;
   getMaterialsContext?: () => string | undefined;
+  materialsCount?: number;
 }
 
 const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType; description: string }[] = [
@@ -31,7 +32,7 @@ const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisAnalyzer({ onSave, getMaterialsContext }: Props) {
+export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount = 0 }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
   const [verseStart, setVerseStart] = useState('');
@@ -134,7 +135,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext }: Props) {
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, question, onSave]);
+  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, question, onSave, getMaterialsContext]);
 
   const renderMarkdown = (text: string) => {
     let html = text
@@ -158,6 +159,17 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext }: Props) {
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           <Search className="w-4 h-4" /> Selecionar Passagem
         </h3>
+
+        {/* Materials indicator */}
+        {materialsCount > 0 && (
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            <span className="text-xs text-primary font-medium">
+              📚 {materialsCount} materiais na Base de Conhecimento — serão consultados automaticamente na análise
+            </span>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="col-span-2 sm:col-span-1">
             <label className="block text-xs font-medium text-muted-foreground mb-1">Livro</label>
@@ -270,6 +282,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext }: Props) {
               <p><strong>2.</strong> Escolha o tipo de análise (exegese, esboço, devocional...)</p>
               <p><strong>3.</strong> Clique em "Analisar" — o resultado é salvo automaticamente</p>
               <p><strong>4.</strong> Acesse o Histórico para rever e anotar suas análises</p>
+              <p><strong>5.</strong> Adicione materiais em "Materiais" para enriquecer as análises com sua biblioteca pessoal</p>
             </div>
           </div>
           <div className="bg-muted/30 p-4 rounded-lg text-left max-w-lg mx-auto">

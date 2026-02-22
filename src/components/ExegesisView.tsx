@@ -11,7 +11,7 @@ export function ExegesisView() {
   const {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
-    fetchOutlines, saveOutline, updateOutlineNotes, deleteOutline,
+    fetchOutlines, saveOutline, updateOutlineNotes, updateOutlineContent, deleteOutline,
     fetchMaterials, uploadMaterial, addLink, deleteMaterial,
     getMaterialsContext,
   } = useExegesis();
@@ -41,11 +41,12 @@ export function ExegesisView() {
           </TabsTrigger>
           <TabsTrigger value="materials" className="gap-1.5 text-xs sm:text-sm">
             <Library className="w-4 h-4 hidden sm:block" /> Materiais
+            {materials.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded-full ml-0.5">{materials.length}</span>}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="analyze">
-          <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} />
+          <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
         </TabsContent>
 
         <TabsContent value="history">
@@ -53,7 +54,7 @@ export function ExegesisView() {
         </TabsContent>
 
         <TabsContent value="outlines">
-          <ExegesisOutlines outlines={outlines} onFetch={fetchOutlines} onSave={saveOutline} onUpdateNotes={updateOutlineNotes} onDelete={deleteOutline} getMaterialsContext={getMaterialsContext} />
+          <ExegesisOutlines outlines={outlines} onFetch={fetchOutlines} onSave={saveOutline} onUpdateNotes={updateOutlineNotes} onUpdateContent={updateOutlineContent} onDelete={deleteOutline} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
         </TabsContent>
 
         <TabsContent value="materials">

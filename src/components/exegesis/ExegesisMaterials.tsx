@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages } from 'lucide-react';
+import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
   { id: 'comentario', label: 'Comentários', icon: BookMarked, description: 'Comentários bíblicos expositivos' },
   { id: 'dicionario', label: 'Dicionários', icon: Languages, description: 'Dicionários bíblicos e teológicos' },
   { id: 'livro', label: 'Livros', icon: BookOpen, description: 'Livros teológicos e de referência' },
+  { id: 'devocional', label: 'Devocionais', icon: Heart, description: 'Devocionais, reflexões e aplicações pastorais' },
 ];
 
 export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onDelete }: Props) {
@@ -100,7 +101,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   return (
     <div className="space-y-6">
       <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as MaterialCategory)} className="w-full">
-        <TabsList className="w-full grid grid-cols-3">
+        <TabsList className="w-full grid grid-cols-4">
           {CATEGORIES.map(cat => {
             const Icon = cat.icon;
             const count = getCategoryCount(cat.id);
