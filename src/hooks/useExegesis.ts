@@ -26,7 +26,7 @@ export interface ExegesisOutline {
   updated_at: string;
 }
 
-export type MaterialCategory = 'livro' | 'comentario' | 'dicionario';
+export type MaterialCategory = 'livro' | 'comentario' | 'dicionario' | 'devocional';
 
 export interface ExegesisMaterial {
   id: string;
@@ -176,12 +176,19 @@ export function useExegesis() {
     setMaterials(prev => prev.filter(m => m.id !== id));
   }, []);
 
+  const updateOutlineContent = useCallback(async (id: string, content: string) => {
+    const { error } = await supabase.from('exegesis_outlines').update({ content } as any).eq('id', id);
+    if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
+    setOutlines(prev => prev.map(o => o.id === id ? { ...o, content } : o));
+  }, []);
+
   const getMaterialsContext = useCallback(() => {
     if (materials.length === 0) return undefined;
     const grouped = {
       livro: materials.filter(m => m.material_category === 'livro'),
       comentario: materials.filter(m => m.material_category === 'comentario'),
       dicionario: materials.filter(m => m.material_category === 'dicionario'),
+      devocional: materials.filter(m => m.material_category === 'devocional'),
     };
     let context = '';
     if (grouped.comentario.length > 0) {
@@ -193,13 +200,16 @@ export function useExegesis() {
     if (grouped.livro.length > 0) {
       context += `\n### Livros Teológicos disponíveis:\n${grouped.livro.map(m => `- ${m.title}${m.description ? ` (${m.description})` : ''}`).join('\n')}`;
     }
+    if (grouped.devocional.length > 0) {
+      context += `\n### Devocionais e Reflexões disponíveis:\n${grouped.devocional.map(m => `- ${m.title}${m.description ? ` (${m.description})` : ''}`).join('\n')}`;
+    }
     return context.trim() || undefined;
   }, [materials]);
 
   return {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
-    fetchOutlines, saveOutline, updateOutlineNotes, deleteOutline,
+    fetchOutlines, saveOutline, updateOutlineNotes, updateOutlineContent, deleteOutline,
     fetchMaterials, uploadMaterial, addLink, deleteMaterial,
     getMaterialsContext,
   };

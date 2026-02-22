@@ -103,8 +103,8 @@ serve(async (req) => {
 
     let userPrompt = "";
     const materialsSection = materials_context
-      ? `\n\n---\n**MATERIAIS DE REFERÊNCIA DO USUÁRIO:**\n${materials_context}\n---\nUtilize esses materiais como fonte complementar na sua análise.\n`
-      : "";
+      ? `\n\n---\n**📚 MATERIAIS DE REFERÊNCIA DO USUÁRIO (BASE DE CONHECIMENTO OBRIGATÓRIA):**\n${materials_context}\n---\n**INSTRUÇÃO OBRIGATÓRIA:** Você DEVE consultar e referenciar esses materiais como fonte primária na sua análise. Cite autores, obras e conceitos dos materiais acima. A IA deve complementar, NUNCA substituir essas fontes. Priorize as informações dos materiais cadastrados antes de gerar qualquer conteúdo apenas com base no seu conhecimento geral.\n`
+      : "\n\n**Nota:** O usuário não possui materiais cadastrados na Base de Conhecimento. Utilize sua base acadêmica padrão.\n";
 
     switch (type) {
       case "full_exegesis":
