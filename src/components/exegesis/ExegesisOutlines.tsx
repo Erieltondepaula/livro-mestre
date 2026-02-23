@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -118,17 +119,45 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [verseEnd, setVerseEnd] = useState('');
   const [customPassage, setCustomPassage] = useState('');
   const [selectedType, setSelectedType] = useState<OutlineType>('outline_expository');
-  const [structure, setStructure] = useState<OutlineStructure>(() => {
-    try {
-      const saved = localStorage.getItem('exegesis_outline_structure');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return getDefaultStructure();
-  });
+  const [structure, setStructure] = useState<OutlineStructure>(getDefaultStructure());
+  const [structureLoaded, setStructureLoaded] = useState(false);
+
+  // Load structure from database on mount
+  useEffect(() => {
+    const loadStructure = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from('user_outline_structures')
+          .select('structure')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (data?.structure) {
+          setStructure(data.structure as unknown as OutlineStructure);
+        }
+      } catch {} finally {
+        setStructureLoaded(true);
+      }
+    };
+    loadStructure();
+  }, []);
+
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleStructureChange = (s: OutlineStructure) => {
     setStructure(s);
-    try { localStorage.setItem('exegesis_outline_structure', JSON.stringify(s)); } catch {}
+    // Debounce save to DB (500ms)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        await supabase
+          .from('user_outline_structures')
+          .upsert({ user_id: user.id, structure: s as any }, { onConflict: 'user_id' });
+      } catch {}
+    }, 500);
   };
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
