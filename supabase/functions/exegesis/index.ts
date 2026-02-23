@@ -329,7 +329,10 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 **Texto:** (versículo ou trecho base deste ponto)
 **Desenvolvimento:** (explicação exegética do texto — DEVE incluir: palavras-chave no original grego/hebraico com transliteração e significado pastoral, contexto histórico, citações dos materiais com marcadores 「...」(Autor, Obra). Mínimo 5 parágrafos distintos com conectores fluidos entre eles.)
 **Aplicação:** (como isso se aplica à vida do ouvinte)
-**Referências:** (textos bíblicos cruzados COMPLETOS — cite o versículo inteiro ou parafraseie pastoralmente, não apenas a referência numérica)
+**Referências:**
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
+(mínimo 2-3 referências, SEMPRE com o texto completo do versículo entre aspas)
 **Frase:** (frase de impacto memorável para fixar o ponto — curta, poderosa, repetível)
 **Aplicação Prática:** (ação CONCRETÍSSIMA para o ouvinte — não genérica. Ex: "Esta semana, toda vez que a ansiedade bater, pare, respire e diga em voz alta: 'Senhor, eu entrego isso a Ti.' Faça isso por 7 dias.")
 
@@ -409,7 +412,11 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 
 13. **EXEGESE DO ORIGINAL OBRIGATÓRIA**: Em CADA ponto, inclua pelo menos UMA palavra-chave no original (grego para NT, hebraico para AT) com: transliteração, significado literal, uso no contexto e impacto pastoral. Ex: "A palavra grega δεῦτε (deute) é um imperativo — Jesus não sugere, Ele ordena com ternura. É um chamado urgente e amoroso."
 
-14. **REFERÊNCIAS BÍBLICAS COMPLETAS**: NÃO cite apenas "Sl 55:22". Cite o versículo completo ou parafraseie pastoralmente: "O salmista nos ensina em Salmos 55:22: 'Lança o teu cuidado sobre o Senhor, e ele te susterá; nunca permitirá que o justo seja abalado.' Isso significa que..."
+14. **REFERÊNCIAS BÍBLICAS NO FORMATO 👉**: A seção Referências de cada ponto DEVE seguir EXATAMENTE este formato — cada referência em uma linha separada com o emoji 👉, o nome completo do livro, capítulo e versículo, seguido de dois pontos e o texto COMPLETO do versículo entre aspas. Exemplo:
+👉 Salmos 25:9: "Guia os humildes na justiça e lhes ensina o seu caminho."
+👉 Provérbios 3:5-6: "Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento. Reconhece-o em todos os teus caminhos, e ele endireitará as tuas veredas."
+👉 Isaías 55:8-9: "Porque os meus pensamentos não são os vossos pensamentos, nem os vossos caminhos os meus caminhos, diz o Senhor."
+NÃO cite apenas a referência numérica. SEMPRE inclua o texto completo do versículo entre aspas. Mínimo de 2-3 referências por ponto.
 
 15. **ARCO NARRATIVO FECHADO COM REFORÇO TEMÁTICO**: O título deve ser retomado no apelo final E reforçado ao longo de todo o sermão. O sermão começa e termina no mesmo conceito, formando um círculo completo. Em CADA ponto, CADA transição, o tema é relembrado, ecoado, reforçado — como "Refúgio para o Cansado" que a cada parágrafo traz de volta o refúgio e o cansaço. A última frase do apelo deve ecoar o título.
 
