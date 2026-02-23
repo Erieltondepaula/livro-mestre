@@ -31,8 +31,10 @@ const nextId = () => `sec_${Date.now()}_${sectionIdCounter++}`;
 const DEFAULT_SECTIONS: () => PointSection[] = () => [
   { id: nextId(), label: 'Subtópico', enabled: true, children: [] },
   { id: nextId(), label: 'Aplicação', enabled: true, children: [] },
+  { id: nextId(), label: 'Referências', enabled: true, children: [] },
   { id: nextId(), label: 'Ilustração', enabled: false, children: [] },
   { id: nextId(), label: 'Frase Impacto', enabled: true, children: [] },
+  { id: nextId(), label: 'Citações', enabled: false, children: [] },
 ];
 
 const DEFAULT_POINT = (): OutlinePoint => ({ name: '', sections: DEFAULT_SECTIONS() });
@@ -85,7 +87,7 @@ const DEPTH_DESCRIPTIONS: Record<string, { label: string; description: string }>
 const SUGGESTED_SECTIONS = [
   'Desenvolvimento', 'Texto', 'Aplicação Prática', 'Ilustração',
   'Frase Impacto', 'Subtópico', 'Transição', 'Reflexão',
-  'Contexto Histórico', 'Palavra Original', 'Referência Cruzada',
+  'Contexto Histórico', 'Palavra Original', 'Referências', 'Citações',
 ];
 
 interface Props {
