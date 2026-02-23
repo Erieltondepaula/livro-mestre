@@ -110,8 +110,24 @@ serve(async (req) => {
       ? `\n\n---\n**📋 ANÁLISES ANTERIORES RELEVANTES DO USUÁRIO:**\n${analyses_context}\n---\n**CURADORIA INTELIGENTE:** NÃO copie automaticamente essas análises. Avalie criticamente: este conteúdo serve integralmente? É melhor extrair apenas o núcleo teológico? Faz sentido inserir aqui? Utilize apenas pontos, frases ou estruturas que sejam coerentes com o tema e tipo do esboço atual.\n`
       : "";
 
+    const formatSections = (sections: any[]) => {
+      if (!sections || sections.length === 0) return '';
+      return sections
+        .filter((s: any) => s.enabled)
+        .map((s: any) => {
+          const children = (s.children || []).filter((c: any) => c.enabled);
+          if (children.length > 0) return `${s.label} (contendo: ${children.map((c: any) => c.label).join(', ')})`;
+          return s.label;
+        })
+        .join(', ');
+    };
+
     const structureSection = structure_config
-      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => `- Ponto ${i+1}${p.name ? ` ("${p.name}")` : ''}: ${p.hasSubtopic ? 'com subtópico' : 'sem subtópico'}, ${p.hasApplication ? 'com aplicação' : 'sem aplicação'}, ${p.hasIllustration ? 'com ilustração' : 'sem ilustração'}, ${p.hasImpactPhrase ? 'com frase de impacto' : 'sem frase de impacto'}`).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Use os nomes personalizados dos pontos quando fornecidos.**\n`
+      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => {
+          const pointLabel = p.name ? `("${p.name}")` : '';
+          const secs = p.sections ? formatSections(p.sections) : '';
+          return `- Ponto ${i+1} ${pointLabel}: ${secs || 'sem seções definidas'}`;
+        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos.**\n`
       : "";
 
     const pastoralFilter = `\n\n**FILTRO DE LINGUAGEM PASTORAL:** O esboço final deve ser claro, proclamável, pastoral e cristocêntrico. Se houver termos complexos, substitua por palavras mais simples sem perder profundidade teológica. Mantenha frases curtas de impacto.\n`;

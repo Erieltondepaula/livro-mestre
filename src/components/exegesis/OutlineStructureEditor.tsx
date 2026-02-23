@@ -1,28 +1,69 @@
 import { useState } from 'react';
-import { Settings2, Plus, Minus, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Settings2, Plus, Minus, ChevronDown, ChevronUp, Info, X, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+export interface PointSection {
+  id: string;
+  label: string;
+  enabled: boolean;
+  children?: PointSection[];
+}
+
+export interface OutlinePoint {
+  name: string;
+  sections: PointSection[];
+}
+
 export interface OutlineStructure {
   pointCount: number;
-  points: { name: string; hasSubtopic: boolean; hasApplication: boolean; hasIllustration: boolean; hasImpactPhrase: boolean }[];
+  points: OutlinePoint[];
   hasFinalAppeal: boolean;
   isExplicitlyChristocentric: boolean;
   depthLevel: 'basico' | 'intermediario' | 'avancado';
 }
 
-const DEFAULT_POINT = { name: '', hasSubtopic: true, hasApplication: true, hasIllustration: false, hasImpactPhrase: true };
+let sectionIdCounter = 0;
+const nextId = () => `sec_${Date.now()}_${sectionIdCounter++}`;
+
+const DEFAULT_SECTIONS: () => PointSection[] = () => [
+  { id: nextId(), label: 'Subtópico', enabled: true, children: [] },
+  { id: nextId(), label: 'Aplicação', enabled: true, children: [] },
+  { id: nextId(), label: 'Ilustração', enabled: false, children: [] },
+  { id: nextId(), label: 'Frase Impacto', enabled: true, children: [] },
+];
+
+const DEFAULT_POINT = (): OutlinePoint => ({ name: '', sections: DEFAULT_SECTIONS() });
 
 export function getDefaultStructure(): OutlineStructure {
   return {
     pointCount: 4,
-    points: Array(4).fill(null).map((_, i) => ({ ...DEFAULT_POINT, hasIllustration: i >= 2 })),
+    points: Array(4).fill(null).map(() => {
+      const p = DEFAULT_POINT();
+      return p;
+    }),
     hasFinalAppeal: true,
     isExplicitlyChristocentric: true,
     depthLevel: 'avancado',
   };
+}
+
+// Convert new format to legacy format for backward compatibility with edge function
+export function structureToPromptSections(structure: OutlineStructure): string {
+  const lines: string[] = [];
+  structure.points.slice(0, structure.pointCount).forEach((point, i) => {
+    const pointLabel = point.name || `Ponto ${i + 1}`;
+    const enabledSections = point.sections.filter(s => s.enabled);
+    const sectionLabels = enabledSections.map(s => {
+      const childLabels = (s.children || []).filter(c => c.enabled).map(c => c.label);
+      if (childLabels.length > 0) return `${s.label} (com: ${childLabels.join(', ')})`;
+      return s.label;
+    });
+    lines.push(`- ${pointLabel}: ${sectionLabels.join(', ')}`);
+  });
+  return lines.join('\n');
 }
 
 const DEPTH_DESCRIPTIONS: Record<string, { label: string; description: string }> = {
@@ -40,6 +81,12 @@ const DEPTH_DESCRIPTIONS: Record<string, { label: string; description: string }>
   },
 };
 
+const SUGGESTED_SECTIONS = [
+  'Desenvolvimento', 'Texto', 'Aplicação Prática', 'Ilustração',
+  'Frase Impacto', 'Subtópico', 'Transição', 'Reflexão',
+  'Contexto Histórico', 'Palavra Original', 'Referência Cruzada',
+];
+
 interface Props {
   structure: OutlineStructure;
   onChange: (s: OutlineStructure) => void;
@@ -47,18 +94,14 @@ interface Props {
 
 export function OutlineStructureEditor({ structure, onChange }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [addingSectionTo, setAddingSectionTo] = useState<{ pointIdx: number; parentId?: string } | null>(null);
+  const [newSectionLabel, setNewSectionLabel] = useState('');
 
   const updatePointCount = (delta: number) => {
-    const newCount = Math.max(2, Math.min(6, structure.pointCount + delta));
+    const newCount = Math.max(2, Math.min(8, structure.pointCount + delta));
     const points = [...structure.points];
-    while (points.length < newCount) points.push({ ...DEFAULT_POINT });
+    while (points.length < newCount) points.push(DEFAULT_POINT());
     onChange({ ...structure, pointCount: newCount, points: points.slice(0, newCount) });
-  };
-
-  const updatePoint = (idx: number, key: keyof Omit<OutlineStructure['points'][0], 'name'>, value: boolean) => {
-    const points = [...structure.points];
-    points[idx] = { ...points[idx], [key]: value };
-    onChange({ ...structure, points });
   };
 
   const updatePointName = (idx: number, name: string) => {
@@ -66,6 +109,90 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
     points[idx] = { ...points[idx], name };
     onChange({ ...structure, points });
   };
+
+  const toggleSection = (pointIdx: number, sectionId: string, parentId?: string) => {
+    const points = [...structure.points];
+    const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
+    if (parentId) {
+      point.sections = point.sections.map(s =>
+        s.id === parentId ? { ...s, children: (s.children || []).map(c => c.id === sectionId ? { ...c, enabled: !c.enabled } : c) } : s
+      );
+    } else {
+      point.sections = point.sections.map(s => s.id === sectionId ? { ...s, enabled: !s.enabled } : s);
+    }
+    points[pointIdx] = point;
+    onChange({ ...structure, points });
+  };
+
+  const renameSectionLabel = (pointIdx: number, sectionId: string, newLabel: string, parentId?: string) => {
+    const points = [...structure.points];
+    const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
+    if (parentId) {
+      point.sections = point.sections.map(s =>
+        s.id === parentId ? { ...s, children: (s.children || []).map(c => c.id === sectionId ? { ...c, label: newLabel } : c) } : s
+      );
+    } else {
+      point.sections = point.sections.map(s => s.id === sectionId ? { ...s, label: newLabel } : s);
+    }
+    points[pointIdx] = point;
+    onChange({ ...structure, points });
+  };
+
+  const removeSection = (pointIdx: number, sectionId: string, parentId?: string) => {
+    const points = [...structure.points];
+    const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
+    if (parentId) {
+      point.sections = point.sections.map(s =>
+        s.id === parentId ? { ...s, children: (s.children || []).filter(c => c.id !== sectionId) } : s
+      );
+    } else {
+      point.sections = point.sections.filter(s => s.id !== sectionId);
+    }
+    points[pointIdx] = point;
+    onChange({ ...structure, points });
+  };
+
+  const addSection = (pointIdx: number, label: string, parentId?: string) => {
+    if (!label.trim()) return;
+    const newSection: PointSection = { id: nextId(), label: label.trim(), enabled: true, children: [] };
+    const points = [...structure.points];
+    const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
+    if (parentId) {
+      point.sections = point.sections.map(s =>
+        s.id === parentId ? { ...s, children: [...(s.children || []), newSection] } : s
+      );
+    } else {
+      point.sections.push(newSection);
+    }
+    points[pointIdx] = point;
+    onChange({ ...structure, points });
+    setNewSectionLabel('');
+    setAddingSectionTo(null);
+  };
+
+  const renderSectionItem = (section: PointSection, pointIdx: number, parentId?: string, depth = 0) => (
+    <div key={section.id} className={`flex items-center gap-1 ${depth > 0 ? 'ml-5 pl-2 border-l border-border/50' : ''}`}>
+      <Switch checked={section.enabled} onCheckedChange={() => toggleSection(pointIdx, section.id, parentId)} className="scale-[0.65] shrink-0" />
+      <input
+        type="text"
+        value={section.label}
+        onChange={(e) => renameSectionLabel(pointIdx, section.id, e.target.value, parentId)}
+        className="bg-transparent text-xs border-none outline-none flex-1 min-w-0 px-1 py-0.5 rounded hover:bg-muted/40 focus:bg-muted/50 transition-colors"
+        onClick={(e) => e.stopPropagation()}
+      />
+      {/* Add child button - only for top-level sections */}
+      {!parentId && (
+        <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 opacity-50 hover:opacity-100"
+          onClick={(e) => { e.stopPropagation(); setAddingSectionTo({ pointIdx, parentId: section.id }); setNewSectionLabel(''); }}>
+          <Plus className="w-2.5 h-2.5" />
+        </Button>
+      )}
+      <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 opacity-40 hover:opacity-100 text-destructive"
+        onClick={(e) => { e.stopPropagation(); removeSection(pointIdx, section.id, parentId); }}>
+        <X className="w-2.5 h-2.5" />
+      </Button>
+    </div>
+  );
 
   return (
     <TooltipProvider>
@@ -90,7 +217,7 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
                   <Minus className="h-3 w-3" />
                 </Button>
                 <span className="w-8 text-center text-sm font-semibold">{structure.pointCount}</span>
-                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updatePointCount(1)} disabled={structure.pointCount >= 6}>
+                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updatePointCount(1)} disabled={structure.pointCount >= 8}>
                   <Plus className="h-3 w-3" />
                 </Button>
               </div>
@@ -113,20 +240,75 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                        <Switch checked={point.hasSubtopic} onCheckedChange={(v) => updatePoint(i, 'hasSubtopic', v)} className="scale-75" /> Subtópico
-                      </label>
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                        <Switch checked={point.hasApplication} onCheckedChange={(v) => updatePoint(i, 'hasApplication', v)} className="scale-75" /> Aplicação
-                      </label>
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                        <Switch checked={point.hasIllustration} onCheckedChange={(v) => updatePoint(i, 'hasIllustration', v)} className="scale-75" /> Ilustração
-                      </label>
-                      <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                        <Switch checked={point.hasImpactPhrase} onCheckedChange={(v) => updatePoint(i, 'hasImpactPhrase', v)} className="scale-75" /> Frase Impacto
-                      </label>
+                    {/* Sections */}
+                    <div className="space-y-1">
+                      {point.sections.map(section => (
+                        <div key={section.id} className="space-y-0.5">
+                          {renderSectionItem(section, i)}
+                          {/* Children */}
+                          {(section.children || []).map(child => renderSectionItem(child, i, section.id, 1))}
+                          {/* Adding child inline */}
+                          {addingSectionTo?.pointIdx === i && addingSectionTo?.parentId === section.id && (
+                            <div className="ml-5 pl-2 border-l border-border/50 flex items-center gap-1 mt-1">
+                              <input
+                                type="text"
+                                value={newSectionLabel}
+                                onChange={(e) => setNewSectionLabel(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') addSection(i, newSectionLabel, section.id); if (e.key === 'Escape') setAddingSectionTo(null); }}
+                                className="input-library text-xs h-6 flex-1"
+                                placeholder="Nome da sub-seção..."
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => addSection(i, newSectionLabel, section.id)}>
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAddingSectionTo(null)}>
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
+                    {/* Add top-level section */}
+                    {addingSectionTo?.pointIdx === i && !addingSectionTo?.parentId ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={newSectionLabel}
+                            onChange={(e) => setNewSectionLabel(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') addSection(i, newSectionLabel); if (e.key === 'Escape') setAddingSectionTo(null); }}
+                            className="input-library text-xs h-6 flex-1"
+                            placeholder="Nome da seção..."
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => addSection(i, newSectionLabel)}>
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setAddingSectionTo(null)}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <div className="flex gap-1 flex-wrap">
+                          {SUGGESTED_SECTIONS.filter(s => !point.sections.some(ps => ps.label === s)).slice(0, 6).map(s => (
+                            <button key={s} onClick={() => addSection(i, s)} className="text-[10px] px-2 py-0.5 rounded-full border border-border hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-colors">
+                              + {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost" size="sm"
+                        className="h-6 text-[10px] text-muted-foreground gap-1 w-full justify-start hover:text-primary"
+                        onClick={(e) => { e.stopPropagation(); setAddingSectionTo({ pointIdx: i }); setNewSectionLabel(''); }}
+                      >
+                        <Plus className="w-3 h-3" /> Adicionar seção
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -173,7 +355,6 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
                   );
                 })}
               </div>
-              {/* Active description below buttons */}
               <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
                 {DEPTH_DESCRIPTIONS[structure.depthLevel]?.description}
               </p>
