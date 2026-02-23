@@ -249,6 +249,48 @@ export function useExegesis() {
     }
   }, []);
 
+  const classifyMaterialByTitle = useCallback(async (title: string): Promise<any | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('exegesis', {
+        body: { passage: title, type: 'extract_metadata' },
+      });
+      if (error) throw error;
+      const result = typeof data?.result === 'string' ? JSON.parse(data.result) : data?.result;
+      return result;
+    } catch (e: any) {
+      console.error('Classify by title error:', e);
+      return null;
+    }
+  }, []);
+
+  const classifyAllMaterials = useCallback(async (onProgress?: (done: number, total: number) => void): Promise<number> => {
+    const unclassified = materials.filter(m => !m.theme && (!m.keywords || (m.keywords as any).length === 0));
+    if (unclassified.length === 0) return 0;
+    let classified = 0;
+    for (let i = 0; i < unclassified.length; i++) {
+      const m = unclassified[i];
+      onProgress?.(i + 1, unclassified.length);
+      const result = await classifyMaterialByTitle(m.title);
+      if (result) {
+        const metadata: any = {};
+        if (result.theme) metadata.theme = result.theme;
+        if (result.keywords?.length > 0) metadata.keywords = result.keywords;
+        if (result.bible_references?.length > 0) metadata.bible_references = result.bible_references;
+        if (result.author) metadata.author = result.author;
+        if (result.content_origin) metadata.content_origin = result.content_origin;
+        if (result.material_category) metadata.material_category = result.material_category;
+        if (Object.keys(metadata).length > 0) {
+          const { error } = await supabase.from('exegesis_materials').update(metadata as any).eq('id', m.id);
+          if (!error) {
+            setMaterials(prev => prev.map(pm => pm.id === m.id ? { ...pm, ...metadata } : pm));
+            classified++;
+          }
+        }
+      }
+    }
+    return classified;
+  }, [materials, classifyMaterialByTitle]);
+
   const suggestImprovements = useCallback(async (passage: string, outlineContent: string): Promise<any | null> => {
     try {
       const materialsCtx = getMaterialsContext();
@@ -272,6 +314,6 @@ export function useExegesis() {
     fetchOutlineVersions,
     fetchMaterials, uploadMaterial, addLink, updateMaterialMetadata, deleteMaterial,
     getMaterialsContext, getRelevantAnalysesContext,
-    classifyContent, extractMetadata, suggestImprovements,
+    classifyContent, extractMetadata, suggestImprovements, classifyAllMaterials,
   };
 }
