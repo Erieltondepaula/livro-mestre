@@ -1,106 +1,160 @@
 
-# Modulo de Exegese Biblica Avancado
+# Plano de Melhoria Completa -- Plataforma Exegese Biblica
 
-## Resumo
-
-Transformar o modulo de exegese atual (que e basicamente um chat simples com IA) em uma ferramenta completa de estudo biblico, com persistencia de dados, biblioteca de materiais de referencia, geracao de esbocos homileticos, e interface organizada em abas para facilitar o uso.
+Este plano abrange todas as 20 melhorias solicitadas, organizadas em fases de implementacao.
 
 ---
 
-## O que muda para voce
+## Fase 1: Editor de Texto Avancado (Correcoes e Melhorias)
 
-Hoje o modulo de exegese e apenas um campo para selecionar passagem e um botao "Analisar" que gera texto via IA sem salvar nada. Com a atualizacao:
+**Problema atual:** Espacamento excessivo, poucas cores, marcador com cor unica, layout desorganizado.
 
-- **Suas analises ficam salvas** no banco de dados (nao perdem ao recarregar)
-- **Voce pode enviar materiais** (PDFs, links) que a IA usa como referencia complementar
-- **Gera esbocos de sermao** automaticamente (expositivo, textual, tematico)
-- **Pode colar textos biblicos** direto para analise
-- **Comentarios e anotacoes** persistem vinculados a cada analise
-- **Tudo organizado** em abas: Analisar | Historico | Esbocos | Materiais
+**Solucoes:**
 
----
+- Adicionar CSS customizado ao editor para controlar espacamento entre blocos (`p`, `h1`-`h3`, `li`, `blockquote`) com margens reduzidas e `line-height` ajustado
+- Ampliar paleta de cores de fonte para 16+ cores organizadas em grid, incluindo input HEX personalizado
+- Ampliar paleta do marcador de texto (highlight) para multiplas cores com seletor HEX dedicado
+- Adicionar controles de tamanho de fonte (dropdown ou botoes +/-)
+- Instalar extensao `@tiptap/extension-font-family` para troca de fonte (Serif, Sans, Mono)
+- Melhorar visual da toolbar: agrupar secoes com labels, tooltips em cada botao
 
-## Estrutura da Interface
-
-A tela sera dividida em **4 abas principais**:
-
-1. **Analisar** - Selecao de passagem + tipos de analise (como hoje, mas melhorado)
-   - Mesmos 7 modos atuais + 3 novos: Metodo Indutivo, Comparacao de Versoes, Devocional
-   - Campo para colar texto biblico direto
-   - Opcao de incluir materiais de referencia na analise
-
-2. **Historico** - Todas as analises salvas, com busca e filtros
-   - Pesquisar por passagem, tipo, data
-   - Editar/excluir anotacoes
-   - Copiar e compartilhar
-
-3. **Esbocos** - Geracao automatica de sermoes
-   - Esboco Expositivo (divisao natural do texto)
-   - Esboco Textual (palavras-chave do texto)
-   - Esboco Tematico (tema central)
-   - Cada esboco salvo e editavel
-
-4. **Materiais** - Biblioteca de referencia do usuario
-   - Upload de PDFs (comentarios, dicionarios, livros)
-   - Links do YouTube e artigos
-   - Visualizar e gerenciar materiais enviados
+**Arquivos alterados:**
+- `src/components/exegesis/ExegesisRichEditor.tsx` -- refatorar toolbar, adicionar color pickers com HEX, highlight multicolor, font size/family
+- `src/index.css` -- adicionar estilos `.ProseMirror` para controle fino de espacamento
 
 ---
 
-## Detalhes Tecnicos
+## Fase 2: Estrutura Editavel Antes de Gerar (Nova Aba)
 
-### Banco de Dados (3 novas tabelas)
+**Nova funcionalidade:** Aba "Estrutura do Esboco" no fluxo de geracao de esbocos.
 
-**`exegesis_analyses`** - Armazena cada analise gerada
-- id, user_id, passage, analysis_type, question, content, notes, created_at, updated_at
+**Implementacao:**
 
-**`exegesis_outlines`** - Esbocos homileticos gerados
-- id, user_id, passage, outline_type (expositivo/textual/tematico), content, notes, created_at
+- Criar componente `OutlineStructureEditor.tsx` com formulario interativo:
+  - Quantidade de pontos (slider 2-6)
+  - Para cada ponto: toggle de subtopico, aplicacao, ilustracao, frase de impacto
+  - Toggle global: apelo final sim/nao
+  - Toggle: cristocentrismo explicito
+  - Slider: nivel de profundidade (basico/intermediario/avancado)
+- Passar configuracao estrutural como parametro ao edge function `exegesis`
+- Atualizar o prompt no edge function para respeitar a estrutura definida pelo usuario
 
-**`exegesis_materials`** - Materiais de referencia do usuario
-- id, user_id, title, type (pdf/youtube/article), url, file_path, description, created_at
+**Arquivos novos:**
+- `src/components/exegesis/OutlineStructureEditor.tsx`
 
-Todas com RLS para que cada usuario veja apenas seus dados.
-
-### Storage
-
-- Novo bucket `exegesis-materials` para armazenar PDFs enviados
-
-### Edge Function (atualizar `exegesis`)
-
-- Aceitar novo parametro `materials_context` com trechos relevantes dos materiais do usuario
-- Novos tipos de analise: `inductive_method`, `version_comparison`, `devotional`
-- Novos tipos de esboco: `outline_expository`, `outline_textual`, `outline_thematic`
-- System prompt enriquecido com os principios dos PDFs enviados (Gorman, Klein, Fee, Hernandes, Presley Camargo, Carlos Osvaldo)
-
-### Frontend
-
-- Refatorar `ExegesisView.tsx` para usar abas (Tabs do Radix)
-- Criar componentes:
-  - `ExegesisAnalyzer.tsx` - aba de analise (passagem + tipo + streaming)
-  - `ExegesisHistory.tsx` - historico salvo com busca
-  - `ExegesisOutlines.tsx` - geracao e listagem de esbocos
-  - `ExegesisMaterials.tsx` - upload e gestao de materiais
-- Criar hook `useExegesis.ts` para CRUD das analises, esbocos e materiais
-- Resultados salvos automaticamente no banco apos streaming concluir
-
-### Prompt da IA (enriquecido)
-
-O system prompt sera atualizado para incorporar os principios extraidos dos materiais:
-- **Gorman**: 7 elementos da exegese (pesquisa, contexto, forma, analise detalhada, sintese, reflexao, aprimoramento)
-- **Klein**: Interpretacao responsavel, distincao generos, pre-entendimentos
-- **Fee**: "Entendes o que les" - leitura cuidadosa, generos literarios
-- **Carlos Osvaldo**: Fundamentos de sintaxe grega/hebraica para analise textual
-- **Hernandes**: Pregacao expositiva, estrutura homiletica
-- **Presley Camargo**: 8 regras de leitura, tipos de sermao (descritivo, normativo, tematico, textual, expositivo)
+**Arquivos alterados:**
+- `src/components/exegesis/ExegesisOutlines.tsx` -- integrar editor de estrutura antes do botao "Gerar"
+- `supabase/functions/exegesis/index.ts` -- receber `structure_config` e adaptar prompt
 
 ---
 
-## Sequencia de Implementacao
+## Fase 3: Curadoria Inteligente de Analises + Filtro Pastoral
 
-1. Criar tabelas no banco + bucket de storage + politicas RLS
-2. Atualizar edge function com novos tipos e prompt enriquecido
-3. Criar hook `useExegesis.ts`
-4. Refatorar `ExegesisView.tsx` com abas
-5. Criar componentes das abas (Analyzer, History, Outlines, Materials)
-6. Testar fluxo completo
+**Integracao Esbocos com Historico de Analises:**
+
+- Ao gerar um esboco, buscar analises anteriores do usuario que contenham a mesma passagem ou temas relacionados
+- Enviar resumo das analises relevantes como contexto adicional ao edge function
+- Adicionar instrucoes no prompt do edge function para curadoria critica: nao copiar automaticamente, extrair apenas nucleos teologicos coerentes
+
+**Filtro de Linguagem Pastoral:**
+
+- Adicionar instrucoes no system prompt do edge function exigindo linguagem clara, proclamavel, pastoral e cristocentrica
+- Orientar substituicao de termos tecnicos por equivalentes acessiveis
+
+**Arquivos alterados:**
+- `src/hooks/useExegesis.ts` -- nova funcao `getRelevantAnalysesContext(passage)` que filtra analises por passagem/tema
+- `src/components/exegesis/ExegesisOutlines.tsx` -- chamar `getRelevantAnalysesContext` e passar como `analyses_context`
+- `supabase/functions/exegesis/index.ts` -- receber `analyses_context`, adicionar regras de curadoria e filtro pastoral no prompt
+
+---
+
+## Fase 4: Classificacao Automatica de Conteudo + Metadados
+
+**Reconhecimento automatico de tipo:**
+
+- Ao colar/importar conteudo na aba Materiais, enviar texto para o edge function `exegesis` com tipo especial `classify_content`
+- A IA analisa estrutura, linguagem, presenca de versiculos, tom, e retorna classificacao sugerida (Texto Biblico, Comentario, Livro, Devocional, Dicionario, Pregacao, Documentario, Texto Teologico)
+- Exibir sugestao ao usuario com opcao de confirmar ou alterar
+
+**Metadados estruturados:**
+
+- Adicionar colunas na tabela `exegesis_materials`: `theme`, `sub_themes` (jsonb), `keywords` (jsonb), `bible_references` (jsonb), `author`, `content_origin` (texto/video/transcricao)
+- Ao salvar material, extrair metadados automaticamente via IA
+- Permitir edicao manual dos metadados
+
+**Arquivos novos:**
+- Migracao SQL para novas colunas em `exegesis_materials`
+
+**Arquivos alterados:**
+- `supabase/functions/exegesis/index.ts` -- novo tipo `classify_content` e `extract_metadata`
+- `src/hooks/useExegesis.ts` -- funcoes `classifyContent()` e `extractMetadata()`
+- `src/components/exegesis/ExegesisMaterials.tsx` -- formulario de metadados, classificacao automatica
+
+---
+
+## Fase 5: Busca Tematica Inteligente + Inteligencia Semantica
+
+**Busca tematica por categoria:**
+
+- Ao gerar esboco, o edge function recebe titulo e pontos principais
+- Sistema busca em TODOS os materiais por tema, filtrando por categoria
+- Resultados organizados hierarquicamente: 1) Definicao (dicionario), 2) Fundamentacao exegetica (comentario), 3) Teologica (livros), 4) Aplicacao pastoral (devocionais), 5) Ilustracoes (pregacoes)
+
+**Equivalencias semanticas:**
+
+- Adicionar no system prompt um bloco de instrucoes para reconhecer variacoes de termos teologicos (avivamento = renovacao espiritual = despertamento; arrependimento = metanoia = conversao)
+- O edge function deve buscar por sinonimos e termos relacionados
+
+**Arquivos alterados:**
+- `supabase/functions/exegesis/index.ts` -- instrucoes de busca tematica hierarquica e equivalencias semanticas no prompt
+- `src/hooks/useExegesis.ts` -- `getMaterialsContext()` refatorado para incluir metadados (tema, keywords, referencias)
+
+---
+
+## Fase 6: Versionamento de Esbocos
+
+**Historico de versoes:**
+
+- Criar tabela `exegesis_outline_versions` com colunas: `id`, `outline_id`, `content`, `version_number`, `created_at`, `user_id`
+- Ao salvar edicao de esboco, criar nova versao automaticamente
+- Interface para listar versoes, comparar (diff visual), restaurar versao anterior
+
+**Arquivos novos:**
+- Migracao SQL para tabela `exegesis_outline_versions` com RLS
+- `src/components/exegesis/OutlineVersionHistory.tsx` -- componente de historico/comparacao
+
+**Arquivos alterados:**
+- `src/hooks/useExegesis.ts` -- funcoes `fetchOutlineVersions()`, `restoreVersion()`
+- `src/components/exegesis/ExegesisOutlines.tsx` -- botao "Versoes" no toolbar de cada esboco
+
+---
+
+## Fase 7: Exportacao Profissional
+
+**Melhorias na exportacao existente:**
+
+- PDF: preservar cores, highlights, tamanhos de fonte, estrutura de topicos
+- Word (.doc): incluir estilos inline para cores e formatacao
+- Markdown: converter HTML formatado para MD preservando estrutura
+- TXT: manter indentacao e organizacao
+
+**Arquivos alterados:**
+- `src/components/exegesis/ExegesisOutlines.tsx` -- refatorar funcoes `exportAsPdf`, `exportAsDocx`, `exportAsMd`, `exportAsTxt` para preservar formatacao completa
+
+---
+
+## Resumo Tecnico
+
+| Fase | Arquivos Novos | Arquivos Alterados | Migracoes SQL |
+|------|---------------|-------------------|---------------|
+| 1 | 0 | 2 | 0 |
+| 2 | 1 | 2 | 0 |
+| 3 | 0 | 3 | 0 |
+| 4 | 1 migracao | 3 | 1 |
+| 5 | 0 | 2 | 0 |
+| 6 | 1 componente + 1 migracao | 2 | 1 |
+| 7 | 0 | 1 | 0 |
+
+**Total:** 2 novas migracoes, 2 novos componentes, ~8 arquivos alterados, 1 edge function atualizado significativamente.
+
+A implementacao seguira esta ordem pois cada fase constroi sobre a anterior. A Fase 1 (editor) e a mais visivel e resolve problemas imediatos de usabilidade. As Fases 4-5 (classificacao + busca semantica) sao as mais complexas e transformam a plataforma em um verdadeiro curador teologico inteligente.
