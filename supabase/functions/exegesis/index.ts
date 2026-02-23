@@ -103,7 +103,14 @@ serve(async (req) => {
 
     let userPrompt = "";
     const materialsSection = materials_context
-      ? `\n\n---\n**📚 MATERIAIS DE REFERÊNCIA DO USUÁRIO (BASE DE CONHECIMENTO OBRIGATÓRIA):**\n${materials_context}\n---\n**INSTRUÇÃO OBRIGATÓRIA:** Você DEVE consultar e referenciar esses materiais como fonte primária na sua análise. Cite autores, obras e conceitos dos materiais acima. A IA deve complementar, NUNCA substituir essas fontes. Priorize as informações dos materiais cadastrados. Organize as referências hierarquicamente: 1) Definições (dicionários), 2) Fundamentação exegética (comentários), 3) Teologia (livros), 4) Aplicação pastoral (devocionais). Reconheça equivalências semânticas (ex: avivamento = renovação espiritual = despertamento; arrependimento = metanoia = conversão).\n`
+      ? `\n\n---\n**📚 MATERIAIS DE REFERÊNCIA DO USUÁRIO (BASE DE CONHECIMENTO — FONTE PRIMÁRIA ABSOLUTA):**\n${materials_context}\n---\n**INSTRUÇÃO OBRIGATÓRIA DE USO DOS MATERIAIS:**
+1. Os materiais acima são a FONTE PRIMÁRIA do sermão. A IA é apenas complementar.
+2. EXTRAIA CITAÇÕES ESPECÍFICAS dos materiais: transcreva trechos relevantes entre aspas, citando autor e obra. Ex: Como diz Spurgeon em "Manhã e Noite": "..."
+3. Cada ponto do sermão DEVE referenciar pelo menos um material cadastrado quando disponível.
+4. Organize hierarquicamente: Dicionários → Comentários → Livros teológicos → Devocionais.
+5. NÃO parafraseie vagamente — cite o trecho exato que fundamenta o ponto.
+6. Reconheça equivalências semânticas (avivamento = renovação espiritual = despertamento).
+7. Se o material não tiver informação relevante para determinado ponto, aí sim complemente com sua base acadêmica.\n`
       : "\n\n**Nota:** O usuário não possui materiais cadastrados na Base de Conhecimento. Utilize sua base acadêmica padrão.\n";
 
     const analysesSection = analyses_context
@@ -384,7 +391,15 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 
 7. **Acessibilidade**: Frases curtas de impacto, repetições intencionais, uma ideia por ponto.
 
-8. **Clímax guardado**: Não há clímax prematuro. A tensão narrativa é mantida até o apelo final.`;
+8. **Clímax guardado**: Não há clímax prematuro. A tensão narrativa é mantida até o apelo final.
+
+9. **LÓGICA PROCEDURAL CRISTOCÊNTRICA**: Cada ponto deve progressivamente revelar ao ouvinte sua NECESSIDADE diante de Cristo. Não basta ensinar — o sermão deve GUIAR: "Você precisa disso... porque sem Cristo..." O ouvinte deve sentir em cada ponto que precisa se posicionar. O sermão inteiro é um caminho que leva a pessoa até o altar.
+
+10. **ENGAJAMENTO E ENVOLVIMENTO**: O sermão deve ser CATIVANTE e ENVOLVENTE. Use storytelling pastoral — histórias reais, perguntas retóricas ("Você já se sentiu assim?"), pausas dramáticas, diálogo imaginário com a congregação. Crie tensão narrativa. O ouvinte não pode desligar em nenhum momento. Cada parágrafo deve prender a atenção.
+
+11. **APLICAÇÃO PRÁTICA EM CADA PARÁGRAFO**: Cada parágrafo do desenvolvimento DEVE terminar com uma aplicação prática concreta — algo que o ouvinte pode FAZER esta semana. Não é teórico — é prático. "Esta semana, ao acordar, antes de pegar o celular, ore 2 minutos agradecendo..." A aplicação deve ser específica, realizável e conectada ao ponto.
+
+12. **DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES**: Cada seção de **Desenvolvimento** deve ter NO MÍNIMO 800 caracteres. Não seja superficial — aprofunde a explicação exegética, traga contexto histórico, explore o significado das palavras originais, faça conexões com outros textos. O desenvolvimento é o coração do ponto — ele precisa ser robusto, rico e fundamentado.`;
         break;
 
       case "outline_textual":
@@ -459,7 +474,7 @@ A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3
 
 ---
 
-Aplique as mesmas regras de engenharia: estrutura progressiva relacional, curva de intensidade crescente (didático → pastoral → confrontativo → profundo), cristocentricidade arquitetônica, transições encadeadas, palavra-chave central, e clímax guardado para o apelo final.`;
+Aplique TODAS as regras de engenharia do sermão: estrutura progressiva relacional, curva de intensidade crescente, cristocentricidade arquitetônica, transições encadeadas, palavra-chave central, clímax guardado, LÓGICA PROCEDURAL (cada ponto revela a necessidade do ouvinte diante de Cristo), ENGAJAMENTO (storytelling, perguntas retóricas, tensão narrativa), APLICAÇÃO PRÁTICA em cada parágrafo do desenvolvimento, e DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES por ponto.`;
         break;
 
       case "outline_thematic":
@@ -534,7 +549,7 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 
 ---
 
-Aplique as mesmas regras de engenharia: estrutura progressiva relacional, curva de intensidade crescente, cristocentricidade arquitetônica, transições encadeadas, conceito central em 4 dimensões, e clímax guardado para o apelo final. Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.`;
+Aplique TODAS as regras de engenharia do sermão: estrutura progressiva relacional, curva de intensidade crescente, cristocentricidade arquitetônica, transições encadeadas, conceito central em 4 dimensões, clímax guardado, LÓGICA PROCEDURAL (cada ponto revela a necessidade do ouvinte diante de Cristo), ENGAJAMENTO (storytelling, perguntas retóricas, tensão narrativa), APLICAÇÃO PRÁTICA em cada parágrafo do desenvolvimento, e DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES por ponto. Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.`;
         break;
 
       case "question":
