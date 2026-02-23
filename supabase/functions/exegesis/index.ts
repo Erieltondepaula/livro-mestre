@@ -335,10 +335,10 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 ## **TRANSIÇÃO PARA A CONCLUSÃO**
 
 ## **Conclusão**
-(Recapitulação dos pontos, síntese do ensino, altamente pessoal)
+(Recapitulação dos pontos principais do sermão, conectando cada ponto diretamente à vida do ouvinte. Não é um resumo frio — é a hora de olhar nos olhos da congregação e dizer: "Se o que foi dito hoje faz sentido para você..." A conclusão deve ser altamente pessoal, confrontativa com amor, apontando como a mensagem pregada muda a vida de quem ouviu. Retome a palavra-chave central e mostre como ela se aplica ao coração do ouvinte AGORA.)
 
 ## **Apelo**
-(Chamado à decisão, emocionalmente máximo, cristocêntrico)
+(SEMPRE cristocêntrico. O apelo é o momento mais íntimo do sermão — é a hora de convidar a pessoa a se mover. Deve mexer com o interior da pessoa, como todo o sermão já vinha fazendo desde o início. A conclusão + apelo é o que faz a pessoa se levantar. Use linguagem direta e pessoal: "Se o que eu falei hoje mudou algo em você, venha até o altar e entregue sua vida a Cristo." O apelo deve apontar para Cristo como solução, refúgio e Senhor. Não é genérico — referencia especificamente o que foi pregado no sermão e como isso se conecta à entrega pessoal a Jesus. É o clímax emocional e espiritual máximo.)
 
 ---
 
@@ -432,8 +432,10 @@ A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3
 ## **TRANSIÇÃO PARA A CONCLUSÃO**
 
 ## **Conclusão**
+(Recapitulação dos pontos do sermão conectando cada um à vida real do ouvinte. Linguagem pessoal e direta: "Se o que foi dito hoje faz sentido para você..." Mostre como a palavra pregada transforma a vida de quem está ouvindo AGORA.)
 
 ## **Apelo**
+(SEMPRE cristocêntrico. Momento íntimo e confrontativo com amor. Convite direto: "Se o que eu falei hoje mudou algo em você, venha até o altar e entregue sua vida a Cristo." Referencie especificamente o que foi pregado e aponte para Cristo como resposta. Clímax emocional e espiritual máximo.)
 
 ---
 
@@ -505,8 +507,10 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 ## **TRANSIÇÃO PARA A CONCLUSÃO**
 
 ## **Conclusão**
+(Recapitulação dos pontos do sermão apontando para a vida do ouvinte. Linguagem pessoal: "Se o que foi dito hoje faz sentido para você..." Conecte cada ponto pregado à realidade de quem está ouvindo.)
 
 ## **Apelo**
+(SEMPRE cristocêntrico. Convite direto e íntimo ao altar: "Se o que eu falei hoje mudou algo em você, venha e entregue sua vida a Cristo." Referencie o sermão pregado e aponte para Cristo. Clímax emocional e espiritual máximo.)
 
 ---
 
