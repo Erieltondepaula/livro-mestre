@@ -53,11 +53,12 @@ export function getDefaultStructure(): OutlineStructure {
 // Convert new format to legacy format for backward compatibility with edge function
 export function structureToPromptSections(structure: OutlineStructure): string {
   const lines: string[] = [];
-  structure.points.slice(0, structure.pointCount).forEach((point, i) => {
+  structure.points.slice(0, structure.pointCount).forEach((point: any, i: number) => {
     const pointLabel = point.name || `Ponto ${i + 1}`;
-    const enabledSections = point.sections.filter(s => s.enabled);
-    const sectionLabels = enabledSections.map(s => {
-      const childLabels = (s.children || []).filter(c => c.enabled).map(c => c.label);
+    const sections = point.sections || [];
+    const enabledSections = sections.filter((s: any) => s.enabled);
+    const sectionLabels = enabledSections.map((s: any) => {
+      const childLabels = (s.children || []).filter((c: any) => c.enabled).map((c: any) => c.label);
       if (childLabels.length > 0) return `${s.label} (com: ${childLabels.join(', ')})`;
       return s.label;
     });
@@ -97,21 +98,37 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
   const [addingSectionTo, setAddingSectionTo] = useState<{ pointIdx: number; parentId?: string } | null>(null);
   const [newSectionLabel, setNewSectionLabel] = useState('');
 
+  // Migrate old format points (hasSubtopic, hasApplication, etc.) to new sections format
+  const migratePoint = (p: any): OutlinePoint => {
+    if (p.sections && Array.isArray(p.sections)) return p as OutlinePoint;
+    return {
+      name: p.name || '',
+      sections: [
+        { id: nextId(), label: 'Subtópico', enabled: p.hasSubtopic !== false, children: [] },
+        { id: nextId(), label: 'Aplicação', enabled: p.hasApplication !== false, children: [] },
+        { id: nextId(), label: 'Ilustração', enabled: !!p.hasIllustration, children: [] },
+        { id: nextId(), label: 'Frase Impacto', enabled: p.hasImpactPhrase !== false, children: [] },
+      ],
+    };
+  };
+
+  const safePoints = structure.points.map(migratePoint);
+
   const updatePointCount = (delta: number) => {
     const newCount = Math.max(2, Math.min(8, structure.pointCount + delta));
-    const points = [...structure.points];
+    const points = [...safePoints];
     while (points.length < newCount) points.push(DEFAULT_POINT());
     onChange({ ...structure, pointCount: newCount, points: points.slice(0, newCount) });
   };
 
   const updatePointName = (idx: number, name: string) => {
-    const points = [...structure.points];
+    const points = [...safePoints];
     points[idx] = { ...points[idx], name };
     onChange({ ...structure, points });
   };
 
   const toggleSection = (pointIdx: number, sectionId: string, parentId?: string) => {
-    const points = [...structure.points];
+    const points = [...safePoints];
     const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
     if (parentId) {
       point.sections = point.sections.map(s =>
@@ -125,7 +142,7 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
   };
 
   const renameSectionLabel = (pointIdx: number, sectionId: string, newLabel: string, parentId?: string) => {
-    const points = [...structure.points];
+    const points = [...safePoints];
     const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
     if (parentId) {
       point.sections = point.sections.map(s =>
@@ -139,7 +156,7 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
   };
 
   const removeSection = (pointIdx: number, sectionId: string, parentId?: string) => {
-    const points = [...structure.points];
+    const points = [...safePoints];
     const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
     if (parentId) {
       point.sections = point.sections.map(s =>
@@ -155,7 +172,7 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
   const addSection = (pointIdx: number, label: string, parentId?: string) => {
     if (!label.trim()) return;
     const newSection: PointSection = { id: nextId(), label: label.trim(), enabled: true, children: [] };
-    const points = [...structure.points];
+    const points = [...safePoints];
     const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
     if (parentId) {
       point.sections = point.sections.map(s =>
@@ -227,7 +244,7 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground uppercase">Configuração por Ponto</Label>
               <div className="grid gap-2">
-                {structure.points.slice(0, structure.pointCount).map((point, i) => (
+                {safePoints.slice(0, structure.pointCount).map((point, i) => (
                   <div key={i} className="bg-muted/30 rounded-lg p-2.5 space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-foreground/70 shrink-0">Ponto {i + 1}</span>
