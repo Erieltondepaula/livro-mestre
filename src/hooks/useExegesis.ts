@@ -249,6 +249,22 @@ export function useExegesis() {
     }
   }, []);
 
+  const suggestImprovements = useCallback(async (passage: string, outlineContent: string): Promise<any | null> => {
+    try {
+      const materialsCtx = getMaterialsContext();
+      const { data, error } = await supabase.functions.invoke('exegesis', {
+        body: { passage, question: outlineContent, type: 'suggest_improvements', materials_context: materialsCtx },
+      });
+      if (error) throw error;
+      const result = typeof data?.result === 'string' ? JSON.parse(data.result) : data?.result;
+      return result;
+    } catch (e: any) {
+      console.error('Suggestions error:', e);
+      toast({ title: 'Erro nas sugestões', description: e.message, variant: 'destructive' });
+      return null;
+    }
+  }, [getMaterialsContext]);
+
   return {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
@@ -256,6 +272,6 @@ export function useExegesis() {
     fetchOutlineVersions,
     fetchMaterials, uploadMaterial, addLink, updateMaterialMetadata, deleteMaterial,
     getMaterialsContext, getRelevantAnalysesContext,
-    classifyContent, extractMetadata,
+    classifyContent, extractMetadata, suggestImprovements,
   };
 }
