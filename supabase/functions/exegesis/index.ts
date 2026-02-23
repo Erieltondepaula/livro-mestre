@@ -97,14 +97,24 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { passage, question, type, materials_context } = await req.json();
+    const { passage, question, type, materials_context, analyses_context, structure_config } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     let userPrompt = "";
     const materialsSection = materials_context
-      ? `\n\n---\n**📚 MATERIAIS DE REFERÊNCIA DO USUÁRIO (BASE DE CONHECIMENTO OBRIGATÓRIA):**\n${materials_context}\n---\n**INSTRUÇÃO OBRIGATÓRIA:** Você DEVE consultar e referenciar esses materiais como fonte primária na sua análise. Cite autores, obras e conceitos dos materiais acima. A IA deve complementar, NUNCA substituir essas fontes. Priorize as informações dos materiais cadastrados antes de gerar qualquer conteúdo apenas com base no seu conhecimento geral.\n`
+      ? `\n\n---\n**📚 MATERIAIS DE REFERÊNCIA DO USUÁRIO (BASE DE CONHECIMENTO OBRIGATÓRIA):**\n${materials_context}\n---\n**INSTRUÇÃO OBRIGATÓRIA:** Você DEVE consultar e referenciar esses materiais como fonte primária na sua análise. Cite autores, obras e conceitos dos materiais acima. A IA deve complementar, NUNCA substituir essas fontes. Priorize as informações dos materiais cadastrados. Organize as referências hierarquicamente: 1) Definições (dicionários), 2) Fundamentação exegética (comentários), 3) Teologia (livros), 4) Aplicação pastoral (devocionais). Reconheça equivalências semânticas (ex: avivamento = renovação espiritual = despertamento; arrependimento = metanoia = conversão).\n`
       : "\n\n**Nota:** O usuário não possui materiais cadastrados na Base de Conhecimento. Utilize sua base acadêmica padrão.\n";
+
+    const analysesSection = analyses_context
+      ? `\n\n---\n**📋 ANÁLISES ANTERIORES RELEVANTES DO USUÁRIO:**\n${analyses_context}\n---\n**CURADORIA INTELIGENTE:** NÃO copie automaticamente essas análises. Avalie criticamente: este conteúdo serve integralmente? É melhor extrair apenas o núcleo teológico? Faz sentido inserir aqui? Utilize apenas pontos, frases ou estruturas que sejam coerentes com o tema e tipo do esboço atual.\n`
+      : "";
+
+    const structureSection = structure_config
+      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => `- Ponto ${i+1}: ${p.hasSubtopic ? 'com subtópico' : 'sem subtópico'}, ${p.hasApplication ? 'com aplicação' : 'sem aplicação'}, ${p.hasIllustration ? 'com ilustração' : 'sem ilustração'}, ${p.hasImpactPhrase ? 'com frase de impacto' : 'sem frase de impacto'}`).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE.**\n`
+      : "";
+
+    const pastoralFilter = `\n\n**FILTRO DE LINGUAGEM PASTORAL:** O esboço final deve ser claro, proclamável, pastoral e cristocêntrico. Se houver termos complexos, substitua por palavras mais simples sem perder profundidade teológica. Mantenha frases curtas de impacto.\n`;
 
     switch (type) {
       case "full_exegesis":
