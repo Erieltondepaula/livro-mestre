@@ -253,7 +253,7 @@ Mantenha a fidelidade exegética mesmo na devoção.`;
         userPrompt = `Gere um ESBOÇO DE SERMÃO EXPOSITIVO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
 
 ## TIPO DE PREGAÇÃO: EXPOSITIVA
 A pregação expositiva expõe o significado de um texto bíblico específico, submetendo as ideias do pregador à autoridade da Escritura. Foca em explicar o contexto histórico, gramatical e literário para aplicá-lo à vida do ouvinte. O texto bíblico fala, e o pregador se submete a ele. As divisões seguem a estrutura natural do texto.
@@ -355,7 +355,7 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEXTUAL completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
 
 ## TIPO DE PREGAÇÃO: TEXTUAL
 A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3 versículos), onde o tema e os pontos principais são extraídos diretamente do texto. O esqueleto do sermão vem de palavras ou expressões-chave do próprio texto. Foca na aplicação direta de uma única passagem.
@@ -428,7 +428,7 @@ Aplique as mesmas regras de engenharia: estrutura progressiva relacional, curva 
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEMÁTICO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
 
 ## TIPO DE PREGAÇÃO: TEMÁTICA
 A pregação temática é estruturada em torno de um assunto/tópico específico extraído do texto. Utiliza diversas passagens bíblicas que abordam o mesmo tema. O tema central governa o sermão, e as divisões derivam dele. Requer cuidado para não impor ideias próprias — o tema deve emergir do texto, não ser imposto a ele.
