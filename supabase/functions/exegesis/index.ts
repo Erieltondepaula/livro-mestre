@@ -105,10 +105,10 @@ serve(async (req) => {
     const materialsSection = materials_context
       ? `\n\n---\n**📚 MATERIAIS DE REFERÊNCIA DO USUÁRIO (BASE DE CONHECIMENTO — FONTE PRIMÁRIA ABSOLUTA):**\n${materials_context}\n---\n**INSTRUÇÃO OBRIGATÓRIA DE USO DOS MATERIAIS:**
 1. Os materiais acima são a FONTE PRIMÁRIA do sermão. A IA é apenas complementar.
-2. EXTRAIA CITAÇÕES ESPECÍFICAS dos materiais: transcreva trechos relevantes entre aspas, citando autor e obra. Ex: Como diz Spurgeon em "Manhã e Noite": "..."
-3. Cada ponto do sermão DEVE referenciar pelo menos um material cadastrado quando disponível.
+2. EXTRAIA CITAÇÕES ESPECÍFICAS dos materiais e SEMPRE formate assim: **「citação extraída do material」(Autor, Obra, p.XX)**. Use os marcadores 「」 para toda citação vinda dos materiais. O leitor PRECISA ver de onde veio cada informação.
+3. Cada ponto do sermão DEVE referenciar pelo menos um material cadastrado quando disponível, usando o formato 「」(Autor, Obra).
 4. Organize hierarquicamente: Dicionários → Comentários → Livros teológicos → Devocionais.
-5. NÃO parafraseie vagamente — cite o trecho exato que fundamenta o ponto.
+5. NÃO parafraseie vagamente — cite o trecho exato que fundamenta o ponto com os marcadores 「」.
 6. Reconheça equivalências semânticas (avivamento = renovação espiritual = despertamento).
 7. Se o material não tiver informação relevante para determinado ponto, aí sim complemente com sua base acadêmica.\n`
       : "\n\n**Nota:** O usuário não possui materiais cadastrados na Base de Conhecimento. Utilize sua base acadêmica padrão.\n";
@@ -373,9 +373,9 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 
 1. **Estrutura Progressiva Relacional**: Os pontos formam uma escada espiritual crescente — aproximação → recebimento → aprofundamento → formação. Cada ponto amplia o anterior, não o substitui.
 
-2. **Transições encadeadas**: As transições expandem o estágio anterior (Se eu fui → então recebo → então descubro → então aprendo). Criam encadeamento lógico inevitável.
+2. **Transições encadeadas e profundas**: As transições NÃO são frases genéricas como "Agora vamos ao próximo ponto". Cada transição deve ser um PARÁGRAFO COMPLETO (mínimo 3 frases) que: (a) resume o impacto do ponto anterior, (b) cria uma ponte narrativa com pergunta retórica ou observação pastoral, (c) introduz naturalmente o próximo ponto. Exemplo: "Se Deus nos chamou como chamou Filipe, então algo acontece quando obedecemos. Você já percebeu que a obediência não é o fim, mas o começo? Quando Filipe chegou ao deserto, ele não encontrou vazio — encontrou um homem sedento pela Palavra. E é exatamente isso que veremos agora..."
 
-3. **Padrão interno de cada ponto**: Declaração conceitual → Expansão explicativa → Correção de entendimento errado → Ampliação pastoral → Aplicação direta.
+3. **Padrão interno de cada ponto (PARÁGRAFOS SEPARADOS)**: O Desenvolvimento deve ter MÚLTIPLOS PARÁGRAFOS distintos e bem separados, cada um com função clara: (1º parágrafo) Declaração conceitual com citação dos materiais 「...」(Autor, Obra); (2º parágrafo) Expansão explicativa — conectando a citação ao contexto do texto bíblico com linguagem pastoral fluida; (3º parágrafo) Correção de entendimento errado ou ampliação do conceito; (4º parágrafo) Aplicação direta ao ouvinte. Cada parágrafo deve FLUIR naturalmente para o próximo com conectores como "Mas isso nos leva a algo ainda mais profundo...", "E perceba que...", "Aqui está o ponto crucial..."
 
 4. **Curva de intensidade crescente**:
    - 1º ponto → Didático
