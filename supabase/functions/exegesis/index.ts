@@ -342,6 +342,9 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 ## **2.**
 **Texto:** (versículo ou trecho base)
 **Desenvolvimento:** (explicação exegética)
+**Referências:**
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Aplicação Prática:** (ação concreta)
 
 ## **TRANSIÇÃO:**
@@ -351,6 +354,9 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 **Texto:** (versículo ou trecho base)
 **Desenvolvimento:** (explicação exegética)
 **Ilustração:** (exemplo concreto, história ou analogia)
+**Referências:**
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Frase:** (frase de impacto)
 **Aplicação Prática:** (ação concreta)
 
@@ -361,6 +367,9 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 **Texto:** (versículo ou trecho base)
 **Desenvolvimento:** (explicação exegética mais confrontativa)
 **Ilustração:** (exemplo profundo e pessoal)
+**Referências:**
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Frase:** (frase de impacto máxima)
 **Aplicação Prática:** (ação transformadora)
 
@@ -460,7 +469,9 @@ A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3
 **Texto:** (palavra ou expressão-chave extraída do versículo)
 **Desenvolvimento:** (exploração exegética dessa expressão)
 **Aplicação:** (significado prático)
-**Referências:** (textos cruzados)
+**Referências:**
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Frase:** (frase de impacto)
 **Aplicação Prática:**
 
@@ -536,7 +547,9 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 **Texto:** (passagem bíblica que sustenta este aspecto do tema)
 **Desenvolvimento:** (explicação do aspecto temático à luz do texto)
 **Aplicação:** (como este aspecto se aplica)
-**Referências:** (outros textos sobre o mesmo aspecto)
+**Referências:**
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
+👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Frase:** (frase de impacto)
 **Aplicação Prática:**
 
