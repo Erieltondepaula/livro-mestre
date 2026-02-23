@@ -144,6 +144,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
       .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h1>')
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/「(.*?)」(\(.*?\))/g, '<span style="background-color:#FEF3C7;border-left:3px solid #D97706;padding:2px 6px;border-radius:3px;font-style:italic;display:inline;">"$1"</span> <span style="color:#92400E;font-weight:600;font-size:0.9em;">$2</span>')
       .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-sm">$1</li>')
       .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4 list-decimal text-sm">$2</li>')
       .replace(/`(.*?)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-xs font-mono">$1</code>')
