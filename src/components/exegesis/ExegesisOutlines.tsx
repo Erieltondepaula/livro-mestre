@@ -246,17 +246,17 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
   const renderMarkdown = (text: string) => {
     let html = text
-      .replace(/^### (.*$)/gm, '<h3 class="text-base font-bold mt-3 mb-1 text-foreground">$1</h3>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-4 mb-1.5 text-foreground">$1</h2>')
-      .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-5 mb-2 text-foreground">$1</h1>')
+      .replace(/^### (.*$)/gm, '<h3 class="text-sm font-bold mt-2 mb-0.5 text-foreground">$1</h3>')
+      .replace(/^## (.*$)/gm, '<h2 class="text-base font-bold mt-3 mb-0.5 text-foreground">$1</h2>')
+      .replace(/^# (.*$)/gm, '<h1 class="text-lg font-bold mt-3 mb-1 text-foreground">$1</h1>')
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/「(.*?)」(\(.*?\))/g, '<span style="background-color:#FEF3C7;border-left:3px solid #D97706;padding:2px 6px;border-radius:3px;font-style:italic;display:inline;">"$1"</span> <span style="color:#92400E;font-weight:600;font-size:0.85em;">$2</span>')
-      .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-sm">$1</li>')
-      .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4 list-decimal text-sm">$2</li>')
-      .replace(/\n\n/g, '</p><p class="text-sm leading-relaxed text-foreground/90 mb-1">')
+      .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-xs">$1</li>')
+      .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4 list-decimal text-xs">$2</li>')
+      .replace(/\n\n/g, '</p><p class="text-xs leading-snug text-foreground/90 mb-0.5">')
       .replace(/\n/g, '<br/>');
-    return `<p class="text-sm leading-relaxed text-foreground/90 mb-1">${html}</p>`;
+    return `<p class="text-xs leading-snug text-foreground/90 mb-0.5">${html}</p>`;
   };
 
   const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático' };
