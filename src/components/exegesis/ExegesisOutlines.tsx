@@ -42,6 +42,7 @@ function markdownToHtml(md: string): string {
     .replace(/^# (.*$)/gm, '<h1>$1</h1>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/「(.*?)」(\(.*?\))/g, '<span class="citation-highlight" style="background-color:#FEF3C7;border-left:3px solid #D97706;padding:2px 6px;border-radius:3px;font-style:italic;display:inline;">"$1"</span> <span class="citation-source" style="color:#92400E;font-weight:600;font-size:0.9em;">$2</span>')
     .replace(/^- (.*$)/gm, '<li>$1</li>')
     .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
     .replace(/^(\d+)\. (.*$)/gm, '<li>$2</li>')
@@ -75,7 +76,11 @@ function exportAsDocx(content: string, passage: string) {
     <style>body{font-family:Calibri,sans-serif;font-size:12pt;line-height:1.6;margin:2cm}
     h1{font-size:18pt;color:#1a1a1a}h2{font-size:15pt;color:#333}h3{font-size:13pt;color:#555}
     mark{padding:2px 4px;border-radius:3px}
-    strong{font-weight:bold}em{font-style:italic}blockquote{border-left:3px solid #ccc;padding-left:12px;color:#555}</style>
+    strong{font-weight:bold}em{font-style:italic}blockquote{border-left:3px solid #ccc;padding-left:12px;color:#555}
+    .citation-highlight{background-color:#FEF3C7;border-left:3px solid #D97706;padding:2px 6px;font-style:italic}
+    .citation-source{color:#92400E;font-weight:600;font-size:0.9em}
+    span[style*="background-color:#FEF3C7"]{background-color:#FEF3C7 !important;border-left:3px solid #D97706;padding:2px 6px;font-style:italic}
+    span[style*="color:#92400E"]{color:#92400E !important;font-weight:bold;font-size:0.9em}</style>
     </head><body>${content}</body></html>`;
   downloadBlob(new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' }), `esboço-${passage.replace(/\s+/g, '-')}.doc`);
 }
@@ -89,7 +94,11 @@ function exportAsPdf(content: string, passage: string) {
     h3{font-size:13pt;margin-top:12pt}strong{font-weight:bold}em{font-style:italic}
     mark{padding:2px 4px;border-radius:3px}
     blockquote{border-left:3px solid #666;padding-left:12px;color:#555;margin:8pt 0}
-    @media print{body{margin:1.5cm}}</style></head><body>${content}</body></html>`);
+    .citation-highlight{background-color:#FEF3C7 !important;border-left:3px solid #D97706;padding:2px 6px;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .citation-source{color:#92400E !important;font-weight:bold;font-size:0.9em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    span[style*="background-color:#FEF3C7"]{background-color:#FEF3C7 !important;border-left:3px solid #D97706;padding:2px 6px;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    span[style*="color:#92400E"]{color:#92400E !important;font-weight:bold;font-size:0.9em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    @media print{body{margin:1.5cm}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}}</style></head><body>${content}</body></html>`);
   printWindow.document.close();
   setTimeout(() => printWindow.print(), 500);
 }
@@ -242,6 +251,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-5 mb-2 text-foreground">$1</h1>')
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/「(.*?)」(\(.*?\))/g, '<span style="background-color:#FEF3C7;border-left:3px solid #D97706;padding:2px 6px;border-radius:3px;font-style:italic;display:inline;">"$1"</span> <span style="color:#92400E;font-weight:600;font-size:0.85em;">$2</span>')
       .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-sm">$1</li>')
       .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4 list-decimal text-sm">$2</li>')
       .replace(/\n\n/g, '</p><p class="text-sm leading-relaxed text-foreground/90 mb-1">')
