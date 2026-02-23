@@ -129,12 +129,14 @@ serve(async (req) => {
         .join(', ');
     };
 
+    const totalPoints = structure_config?.pointCount || 4;
     const structureSection = structure_config
       ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => {
           const pointLabel = p.name ? `("${p.name}")` : '';
           const secs = p.sections ? formatSections(p.sections) : '';
-          return `- Ponto ${i+1} ${pointLabel}: ${secs || 'sem seções definidas'}`;
-        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos.**\n`
+          const isLast = i === structure_config.pointCount - 1;
+          return `- Ponto ${i+1} ${pointLabel}${isLast ? ' ⛪ [ÚLTIMO PONTO — CLÍMAX CRISTOCÊNTRICO]' : ''}: ${secs || 'sem seções definidas'}`;
+        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos.**\n\n**⛪ REGRA DO ÚLTIMO PONTO CRISTOCÊNTRICO:** O ponto ${structure_config.pointCount} (o ÚLTIMO ponto, seja qual for a quantidade) SEMPRE aponta para a CRUZ DE CRISTO — o sacrifício, a redenção, tudo que Ele fez por nós. Se há 1 ponto, ele é o último. Se há 2, o segundo é o último. Se há 3, o terceiro. E assim por diante. O último ponto é SEMPRE o clímax que revela Cristo crucificado como a resposta final.\n`
       : "";
 
     const depthLevel = structure_config?.depthLevel || 'basico';
@@ -362,10 +364,10 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 ## **TRANSIÇÃO PARA A CONCLUSÃO**
 
 ## **Conclusão**
-(Recapitulação dos pontos principais do sermão, conectando cada ponto diretamente à vida do ouvinte. Não é um resumo frio — é a hora de olhar nos olhos da congregação e dizer: "Se o que foi dito hoje faz sentido para você..." A conclusão deve ser altamente pessoal, confrontativa com amor, apontando como a mensagem pregada muda a vida de quem ouviu. Retome a palavra-chave central e mostre como ela se aplica ao coração do ouvinte AGORA.)
+(SÍNTESE do que foi falado ao longo do sermão. Recapitule cada ponto conectando-o diretamente ao TEMA CENTRAL e à vida do ouvinte. REFORCE o título — mencione-o explicitamente. Não é um resumo frio — é a hora de olhar nos olhos da congregação e dizer: "Se o que foi dito hoje faz sentido para você..." A conclusão amarra todos os fios do sermão num único laço, mostrando como cada ponto construiu a mesma verdade central. Retome a palavra-chave central e mostre como ela se aplica ao coração do ouvinte AGORA.)
 
 ## **Apelo**
-(SEMPRE cristocêntrico. O apelo é o momento mais íntimo do sermão — é a hora de convidar a pessoa a se mover. Deve mexer com o interior da pessoa, como todo o sermão já vinha fazendo desde o início. A conclusão + apelo é o que faz a pessoa se levantar. Use linguagem direta e pessoal: "Se o que eu falei hoje mudou algo em você, venha até o altar e entregue sua vida a Cristo." O apelo deve apontar para Cristo como solução, refúgio e Senhor. Não é genérico — referencia especificamente o que foi pregado no sermão e como isso se conecta à entrega pessoal a Jesus. É o clímax emocional e espiritual máximo.)
+(SEMPRE cristocêntrico, seguindo a lógica de "Refúgio para o Cansado". O apelo é consequência NATURAL do último ponto que revelou a cruz. Identifique dores REAIS e ESPECÍFICAS: solidão, vícios, depressão, pensamentos suicidas, medo, cansaço. Use repetição anafórica conectada ao tema do sermão: "Se está cansado, venha. Se está ferido, venha. Se está confuso, venha." RETOME o tema do sermão em cada frase do apelo. Conecte cada dor ao que Cristo fez na cruz. Use linguagem direta e pessoal: "Se o que eu falei hoje mudou algo em você, venha até o altar e entregue sua vida a Cristo." A última frase ECOA o título do sermão. Ex: Se o título é "Refúgio para o Cansado", o apelo termina com: "O nome desse refúgio é Jesus Cristo." O apelo não é genérico — é o clímax emocional e espiritual máximo que faz a pessoa se levantar.)
 
 ---
 
@@ -381,23 +383,23 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 
 3. **Padrão interno de cada ponto (PARÁGRAFOS SEPARADOS E FLUIDOS)**: O Desenvolvimento deve ter MÚLTIPLOS PARÁGRAFOS distintos (mínimo 5), cada um com função clara: (1º) Declaração conceitual com citação dos materiais 「...」(Autor, Obra); (2º) Expansão explicativa conectando a citação ao contexto bíblico; (3º) Exegese do original — palavra grega/hebraica com transliteração, significado e impacto pastoral; (4º) Ampliação pastoral com linguagem acessível; (5º) Confronto ou aplicação ao ouvinte. CONECTORES OBRIGATÓRIOS entre parágrafos: "E à medida que...", "Mas isso nos leva a algo ainda mais profundo...", "E perceba que...", "Aqui está o ponto crucial...", "Por isso..."
 
-4. **Curva de intensidade crescente**:
-   - 1º ponto → Didático (ensina com ternura)
-   - 2º ponto → Pastoral (acolhe e nutre)
-   - 3º ponto → Confrontativo leve (questiona com amor)
-   - 4º ponto → Confrontativo profundo (expõe a necessidade)
-   - Conclusão → Altamente pessoal (olha nos olhos)
+4. **Curva de Intensidade Crescente com Tom Progressivo**: O sermão começa com tom SERENO e evolui progressivamente até CULMINAR no que Cristo fez na cruz. A intensidade é crescente:
+   - 1º ponto → Tom sereno e didático (ensina com ternura, apresenta o tema com cuidado)
+   - Pontos intermediários → Tom pastoral crescendo para confrontativo (cada ponto aumenta a intensidade, acolhe, questiona, confronta com amor)
+   - ÚLTIMO PONTO (seja qual for o número — se é o 2º, 3º, 4º, 5º, etc.) → ⛪ CLÍMAX CRISTOCÊNTRICO ABSOLUTO: Este ponto aponta SEMPRE para a CRUZ DE CRISTO, o sacrifício, a redenção, tudo que Ele fez por nós. É aqui que o sermão chega ao seu ápice máximo — Cristo crucificado, morto e ressurreto como resposta final para toda necessidade revelada nos pontos anteriores. O tom é confrontativo profundo com amor, revelando a necessidade do ouvinte e mostrando que SÓ CRISTO é a resposta.
+   - Conclusão → Síntese pessoal (olha nos olhos)
    - Apelo → Emocionalmente máximo (convida ao altar)
+   **IMPORTANTE**: Cristo aparece DESDE O INÍCIO do sermão como fio condutor, mas o clímax — a revelação plena do sacrifício na cruz — é GUARDADO para o último ponto.
 
-5. **Palavra-chave central**: Trabalhe UMA palavra/conceito central e desenvolva em 4 dimensões. Aprofundamento, não multiplicação de ideias.
+5. **Palavra-chave central e REFORÇO DO TEMA**: Trabalhe UMA palavra/conceito central e desenvolva em múltiplas dimensões. O TEMA e o TÍTULO devem ser REFORÇADOS ao longo de TODO o sermão — em CADA ponto, CADA transição, CADA aplicação. Assim como no sermão "Refúgio para o Cansado" que reforça a todo momento o refúgio, o cansaço, o descanso — o seu sermão deve fazer o mesmo com seu tema central. O ouvinte deve sentir o tema ecoando do início ao fim.
 
-6. **Cristocentricidade arquitetônica**: Cristo aparece como início, meio, aprofundamento e formação — fio condutor estrutural, não apenas menção final. Do título ao apelo, o sermão inteiro orbita em torno de Cristo.
+6. **Cristocentricidade arquitetônica**: Cristo aparece como início, meio, aprofundamento e formação — fio condutor estrutural, não apenas menção final. Do título ao apelo, o sermão inteiro orbita em torno de Cristo. MAS o clímax — o momento em que o sacrifício na cruz é plenamente revelado — é SEMPRE no ÚLTIMO ponto.
 
 7. **Acessibilidade sem perder profundidade**: Frases curtas de impacto, repetições intencionais, uma ideia por ponto. A linguagem é pastoral no melhor sentido — qualquer pessoa entende, mas ninguém sente que é raso.
 
-8. **Clímax guardado**: Não há clímax prematuro. A tensão narrativa é mantida até o apelo final.
+8. **Clímax guardado para o ÚLTIMO PONTO**: O clímax do sermão é no ÚLTIMO PONTO, onde Cristo e Sua cruz são plenamente revelados. Não há clímax prematuro. A tensão narrativa é construída ao longo de todos os pontos anteriores, revelando a necessidade do ouvinte, para que no último ponto a CRUZ DE CRISTO surja como a resposta INEVITÁVEL. Os pontos anteriores preparam o terreno; o último ponto planta a cruz.
 
-9. **LÓGICA PROCEDURAL CRISTOCÊNTRICA**: Cada ponto deve progressivamente revelar ao ouvinte sua NECESSIDADE diante de Cristo. Não basta ensinar — o sermão deve GUIAR: "Você precisa disso... porque sem Cristo..." O ouvinte deve sentir em cada ponto que precisa se posicionar. O sermão inteiro é um caminho que leva a pessoa até o altar.
+9. **LÓGICA PROCEDURAL CRISTOCÊNTRICA**: Cada ponto deve progressivamente revelar ao ouvinte sua NECESSIDADE diante de Cristo. Não basta ensinar — o sermão deve GUIAR: "Você precisa disso... porque sem Cristo..." Os pontos anteriores mostram a dor, a carência, a fome espiritual. O ÚLTIMO ponto revela: "E é exatamente por isso que Cristo veio, morreu e ressuscitou." O sermão inteiro é um caminho que leva a pessoa até a cruz e depois ao altar.
 
 10. **ENGAJAMENTO E ENVOLVIMENTO**: O sermão deve ser CATIVANTE e ENVOLVENTE. Use storytelling pastoral — histórias reais, perguntas retóricas ("Você já se sentiu assim?"), diálogo imaginário com a congregação ("Talvez você esteja pensando..."). Crie tensão narrativa. O ouvinte não pode desligar em nenhum momento.
 
@@ -409,9 +411,9 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 
 14. **REFERÊNCIAS BÍBLICAS COMPLETAS**: NÃO cite apenas "Sl 55:22". Cite o versículo completo ou parafraseie pastoralmente: "O salmista nos ensina em Salmos 55:22: 'Lança o teu cuidado sobre o Senhor, e ele te susterá; nunca permitirá que o justo seja abalado.' Isso significa que..."
 
-15. **ARCO NARRATIVO FECHADO**: O título deve ser retomado no apelo final. O sermão começa e termina no mesmo conceito, formando um círculo completo. A última frase do apelo deve ecoar o título. Ex: Se o título é "Refúgio para o Cansado", o apelo termina com: "O nome desse refúgio é Jesus Cristo."
+15. **ARCO NARRATIVO FECHADO COM REFORÇO TEMÁTICO**: O título deve ser retomado no apelo final E reforçado ao longo de todo o sermão. O sermão começa e termina no mesmo conceito, formando um círculo completo. Em CADA ponto, CADA transição, o tema é relembrado, ecoado, reforçado — como "Refúgio para o Cansado" que a cada parágrafo traz de volta o refúgio e o cansaço. A última frase do apelo deve ecoar o título.
 
-16. **APELO CORAJOSO E PASTORAL**: O apelo deve identificar dores REAIS da congregação (solidão, vícios, depressão, pensamentos suicidas) com coragem e amor. Não seja genérico — seja específico: "Você que tentou aliviar a dor com bebida, com distração, com trabalho excessivo... Jesus não te trouxe aqui para te perder, Ele te trouxe para te encontrar." Use repetição anafórica: "Se está cansado, venha. Se está ferido, venha. Se está confuso, venha."
+16. **APELO MODELO "REFÚGIO PARA O CANSADO"**: O apelo deve seguir a mesma lógica do sermão "Refúgio para o Cansado": identificar dores REAIS da congregação (solidão, vícios, depressão, pensamentos suicidas) com coragem e amor. Não seja genérico — seja específico: "Você que tentou aliviar a dor com bebida, com distração, com trabalho excessivo... Jesus não te trouxe aqui para te perder, Ele te trouxe para te encontrar." Use repetição anafórica: "Se está cansado, venha. Se está ferido, venha. Se está confuso, venha." O apelo RETOMA o tema do sermão e CONECTA cada dor ao que Cristo fez na cruz. O apelo não é um acréscimo — é a consequência natural do último ponto que já revelou a cruz.
 
 17. **MATERIAIS COMO ALICERCE**: Quando materiais estiverem disponíveis, eles são a BASE do sermão. Cada ponto deve conter pelo menos uma citação formatada como 「trecho exato extraído do material」(Autor, Obra). A IA complementa, mas NUNCA substitui os materiais. Se há um dicionário bíblico nos materiais, USE-O para definir as palavras-chave. Se há um comentário, USE-O para a exegese.`;
 
@@ -483,14 +485,14 @@ A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3
 ## **TRANSIÇÃO PARA A CONCLUSÃO**
 
 ## **Conclusão**
-(Recapitulação dos pontos do sermão conectando cada um à vida real do ouvinte. Linguagem pessoal e direta: "Se o que foi dito hoje faz sentido para você..." Mostre como a palavra pregada transforma a vida de quem está ouvindo AGORA.)
+(SÍNTESE do que foi falado. Recapitule cada ponto conectando ao TEMA CENTRAL e REFORÇANDO o título. Linguagem pessoal: "Se o que foi dito hoje faz sentido para você..." Amarre todos os fios do sermão mostrando como cada ponto construiu a mesma verdade.)
 
 ## **Apelo**
-(SEMPRE cristocêntrico. Momento íntimo e confrontativo com amor. Convite direto: "Se o que eu falei hoje mudou algo em você, venha até o altar e entregue sua vida a Cristo." Referencie especificamente o que foi pregado e aponte para Cristo como resposta. Clímax emocional e espiritual máximo.)
+(SEMPRE cristocêntrico, modelo "Refúgio para o Cansado". Consequência natural do último ponto que revelou a cruz. Identifique dores reais, use repetição anafórica conectada ao tema, RETOME o título em cada frase. A última frase ECOA o título. Clímax emocional e espiritual máximo.)
 
 ---
 
-Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transições modelo de excelência (parágrafos completos), parágrafos separados e fluidos no desenvolvimento (mínimo 5), curva de intensidade crescente, cristocentricidade arquitetônica, exegese do original obrigatória (grego/hebraico com transliteração), referências bíblicas COMPLETAS (cite o versículo), aplicações práticas CONCRETÍSSIMAS com prazo e ação específica, DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES, arco narrativo fechado (título retomado no apelo), apelo corajoso e pastoral que identifica dores reais, materiais como alicerce com citações 「...」(Autor, Obra).`;
+Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transições modelo de excelência, parágrafos fluidos (mínimo 5), CURVA DE INTENSIDADE com tom sereno no início culminando na CRUZ DE CRISTO no ÚLTIMO PONTO, REFORÇO DO TEMA ao longo de todo o sermão (como "Refúgio para o Cansado"), cristocentricidade arquitetônica, exegese do original obrigatória, referências bíblicas COMPLETAS, aplicações práticas CONCRETÍSSIMAS, DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES, arco narrativo fechado com reforço temático, APELO modelo "Refúgio para o Cansado" com repetição anafórica e dores reais, materiais como alicerce com citações 「...」(Autor, Obra).`;
         break;
 
       case "outline_thematic":
@@ -559,14 +561,14 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 ## **TRANSIÇÃO PARA A CONCLUSÃO**
 
 ## **Conclusão**
-(Recapitulação dos pontos do sermão apontando para a vida do ouvinte. Linguagem pessoal: "Se o que foi dito hoje faz sentido para você..." Conecte cada ponto pregado à realidade de quem está ouvindo.)
+(SÍNTESE do que foi falado. Recapitule cada ponto conectando ao TEMA CENTRAL e REFORÇANDO o título. Linguagem pessoal: "Se o que foi dito hoje faz sentido para você..." Amarre todos os fios mostrando como cada ponto sustenta a mesma verdade central.)
 
 ## **Apelo**
-(SEMPRE cristocêntrico. Convite direto e íntimo ao altar: "Se o que eu falei hoje mudou algo em você, venha e entregue sua vida a Cristo." Referencie o sermão pregado e aponte para Cristo. Clímax emocional e espiritual máximo.)
+(SEMPRE cristocêntrico, modelo "Refúgio para o Cansado". Consequência natural do último ponto que revelou a cruz. Identifique dores reais, use repetição anafórica conectada ao tema, RETOME o título em cada frase. A última frase ECOA o título. Clímax emocional e espiritual máximo.)
 
 ---
 
-Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transições modelo de excelência (parágrafos completos), parágrafos separados e fluidos no desenvolvimento (mínimo 5), curva de intensidade crescente, cristocentricidade arquitetônica, exegese do original obrigatória (grego/hebraico com transliteração), referências bíblicas COMPLETAS (cite o versículo), aplicações práticas CONCRETÍSSIMAS com prazo e ação específica, DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES, arco narrativo fechado (título retomado no apelo), apelo corajoso e pastoral que identifica dores reais, materiais como alicerce com citações 「...」(Autor, Obra). Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.`;
+Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transições modelo de excelência, parágrafos fluidos (mínimo 5), CURVA DE INTENSIDADE com tom sereno no início culminando na CRUZ DE CRISTO no ÚLTIMO PONTO, REFORÇO DO TEMA ao longo de todo o sermão (como "Refúgio para o Cansado"), cristocentricidade arquitetônica, exegese do original obrigatória, referências bíblicas COMPLETAS, aplicações práticas CONCRETÍSSIMAS, DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES, arco narrativo fechado com reforço temático, APELO modelo "Refúgio para o Cansado" com repetição anafórica e dores reais, materiais como alicerce com citações 「...」(Autor, Obra). Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.`;
         break;
 
       case "question":
