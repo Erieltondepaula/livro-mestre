@@ -161,12 +161,14 @@ Ideal para: seminários, conferências teológicas, pregadores experientes, estu
 
     const pastoralFilter = `\n\n${depthInstructions[depthLevel] || depthInstructions.basico}\n\n**FILTRO DE LINGUAGEM PASTORAL:** O esboço final deve ser claro, proclamável, pastoral e cristocêntrico. A profundidade do conteúdo deve ser mantida independente do nível — o que muda é a LINGUAGEM, não a qualidade da mensagem. Mantenha frases curtas de impacto.\n`;
 
+    const citationRule = `\n\n**REGRA DE CITAÇÕES DOS MATERIAIS:** Quando materiais estiverem disponíveis, EXTRAIA citações diretas e formate SEMPRE assim: **「citação extraída do material」(Autor, Obra, p.XX)**. Use os marcadores 「」 para TODA citação vinda dos materiais. O leitor PRECISA ver de onde veio cada informação. NÃO parafraseie — cite o trecho exato.\n`;
+
     switch (type) {
       case "full_exegesis":
         userPrompt = `Faça uma exegese completa e detalhada do seguinte texto bíblico:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 Siga a estrutura completa de análise exegética conforme Gorman (7 elementos):
 1. Pesquisa preliminar
 2. Análise contextual (histórico-cultural)
@@ -183,7 +185,7 @@ Seja detalhado e profundo. Inclua referências cruzadas e notas sobre o texto or
         userPrompt = `Analise o CONTEXTO (histórico, literário e canônico) do seguinte texto bíblico:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 Foque em:
 1. Quem escreveu, para quem, quando, onde e por quê
 2. Situação política, social e religiosa da época
@@ -196,7 +198,7 @@ Foque em:
         userPrompt = `Faça um estudo de palavras-chave do seguinte texto bíblico:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 Para cada palavra-chave:
 1. Termo original em hebraico/grego (transliterado)
 2. Campo semântico e significados possíveis
@@ -209,7 +211,7 @@ Para cada palavra-chave:
         userPrompt = `Analise o GÊNERO LITERÁRIO do seguinte texto bíblico e como isso afeta a interpretação:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 Conforme Fee e Klein:
 1. Identifique o gênero (narrativa, poesia, profecia, epístola, apocalíptico, lei, sabedoria)
 2. Convenções literárias próprias deste gênero
@@ -223,7 +225,7 @@ Conforme Fee e Klein:
         userPrompt = `Faça uma análise TEOLÓGICA do seguinte texto bíblico:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 1. Tema(s) teológico(s) principal(is)
 2. Contribuição para a teologia bíblica geral
 3. Relação com a história da redenção
@@ -236,7 +238,7 @@ ${materialsSection}
         userPrompt = `Com base na exegese do seguinte texto bíblico, elabore uma APLICAÇÃO prática:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 1. Significado original para os destinatários
 2. Princípios permanentes e transculturais
 3. Aplicação contemporânea responsável para a igreja
@@ -249,7 +251,7 @@ Não alegorize ou espiritualize indevidamente.`;
         userPrompt = `Aplique o MÉTODO INDUTIVO de estudo bíblico ao seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 ### OBSERVAÇÃO (O que o texto DIZ?)
 - Leia atentamente e anote cada detalhe
 - Quem? O quê? Quando? Onde? Por quê? Como?
@@ -272,7 +274,7 @@ ${materialsSection}
         userPrompt = `Compare diferentes perspectivas de tradução do seguinte texto bíblico:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 1. Analise as diferenças de tradução entre as principais versões (ARA, NVI, ARC, NAA, NVT)
 2. Explique por que existem diferenças
 3. Qual tradução captura melhor o sentido original?
@@ -284,7 +286,7 @@ ${materialsSection}
         userPrompt = `Elabore uma reflexão devocional cristocêntrica sobre o seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}
+${materialsSection}${citationRule}
 1. Contexto breve do texto
 2. O que Deus revela sobre si mesmo neste texto?
 3. Conexão com a pessoa e obra de Cristo
