@@ -183,39 +183,92 @@ export type Database = {
       }
       exegesis_materials: {
         Row: {
+          author: string | null
+          bible_references: Json | null
+          content_origin: string | null
           created_at: string
           description: string | null
           file_path: string | null
           id: string
+          keywords: Json | null
           material_category: string
           material_type: string
+          sub_themes: Json | null
+          theme: string | null
           title: string
           url: string | null
           user_id: string
         }
         Insert: {
+          author?: string | null
+          bible_references?: Json | null
+          content_origin?: string | null
           created_at?: string
           description?: string | null
           file_path?: string | null
           id?: string
+          keywords?: Json | null
           material_category?: string
           material_type?: string
+          sub_themes?: Json | null
+          theme?: string | null
           title: string
           url?: string | null
           user_id: string
         }
         Update: {
+          author?: string | null
+          bible_references?: Json | null
+          content_origin?: string | null
           created_at?: string
           description?: string | null
           file_path?: string | null
           id?: string
+          keywords?: Json | null
           material_category?: string
           material_type?: string
+          sub_themes?: Json | null
+          theme?: string | null
           title?: string
           url?: string | null
           user_id?: string
         }
         Relationships: []
+      }
+      exegesis_outline_versions: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          outline_id: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          outline_id: string
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          outline_id?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exegesis_outline_versions_outline_id_fkey"
+            columns: ["outline_id"]
+            isOneToOne: false
+            referencedRelation: "exegesis_outlines"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       exegesis_outlines: {
         Row: {

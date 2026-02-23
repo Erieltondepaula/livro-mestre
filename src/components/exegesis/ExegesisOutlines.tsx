@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen } from 'lucide-react';
+import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import { ExegesisRichEditor } from './ExegesisRichEditor';
+import { OutlineStructureEditor, getDefaultStructure } from './OutlineStructureEditor';
+import { OutlineVersionHistory } from './OutlineVersionHistory';
+import type { OutlineStructure } from './OutlineStructureEditor';
+import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline } from '@/hooks/useExegesis';
 
 type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic';
@@ -17,6 +21,8 @@ interface Props {
   onUpdateContent: (id: string, content: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   getMaterialsContext?: () => string | undefined;
+  getRelevantAnalysesContext?: (passage: string) => string | undefined;
+  fetchOutlineVersions?: (outlineId: string) => Promise<OutlineVersion[]>;
   materialsCount?: number;
 }
 
@@ -28,7 +34,6 @@ const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] =
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-// Convert markdown to HTML for the rich editor
 function markdownToHtml(md: string): string {
   return md
     .replace(/^### (.*$)/gm, '<h3>$1</h3>')
@@ -41,21 +46,15 @@ function markdownToHtml(md: string): string {
     .replace(/^(\d+)\. (.*$)/gm, '<li>$2</li>')
     .replace(/\n\n/g, '</p><p>')
     .replace(/\n/g, '<br/>')
-    .replace(/^(.+)$/gm, (match) => {
-      if (match.startsWith('<')) return match;
-      return `<p>${match}</p>`;
-    });
+    .replace(/^(.+)$/gm, (match) => match.startsWith('<') ? match : `<p>${match}</p>`);
 }
 
-// Export helpers
 function exportAsTxt(content: string, passage: string) {
   const text = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
-  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-  downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.txt`);
+  downloadBlob(new Blob([text], { type: 'text/plain;charset=utf-8' }), `esboço-${passage.replace(/\s+/g, '-')}.txt`);
 }
 
 function exportAsMd(content: string, passage: string) {
-  // If content is HTML, convert basic HTML back to markdown
   let md = content
     .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
     .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
@@ -65,23 +64,19 @@ function exportAsMd(content: string, passage: string) {
     .replace(/<li>(.*?)<\/li>/gi, '- $1\n')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&');
-  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
-  downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.md`);
+    .replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+  downloadBlob(new Blob([md], { type: 'text/markdown;charset=utf-8' }), `esboço-${passage.replace(/\s+/g, '-')}.md`);
 }
 
 function exportAsDocx(content: string, passage: string) {
-  const htmlContent = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+  const htmlContent = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
     <head><meta charset="utf-8"><title>Esboço - ${passage}</title>
     <style>body{font-family:Calibri,sans-serif;font-size:12pt;line-height:1.6;margin:2cm}
     h1{font-size:18pt;color:#1a1a1a}h2{font-size:15pt;color:#333}h3{font-size:13pt;color:#555}
+    mark{padding:2px 4px;border-radius:3px}
     strong{font-weight:bold}em{font-style:italic}blockquote{border-left:3px solid #ccc;padding-left:12px;color:#555}</style>
     </head><body>${content}</body></html>`;
-  const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' });
-  downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.doc`);
+  downloadBlob(new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' }), `esboço-${passage.replace(/\s+/g, '-')}.doc`);
 }
 
 function exportAsPdf(content: string, passage: string) {
@@ -91,10 +86,11 @@ function exportAsPdf(content: string, passage: string) {
     <style>body{font-family:Georgia,serif;font-size:12pt;line-height:1.8;margin:2cm;color:#1a1a1a}
     h1{font-size:20pt;text-align:center;margin-bottom:8pt}h2{font-size:15pt;margin-top:16pt;border-bottom:1px solid #ddd;padding-bottom:4pt}
     h3{font-size:13pt;margin-top:12pt}strong{font-weight:bold}em{font-style:italic}
+    mark{padding:2px 4px;border-radius:3px}
     blockquote{border-left:3px solid #666;padding-left:12px;color:#555;margin:8pt 0}
     @media print{body{margin:1.5cm}}</style></head><body>${content}</body></html>`);
   printWindow.document.close();
-  setTimeout(() => { printWindow.print(); }, 500);
+  setTimeout(() => printWindow.print(), 500);
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -105,13 +101,14 @@ function downloadBlob(blob: Blob, filename: string) {
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onUpdateContent, onDelete, getMaterialsContext, materialsCount = 0 }: Props) {
+export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onUpdateContent, onDelete, getMaterialsContext, getRelevantAnalysesContext, fetchOutlineVersions, materialsCount = 0 }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
   const [verseStart, setVerseStart] = useState('');
   const [verseEnd, setVerseEnd] = useState('');
   const [customPassage, setCustomPassage] = useState('');
   const [selectedType, setSelectedType] = useState<OutlineType>('outline_expository');
+  const [structure, setStructure] = useState<OutlineStructure>(getDefaultStructure());
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -120,6 +117,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesValue, setNotesValue] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [versionsOpen, setVersionsOpen] = useState<string | null>(null);
+  const [versions, setVersions] = useState<OutlineVersion[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -149,7 +148,13 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ passage, type: selectedType, materials_context: getMaterialsContext?.() }),
+        body: JSON.stringify({
+          passage,
+          type: selectedType,
+          materials_context: getMaterialsContext?.(),
+          analyses_context: getRelevantAnalysesContext?.(passage),
+          structure_config: structure,
+        }),
         signal: controller.signal,
       });
       if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
@@ -184,7 +189,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     } catch (e: any) {
       if (e.name !== 'AbortError') toast({ title: "Erro", description: e.message, variant: "destructive" });
     } finally { setIsLoading(false); abortRef.current = null; }
-  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, onSave, getMaterialsContext]);
+  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, structure, onSave, getMaterialsContext, getRelevantAnalysesContext]);
 
   const handleSaveEdit = async (id: string) => {
     await onUpdateContent(id, editContent);
@@ -192,23 +197,37 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     toast({ title: "Esboço atualizado!" });
   };
 
+  const handleShowVersions = async (outlineId: string) => {
+    if (fetchOutlineVersions) {
+      const v = await fetchOutlineVersions(outlineId);
+      setVersions(v);
+      setVersionsOpen(outlineId);
+    }
+  };
+
+  const handleRestoreVersion = async (content: string) => {
+    if (!versionsOpen) return;
+    const htmlContent = isHtml(content) ? content : markdownToHtml(content);
+    setEditContent(htmlContent);
+    setEditingId(versionsOpen);
+    toast({ title: 'Versão restaurada — salve para confirmar.' });
+  };
+
   const renderMarkdown = (text: string) => {
     let html = text
-      .replace(/^### (.*$)/gm, '<h3 class="text-base font-bold mt-4 mb-2 text-foreground">$1</h3>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-5 mb-2 text-foreground">$1</h2>')
-      .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h1>')
+      .replace(/^### (.*$)/gm, '<h3 class="text-base font-bold mt-3 mb-1 text-foreground">$1</h3>')
+      .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-4 mb-1.5 text-foreground">$1</h2>')
+      .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-5 mb-2 text-foreground">$1</h1>')
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-sm">$1</li>')
       .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4 list-decimal text-sm">$2</li>')
-      .replace(/\n\n/g, '</p><p class="text-sm leading-relaxed text-foreground/90 mb-2">')
+      .replace(/\n\n/g, '</p><p class="text-sm leading-relaxed text-foreground/90 mb-1">')
       .replace(/\n/g, '<br/>');
-    return `<p class="text-sm leading-relaxed text-foreground/90 mb-2">${html}</p>`;
+    return `<p class="text-sm leading-relaxed text-foreground/90 mb-1">${html}</p>`;
   };
 
   const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático' };
-
-  // Determine if content is HTML (from rich editor) or markdown (from AI)
   const isHtml = (content: string) => content.includes('<h1') || content.includes('<h2') || content.includes('<p>') || content.includes('<strong>');
 
   return (
@@ -219,13 +238,10 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           <FileText className="w-4 h-4" /> Gerar Esboço de Sermão
         </h3>
 
-        {/* Materials indicator */}
         {materialsCount > 0 && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary" />
-            <span className="text-xs text-primary font-medium">
-              📚 {materialsCount} materiais disponíveis na Base de Conhecimento — serão consultados automaticamente
-            </span>
+            <span className="text-xs text-primary font-medium">📚 {materialsCount} materiais + análises anteriores serão consultados automaticamente</span>
           </div>
         )}
 
@@ -274,6 +290,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           ))}
         </div>
 
+        {/* Structure Editor */}
+        <OutlineStructureEditor structure={structure} onChange={setStructure} />
+
         <Button onClick={handleGenerate} disabled={isLoading || !getPassageText()} className="btn-library-primary">
           {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</> : <><Send className="w-4 h-4 mr-2" /> Gerar Esboço</>}
         </Button>
@@ -316,7 +335,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                 </div>
                 {isExp && (
                   <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
-                    {/* Toolbar */}
                     <div className="flex items-center gap-2 flex-wrap">
                       <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
                         if (isEditing) { handleSaveEdit(o.id); } else {
@@ -332,8 +350,10 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                           <Eye className="w-3.5 h-3.5" /> Cancelar
                         </Button>
                       )}
+                      <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => handleShowVersions(o.id)}>
+                        <History className="w-3.5 h-3.5" /> Versões
+                      </Button>
                       <div className="flex-1" />
-                      {/* Export buttons */}
                       <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPdf(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
                         <Download className="w-3 h-3" /> PDF
                       </Button>
@@ -348,7 +368,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                       </Button>
                     </div>
 
-                    {/* Content */}
                     {isEditing ? (
                       <ExegesisRichEditor content={editContent} onChange={setEditContent} placeholder="Edite o esboço..." minHeight="400px" />
                     ) : (
@@ -359,7 +378,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                       )
                     )}
 
-                    {/* Notes */}
                     <div className="border-t border-border pt-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Anotações</span>
@@ -380,6 +398,14 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           })}
         </div>
       )}
+
+      {/* Version History Dialog */}
+      <OutlineVersionHistory
+        versions={versions}
+        open={!!versionsOpen}
+        onClose={() => setVersionsOpen(null)}
+        onRestore={handleRestoreVersion}
+      />
     </div>
   );
 }

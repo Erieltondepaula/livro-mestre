@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart } from 'lucide-react';
+import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
@@ -10,7 +10,8 @@ interface Props {
   loading: boolean;
   onFetch: () => void;
   onUpload: (file: File, title: string, category: MaterialCategory, description?: string) => Promise<ExegesisMaterial | null>;
-  onAddLink: (title: string, url: string, type: 'youtube' | 'article', description?: string) => Promise<ExegesisMaterial | null>;
+  onAddLink: (title: string, url: string, type: 'youtube' | 'article', category: MaterialCategory, description?: string) => Promise<ExegesisMaterial | null>;
+  onUpdateMetadata?: (id: string, metadata: { theme?: string; keywords?: string[]; bible_references?: string[]; author?: string; content_origin?: string }) => Promise<void>;
   onDelete: (id: string, filePath?: string | null) => Promise<void>;
 }
 
@@ -21,7 +22,7 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
   { id: 'devocional', label: 'Devocionais', icon: Heart, description: 'Devocionais, reflexões e aplicações pastorais' },
 ];
 
-export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onDelete }: Props) {
+export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete }: Props) {
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>('comentario');
   const [showUpload, setShowUpload] = useState(false);
   const [showLink, setShowLink] = useState(false);
@@ -30,6 +31,8 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   const [url, setUrl] = useState('');
   const [linkType, setLinkType] = useState<'youtube' | 'article'>('youtube');
   const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: string }[]>([]);
+  const [editingMetaId, setEditingMetaId] = useState<string | null>(null);
+  const [metaForm, setMetaForm] = useState<{ theme: string; keywords: string; bible_references: string; author: string; content_origin: string }>({ theme: '', keywords: '', bible_references: '', author: '', content_origin: 'texto' });
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -39,55 +42,54 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   const handleFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     const fileArray = Array.from(files);
     const validExtensions = ['.pdf', '.doc', '.docx'];
     const invalidFiles = fileArray.filter(f => !validExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
-    
-    if (invalidFiles.length > 0) {
-      toast({ title: "Formato não suportado", description: `Aceita apenas: PDF, DOC, DOCX. Arquivos ignorados: ${invalidFiles.map(f => f.name).join(', ')}`, variant: "destructive" });
-    }
-
+    if (invalidFiles.length > 0) toast({ title: "Formato não suportado", description: `Aceita apenas: PDF, DOC, DOCX`, variant: "destructive" });
     const validFiles = fileArray.filter(f => validExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
     if (validFiles.length === 0) return;
 
     setUploadingFiles(validFiles.map(f => ({ name: f.name, progress: 'Enviando...' })));
-
     let successCount = 0;
     for (let i = 0; i < validFiles.length; i++) {
       const file = validFiles[i];
-      const name = title.trim() && validFiles.length === 1
-        ? title.trim()
-        : file.name.replace(/\.[^.]+$/, '');
-      
+      const name = title.trim() && validFiles.length === 1 ? title.trim() : file.name.replace(/\.[^.]+$/, '');
       setUploadingFiles(prev => prev.map((p, idx) => idx === i ? { ...p, progress: `Enviando... (${i + 1}/${validFiles.length})` } : p));
-      
       const result = await onUpload(file, name, activeCategory, description.trim() || undefined);
-      if (result) {
-        successCount++;
-        setUploadingFiles(prev => prev.map((p, idx) => idx === i ? { ...p, progress: '✅ Enviado' } : p));
-      } else {
-        setUploadingFiles(prev => prev.map((p, idx) => idx === i ? { ...p, progress: '❌ Erro' } : p));
-      }
+      if (result) { successCount++; setUploadingFiles(prev => prev.map((p, idx) => idx === i ? { ...p, progress: '✅ Enviado' } : p)); }
+      else setUploadingFiles(prev => prev.map((p, idx) => idx === i ? { ...p, progress: '❌ Erro' } : p));
     }
-
-    if (successCount > 0) {
-      toast({ title: `${successCount} arquivo(s) enviado(s)!`, description: `Adicionado(s) em ${CATEGORIES.find(c => c.id === activeCategory)?.label}.` });
-    }
-
-    setTimeout(() => {
-      setTitle('');
-      setDescription('');
-      setUploadingFiles([]);
-      setShowUpload(false);
-      if (fileRef.current) fileRef.current.value = '';
-    }, 1500);
+    if (successCount > 0) toast({ title: `${successCount} arquivo(s) enviado(s)!` });
+    setTimeout(() => { setTitle(''); setDescription(''); setUploadingFiles([]); setShowUpload(false); if (fileRef.current) fileRef.current.value = ''; }, 1500);
   };
 
   const handleAddLink = async () => {
     if (!title.trim() || !url.trim()) { toast({ title: "Preencha título e URL", variant: "destructive" }); return; }
-    await onAddLink(title.trim(), url.trim(), linkType, description.trim() || undefined);
+    await onAddLink(title.trim(), url.trim(), linkType, activeCategory, description.trim() || undefined);
     setTitle(''); setUrl(''); setDescription(''); setShowLink(false);
+  };
+
+  const startEditMeta = (m: ExegesisMaterial) => {
+    setEditingMetaId(m.id);
+    setMetaForm({
+      theme: m.theme || '',
+      keywords: Array.isArray(m.keywords) ? (m.keywords as string[]).join(', ') : '',
+      bible_references: Array.isArray(m.bible_references) ? (m.bible_references as string[]).join(', ') : '',
+      author: m.author || '',
+      content_origin: m.content_origin || 'texto',
+    });
+  };
+
+  const saveMetadata = async () => {
+    if (!editingMetaId || !onUpdateMetadata) return;
+    await onUpdateMetadata(editingMetaId, {
+      theme: metaForm.theme || undefined,
+      keywords: metaForm.keywords ? metaForm.keywords.split(',').map(s => s.trim()).filter(Boolean) : [],
+      bible_references: metaForm.bible_references ? metaForm.bible_references.split(',').map(s => s.trim()).filter(Boolean) : [],
+      author: metaForm.author || undefined,
+      content_origin: metaForm.content_origin || 'texto',
+    });
+    setEditingMetaId(null);
   };
 
   const getIcon = (type: string) => {
@@ -118,7 +120,6 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
         {CATEGORIES.map(cat => (
           <TabsContent key={cat.id} value={cat.id}>
             <div className="space-y-4">
-              {/* Actions */}
               <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={() => { setShowUpload(!showUpload); setShowLink(false); }} className="gap-2">
                   <Upload className="w-4 h-4" /> Enviar Arquivos
@@ -128,21 +129,17 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                 </Button>
               </div>
 
-              {/* Upload Form */}
               {showUpload && (
                 <div className="card-library p-4 space-y-3">
-                  <h4 className="text-sm font-medium flex items-center gap-2">
-                    <Files className="w-4 h-4" /> Enviar {cat.label}
-                  </h4>
-                  <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-library w-full text-sm" placeholder="Título do material (opcional — usa nome do arquivo se vazio)" />
+                  <h4 className="text-sm font-medium flex items-center gap-2"><Files className="w-4 h-4" /> Enviar {cat.label}</h4>
+                  <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-library w-full text-sm" placeholder="Título do material (opcional)" />
                   <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="input-library w-full text-sm" placeholder="Descrição breve (opcional)" />
                   <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
                     <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" multiple onChange={handleFilesSelect} className="hidden" id="exegesis-file-upload" />
                     <label htmlFor="exegesis-file-upload" className="cursor-pointer space-y-2 block">
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground/60" />
                       <p className="text-sm font-medium text-foreground">Clique para selecionar arquivos</p>
-                      <p className="text-xs text-muted-foreground">Selecione um ou vários arquivos de uma vez</p>
-                      <p className="text-xs text-muted-foreground">Aceita: PDF, DOC, DOCX • Até 500MB por arquivo</p>
+                      <p className="text-xs text-muted-foreground">Aceita: PDF, DOC, DOCX • Múltiplos arquivos</p>
                     </label>
                   </div>
                   {uploadingFiles.length > 0 && (
@@ -162,7 +159,6 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                 </div>
               )}
 
-              {/* Link Form */}
               {showLink && (
                 <div className="card-library p-4 space-y-3">
                   <h4 className="text-sm font-medium">Adicionar Link</h4>
@@ -181,33 +177,72 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                 </div>
               )}
 
-              {/* Materials List */}
               {filteredMaterials.length === 0 ? (
                 <div className="card-library p-8 text-center space-y-3">
                   {(() => { const Icon = cat.icon; return <Icon className="w-10 h-10 mx-auto text-muted-foreground/40" />; })()}
                   <p className="text-sm text-muted-foreground">Nenhum {cat.label.toLowerCase()} adicionado ainda.</p>
-                  <p className="text-xs text-muted-foreground">{cat.description} — envie arquivos ou links para enriquecer suas análises e esboços.</p>
+                  <p className="text-xs text-muted-foreground">{cat.description}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {filteredMaterials.map(m => (
-                    <div key={m.id} className="card-library p-3 flex items-center gap-3">
-                      {getIcon(m.material_type)}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{m.title}</p>
-                        {m.description && <p className="text-xs text-muted-foreground truncate">{m.description}</p>}
-                        <p className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleDateString('pt-BR')}</p>
-                      </div>
-                      <div className="flex gap-1">
-                        {m.url && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(m.url!, '_blank')}>
-                            <ExternalLink className="w-3.5 h-3.5" />
+                    <div key={m.id} className="card-library overflow-hidden">
+                      <div className="p-3 flex items-center gap-3">
+                        {getIcon(m.material_type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{m.title}</p>
+                          {m.description && <p className="text-xs text-muted-foreground truncate">{m.description}</p>}
+                          <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                            <p className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleDateString('pt-BR')}</p>
+                            {m.theme && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{m.theme}</span>}
+                            {m.author && <span className="text-[10px] text-muted-foreground">por {m.author}</span>}
+                          </div>
+                          {m.keywords && Array.isArray(m.keywords) && (m.keywords as string[]).length > 0 && (
+                            <div className="flex gap-1 flex-wrap mt-1">
+                              {(m.keywords as string[]).slice(0, 5).map((k, i) => (
+                                <span key={i} className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{k}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          {onUpdateMetadata && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editingMetaId === m.id ? setEditingMetaId(null) : startEditMeta(m)}>
+                              <Tag className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {m.url && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(m.url!, '_blank')}>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(m.id, m.file_path)}>
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => onDelete(m.id, m.file_path)}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        </div>
                       </div>
+                      {/* Metadata editor */}
+                      {editingMetaId === m.id && (
+                        <div className="p-3 border-t bg-muted/20 space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1"><Tag className="w-3 h-3" /> Metadados</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input type="text" value={metaForm.theme} onChange={(e) => setMetaForm(p => ({ ...p, theme: e.target.value }))} className="input-library text-xs" placeholder="Tema principal" />
+                            <input type="text" value={metaForm.author} onChange={(e) => setMetaForm(p => ({ ...p, author: e.target.value }))} className="input-library text-xs" placeholder="Autor" />
+                            <input type="text" value={metaForm.keywords} onChange={(e) => setMetaForm(p => ({ ...p, keywords: e.target.value }))} className="input-library text-xs" placeholder="Palavras-chave (separe por vírgula)" />
+                            <input type="text" value={metaForm.bible_references} onChange={(e) => setMetaForm(p => ({ ...p, bible_references: e.target.value }))} className="input-library text-xs" placeholder="Referências bíblicas (separe por vírgula)" />
+                            <select value={metaForm.content_origin} onChange={(e) => setMetaForm(p => ({ ...p, content_origin: e.target.value }))} className="input-library text-xs">
+                              <option value="texto">Texto</option>
+                              <option value="video">Vídeo</option>
+                              <option value="transcricao">Transcrição</option>
+                              <option value="audio">Áudio</option>
+                            </select>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" className="h-7 text-xs gap-1" onClick={saveMetadata}><Check className="w-3 h-3" /> Salvar</Button>
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setEditingMetaId(null)}><X className="w-3 h-3" /> Cancelar</Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

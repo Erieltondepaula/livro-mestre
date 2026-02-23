@@ -12,12 +12,13 @@ export function ExegesisView() {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
     fetchOutlines, saveOutline, updateOutlineNotes, updateOutlineContent, deleteOutline,
-    fetchMaterials, uploadMaterial, addLink, deleteMaterial,
-    getMaterialsContext,
+    fetchOutlineVersions,
+    fetchMaterials, uploadMaterial, addLink, updateMaterialMetadata, deleteMaterial,
+    getMaterialsContext, getRelevantAnalysesContext,
   } = useExegesis();
 
-  // Pre-fetch materials so context is available for analyzer/outlines
-  useEffect(() => { fetchMaterials(); }, [fetchMaterials]);
+  // Pre-fetch materials and analyses so context is available
+  useEffect(() => { fetchMaterials(); fetchAnalyses(); }, [fetchMaterials, fetchAnalyses]);
 
   return (
     <div className="space-y-6">
@@ -54,11 +55,30 @@ export function ExegesisView() {
         </TabsContent>
 
         <TabsContent value="outlines">
-          <ExegesisOutlines outlines={outlines} onFetch={fetchOutlines} onSave={saveOutline} onUpdateNotes={updateOutlineNotes} onUpdateContent={updateOutlineContent} onDelete={deleteOutline} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
+          <ExegesisOutlines
+            outlines={outlines}
+            onFetch={fetchOutlines}
+            onSave={saveOutline}
+            onUpdateNotes={updateOutlineNotes}
+            onUpdateContent={updateOutlineContent}
+            onDelete={deleteOutline}
+            getMaterialsContext={getMaterialsContext}
+            getRelevantAnalysesContext={getRelevantAnalysesContext}
+            fetchOutlineVersions={fetchOutlineVersions}
+            materialsCount={materials.length}
+          />
         </TabsContent>
 
         <TabsContent value="materials">
-          <ExegesisMaterials materials={materials} loading={loading} onFetch={fetchMaterials} onUpload={uploadMaterial} onAddLink={addLink} onDelete={deleteMaterial} />
+          <ExegesisMaterials
+            materials={materials}
+            loading={loading}
+            onFetch={fetchMaterials}
+            onUpload={uploadMaterial}
+            onAddLink={addLink}
+            onUpdateMetadata={updateMaterialMetadata}
+            onDelete={deleteMaterial}
+          />
         </TabsContent>
       </Tabs>
     </div>
