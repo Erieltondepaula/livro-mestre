@@ -313,7 +313,7 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 ---
 
 ## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
-(Sugestão de abertura pastoral calorosa e acolhedora)
+(DEIXAR EM BRANCO — o pregador preenche manualmente)
 
 ## **INTRODUÇÃO:**
 (OBRIGATÓRIO — NÃO PODE FICAR VAZIA. A introdução é o gancho que prende ou perde a congregação nos primeiros 60 segundos. Deve conter: (1) Uma pergunta retórica poderosa ou cenário real que gere identificação imediata — ex: "Quando foi a última vez que você realmente descansou? Não apenas deitou — mas descansou a alma?"; (2) Contextualização breve do texto bíblico — quem está falando, para quem, em que situação; (3) Por que este texto é urgente HOJE para quem está ouvindo. Mínimo de 4 frases.)
@@ -369,7 +369,11 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 
 ---
 
-## REGRAS DE ENGENHARIA DO SERMÃO:
+## REGRAS DE ENGENHARIA DO SERMÃO (OBRIGATÓRIO — VERIFICAÇÃO FINAL ANTES DE ENTREGAR):
+
+⚠️ **REGRA ZERO — BOAS-VINDAS SEMPRE EM BRANCO**: A seção "BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO" deve conter APENAS o texto "(O pregador preenche)" — NUNCA gere conteúdo para ela. O pregador sempre insere manualmente.
+
+⚠️ **REGRA DE ESPAÇAMENTO**: NÃO use linhas em branco excessivas entre seções. Use apenas UMA linha em branco entre seções. O esboço deve ser COMPACTO e FLUIDO, sem espaços vazios grandes.
 
 1. **Estrutura Progressiva Relacional (Escada Espiritual)**: Os pontos formam uma escada espiritual crescente — aproximação → recebimento → aprofundamento → formação. Cada ponto amplia o anterior, não o substitui. É como o sermão "Refúgio para o Cansado": ir → receber → descobrir → aprender. O ouvinte sobe um degrau por ponto.
 
@@ -434,6 +438,7 @@ A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3
 ---
 
 ## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
+(DEIXAR EM BRANCO — o pregador preenche manualmente)
 
 ## **INTRODUÇÃO:**
 (OBRIGATÓRIO — NÃO PODE FICAR VAZIA. Gancho poderoso nos primeiros 60 segundos: pergunta retórica ou cenário real que gere identificação. Contexto breve do texto. Urgência para hoje. Mínimo 4 frases.)
@@ -509,6 +514,7 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 ---
 
 ## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
+(DEIXAR EM BRANCO — o pregador preenche manualmente)
 
 ## **INTRODUÇÃO:**
 (OBRIGATÓRIO — NÃO PODE FICAR VAZIA. Gancho poderoso nos primeiros 60 segundos: pergunta retórica ou cenário real que gere identificação. Contextualização breve. Urgência para hoje. Mínimo 4 frases.)
