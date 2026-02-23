@@ -145,7 +145,12 @@ export function useExegesis() {
     try {
       const ext = file.name.split('.').pop()?.toLowerCase() || 'pdf';
       const materialType = ['doc', 'docx'].includes(ext) ? 'doc' : 'pdf';
-      const filePath = `${user.id}/${Date.now()}_${file.name}`;
+      // Sanitize filename: remove accents, special chars, spaces
+      const sanitizedName = file.name
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // replace special chars
+        .replace(/_+/g, '_'); // collapse multiple underscores
+      const filePath = `${user.id}/${Date.now()}_${sanitizedName}`;
       const { error: uploadError } = await supabase.storage.from('exegesis-materials').upload(filePath, file, { cacheControl: '3600', upsert: false });
       if (uploadError) throw uploadError;
       const { data, error } = await supabase.from('exegesis_materials').insert({ user_id: user.id, title, material_type: materialType, material_category: category, file_path: filePath, description } as any).select().single();
