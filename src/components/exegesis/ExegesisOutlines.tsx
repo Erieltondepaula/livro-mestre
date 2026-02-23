@@ -118,7 +118,18 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [verseEnd, setVerseEnd] = useState('');
   const [customPassage, setCustomPassage] = useState('');
   const [selectedType, setSelectedType] = useState<OutlineType>('outline_expository');
-  const [structure, setStructure] = useState<OutlineStructure>(getDefaultStructure());
+  const [structure, setStructure] = useState<OutlineStructure>(() => {
+    try {
+      const saved = localStorage.getItem('exegesis_outline_structure');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return getDefaultStructure();
+  });
+
+  const handleStructureChange = (s: OutlineStructure) => {
+    setStructure(s);
+    try { localStorage.setItem('exegesis_outline_structure', JSON.stringify(s)); } catch {}
+  };
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -323,7 +334,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         </div>
 
         {/* Structure Editor */}
-        <OutlineStructureEditor structure={structure} onChange={setStructure} />
+        <OutlineStructureEditor structure={structure} onChange={handleStructureChange} />
 
         <Button onClick={handleGenerate} disabled={isLoading || !getPassageText()} className="btn-library-primary">
           {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</> : <><Send className="w-4 h-4 mr-2" /> Gerar Esboço</>}
