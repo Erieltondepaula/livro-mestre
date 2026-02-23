@@ -15,7 +15,7 @@ export function ExegesisView() {
     fetchOutlineVersions,
     fetchMaterials, uploadMaterial, addLink, updateMaterialMetadata, deleteMaterial,
     getMaterialsContext, getRelevantAnalysesContext,
-    classifyContent, extractMetadata, suggestImprovements,
+    classifyContent, extractMetadata, suggestImprovements, classifyAllMaterials,
   } = useExegesis();
 
   // Pre-fetch materials and analyses so context is available
@@ -82,6 +82,7 @@ export function ExegesisView() {
             onDelete={deleteMaterial}
             onClassify={classifyContent}
             onExtractMetadata={extractMetadata}
+            onClassifyAll={classifyAllMaterials}
           />
         </TabsContent>
       </Tabs>

@@ -15,6 +15,7 @@ interface Props {
   onDelete: (id: string, filePath?: string | null) => Promise<void>;
   onClassify?: (content: string) => Promise<any | null>;
   onExtractMetadata?: (content: string, title?: string) => Promise<any | null>;
+  onClassifyAll?: (onProgress?: (done: number, total: number) => void) => Promise<number>;
 }
 
 const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType; description: string }[] = [
@@ -24,7 +25,7 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
   { id: 'devocional', label: 'Devocionais', icon: Heart, description: 'Devocionais, reflexões e aplicações pastorais' },
 ];
 
-export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete, onClassify, onExtractMetadata }: Props) {
+export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete, onClassify, onExtractMetadata, onClassifyAll }: Props) {
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>('comentario');
   const [showUpload, setShowUpload] = useState(false);
   const [showLink, setShowLink] = useState(false);
@@ -40,6 +41,8 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   const [uploadingFiles, setUploadingFiles] = useState<{ name: string; progress: string }[]>([]);
   const [editingMetaId, setEditingMetaId] = useState<string | null>(null);
   const [metaForm, setMetaForm] = useState<{ theme: string; keywords: string; bible_references: string; author: string; content_origin: string }>({ theme: '', keywords: '', bible_references: '', author: '', content_origin: 'texto' });
+  const [batchClassifying, setBatchClassifying] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -170,6 +173,31 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                     <ClipboardPaste className="w-4 h-4" /> Colar Conteúdo
                   </Button>
                 )}
+                {onClassifyAll && (() => {
+                  const unclassifiedCount = materials.filter(m => !m.theme && (!m.keywords || (m.keywords as any).length === 0)).length;
+                  return unclassifiedCount > 0 ? (
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      disabled={batchClassifying}
+                      onClick={async () => {
+                        setBatchClassifying(true);
+                        setBatchProgress({ done: 0, total: unclassifiedCount });
+                        try {
+                          const count = await onClassifyAll((done, total) => setBatchProgress({ done, total }));
+                          toast({ title: `${count} materiais classificados!`, description: 'Metadados extraídos automaticamente pela IA.' });
+                        } finally {
+                          setBatchClassifying(false);
+                          setBatchProgress(null);
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      {batchClassifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      {batchClassifying && batchProgress ? `Classificando ${batchProgress.done}/${batchProgress.total}...` : `Classificar Todos (${unclassifiedCount})`}
+                    </Button>
+                  ) : null;
+                })()}
               </div>
 
               {showPaste && onClassify && (
