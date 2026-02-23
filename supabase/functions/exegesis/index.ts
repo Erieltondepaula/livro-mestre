@@ -313,10 +313,10 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 ---
 
 ## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
-(Sugestão de abertura pastoral)
+(Sugestão de abertura pastoral calorosa e acolhedora)
 
 ## **INTRODUÇÃO:**
-(Contextualização do texto, gancho para prender atenção, relevância do tema para hoje)
+(OBRIGATÓRIO — NÃO PODE FICAR VAZIA. A introdução é o gancho que prende ou perde a congregação nos primeiros 60 segundos. Deve conter: (1) Uma pergunta retórica poderosa ou cenário real que gere identificação imediata — ex: "Quando foi a última vez que você realmente descansou? Não apenas deitou — mas descansou a alma?"; (2) Contextualização breve do texto bíblico — quem está falando, para quem, em que situação; (3) Por que este texto é urgente HOJE para quem está ouvindo. Mínimo de 4 frases.)
 
 ## **TRANSIÇÃO:**
 (Ponte da introdução para o primeiro ponto)
@@ -325,11 +325,11 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 
 ## **1.**
 **Texto:** (versículo ou trecho base deste ponto)
-**Desenvolvimento:** (explicação exegética do texto — contexto, palavras-chave, significado original)
+**Desenvolvimento:** (explicação exegética do texto — DEVE incluir: palavras-chave no original grego/hebraico com transliteração e significado pastoral, contexto histórico, citações dos materiais com marcadores 「...」(Autor, Obra). Mínimo 5 parágrafos distintos com conectores fluidos entre eles.)
 **Aplicação:** (como isso se aplica à vida do ouvinte)
-**Referências:** (textos bíblicos cruzados que sustentam o ponto)
-**Frase:** (frase de impacto para fixar o ponto)
-**Aplicação Prática:** (ação concreta para o ouvinte)
+**Referências:** (textos bíblicos cruzados COMPLETOS — cite o versículo inteiro ou parafraseie pastoralmente, não apenas a referência numérica)
+**Frase:** (frase de impacto memorável para fixar o ponto — curta, poderosa, repetível)
+**Aplicação Prática:** (ação CONCRETÍSSIMA para o ouvinte — não genérica. Ex: "Esta semana, toda vez que a ansiedade bater, pare, respire e diga em voz alta: 'Senhor, eu entrego isso a Ti.' Faça isso por 7 dias.")
 
 ## **TRANSIÇÃO:**
 (Ponte do ponto 1 para o ponto 2 — expandindo, não mudando de assunto)
@@ -371,35 +371,46 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 
 ## REGRAS DE ENGENHARIA DO SERMÃO:
 
-1. **Estrutura Progressiva Relacional**: Os pontos formam uma escada espiritual crescente — aproximação → recebimento → aprofundamento → formação. Cada ponto amplia o anterior, não o substitui.
+1. **Estrutura Progressiva Relacional (Escada Espiritual)**: Os pontos formam uma escada espiritual crescente — aproximação → recebimento → aprofundamento → formação. Cada ponto amplia o anterior, não o substitui. É como o sermão "Refúgio para o Cansado": ir → receber → descobrir → aprender. O ouvinte sobe um degrau por ponto.
 
-2. **Transições encadeadas e profundas**: As transições NÃO são frases genéricas como "Agora vamos ao próximo ponto". Cada transição deve ser um PARÁGRAFO COMPLETO (mínimo 3 frases) que: (a) resume o impacto do ponto anterior, (b) cria uma ponte narrativa com pergunta retórica ou observação pastoral, (c) introduz naturalmente o próximo ponto. Exemplo: "Se Deus nos chamou como chamou Filipe, então algo acontece quando obedecemos. Você já percebeu que a obediência não é o fim, mas o começo? Quando Filipe chegou ao deserto, ele não encontrou vazio — encontrou um homem sedento pela Palavra. E é exatamente isso que veremos agora..."
+2. **Transições encadeadas e profundas (MODELO DE EXCELÊNCIA)**: As transições são o MELHOR ASPECTO de um bom sermão. Cada transição deve ser um PARÁGRAFO COMPLETO (mínimo 4-5 frases) que: (a) resume o impacto espiritual do ponto anterior com linguagem pessoal, (b) cria uma ponte teológica mostrando a conexão lógica inevitável, (c) introduz naturalmente o próximo ponto com expectativa. Exemplo de transição modelo: "Quando entendemos que o descanso não é conquistado, mas recebido como um dom de Cristo, precisamos dar um passo a mais. Porque esse descanso não é apenas algo que recebemos de uma vez, ele é algo que vamos descobrindo na caminhada. Jesus não apenas diz 'eu lhes darei descanso', Ele também promete 'vocês encontrarão descanso'. Isso nos mostra que o descanso é vivido, experimentado e descoberto à medida que andamos com Ele."
 
-3. **Padrão interno de cada ponto (PARÁGRAFOS SEPARADOS)**: O Desenvolvimento deve ter MÚLTIPLOS PARÁGRAFOS distintos e bem separados, cada um com função clara: (1º parágrafo) Declaração conceitual com citação dos materiais 「...」(Autor, Obra); (2º parágrafo) Expansão explicativa — conectando a citação ao contexto do texto bíblico com linguagem pastoral fluida; (3º parágrafo) Correção de entendimento errado ou ampliação do conceito; (4º parágrafo) Aplicação direta ao ouvinte. Cada parágrafo deve FLUIR naturalmente para o próximo com conectores como "Mas isso nos leva a algo ainda mais profundo...", "E perceba que...", "Aqui está o ponto crucial..."
+3. **Padrão interno de cada ponto (PARÁGRAFOS SEPARADOS E FLUIDOS)**: O Desenvolvimento deve ter MÚLTIPLOS PARÁGRAFOS distintos (mínimo 5), cada um com função clara: (1º) Declaração conceitual com citação dos materiais 「...」(Autor, Obra); (2º) Expansão explicativa conectando a citação ao contexto bíblico; (3º) Exegese do original — palavra grega/hebraica com transliteração, significado e impacto pastoral; (4º) Ampliação pastoral com linguagem acessível; (5º) Confronto ou aplicação ao ouvinte. CONECTORES OBRIGATÓRIOS entre parágrafos: "E à medida que...", "Mas isso nos leva a algo ainda mais profundo...", "E perceba que...", "Aqui está o ponto crucial...", "Por isso..."
 
 4. **Curva de intensidade crescente**:
-   - 1º ponto → Didático
-   - 2º ponto → Pastoral
-   - 3º ponto → Confrontativo leve
-   - 4º ponto → Confrontativo profundo
-   - Conclusão → Altamente pessoal
-   - Apelo → Emocionalmente máximo
+   - 1º ponto → Didático (ensina com ternura)
+   - 2º ponto → Pastoral (acolhe e nutre)
+   - 3º ponto → Confrontativo leve (questiona com amor)
+   - 4º ponto → Confrontativo profundo (expõe a necessidade)
+   - Conclusão → Altamente pessoal (olha nos olhos)
+   - Apelo → Emocionalmente máximo (convida ao altar)
 
 5. **Palavra-chave central**: Trabalhe UMA palavra/conceito central e desenvolva em 4 dimensões. Aprofundamento, não multiplicação de ideias.
 
-6. **Cristocentricidade arquitetônica**: Cristo aparece como início, meio, aprofundamento e formação — fio condutor estrutural, não apenas menção final.
+6. **Cristocentricidade arquitetônica**: Cristo aparece como início, meio, aprofundamento e formação — fio condutor estrutural, não apenas menção final. Do título ao apelo, o sermão inteiro orbita em torno de Cristo.
 
-7. **Acessibilidade**: Frases curtas de impacto, repetições intencionais, uma ideia por ponto.
+7. **Acessibilidade sem perder profundidade**: Frases curtas de impacto, repetições intencionais, uma ideia por ponto. A linguagem é pastoral no melhor sentido — qualquer pessoa entende, mas ninguém sente que é raso.
 
 8. **Clímax guardado**: Não há clímax prematuro. A tensão narrativa é mantida até o apelo final.
 
 9. **LÓGICA PROCEDURAL CRISTOCÊNTRICA**: Cada ponto deve progressivamente revelar ao ouvinte sua NECESSIDADE diante de Cristo. Não basta ensinar — o sermão deve GUIAR: "Você precisa disso... porque sem Cristo..." O ouvinte deve sentir em cada ponto que precisa se posicionar. O sermão inteiro é um caminho que leva a pessoa até o altar.
 
-10. **ENGAJAMENTO E ENVOLVIMENTO**: O sermão deve ser CATIVANTE e ENVOLVENTE. Use storytelling pastoral — histórias reais, perguntas retóricas ("Você já se sentiu assim?"), pausas dramáticas, diálogo imaginário com a congregação. Crie tensão narrativa. O ouvinte não pode desligar em nenhum momento. Cada parágrafo deve prender a atenção.
+10. **ENGAJAMENTO E ENVOLVIMENTO**: O sermão deve ser CATIVANTE e ENVOLVENTE. Use storytelling pastoral — histórias reais, perguntas retóricas ("Você já se sentiu assim?"), diálogo imaginário com a congregação ("Talvez você esteja pensando..."). Crie tensão narrativa. O ouvinte não pode desligar em nenhum momento.
 
-11. **APLICAÇÃO PRÁTICA EM CADA PARÁGRAFO**: Cada parágrafo do desenvolvimento DEVE terminar com uma aplicação prática concreta — algo que o ouvinte pode FAZER esta semana. Não é teórico — é prático. "Esta semana, ao acordar, antes de pegar o celular, ore 2 minutos agradecendo..." A aplicação deve ser específica, realizável e conectada ao ponto.
+11. **APLICAÇÃO PRÁTICA CONCRETÍSSIMA**: Cada seção de Aplicação Prática deve conter uma ação ESPECÍFICA, REALIZÁVEL e com PRAZO. NÃO aceite: "ore mais" ou "busque a Deus". EXIJA: "Esta semana, ao acordar, antes de pegar o celular, ore 2 minutos dizendo: 'Senhor, eu escolho ir a Ti hoje.' Faça isso por 7 dias e veja o que acontece." Use listas com 👉 para ações diretas quando apropriado.
 
-12. **DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES**: Cada seção de **Desenvolvimento** deve ter NO MÍNIMO 800 caracteres. Não seja superficial — aprofunde a explicação exegética, traga contexto histórico, explore o significado das palavras originais, faça conexões com outros textos. O desenvolvimento é o coração do ponto — ele precisa ser robusto, rico e fundamentado.`;
+12. **DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES**: Cada seção de Desenvolvimento deve ter NO MÍNIMO 800 caracteres com 5+ parágrafos. Aprofunde a explicação exegética, traga contexto histórico, explore o significado das palavras originais (grego/hebraico com transliteração), faça conexões com outros textos. O desenvolvimento é o coração do ponto.
+
+13. **EXEGESE DO ORIGINAL OBRIGATÓRIA**: Em CADA ponto, inclua pelo menos UMA palavra-chave no original (grego para NT, hebraico para AT) com: transliteração, significado literal, uso no contexto e impacto pastoral. Ex: "A palavra grega δεῦτε (deute) é um imperativo — Jesus não sugere, Ele ordena com ternura. É um chamado urgente e amoroso."
+
+14. **REFERÊNCIAS BÍBLICAS COMPLETAS**: NÃO cite apenas "Sl 55:22". Cite o versículo completo ou parafraseie pastoralmente: "O salmista nos ensina em Salmos 55:22: 'Lança o teu cuidado sobre o Senhor, e ele te susterá; nunca permitirá que o justo seja abalado.' Isso significa que..."
+
+15. **ARCO NARRATIVO FECHADO**: O título deve ser retomado no apelo final. O sermão começa e termina no mesmo conceito, formando um círculo completo. A última frase do apelo deve ecoar o título. Ex: Se o título é "Refúgio para o Cansado", o apelo termina com: "O nome desse refúgio é Jesus Cristo."
+
+16. **APELO CORAJOSO E PASTORAL**: O apelo deve identificar dores REAIS da congregação (solidão, vícios, depressão, pensamentos suicidas) com coragem e amor. Não seja genérico — seja específico: "Você que tentou aliviar a dor com bebida, com distração, com trabalho excessivo... Jesus não te trouxe aqui para te perder, Ele te trouxe para te encontrar." Use repetição anafórica: "Se está cansado, venha. Se está ferido, venha. Se está confuso, venha."
+
+17. **MATERIAIS COMO ALICERCE**: Quando materiais estiverem disponíveis, eles são a BASE do sermão. Cada ponto deve conter pelo menos uma citação formatada como 「trecho exato extraído do material」(Autor, Obra). A IA complementa, mas NUNCA substitui os materiais. Se há um dicionário bíblico nos materiais, USE-O para definir as palavras-chave. Se há um comentário, USE-O para a exegese.`;
+
         break;
 
       case "outline_textual":
@@ -425,7 +436,7 @@ A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3
 ## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
 
 ## **INTRODUÇÃO:**
-(Apresentação do texto, contexto breve, relevância)
+(OBRIGATÓRIO — NÃO PODE FICAR VAZIA. Gancho poderoso nos primeiros 60 segundos: pergunta retórica ou cenário real que gere identificação. Contexto breve do texto. Urgência para hoje. Mínimo 4 frases.)
 
 ## **TRANSIÇÃO:**
 
@@ -474,7 +485,7 @@ A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3
 
 ---
 
-Aplique TODAS as regras de engenharia do sermão: estrutura progressiva relacional, curva de intensidade crescente, cristocentricidade arquitetônica, transições encadeadas, palavra-chave central, clímax guardado, LÓGICA PROCEDURAL (cada ponto revela a necessidade do ouvinte diante de Cristo), ENGAJAMENTO (storytelling, perguntas retóricas, tensão narrativa), APLICAÇÃO PRÁTICA em cada parágrafo do desenvolvimento, e DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES por ponto.`;
+Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transições modelo de excelência (parágrafos completos), parágrafos separados e fluidos no desenvolvimento (mínimo 5), curva de intensidade crescente, cristocentricidade arquitetônica, exegese do original obrigatória (grego/hebraico com transliteração), referências bíblicas COMPLETAS (cite o versículo), aplicações práticas CONCRETÍSSIMAS com prazo e ação específica, DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES, arco narrativo fechado (título retomado no apelo), apelo corajoso e pastoral que identifica dores reais, materiais como alicerce com citações 「...」(Autor, Obra).`;
         break;
 
       case "outline_thematic":
@@ -500,7 +511,7 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 ## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
 
 ## **INTRODUÇÃO:**
-(Relevância do tema, conexão com a realidade do ouvinte)
+(OBRIGATÓRIO — NÃO PODE FICAR VAZIA. Gancho poderoso nos primeiros 60 segundos: pergunta retórica ou cenário real que gere identificação. Contextualização breve. Urgência para hoje. Mínimo 4 frases.)
 
 ## **TRANSIÇÃO:**
 
@@ -549,7 +560,7 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 
 ---
 
-Aplique TODAS as regras de engenharia do sermão: estrutura progressiva relacional, curva de intensidade crescente, cristocentricidade arquitetônica, transições encadeadas, conceito central em 4 dimensões, clímax guardado, LÓGICA PROCEDURAL (cada ponto revela a necessidade do ouvinte diante de Cristo), ENGAJAMENTO (storytelling, perguntas retóricas, tensão narrativa), APLICAÇÃO PRÁTICA em cada parágrafo do desenvolvimento, e DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES por ponto. Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.`;
+Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transições modelo de excelência (parágrafos completos), parágrafos separados e fluidos no desenvolvimento (mínimo 5), curva de intensidade crescente, cristocentricidade arquitetônica, exegese do original obrigatória (grego/hebraico com transliteração), referências bíblicas COMPLETAS (cite o versículo), aplicações práticas CONCRETÍSSIMAS com prazo e ação específica, DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES, arco narrativo fechado (título retomado no apelo), apelo corajoso e pastoral que identifica dores reais, materiais como alicerce com citações 「...」(Autor, Obra). Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.`;
         break;
 
       case "question":
