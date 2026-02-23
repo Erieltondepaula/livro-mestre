@@ -130,7 +130,27 @@ serve(async (req) => {
         }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos.**\n`
       : "";
 
-    const pastoralFilter = `\n\n**FILTRO DE LINGUAGEM PASTORAL:** O esboço final deve ser claro, proclamável, pastoral e cristocêntrico. Se houver termos complexos, substitua por palavras mais simples sem perder profundidade teológica. Mantenha frases curtas de impacto.\n`;
+    const depthLevel = structure_config?.depthLevel || 'basico';
+    
+    const depthInstructions: Record<string, string> = {
+      basico: `**🎯 NÍVEL DE PROFUNDIDADE: BÁSICO**
+REGRA ABSOLUTA DE LINGUAGEM: Use APENAS palavras simples e cotidianas. PROIBIDO usar termos teológicos acadêmicos como "soteriologia", "escatologia", "pneumatologia", "hermenêutica", "exegese", "cristologia", "eclesiologia", "sanctificação", "justificação forense", "propiciação", "imputação", "kenosis", "pericórese", "hipostática".
+Em vez de "justificação", diga "perdão de Deus" ou "Deus nos aceita". Em vez de "santificação", diga "viver para Deus" ou "crescer na fé". Em vez de "propiciação", diga "Jesus pagou por nós". Em vez de "expiação", diga "o sacrifício de Cristo".
+Frases curtas, diretas, como se falasse com alguém que nunca leu a Bíblia. Mesmo sendo básico, deve ter CLAREZA e PROFUNDIDADE — a simplicidade não reduz o conteúdo, apenas a linguagem. A mensagem deve ser tão poderosa e profunda quanto nos outros níveis, mas acessível a qualquer pessoa.
+Ideal para: pregações evangelísticas, cultos abertos, públicos iniciantes.`,
+
+      intermediario: `**🎯 NÍVEL DE PROFUNDIDADE: INTERMEDIÁRIO**
+Equilíbrio entre acessibilidade e vocabulário teológico. Pode usar termos como "graça", "redenção", "santificação" desde que explique brevemente o significado. Evite termos altamente técnicos sem contexto. Quando usar um termo mais acadêmico, coloque entre parênteses uma explicação simples. Exemplo: "justificação (o ato de Deus nos declarar justos)".
+A linguagem deve ser clara para cristãos com alguma caminhada na fé, mas sem ser inacessível. Profundidade teológica com explicação pastoral.
+Ideal para: cultos regulares, estudos bíblicos, cristãos em crescimento.`,
+
+      avancado: `**🎯 NÍVEL DE PROFUNDIDADE: AVANÇADO**
+Linguagem teológica plena — termos técnicos, referências a originais (hebraico/grego), conceitos sistemáticos, debate entre posições teológicas. Pode usar livremente: soteriologia, escatologia, pneumatologia, hermenêutica, cristologia, eclesiologia, propiciação, expiação, kenosis, pericórese, união hipostática, etc.
+Inclua referências aos originais (hebraico/grego) com transliteração. Discuta nuances interpretativas e posições teológicas diferentes quando relevante.
+Ideal para: seminários, conferências teológicas, pregadores experientes, estudos aprofundados.`,
+    };
+
+    const pastoralFilter = `\n\n${depthInstructions[depthLevel] || depthInstructions.basico}\n\n**FILTRO DE LINGUAGEM PASTORAL:** O esboço final deve ser claro, proclamável, pastoral e cristocêntrico. A profundidade do conteúdo deve ser mantida independente do nível — o que muda é a LINGUAGEM, não a qualidade da mensagem. Mantenha frases curtas de impacto.\n`;
 
     switch (type) {
       case "full_exegesis":

@@ -449,6 +449,21 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                                 <p className="text-muted-foreground mt-0.5">{s.description}</p>
                                 {s.example && <p className="text-primary/80 mt-1 italic">💡 {s.example}</p>}
                               </div>
+                              {s.example && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="shrink-0 text-[10px] h-7 gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                                  onClick={() => {
+                                    const htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
+                                    setEditContent(htmlContent + `\n<p><strong>📝 [Sugestão aplicada — ${s.title}]:</strong> ${s.example}</p>`);
+                                    setEditingId(o.id);
+                                    toast({ title: 'Sugestão adicionada ao esboço — revise e salve.' });
+                                  }}
+                                >
+                                  <Check className="w-3 h-3" /> Aplicar
+                                </Button>
+                              )}
                             </div>
                           ))}
                         </div>
