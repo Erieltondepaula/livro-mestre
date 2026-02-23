@@ -97,6 +97,7 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [addingSectionTo, setAddingSectionTo] = useState<{ pointIdx: number; parentId?: string } | null>(null);
   const [newSectionLabel, setNewSectionLabel] = useState('');
+  const [dragState, setDragState] = useState<{ pointIdx: number; sectionId: string } | null>(null);
 
   // Migrate old format points (hasSubtopic, hasApplication, etc.) to new sections format
   const migratePoint = (p: any): OutlinePoint => {
@@ -187,8 +188,52 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
     setAddingSectionTo(null);
   };
 
+  const moveSectionInPoint = (pointIdx: number, fromIndex: number, toIndex: number) => {
+    const points = [...safePoints];
+    const point = { ...points[pointIdx], sections: [...points[pointIdx].sections] };
+    const [moved] = point.sections.splice(fromIndex, 1);
+    point.sections.splice(toIndex, 0, moved);
+    points[pointIdx] = point;
+    onChange({ ...structure, points });
+  };
+
+  const handleDragStart = (e: React.DragEvent, pointIdx: number, sectionId: string) => {
+    setDragState({ pointIdx, sectionId });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', sectionId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, pointIdx: number, sectionId: string) => {
+    if (!dragState || dragState.pointIdx !== pointIdx || dragState.sectionId === sectionId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, pointIdx: number, targetSectionId: string) => {
+    e.preventDefault();
+    if (!dragState || dragState.pointIdx !== pointIdx) return;
+    const point = safePoints[pointIdx];
+    const fromIdx = point.sections.findIndex(s => s.id === dragState.sectionId);
+    const toIdx = point.sections.findIndex(s => s.id === targetSectionId);
+    if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+      moveSectionInPoint(pointIdx, fromIdx, toIdx);
+    }
+    setDragState(null);
+  };
+
   const renderSectionItem = (section: PointSection, pointIdx: number, parentId?: string, depth = 0) => (
-    <div key={section.id} className={`flex items-center gap-1 ${depth > 0 ? 'ml-5 pl-2 border-l border-border/50' : ''}`}>
+    <div
+      key={section.id}
+      className={`flex items-center gap-1 ${depth > 0 ? 'ml-5 pl-2 border-l border-border/50' : ''} ${dragState?.sectionId === section.id ? 'opacity-50' : ''}`}
+      draggable={depth === 0}
+      onDragStart={depth === 0 ? (e) => handleDragStart(e, pointIdx, section.id) : undefined}
+      onDragOver={depth === 0 ? (e) => handleDragOver(e, pointIdx, section.id) : undefined}
+      onDrop={depth === 0 ? (e) => handleDrop(e, pointIdx, section.id) : undefined}
+      onDragEnd={() => setDragState(null)}
+    >
+      {depth === 0 && (
+        <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab shrink-0 hover:text-muted-foreground" />
+      )}
       <Switch checked={section.enabled} onCheckedChange={() => toggleSection(pointIdx, section.id, parentId)} className="scale-[0.65] shrink-0" />
       <input
         type="text"
