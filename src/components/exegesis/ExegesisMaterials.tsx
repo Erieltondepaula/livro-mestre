@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X } from 'lucide-react';
+import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X, Sparkles, ClipboardPaste } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
@@ -13,6 +13,8 @@ interface Props {
   onAddLink: (title: string, url: string, type: 'youtube' | 'article', category: MaterialCategory, description?: string) => Promise<ExegesisMaterial | null>;
   onUpdateMetadata?: (id: string, metadata: { theme?: string; keywords?: string[]; bible_references?: string[]; author?: string; content_origin?: string }) => Promise<void>;
   onDelete: (id: string, filePath?: string | null) => Promise<void>;
+  onClassify?: (content: string) => Promise<any | null>;
+  onExtractMetadata?: (content: string, title?: string) => Promise<any | null>;
 }
 
 const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType; description: string }[] = [
@@ -22,10 +24,15 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
   { id: 'devocional', label: 'Devocionais', icon: Heart, description: 'Devocionais, reflexões e aplicações pastorais' },
 ];
 
-export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete }: Props) {
+export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete, onClassify, onExtractMetadata }: Props) {
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>('comentario');
   const [showUpload, setShowUpload] = useState(false);
   const [showLink, setShowLink] = useState(false);
+  const [showPaste, setShowPaste] = useState(false);
+  const [pasteContent, setPasteContent] = useState('');
+  const [pasteTitle, setPasteTitle] = useState('');
+  const [classifying, setClassifying] = useState(false);
+  const [classificationResult, setClassificationResult] = useState<any>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [url, setUrl] = useState('');
@@ -67,6 +74,37 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
     if (!title.trim() || !url.trim()) { toast({ title: "Preencha título e URL", variant: "destructive" }); return; }
     await onAddLink(title.trim(), url.trim(), linkType, activeCategory, description.trim() || undefined);
     setTitle(''); setUrl(''); setDescription(''); setShowLink(false);
+  };
+
+  const handleClassifyPaste = async () => {
+    if (!pasteContent.trim() || !onClassify) return;
+    setClassifying(true);
+    setClassificationResult(null);
+    try {
+      const result = await onClassify(pasteContent.trim());
+      if (result) {
+        setClassificationResult(result);
+        if (result.material_category) setActiveCategory(result.material_category);
+        toast({ title: 'Conteúdo classificado!', description: `Tipo: ${result.content_type || result.material_category} | Confiança: ${Math.round((result.confidence || 0) * 100)}%` });
+      }
+    } finally { setClassifying(false); }
+  };
+
+  const handleSaveClassified = async () => {
+    if (!pasteTitle.trim()) { toast({ title: 'Informe um título', variant: 'destructive' }); return; }
+    const cat = classificationResult?.material_category || activeCategory;
+    const desc = classificationResult?.reasoning || '';
+    const result = await onAddLink(pasteTitle.trim(), '', 'article', cat, desc);
+    if (result && onUpdateMetadata && classificationResult) {
+      await onUpdateMetadata(result.id, {
+        theme: classificationResult.theme || undefined,
+        keywords: classificationResult.keywords || [],
+        bible_references: classificationResult.bible_references || [],
+        author: classificationResult.author || undefined,
+        content_origin: classificationResult.content_origin || 'texto',
+      });
+    }
+    setPasteContent(''); setPasteTitle(''); setClassificationResult(null); setShowPaste(false);
   };
 
   const startEditMeta = (m: ExegesisMaterial) => {
@@ -121,13 +159,63 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
           <TabsContent key={cat.id} value={cat.id}>
             <div className="space-y-4">
               <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" size="sm" onClick={() => { setShowUpload(!showUpload); setShowLink(false); }} className="gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setShowUpload(!showUpload); setShowLink(false); setShowPaste(false); }} className="gap-2">
                   <Upload className="w-4 h-4" /> Enviar Arquivos
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => { setShowLink(!showLink); setShowUpload(false); }} className="gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setShowLink(!showLink); setShowUpload(false); setShowPaste(false); }} className="gap-2">
                   <Plus className="w-4 h-4" /> Adicionar Link
                 </Button>
+                {onClassify && (
+                  <Button variant="outline" size="sm" onClick={() => { setShowPaste(!showPaste); setShowUpload(false); setShowLink(false); }} className="gap-2">
+                    <ClipboardPaste className="w-4 h-4" /> Colar Conteúdo
+                  </Button>
+                )}
               </div>
+
+              {showPaste && onClassify && (
+                <div className="card-library p-4 space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> Classificação Automática por IA</h4>
+                  <p className="text-xs text-muted-foreground">Cole ou digite qualquer conteúdo teológico. A IA identificará automaticamente o tipo, tema, palavras-chave e referências bíblicas.</p>
+                  <input type="text" value={pasteTitle} onChange={(e) => setPasteTitle(e.target.value)} className="input-library w-full text-sm" placeholder="Título do material *" />
+                  <textarea
+                    value={pasteContent}
+                    onChange={(e) => setPasteContent(e.target.value)}
+                    className="input-library w-full text-sm min-h-[120px] resize-y"
+                    placeholder="Cole aqui o conteúdo do texto bíblico, comentário, devocional, pregação, definição de dicionário..."
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleClassifyPaste} disabled={classifying || !pasteContent.trim()} className="gap-2">
+                      {classifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {classifying ? 'Classificando...' : 'Classificar com IA'}
+                    </Button>
+                  </div>
+                  {classificationResult && (
+                    <div className="bg-muted/30 rounded-lg p-3 space-y-2 border border-border">
+                      <p className="text-xs font-semibold text-foreground">Resultado da Classificação:</p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div><span className="text-muted-foreground">Categoria:</span> <span className="font-medium">{classificationResult.material_category}</span></div>
+                        <div><span className="text-muted-foreground">Tipo:</span> <span className="font-medium">{classificationResult.content_type}</span></div>
+                        <div><span className="text-muted-foreground">Tema:</span> <span className="font-medium">{classificationResult.theme}</span></div>
+                        <div><span className="text-muted-foreground">Confiança:</span> <span className="font-medium">{Math.round((classificationResult.confidence || 0) * 100)}%</span></div>
+                      </div>
+                      {classificationResult.keywords?.length > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {classificationResult.keywords.map((k: string, i: number) => (
+                            <span key={i} className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{k}</span>
+                          ))}
+                        </div>
+                      )}
+                      {classificationResult.bible_references?.length > 0 && (
+                        <p className="text-[10px] text-muted-foreground">Refs: {classificationResult.bible_references.join(', ')}</p>
+                      )}
+                      {classificationResult.reasoning && <p className="text-[10px] text-muted-foreground italic">{classificationResult.reasoning}</p>}
+                      <Button size="sm" onClick={handleSaveClassified} disabled={!pasteTitle.trim()} className="gap-1.5 mt-1">
+                        <Check className="w-3.5 h-3.5" /> Salvar na categoria "{classificationResult.material_category}"
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {showUpload && (
                 <div className="card-library p-4 space-y-3">

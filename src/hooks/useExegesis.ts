@@ -218,6 +218,37 @@ export function useExegesis() {
     return relevant.map(a => `### Análise anterior (${a.analysis_type}) — ${a.passage}:\n${a.content.substring(0, 800)}${a.content.length > 800 ? '...' : ''}`).join('\n\n---\n\n');
   }, [analyses]);
 
+  // --- AI Classification & Metadata ---
+  const classifyContent = useCallback(async (content: string): Promise<any | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('exegesis', {
+        body: { passage: content, type: 'classify_content' },
+      });
+      if (error) throw error;
+      const result = typeof data?.result === 'string' ? JSON.parse(data.result) : data?.result;
+      return result;
+    } catch (e: any) {
+      console.error('Classification error:', e);
+      toast({ title: 'Erro na classificação', description: e.message, variant: 'destructive' });
+      return null;
+    }
+  }, []);
+
+  const extractMetadata = useCallback(async (content: string, title?: string): Promise<any | null> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('exegesis', {
+        body: { passage: content, question: title, type: 'extract_metadata' },
+      });
+      if (error) throw error;
+      const result = typeof data?.result === 'string' ? JSON.parse(data.result) : data?.result;
+      return result;
+    } catch (e: any) {
+      console.error('Metadata extraction error:', e);
+      toast({ title: 'Erro na extração', description: e.message, variant: 'destructive' });
+      return null;
+    }
+  }, []);
+
   return {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
@@ -225,5 +256,6 @@ export function useExegesis() {
     fetchOutlineVersions,
     fetchMaterials, uploadMaterial, addLink, updateMaterialMetadata, deleteMaterial,
     getMaterialsContext, getRelevantAnalysesContext,
+    classifyContent, extractMetadata,
   };
 }

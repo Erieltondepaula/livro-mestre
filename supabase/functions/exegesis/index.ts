@@ -507,9 +507,77 @@ ${materialsSection}
 Responda de forma clara, fundamentada e exegeticamente responsável. Use os princípios hermenêuticos de Gorman, Klein e Fee quando aplicável.`;
         break;
 
+      case "classify_content":
+        userPrompt = `Analise o seguinte conteúdo e classifique-o automaticamente. Retorne APENAS um JSON válido, sem markdown, sem explicação.
+
+**Conteúdo para classificar:**
+${passage}
+
+Retorne exatamente este formato JSON:
+{
+  "material_category": "comentario" | "dicionario" | "livro" | "devocional",
+  "content_type": "texto_biblico" | "comentario_biblico" | "livro" | "devocional" | "dicionario_biblico" | "pregacao" | "documentario" | "texto_teologico",
+  "theme": "tema principal identificado",
+  "sub_themes": ["subtema1", "subtema2"],
+  "keywords": ["palavra1", "palavra2", "palavra3"],
+  "bible_references": ["Gn 1:1", "Jo 3:16"],
+  "author": "autor se identificável ou null",
+  "content_origin": "texto" | "video" | "transcricao" | "audio",
+  "confidence": 0.85,
+  "reasoning": "breve explicação da classificação"
+}
+
+**Critérios de classificação (Lógica do Supermercado):**
+- Definições técnicas de termos → "dicionario"
+- Explicações exegéticas verso a verso → "comentario"
+- Reflexões pastorais e aplicações de vida → "devocional"
+- Conteúdo acadêmico/teológico extenso → "livro"
+- Presença de versículos como corpo principal → "texto_biblico"
+- Tom oral, ilustrações, apelos → "pregacao"
+- Linguagem investigativa/histórica → "documentario"
+
+**Indicadores a analisar:**
+- Estrutura textual e formatação
+- Linguagem (acadêmica, pastoral, técnica, oral)
+- Presença e uso de versículos bíblicos
+- Tom geral (didático, devocional, confrontativo)
+- Presença de definições técnicas (hebraico/grego)
+- Estrutura narrativa ou argumentativa`;
+        break;
+
+      case "extract_metadata":
+        userPrompt = `Extraia metadados estruturados do seguinte conteúdo. Retorne APENAS um JSON válido, sem markdown, sem explicação.
+
+**Conteúdo:**
+${passage}
+
+${question ? `**Título do material:** ${question}` : ''}
+
+Retorne exatamente este formato JSON:
+{
+  "theme": "tema principal identificado",
+  "sub_themes": ["subtema1", "subtema2", "subtema3"],
+  "keywords": ["palavra-chave1", "palavra-chave2", "palavra-chave3", "palavra-chave4", "palavra-chave5"],
+  "bible_references": ["Referência 1", "Referência 2"],
+  "author": "autor se identificável ou null",
+  "content_origin": "texto" | "video" | "transcricao" | "audio"
+}
+
+**Instruções:**
+- Identifique o tema teológico/bíblico principal
+- Extraia subtemas relacionados (máx 5)
+- Identifique palavras-chave relevantes para busca semântica (máx 8)
+- Liste TODAS as referências bíblicas mencionadas no formato padrão (Livro Cap:Vers)
+- Reconheça equivalências semânticas (ex: avivamento = renovação espiritual = despertamento)
+- Identifique o autor se mencionado
+- Classifique a origem do conteúdo`;
+        break;
+
       default:
         userPrompt = passage || question || "Ajude-me a entender princípios de exegese bíblica.";
     }
+
+    const isJsonType = type === "classify_content" || type === "extract_metadata";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -520,10 +588,10 @@ Responda de forma clara, fundamentada e exegeticamente responsável. Use os prin
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: isJsonType ? "Você é um classificador de conteúdo teológico. Retorne APENAS JSON válido, sem markdown, sem explicações adicionais." : SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        stream: true,
+        stream: !isJsonType,
       }),
     });
 
@@ -542,6 +610,16 @@ Responda de forma clara, fundamentada e exegeticamente responsável. Use os prin
       console.error("AI gateway error:", response.status, t);
       return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (isJsonType) {
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || "{}";
+      // Strip markdown code fences if present
+      const cleaned = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return new Response(JSON.stringify({ result: cleaned }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
