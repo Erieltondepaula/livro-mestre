@@ -111,7 +111,7 @@ serve(async (req) => {
       : "";
 
     const structureSection = structure_config
-      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => `- Ponto ${i+1}: ${p.hasSubtopic ? 'com subtópico' : 'sem subtópico'}, ${p.hasApplication ? 'com aplicação' : 'sem aplicação'}, ${p.hasIllustration ? 'com ilustração' : 'sem ilustração'}, ${p.hasImpactPhrase ? 'com frase de impacto' : 'sem frase de impacto'}`).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE.**\n`
+      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => `- Ponto ${i+1}${p.name ? ` ("${p.name}")` : ''}: ${p.hasSubtopic ? 'com subtópico' : 'sem subtópico'}, ${p.hasApplication ? 'com aplicação' : 'sem aplicação'}, ${p.hasIllustration ? 'com ilustração' : 'sem ilustração'}, ${p.hasImpactPhrase ? 'com frase de impacto' : 'sem frase de impacto'}`).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Use os nomes personalizados dos pontos quando fornecidos.**\n`
       : "";
 
     const pastoralFilter = `\n\n**FILTRO DE LINGUAGEM PASTORAL:** O esboço final deve ser claro, proclamável, pastoral e cristocêntrico. Se houver termos complexos, substitua por palavras mais simples sem perder profundidade teológica. Mantenha frases curtas de impacto.\n`;
@@ -573,11 +573,56 @@ Retorne exatamente este formato JSON:
 - Classifique a origem do conteúdo`;
         break;
 
+      case "suggest_improvements":
+        userPrompt = `Analise o seguinte esboço de sermão e sugira melhorias específicas. Retorne APENAS um JSON válido, sem markdown.
+
+**Passagem bíblica:** ${passage}
+${materialsSection}
+
+**Conteúdo atual do esboço:**
+${question}
+
+Retorne exatamente este formato JSON:
+{
+  "suggestions": [
+    {
+      "area": "titulo" | "estrutura" | "desenvolvimento" | "aplicacao" | "transicao" | "ilustracao" | "oratoria" | "homiletica" | "cristocentrismo" | "linguagem",
+      "severity": "info" | "warning" | "improvement",
+      "title": "título curto da sugestão",
+      "description": "explicação detalhada da melhoria sugerida",
+      "example": "exemplo concreto de como aplicar (opcional)"
+    }
+  ],
+  "overall_score": 85,
+  "strengths": ["ponto forte 1", "ponto forte 2"],
+  "homiletics_notes": "observações sobre a estrutura homilética",
+  "oratory_notes": "observações sobre a comunicação e oratória"
+}
+
+**REGRAS DE AVALIAÇÃO HOMILÉTICA:**
+- Estudo exegético sólido? O sermão se baseia na interpretação correta do texto?
+- Estrutura clara? Introdução (prender atenção), corpo (desenvolvimento), conclusão (apelo/resumo)?
+- Tipo de sermão coerente? (temático, textual ou expositivo)
+- Centralidade em Cristo? O foco é o Evangelho com aplicação prática?
+- Ilustrações adequadas? Histórias ou exemplos que tornam o tema compreensível?
+- Transições fluidas? Os pontos se conectam logicamente?
+- Progressão crescente? A intensidade cresce do didático ao confrontativo?
+
+**REGRAS DE AVALIAÇÃO DE ORATÓRIA:**
+- Linguagem proclamável? Frases curtas e de impacto?
+- Clareza e dicção? Termos acessíveis ao público?
+- Variação de tom? Momentos didáticos vs. emocionais vs. confrontativos?
+- Engajamento? O sermão prende a atenção do início ao fim?
+- Aplicações concretas? O ouvinte sabe exatamente o que fazer?
+
+Máximo de 8 sugestões, priorizando as mais impactantes.`;
+        break;
+
       default:
         userPrompt = passage || question || "Ajude-me a entender princípios de exegese bíblica.";
     }
 
-    const isJsonType = type === "classify_content" || type === "extract_metadata";
+    const isJsonType = type === "classify_content" || type === "extract_metadata" || type === "suggest_improvements";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

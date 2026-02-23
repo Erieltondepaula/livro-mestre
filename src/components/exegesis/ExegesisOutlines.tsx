@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History } from 'lucide-react';
+import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ interface Props {
   getRelevantAnalysesContext?: (passage: string) => string | undefined;
   fetchOutlineVersions?: (outlineId: string) => Promise<OutlineVersion[]>;
   materialsCount?: number;
+  onSuggestImprovements?: (passage: string, content: string) => Promise<any | null>;
 }
 
 const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] = [
@@ -101,7 +102,7 @@ function downloadBlob(blob: Blob, filename: string) {
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onUpdateContent, onDelete, getMaterialsContext, getRelevantAnalysesContext, fetchOutlineVersions, materialsCount = 0 }: Props) {
+export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onUpdateContent, onDelete, getMaterialsContext, getRelevantAnalysesContext, fetchOutlineVersions, materialsCount = 0, onSuggestImprovements }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
   const [verseStart, setVerseStart] = useState('');
@@ -119,6 +120,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [versionsOpen, setVersionsOpen] = useState<string | null>(null);
   const [versions, setVersions] = useState<OutlineVersion[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Record<string, any>>({});
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -195,6 +198,25 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     await onUpdateContent(id, editContent);
     setEditingId(null);
     toast({ title: "Esboço atualizado!" });
+    // Auto-suggest improvements after saving
+    if (onSuggestImprovements) {
+      const outline = outlines.find(o => o.id === id);
+      if (outline) {
+        setSuggestionsLoading(id);
+        const result = await onSuggestImprovements(outline.passage, editContent.replace(/<[^>]+>/g, '').substring(0, 3000));
+        if (result) setSuggestions(prev => ({ ...prev, [id]: result }));
+        setSuggestionsLoading(null);
+      }
+    }
+  };
+
+  const handleRequestSuggestions = async (outline: ExegesisOutline) => {
+    if (!onSuggestImprovements) return;
+    setSuggestionsLoading(outline.id);
+    const plainContent = outline.content.replace(/<[^>]+>/g, '').substring(0, 3000);
+    const result = await onSuggestImprovements(outline.passage, plainContent);
+    if (result) setSuggestions(prev => ({ ...prev, [outline.id]: result }));
+    setSuggestionsLoading(null);
   };
 
   const handleShowVersions = async (outlineId: string) => {
@@ -353,6 +375,12 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                       <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => handleShowVersions(o.id)}>
                         <History className="w-3.5 h-3.5" /> Versões
                       </Button>
+                      {onSuggestImprovements && (
+                        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => handleRequestSuggestions(o)} disabled={suggestionsLoading === o.id}>
+                          {suggestionsLoading === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                          {suggestionsLoading === o.id ? 'Analisando...' : 'Sugestões IA'}
+                        </Button>
+                      )}
                       <div className="flex-1" />
                       <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPdf(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
                         <Download className="w-3 h-3" /> PDF
@@ -367,6 +395,65 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                         <Download className="w-3 h-3" /> MD
                       </Button>
                     </div>
+
+                    {/* AI Suggestions Panel */}
+                    {suggestions[o.id] && (
+                      <div className="bg-muted/20 border border-border rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> Sugestões de Melhoria</h4>
+                          <div className="flex items-center gap-2">
+                            {suggestions[o.id].overall_score && (
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded ${suggestions[o.id].overall_score >= 80 ? 'bg-green-500/10 text-green-600' : suggestions[o.id].overall_score >= 60 ? 'bg-yellow-500/10 text-yellow-600' : 'bg-red-500/10 text-red-600'}`}>
+                                Nota: {suggestions[o.id].overall_score}/100
+                              </span>
+                            )}
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setSuggestions(prev => { const next = { ...prev }; delete next[o.id]; return next; })}>
+                              ✕
+                            </Button>
+                          </div>
+                        </div>
+                        {suggestions[o.id].strengths?.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pontos fortes</p>
+                            <div className="flex gap-1.5 flex-wrap">
+                              {suggestions[o.id].strengths.map((s: string, i: number) => (
+                                <span key={i} className="text-[10px] bg-green-500/10 text-green-700 px-2 py-0.5 rounded flex items-center gap-1">
+                                  <CheckCircle2 className="w-2.5 h-2.5" /> {s}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {suggestions[o.id].homiletics_notes && (
+                          <div className="text-xs bg-primary/5 p-2.5 rounded border border-primary/10">
+                            <p className="font-semibold text-primary mb-0.5">📖 Homilética</p>
+                            <p className="text-foreground/80">{suggestions[o.id].homiletics_notes}</p>
+                          </div>
+                        )}
+                        {suggestions[o.id].oratory_notes && (
+                          <div className="text-xs bg-accent/30 p-2.5 rounded border border-accent/50">
+                            <p className="font-semibold text-foreground mb-0.5">🎙️ Oratória</p>
+                            <p className="text-foreground/80">{suggestions[o.id].oratory_notes}</p>
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          {suggestions[o.id].suggestions?.map((s: any, i: number) => (
+                            <div key={i} className="flex gap-2.5 items-start text-xs border-b border-border/50 pb-2 last:border-0">
+                              <div className="shrink-0 mt-0.5">
+                                {s.severity === 'warning' ? <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" /> :
+                                 s.severity === 'improvement' ? <Sparkles className="w-3.5 h-3.5 text-primary" /> :
+                                 <Info className="w-3.5 h-3.5 text-blue-500" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-foreground">{s.title} <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">{s.area}</span></p>
+                                <p className="text-muted-foreground mt-0.5">{s.description}</p>
+                                {s.example && <p className="text-primary/80 mt-1 italic">💡 {s.example}</p>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {isEditing ? (
                       <ExegesisRichEditor content={editContent} onChange={setEditContent} placeholder="Edite o esboço..." minHeight="400px" />
