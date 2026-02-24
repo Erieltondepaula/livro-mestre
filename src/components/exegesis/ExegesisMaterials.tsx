@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X, Sparkles, ClipboardPaste } from 'lucide-react';
+import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X, Sparkles, ClipboardPaste, Film, Image, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
   { id: 'dicionario', label: 'Dicionários', icon: Languages, description: 'Dicionários bíblicos e teológicos' },
   { id: 'livro', label: 'Livros', icon: BookOpen, description: 'Livros teológicos e de referência' },
   { id: 'devocional', label: 'Devocionais', icon: Heart, description: 'Devocionais, reflexões e aplicações pastorais' },
+  { id: 'midia', label: 'Mídia', icon: Film, description: 'Vídeos, imagens, links e outros recursos multimídia' },
 ];
 
 export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete, onClassify, onExtractMetadata, onClassifyAll }: Props) {
@@ -53,9 +54,11 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
     const files = e.target.files;
     if (!files || files.length === 0) return;
     const fileArray = Array.from(files);
-    const validExtensions = ['.pdf', '.doc', '.docx'];
+    const validExtensions = activeCategory === 'midia' 
+      ? ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.mp3', '.wav']
+      : ['.pdf', '.doc', '.docx'];
     const invalidFiles = fileArray.filter(f => !validExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
-    if (invalidFiles.length > 0) toast({ title: "Formato não suportado", description: `Aceita apenas: PDF, DOC, DOCX`, variant: "destructive" });
+    if (invalidFiles.length > 0) toast({ title: "Formato não suportado", description: activeCategory === 'midia' ? 'Aceita: PDF, DOC, DOCX, JPG, PNG, MP4, MP3' : 'Aceita apenas: PDF, DOC, DOCX', variant: "destructive" });
     const validFiles = fileArray.filter(f => validExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
     if (validFiles.length === 0) return;
 
@@ -144,7 +147,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   return (
     <div className="space-y-6">
       <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as MaterialCategory)} className="w-full">
-        <TabsList className="w-full grid grid-cols-4">
+        <TabsList className="w-full grid grid-cols-5">
           {CATEGORIES.map(cat => {
             const Icon = cat.icon;
             const count = getCategoryCount(cat.id);

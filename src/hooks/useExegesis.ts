@@ -27,7 +27,7 @@ export interface ExegesisOutline {
   updated_at: string;
 }
 
-export type MaterialCategory = 'livro' | 'comentario' | 'dicionario' | 'devocional';
+export type MaterialCategory = 'livro' | 'comentario' | 'dicionario' | 'devocional' | 'midia';
 
 export interface ExegesisMaterial {
   id: string;
@@ -194,6 +194,7 @@ export function useExegesis() {
       comentario: materials.filter(m => m.material_category === 'comentario'),
       livro: materials.filter(m => m.material_category === 'livro'),
       devocional: materials.filter(m => m.material_category === 'devocional'),
+      midia: materials.filter(m => m.material_category === 'midia'),
     };
     let context = '';
     const formatMaterial = (m: ExegesisMaterial) => {
@@ -209,6 +210,7 @@ export function useExegesis() {
     if (grouped.comentario.length > 0) context += `\n### 📘 Comentários Bíblicos:\n${grouped.comentario.map(formatMaterial).join('\n')}`;
     if (grouped.livro.length > 0) context += `\n### 📚 Livros Teológicos:\n${grouped.livro.map(formatMaterial).join('\n')}`;
     if (grouped.devocional.length > 0) context += `\n### 📗 Devocionais e Reflexões:\n${grouped.devocional.map(formatMaterial).join('\n')}`;
+    if (grouped.midia.length > 0) context += `\n### 🎬 Mídia (Vídeos, Imagens, Links):\n${grouped.midia.map(formatMaterial).join('\n')}`;
     return context.trim() || undefined;
   }, [materials]);
 
