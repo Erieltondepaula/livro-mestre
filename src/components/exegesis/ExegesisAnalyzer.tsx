@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -9,7 +9,7 @@ import type { ExegesisAnalysis } from '@/hooks/useExegesis';
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
   | 'theological_analysis' | 'application' | 'question'
-  | 'inductive_method' | 'version_comparison' | 'devotional';
+  | 'inductive_method' | 'version_comparison' | 'devotional' | 'geographic_historical';
 
 interface Props {
   onSave: (analysis: { passage: string; analysis_type: string; question?: string; content: string }) => Promise<ExegesisAnalysis | null>;
@@ -27,6 +27,7 @@ const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType
   { id: 'inductive_method', label: 'Método Indutivo', icon: BookText, description: 'Observação → Interpretação → Aplicação' },
   { id: 'version_comparison', label: 'Versões', icon: GitCompare, description: 'Compare diferentes traduções bíblicas' },
   { id: 'devotional', label: 'Devocional', icon: Heart, description: 'Reflexão devocional cristocêntrica' },
+  { id: 'geographic_historical', label: 'Geográfico/Histórico', icon: Globe, description: 'Análise geográfica e histórica com mapas' },
   { id: 'question', label: 'Pergunta Livre', icon: MessageCircleQuestion, description: 'Faça uma pergunta sobre o texto' },
 ];
 
