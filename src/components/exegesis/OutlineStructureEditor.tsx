@@ -23,18 +23,20 @@ export interface OutlineStructure {
   hasFinalAppeal: boolean;
   isExplicitlyChristocentric: boolean;
   depthLevel: 'basico' | 'intermediario' | 'avancado';
+  title?: string;
+  theme?: string;
 }
 
 let sectionIdCounter = 0;
 const nextId = () => `sec_${Date.now()}_${sectionIdCounter++}`;
 
 const DEFAULT_SECTIONS: () => PointSection[] = () => [
-  { id: nextId(), label: 'Subtópico', enabled: true, children: [] },
+  { id: nextId(), label: 'Desenvolvimento', enabled: true, children: [] },
+  { id: nextId(), label: 'Citações', enabled: true, children: [] },
   { id: nextId(), label: 'Aplicação', enabled: true, children: [] },
   { id: nextId(), label: 'Referências', enabled: true, children: [] },
-  { id: nextId(), label: 'Ilustração', enabled: false, children: [] },
+  { id: nextId(), label: 'Ilustração', enabled: true, children: [] },
   { id: nextId(), label: 'Frase Impacto', enabled: true, children: [] },
-  { id: nextId(), label: 'Citações', enabled: false, children: [] },
 ];
 
 const DEFAULT_POINT = (): OutlinePoint => ({ name: '', sections: DEFAULT_SECTIONS() });
@@ -273,6 +275,32 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
 
         {expanded && (
           <div className="p-4 border-t space-y-4">
+            {/* Title and Theme */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Título do Sermão</Label>
+                <input
+                  type="text"
+                  value={structure.title || ''}
+                  onChange={(e) => onChange({ ...structure, title: e.target.value })}
+                  className="input-library w-full text-sm"
+                  placeholder="Ex: Refúgio para o Cansado"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Tema Central</Label>
+                <input
+                  type="text"
+                  value={structure.theme || ''}
+                  onChange={(e) => onChange({ ...structure, theme: e.target.value })}
+                  className="input-library w-full text-sm"
+                  placeholder="Ex: O descanso em Cristo"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+
             {/* Point count */}
             <div className="flex items-center justify-between">
               <Label className="text-sm">Quantidade de pontos</Label>

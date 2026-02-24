@@ -130,13 +130,15 @@ serve(async (req) => {
     };
 
     const totalPoints = structure_config?.pointCount || 4;
+    const userTitle = structure_config?.title ? `\n- Título sugerido pelo usuário: "${structure_config.title}" (use como base ou adapte, mas mantenha a essência)` : '';
+    const userTheme = structure_config?.theme ? `\n- Tema central definido pelo usuário: "${structure_config.theme}" (REFORCE este tema ao longo de TODO o sermão)` : '';
     const structureSection = structure_config
-      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => {
+      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**${userTitle}${userTheme}\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => {
           const pointLabel = p.name ? `("${p.name}")` : '';
           const secs = p.sections ? formatSections(p.sections) : '';
           const isLast = i === structure_config.pointCount - 1;
           return `- Ponto ${i+1} ${pointLabel}${isLast ? ' ⛪ [ÚLTIMO PONTO — CLÍMAX CRISTOCÊNTRICO]' : ''}: ${secs || 'sem seções definidas'}`;
-        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos.**\n\n**⛪ REGRA DO ÚLTIMO PONTO CRISTOCÊNTRICO:** O ponto ${structure_config.pointCount} (o ÚLTIMO ponto, seja qual for a quantidade) SEMPRE aponta para a CRUZ DE CRISTO — o sacrifício, a redenção, tudo que Ele fez por nós. Se há 1 ponto, ele é o último. Se há 2, o segundo é o último. Se há 3, o terceiro. E assim por diante. O último ponto é SEMPRE o clímax que revela Cristo crucificado como a resposta final.\n`
+        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos. Se o usuário habilitou "Citações", SEMPRE inclua citações dos materiais formatadas como 「citação」(Autor, Obra). Se habilitou "Ilustração", SEMPRE inclua uma ilustração real e relevante.**\n\n**⛪ REGRA DO ÚLTIMO PONTO CRISTOCÊNTRICO:** O ponto ${structure_config.pointCount} (o ÚLTIMO ponto, seja qual for a quantidade) SEMPRE aponta para a CRUZ DE CRISTO — o sacrifício, a redenção, tudo que Ele fez por nós. Se há 1 ponto, ele é o último. Se há 2, o segundo é o último. Se há 3, o terceiro. E assim por diante. O último ponto é SEMPRE o clímax que revela Cristo crucificado como a resposta final.\n`
       : "";
 
     const depthLevel = structure_config?.depthLevel || 'basico';
@@ -275,25 +277,42 @@ ${materialsSection}${citationRule}
 
 **Passagem:** ${passage}
 ${materialsSection}${citationRule}
-1. Analise as diferenças de tradução entre as principais versões (ARA, NVI, ARC, NAA, NVT)
-2. Explique por que existem diferenças
-3. Qual tradução captura melhor o sentido original?
-4. Variantes textuais relevantes (se houver)
-5. Impacto das diferenças na interpretação`;
+1. Apresente o texto COMPLETO em cada uma das seguintes versões (OBRIGATÓRIO incluir TODAS):
+   - **ARC** (Almeida Revista e Corrigida)
+   - **ARA** (Almeida Revista e Atualizada)
+   - **NVI** (Nova Versão Internacional)
+   - **NAA** (Nova Almeida Atualizada)
+   - **NVT** (Nova Versão Transformadora)
+   - **ACF** (Almeida Corrigida Fiel)
+   - **King James 1611** (versão inglesa clássica traduzida para português)
+2. Analise as diferenças de tradução entre as versões, destacando palavras-chave que variam
+3. Explique POR QUE existem diferenças (tradução formal vs dinâmica, variantes textuais, escolhas do tradutor)
+4. Qual tradução captura melhor o sentido original? Justifique com análise do texto em hebraico/grego
+5. Variantes textuais relevantes nos manuscritos (se houver)
+6. Impacto prático das diferenças na interpretação e pregação
+7. Recomendação: qual versão usar para estudo exegético vs. leitura devocional vs. pregação`;
         break;
 
       case "devotional":
-        userPrompt = `Elabore uma reflexão devocional cristocêntrica sobre o seguinte texto:
+        userPrompt = `Elabore uma reflexão devocional cristocêntrica PROFUNDA e COMPLETA sobre o seguinte texto:
 
 **Passagem:** ${passage}
 ${materialsSection}${citationRule}
-1. Contexto breve do texto
-2. O que Deus revela sobre si mesmo neste texto?
-3. Conexão com a pessoa e obra de Cristo
-4. Lição espiritual para hoje
-5. Oração sugerida baseada no texto
-6. Versículo-chave para memorizar
-Mantenha a fidelidade exegética mesmo na devoção.`;
+
+**INSTRUÇÃO ESPECIAL PARA DEVOCIONAL:** Ao consultar os materiais da Base de Conhecimento, PRIORIZE os materiais da categoria "Devocional" (📗). Busque também em Comentários, Livros e Dicionários para enriquecer a reflexão, mas o TOM deve ser devocional — pastoral, íntimo, que toque o coração.
+
+1. **Contexto histórico-cultural breve** — quem escreveu, para quem, em que circunstância
+2. **O texto na íntegra** — apresente o texto completo da passagem
+3. **O que Deus revela sobre Si mesmo neste texto?** — atributos divinos manifestados
+4. **Conexão cristocêntrica** — como este texto aponta para a pessoa e obra de Cristo
+5. **Análise devocional versículo a versículo** — reflexão pastoral de cada versículo com linguagem acessível
+6. **Lição espiritual para hoje** — princípios permanentes aplicados à vida contemporânea
+7. **Aplicação prática concreta** — ações específicas para a semana (não genéricas)
+8. **Oração sugerida** — oração completa e pessoal baseada no texto (mínimo 5 frases)
+9. **Versículo-chave para memorizar** — o versículo mais impactante da passagem
+10. **Hino/Louvor sugerido** — um hino ou cântico que se conecta ao tema
+
+Mantenha a fidelidade exegética mesmo na devoção. Use linguagem íntima e pastoral — como se estivesse conversando com alguém que precisa ouvir essa palavra HOJE. Inclua citações dos materiais quando disponíveis, especialmente dos devocionais.`;
         break;
 
       case "outline_expository":
@@ -331,10 +350,11 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 **Texto:** (versículo ou trecho base deste ponto)
 **Desenvolvimento:** (explicação exegética do texto — DEVE incluir: palavras-chave no original grego/hebraico com transliteração e significado pastoral, contexto histórico, citações dos materiais com marcadores 「...」(Autor, Obra). Mínimo 5 parágrafos distintos com conectores fluidos entre eles.)
 **Aplicação:** (como isso se aplica à vida do ouvinte)
-**Referências:**
+**Citações:** (citações de livros, comentários e materiais da Base de Conhecimento, formatadas como 「citação」(Autor, Obra, p.XX). Se a seção Citações estiver habilitada, SEMPRE inclua pelo menos 2 citações.)
+**Referências:** (REFERÊNCIAS CRUZADAS — versículos de OUTROS livros/capítulos da Bíblia que COMPLEMENTAM o ponto, NÃO do texto base sendo estudado. Ex: se o texto é João 3:16, as referências devem ser de Romanos, Efésios, Isaías, etc.)
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
-(mínimo 2-3 referências, SEMPRE com o texto completo do versículo entre aspas)
+(mínimo 2-3 referências CRUZADAS, SEMPRE com o texto completo do versículo entre aspas. NUNCA repita versículos do texto base.)
 **Frase:** (frase de impacto memorável para fixar o ponto — curta, poderosa, repetível)
 **Aplicação Prática:** (ação CONCRETÍSSIMA para o ouvinte — não genérica. Ex: "Esta semana, toda vez que a ansiedade bater, pare, respire e diga em voz alta: 'Senhor, eu entrego isso a Ti.' Faça isso por 7 dias.")
 
@@ -344,7 +364,8 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 ## **2.**
 **Texto:** (versículo ou trecho base)
 **Desenvolvimento:** (explicação exegética)
-**Referências:**
+**Citações:** (citações dos materiais da Base de Conhecimento: 「citação」(Autor, Obra, p.XX))
+**Referências:** (REFERÊNCIAS CRUZADAS — versículos de OUTROS livros/capítulos, NÃO do texto base)
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Aplicação Prática:** (ação concreta)
@@ -355,8 +376,9 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 ## **3.**
 **Texto:** (versículo ou trecho base)
 **Desenvolvimento:** (explicação exegética)
-**Ilustração:** (exemplo concreto, história ou analogia)
-**Referências:**
+**Ilustração:** (exemplo concreto, história real ou analogia que ilumine o ponto)
+**Citações:** (citações dos materiais: 「citação」(Autor, Obra, p.XX))
+**Referências:** (REFERÊNCIAS CRUZADAS — versículos de OUTROS livros/capítulos)
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Frase:** (frase de impacto)
@@ -368,8 +390,9 @@ A pregação expositiva expõe o significado de um texto bíblico específico, s
 ## **4.**
 **Texto:** (versículo ou trecho base)
 **Desenvolvimento:** (explicação exegética mais confrontativa)
-**Ilustração:** (exemplo profundo e pessoal)
-**Referências:**
+**Ilustração:** (exemplo profundo e pessoal que mostre Cristo como resposta)
+**Citações:** (citações dos materiais: 「citação」(Autor, Obra, p.XX))
+**Referências:** (REFERÊNCIAS CRUZADAS — versículos de OUTROS livros/capítulos)
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Frase:** (frase de impacto máxima)
@@ -471,7 +494,8 @@ A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3
 **Texto:** (palavra ou expressão-chave extraída do versículo)
 **Desenvolvimento:** (exploração exegética dessa expressão)
 **Aplicação:** (significado prático)
-**Referências:**
+**Citações:** (citações dos materiais: 「citação」(Autor, Obra, p.XX))
+**Referências:** (REFERÊNCIAS CRUZADAS — versículos de OUTROS livros/capítulos, NÃO do texto base)
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Frase:** (frase de impacto)
@@ -549,7 +573,8 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 **Texto:** (passagem bíblica que sustenta este aspecto do tema)
 **Desenvolvimento:** (explicação do aspecto temático à luz do texto)
 **Aplicação:** (como este aspecto se aplica)
-**Referências:**
+**Citações:** (citações dos materiais: 「citação」(Autor, Obra, p.XX))
+**Referências:** (REFERÊNCIAS CRUZADAS — versículos de OUTROS livros/capítulos)
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
 **Frase:** (frase de impacto)
