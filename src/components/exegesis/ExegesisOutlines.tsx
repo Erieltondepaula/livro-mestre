@@ -499,23 +499,31 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                                 <p className="text-muted-foreground mt-0.5">{s.description}</p>
                                 {s.example && <p className="text-primary/80 mt-1 italic">💡 {s.example}</p>}
                               </div>
-                              {s.example && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="shrink-0 text-[10px] h-7 gap-1 border-primary/30 text-primary hover:bg-primary/10"
-                                  onClick={() => {
-                                    const htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
-                                    setEditContent(htmlContent + `\n<p><strong>📝 [Sugestão aplicada — ${s.title}]:</strong> ${s.example}</p>`);
-                                    setEditingId(o.id);
-                                    toast({ title: 'Sugestão adicionada ao esboço — revise e salve.' });
-                                  }}
-                                >
-                                  <Check className="w-3 h-3" /> Aplicar
-                                </Button>
-                              )}
+                              <div className="flex gap-1 shrink-0">
+                                {s.example && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="shrink-0 text-[10px] h-7 gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                                    onClick={() => {
+                                      const htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
+                                      setEditContent(htmlContent + `\n<p><strong>📝 [Sugestão aplicada — ${s.title}]:</strong> ${s.example}</p>`);
+                                      setEditingId(o.id);
+                                      toast({ title: 'Sugestão adicionada ao esboço — revise e salve.' });
+                                    }}
+                                  >
+                                    <Check className="w-3 h-3" /> Aplicar
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           ))}
+                        </div>
+                        <div className="flex gap-2 pt-2 border-t border-border/50">
+                          <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleRequestSuggestions(o)} disabled={suggestionsLoading === o.id}>
+                            {suggestionsLoading === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                            Regenerar Sugestões
+                          </Button>
                         </div>
                       </div>
                     )}

@@ -315,6 +315,61 @@ ${materialsSection}${citationRule}
 Mantenha a fidelidade exegética mesmo na devoção. Use linguagem íntima e pastoral — como se estivesse conversando com alguém que precisa ouvir essa palavra HOJE. Inclua citações dos materiais quando disponíveis, especialmente dos devocionais.`;
         break;
 
+      case "geographic_historical":
+        userPrompt = `Faça uma análise GEOGRÁFICA e HISTÓRICA completa do seguinte texto bíblico:
+
+**Passagem:** ${passage}
+${materialsSection}${citationRule}
+
+## ANÁLISE GEOGRÁFICA E HISTÓRICA COMPLETA
+
+### 1. LOCALIZAÇÃO GEOGRÁFICA
+- **Onde acontece?** Identifique TODOS os lugares mencionados no texto
+- **Coordenadas aproximadas** e região (Judeia, Samaria, Galileia, etc.)
+- **Descrição topográfica**: terreno, clima, vegetação da região
+- **Distâncias** entre os lugares mencionados (em km e tempo de viagem da época)
+- **Rotas e caminhos**: que estrada/rota seria usada na época
+
+### 2. MAPA DESCRITIVO
+Descreva um MAPA TEXTUAL detalhado que permita ao leitor visualizar a geografia:
+- 📍 Marque cada local mencionado com sua importância
+- 🛤️ Trace a rota/caminho se houver deslocamento
+- 🏔️ Destaque montanhas, vales, rios, mares relevantes
+- 🏛️ Indique cidades, vilas e templos próximos
+- Use formato de lista com emoji para cada ponto geográfico
+
+### 3. CONTEXTO HISTÓRICO DETALHADO
+- **Período histórico**: ano aproximado, império dominante, governante local
+- **Situação política**: quem governava, conflitos, impostos, leis vigentes
+- **Situação social**: classes sociais, costumes, vida cotidiana
+- **Situação religiosa**: templo, sinagoga, sacerdócio, seitas (fariseus, saduceus, essênios)
+- **Eventos históricos contemporâneos**: o que estava acontecendo no mundo naquela época
+
+### 4. ARQUEOLOGIA E EVIDÊNCIAS
+- **Descobertas arqueológicas** relacionadas ao local ou período
+- **Inscrições e artefatos** que confirmam ou iluminam o texto
+- **Manuscritos** relevantes (Qumran, papiros, etc.)
+
+### 5. COSTUMES E CULTURA DA ÉPOCA
+- **Vida cotidiana**: alimentação, vestimenta, moradia, trabalho
+- **Práticas religiosas**: rituais, festas, sacrifícios
+- **Relações sociais**: família, casamento, escravidão, comércio
+- **Línguas faladas**: aramaico, grego, hebraico, latim
+
+### 6. SIGNIFICADO GEOGRÁFICO PARA A INTERPRETAÇÃO
+- Como a geografia influencia o significado do texto?
+- Simbolismo dos lugares mencionados na Bíblia
+- Por que o autor menciona esses locais específicos?
+
+### 7. MAPAS DE REFERÊNCIA SUGERIDOS
+Liste mapas bíblicos que o estudante deveria consultar:
+- 🗺️ Nome do mapa e o que ele mostra
+- 📚 Onde encontrar (atlas bíblico, site, recurso online)
+- Sugira links de referência para mapas interativos bíblicos quando possível
+
+Seja o mais detalhado possível. O objetivo é que o leitor consiga VISUALIZAR completamente o cenário onde o texto acontece, como se estivesse lá.`;
+        break;
+
       case "outline_expository":
         userPrompt = `Gere um ESBOÇO DE SERMÃO EXPOSITIVO completo baseado no seguinte texto:
 
