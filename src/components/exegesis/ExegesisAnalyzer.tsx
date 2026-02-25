@@ -45,6 +45,8 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
   const [currentStream, setCurrentStream] = useState('');
   const [lastResult, setLastResult] = useState<{ passage: string; type: AnalysisType; question?: string; content: string } | null>(null);
   const [saved, setSaved] = useState(false);
+  const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
+  const [mapLoading, setMapLoading] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -64,6 +66,35 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
       }
     }
     return passage;
+  };
+
+  const generateMapImage = async (passage: string, content: string) => {
+    setMapLoading(true);
+    setMapImageUrl(null);
+    try {
+      const mapDataMatch = content.match(/```MAP_DATA\n([\s\S]*?)```/);
+      const mapInfo = mapDataMatch ? mapDataMatch[1] : `Mapa bíblico de ${passage}`;
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        body: JSON.stringify({
+          model: "google/gemini-3-pro-image-preview",
+          messages: [{ role: "user", content: `Gere uma imagem de um MAPA BÍBLICO detalhado e bonito para a passagem "${passage}". O mapa deve ser estilo cartográfico antigo/pergaminho com os seguintes dados:\n${mapInfo}\n\nO mapa deve mostrar: terreno, rios, mares, cidades marcadas com pontos, rotas tracejadas, e uma legenda. Estilo de mapa antigo bíblico com cores sépia/marrom.` }],
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const imageContent = data.choices?.[0]?.message?.content;
+        if (imageContent) {
+          const imgMatch = imageContent.match(/!\[.*?\]\((.*?)\)/);
+          if (imgMatch) setMapImageUrl(imgMatch[1]);
+        }
+      }
+    } catch (e) {
+      console.error('Map generation error:', e);
+    } finally {
+      setMapLoading(false);
+    }
   };
 
   const handleAnalyze = useCallback(async () => {
@@ -123,6 +154,11 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
 
       setLastResult({ passage, type: selectedType, question: selectedType === 'question' ? question.trim() : undefined, content: fullContent });
       setCurrentStream('');
+
+      // Generate map image for geographic_historical type
+      if (selectedType === 'geographic_historical') {
+        generateMapImage(passage, fullContent);
+      }
 
       // Auto-save
       const saved = await onSave({ passage, analysis_type: selectedType, question: question.trim() || undefined, content: fullContent });
@@ -270,6 +306,21 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
             </Button>
           </div>
           <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(lastResult.content) }} />
+          {/* Map Image for Geographic/Historical */}
+          {lastResult.type === 'geographic_historical' && (
+            <div className="mt-4 border border-border rounded-lg p-4">
+              <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico</h4>
+              {mapLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Gerando imagem do mapa...
+                </div>
+              ) : mapImageUrl ? (
+                <img src={mapImageUrl} alt={`Mapa bíblico de ${lastResult.passage}`} className="w-full rounded-lg shadow-md" />
+              ) : (
+                <p className="text-xs text-muted-foreground italic text-center py-4">Mapa em processamento ou indisponível. Os dados geográficos estão descritos na análise acima.</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

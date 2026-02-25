@@ -12,7 +12,7 @@ import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline } from '@/hooks/useExegesis';
 
-type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic';
+type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic' | 'outline_descriptive' | 'outline_normative' | 'outline_theological';
 
 interface Props {
   outlines: ExegesisOutline[];
@@ -32,6 +32,9 @@ const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] =
   { id: 'outline_expository', label: '📖 Expositivo', description: 'Divisão natural do texto com aplicações progressivas' },
   { id: 'outline_textual', label: '📝 Textual', description: 'Baseado em palavras/expressões-chave do texto' },
   { id: 'outline_thematic', label: '🎯 Temático', description: 'Tema central com desenvolvimento doutrinário' },
+  { id: 'outline_descriptive', label: '🔍 Descritivo', description: 'Foca nos fatos bíblicos, história e contexto' },
+  { id: 'outline_normative', label: '📋 Normativo', description: 'Doutrinário e ético, aplicável a todos os tempos' },
+  { id: 'outline_theological', label: '⛪ Teológico', description: 'Expõe uma doutrina bíblica com base em vários textos' },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
@@ -299,7 +302,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     return `<p class="text-xs leading-snug text-foreground/90 mb-0.5">${html}</p>`;
   };
 
-  const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático' };
+  const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático', outline_descriptive: 'Descritivo', outline_normative: 'Normativo', outline_theological: 'Teológico' };
   const isHtml = (content: string) => content.includes('<h1') || content.includes('<h2') || content.includes('<p>') || content.includes('<strong>');
 
   return (
@@ -501,19 +504,40 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                               </div>
                               <div className="flex gap-1 shrink-0">
                                 {s.example && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="shrink-0 text-[10px] h-7 gap-1 border-primary/30 text-primary hover:bg-primary/10"
-                                    onClick={() => {
-                                      const htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
-                                      setEditContent(htmlContent + `\n<p><strong>📝 [Sugestão aplicada — ${s.title}]:</strong> ${s.example}</p>`);
-                                      setEditingId(o.id);
-                                      toast({ title: 'Sugestão adicionada ao esboço — revise e salve.' });
-                                    }}
-                                  >
-                                    <Check className="w-3 h-3" /> Aplicar
-                                  </Button>
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="shrink-0 text-[10px] h-7 gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                                      onClick={() => {
+                                        const htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
+                                        setEditContent(htmlContent + `\n<p><strong>📝 [Sugestão aplicada — ${s.title}]:</strong> ${s.example}</p>`);
+                                        setEditingId(o.id);
+                                        toast({ title: 'Sugestão adicionada ao esboço — revise e salve.' });
+                                      }}
+                                    >
+                                      <Check className="w-3 h-3" /> Aplicar
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="shrink-0 text-[10px] h-7 gap-1"
+                                      onClick={() => {
+                                        const newExample = prompt('Editar sugestão:', s.example);
+                                        if (newExample !== null) {
+                                          setSuggestions(prev => {
+                                            const updated = { ...prev };
+                                            const suggList = [...updated[o.id].suggestions];
+                                            suggList[i] = { ...suggList[i], example: newExample };
+                                            updated[o.id] = { ...updated[o.id], suggestions: suggList };
+                                            return updated;
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <Edit3 className="w-3 h-3" /> Editar
+                                    </Button>
+                                  </>
                                 )}
                               </div>
                             </div>
