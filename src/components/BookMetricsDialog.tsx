@@ -323,7 +323,24 @@ export function BookMetricsDialog({
     }
 
     // Sort by timestamp descending (most recent first)
-    return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
+    const sorted = Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
+    
+    // Fix Bible start pages: each day's start should be previous day's end
+    if (isBible && sorted.length > 1) {
+      // Sort ascending by timestamp to calculate incremental pages
+      const ascending = [...sorted].reverse();
+      for (let i = 0; i < ascending.length; i++) {
+        if (i === 0) {
+          // First day keeps paginaInicial as is (could be 0 which is correct for day 1)
+        } else {
+          // Each subsequent day starts where the previous day ended
+          ascending[i].paginaInicial = ascending[i - 1].paginaFinal;
+          ascending[i].quantidadePaginas = ascending[i].paginaFinal - ascending[i].paginaInicial;
+        }
+      }
+    }
+    
+    return sorted;
   };
 
   const isBibleCategory = book.categoria?.toLowerCase() === 'bíblia' || 

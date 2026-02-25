@@ -330,13 +330,20 @@ ${materialsSection}${citationRule}
 - **Distâncias** entre os lugares mencionados (em km e tempo de viagem da época)
 - **Rotas e caminhos**: que estrada/rota seria usada na época
 
-### 2. MAPA DESCRITIVO
-Descreva um MAPA TEXTUAL detalhado que permita ao leitor visualizar a geografia:
-- 📍 Marque cada local mencionado com sua importância
-- 🛤️ Trace a rota/caminho se houver deslocamento
-- 🏔️ Destaque montanhas, vales, rios, mares relevantes
-- 🏛️ Indique cidades, vilas e templos próximos
-- Use formato de lista com emoji para cada ponto geográfico
+### 2. MAPA GEOGRÁFICO
+**INSTRUÇÃO IMPORTANTE:** Em vez de descrever o mapa em texto, forneça TODAS as informações necessárias para gerar uma imagem de mapa:
+- Liste TODOS os locais com coordenadas aproximadas (latitude/longitude)
+- Trace rotas de deslocamento com pontos de partida e chegada
+- Indique montanhas, vales, rios, mares com posição relativa
+- Indique cidades, vilas e templos com distâncias
+- Formate as informações de mapa dentro de um bloco especial:
+\`\`\`MAP_DATA
+TITULO: [título do mapa]
+REGIAO: [região principal]
+PONTOS: [Local1 (lat,lon) | Local2 (lat,lon) | ...]
+ROTAS: [De → Para | De → Para | ...]
+REFERENCIAS: [rio, montanha, mar, etc.]
+\`\`\`
 
 ### 3. CONTEXTO HISTÓRICO DETALHADO
 - **Período histórico**: ano aproximado, império dominante, governante local
@@ -670,7 +677,71 @@ A pregação temática é estruturada em torno de um assunto/tópico específico
 
 ---
 
-Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transições modelo de excelência, parágrafos fluidos (mínimo 5), CURVA DE INTENSIDADE com tom sereno no início culminando na CRUZ DE CRISTO no ÚLTIMO PONTO, REFORÇO DO TEMA ao longo de todo o sermão (como "Refúgio para o Cansado"), cristocentricidade arquitetônica, exegese do original obrigatória, referências bíblicas COMPLETAS, aplicações práticas CONCRETÍSSIMAS, DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES, arco narrativo fechado com reforço temático, APELO modelo "Refúgio para o Cansado" com repetição anafórica e dores reais, materiais como alicerce com citações 「...」(Autor, Obra). Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.`;
+Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transições modelo de excelência, parágrafos fluidos (mínimo 5), CURVA DE INTENSIDADE com tom sereno no início culminando na CRUZ DE CRISTO no ÚLTIMO PONTO, REFORÇO DO TEMA ao longo de todo o sermão (como "Refúgio para o Cansado"), cristocentricidade arquitetônica, exegese do original obrigatória, referências bíblicas COMPLETAS, aplicações práticas CONCRETÍSSIMAS, DESENVOLVIMENTO MÍNIMO DE 800 CARACTERES, arco narrativo fechado com reforço temático, APELO modelo "Refúgio para o Cansado" com repetição anafórica e dores reais, materiais como alicerce com citações 「...」(Autor, Obra). Cada ponto deve usar textos bíblicos diferentes que sustentam o tema central.
+
+**REGRA DE CITAÇÕES AMPLIADA:** As citações no sermão podem vir de QUALQUER fonte relevante:
+- **Textos bíblicos:** Versículos que sustentam o ponto (sempre no formato 👉)
+- **Materiais da Base de Conhecimento:** Livros, comentários, dicionários → formato 「citação」(Autor, Obra, p.XX)
+- **Pensadores e teólogos:** Citações de pregadores, pastores, escritores cristãos (Spurgeon, Lloyd-Jones, Lutero, Calvino, etc.) → formato 「citação」(Autor)
+- **Fontes externas:** Vídeos, posts, blogs, vlogs mencionados nos materiais → formato 「citação」(Fonte, Plataforma)
+A seção "Citações" de cada ponto deve conter pelo menos uma citação de cada tipo disponível, priorizando os materiais do usuário.`;
+        break;
+
+      case "outline_descriptive":
+        userPrompt = `Gere um ESBOÇO DE SERMÃO DESCRITIVO completo baseado no seguinte texto:
+
+**Passagem:** ${passage}
+${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
+
+## TIPO DE PREGAÇÃO: DESCRITIVA (conforme Presley Camargo)
+O sermão descritivo foca em explicar O QUE ACONTECEU — como Deus agiu, o que os personagens fizeram. Olha para os FATOS bíblicos, a história, o contexto, e expõe a verdade que está ali. Base ideal: Narrativas, salmos históricos, Atos dos Apóstolos, biografias bíblicas.
+
+## ESTRUTURA: Título descritivo → Boas-vindas (em branco) → Introdução (contextualizar narrativa) → Transição →
+1. O que aconteceu? (Descrição dos fatos com citações e referências cruzadas)
+2. Como Deus agiu? (A ação divina na narrativa)
+3. O que os personagens fizeram? (Reações humanas com ilustração)
+4. O que isso revela sobre Cristo? (CLÍMAX CRISTOCÊNTRICO)
+→ Conclusão (síntese narrativa) → Apelo (cristocêntrico)
+
+Aplique TODAS as 17 regras de engenharia do sermão.`;
+        break;
+
+      case "outline_normative":
+        userPrompt = `Gere um ESBOÇO DE SERMÃO NORMATIVO completo baseado no seguinte texto:
+
+**Passagem:** ${passage}
+${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
+
+## TIPO DE PREGAÇÃO: NORMATIVA (conforme Presley Camargo)
+O sermão normativo foca no que é DOUTRINÁRIO, ÉTICO ou APLICÁVEL a todos os tempos. Estabelece o que DEVE ser crido ou vivido hoje, com base no ensino bíblico. Base ideal: Epístolas, palavras de Jesus, mandamentos, advertências proféticas.
+
+## ESTRUTURA: Título normativo → Boas-vindas (em branco) → Introdução (apresentar norma/doutrina) → Transição →
+1. O que a Escritura ORDENA (mandamento com exegese do original, citações, referências cruzadas, aplicação prática)
+2. Por que isso é NORMATIVO (base doutrinária para todos os tempos)
+3. Os perigos de DESOBEDECER (advertência com ilustração)
+4. A graça para OBEDECER (CLÍMAX CRISTOCÊNTRICO — Cristo cumpriu a lei e nos capacita)
+→ Conclusão → Apelo (cristocêntrico — obediência pela graça)
+
+Aplique TODAS as 17 regras de engenharia do sermão.`;
+        break;
+
+      case "outline_theological":
+        userPrompt = `Gere um ESBOÇO DE SERMÃO TEOLÓGICO completo baseado no seguinte texto:
+
+**Passagem:** ${passage}
+${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
+
+## TIPO DE PREGAÇÃO: TEOLÓGICA (conforme Presley Camargo)
+O sermão teológico expõe uma DOUTRINA BÍBLICA profunda, mostrando sua base em VÁRIOS textos. Parte de um tema como "a graça", "a trindade", "a salvação" e percorre diversos textos com base doutrinária. Ensina verdades sólidas da fé e edifica a Igreja com fundamento.
+
+## ESTRUTURA: Título teológico → Boas-vindas (em branco) → Introdução (apresentar doutrina central) → Transição →
+1. Definição bíblica (exegese do original grego/hebraico, citações de dicionários e comentários, referências cruzadas de vários livros)
+2. Fundamentação canônica (a doutrina ao longo do AT e NT — visão panorâmica)
+3. Implicações práticas (como a doutrina transforma a vida cristã com ilustração e aplicação concreta)
+4. Culminação cristocêntrica (CLÍMAX CRISTOCÊNTRICO — como a doutrina aponta para Cristo e Sua obra na cruz)
+→ Conclusão (síntese doutrinária) → Apelo (cristocêntrico — compromisso com a verdade bíblica)
+
+Aplique TODAS as 17 regras de engenharia do sermão.`;
         break;
 
       case "question":
