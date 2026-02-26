@@ -97,7 +97,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { passage, question, type, materials_context, analyses_context, structure_config } = await req.json();
+    const { passage, question, type, materials_context, analyses_context, structure_config, approach } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -142,6 +142,23 @@ serve(async (req) => {
       : "";
 
     const depthLevel = structure_config?.depthLevel || 'basico';
+    
+    const approachInstructions: Record<string, string> = {
+      descriptive: `**📌 ABORDAGEM DESCRITIVA (conforme Presley Camargo):**
+O sermão foca em explicar O QUE ACONTECEU — como Deus agiu, o que os personagens fizeram. Olha para os FATOS bíblicos, a história, o contexto, e expõe a verdade que está ali. Perguntas guia: O que aconteceu? Como Deus agiu? O que os personagens fizeram? O que isso revela? Ideal para narrativas, salmos históricos, Atos, biografias bíblicas.`,
+      normative: `**📌 ABORDAGEM NORMATIVA (conforme Presley Camargo):**
+O sermão foca no que é DOUTRINÁRIO, ÉTICO ou APLICÁVEL a todos os tempos. Estabelece o que DEVE ser crido ou vivido hoje. Perguntas guia: O que a Escritura ordena? Por que é normativo? Quais os perigos de desobedecer? Qual a graça para obedecer? Ideal para epístolas, palavras de Jesus, mandamentos, advertências proféticas.`,
+      theological: `**📌 ABORDAGEM TEOLÓGICA (conforme Presley Camargo):**
+O sermão expõe uma DOUTRINA BÍBLICA profunda, mostrando sua base em VÁRIOS textos. Parte de um tema doutrinário e percorre diversos textos com base canônica. Perguntas guia: Qual a definição bíblica? Qual a fundamentação canônica? Quais as implicações práticas? Como aponta para Cristo? Ideal para estudos doutrinários e conferências teológicas.`,
+      descriptive_normative: `**📌 ABORDAGEM DESCRITIVA + NORMATIVA (conforme Presley Camargo):**
+O sermão COMBINA a descrição dos fatos bíblicos (o que aconteceu) COM a extração de normas para hoje (o que devemos fazer). Primeiro RELATA, depois PRESCREVE. É a abordagem mais completa para narrativas que contêm princípios éticos. Ideal para textos que narram eventos E contêm mandamentos ou princípios.`,
+      theological_doctrinal: `**📌 ABORDAGEM TEOLÓGICA DOUTRINÁRIA:**
+O sermão é um ESTUDO DOUTRINÁRIO PROFUNDO com base canônica completa. Percorre o tema desde o AT até o NT, mostrando o desenvolvimento progressivo da doutrina. Usa linguagem teológica precisa, referências aos originais, e debate entre posições teológicas. Ideal para seminários e estudos aprofundados.`,
+    };
+
+    const approachSection = approach && approachInstructions[approach]
+      ? `\n\n${approachInstructions[approach]}\n**INSTRUÇÃO:** Aplique esta abordagem ao sermão. O tipo de sermão (expositivo/textual/temático) define a ESTRUTURA, e a abordagem define o TRATAMENTO do texto.\n`
+      : '';
     
     const depthInstructions: Record<string, string> = {
       basico: `**🎯 NÍVEL DE PROFUNDIDADE: BÁSICO**
@@ -381,7 +398,7 @@ Seja o mais detalhado possível. O objetivo é que o leitor consiga VISUALIZAR c
         userPrompt = `Gere um ESBOÇO DE SERMÃO EXPOSITIVO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
 
 ## TIPO DE PREGAÇÃO: EXPOSITIVA
 A pregação expositiva expõe o significado de um texto bíblico específico, submetendo as ideias do pregador à autoridade da Escritura. Foca em explicar o contexto histórico, gramatical e literário para aplicá-lo à vida do ouvinte. O texto bíblico fala, e o pregador se submete a ele. As divisões seguem a estrutura natural do texto.
@@ -526,7 +543,7 @@ NÃO cite apenas a referência numérica. SEMPRE inclua o texto completo do vers
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEXTUAL completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
 
 ## TIPO DE PREGAÇÃO: TEXTUAL
 A pregação textual é baseada em um versículo ou pequeno trecho bíblico (2-3 versículos), onde o tema e os pontos principais são extraídos diretamente do texto. O esqueleto do sermão vem de palavras ou expressões-chave do próprio texto. Foca na aplicação direta de uma única passagem.
@@ -605,7 +622,7 @@ Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transiç
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEMÁTICO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
 
 ## TIPO DE PREGAÇÃO: TEMÁTICA
 A pregação temática é estruturada em torno de um assunto/tópico específico extraído do texto. Utiliza diversas passagens bíblicas que abordam o mesmo tema. O tema central governa o sermão, e as divisões derivam dele. Requer cuidado para não impor ideias próprias — o tema deve emergir do texto, não ser imposto a ele.
@@ -687,62 +704,8 @@ Aplique TODAS as 17 regras de engenharia do sermão: escada espiritual, transiç
 A seção "Citações" de cada ponto deve conter pelo menos uma citação de cada tipo disponível, priorizando os materiais do usuário.`;
         break;
 
-      case "outline_descriptive":
-        userPrompt = `Gere um ESBOÇO DE SERMÃO DESCRITIVO completo baseado no seguinte texto:
-
-**Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
-
-## TIPO DE PREGAÇÃO: DESCRITIVA (conforme Presley Camargo)
-O sermão descritivo foca em explicar O QUE ACONTECEU — como Deus agiu, o que os personagens fizeram. Olha para os FATOS bíblicos, a história, o contexto, e expõe a verdade que está ali. Base ideal: Narrativas, salmos históricos, Atos dos Apóstolos, biografias bíblicas.
-
-## ESTRUTURA: Título descritivo → Boas-vindas (em branco) → Introdução (contextualizar narrativa) → Transição →
-1. O que aconteceu? (Descrição dos fatos com citações e referências cruzadas)
-2. Como Deus agiu? (A ação divina na narrativa)
-3. O que os personagens fizeram? (Reações humanas com ilustração)
-4. O que isso revela sobre Cristo? (CLÍMAX CRISTOCÊNTRICO)
-→ Conclusão (síntese narrativa) → Apelo (cristocêntrico)
-
-Aplique TODAS as 17 regras de engenharia do sermão.`;
-        break;
-
-      case "outline_normative":
-        userPrompt = `Gere um ESBOÇO DE SERMÃO NORMATIVO completo baseado no seguinte texto:
-
-**Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
-
-## TIPO DE PREGAÇÃO: NORMATIVA (conforme Presley Camargo)
-O sermão normativo foca no que é DOUTRINÁRIO, ÉTICO ou APLICÁVEL a todos os tempos. Estabelece o que DEVE ser crido ou vivido hoje, com base no ensino bíblico. Base ideal: Epístolas, palavras de Jesus, mandamentos, advertências proféticas.
-
-## ESTRUTURA: Título normativo → Boas-vindas (em branco) → Introdução (apresentar norma/doutrina) → Transição →
-1. O que a Escritura ORDENA (mandamento com exegese do original, citações, referências cruzadas, aplicação prática)
-2. Por que isso é NORMATIVO (base doutrinária para todos os tempos)
-3. Os perigos de DESOBEDECER (advertência com ilustração)
-4. A graça para OBEDECER (CLÍMAX CRISTOCÊNTRICO — Cristo cumpriu a lei e nos capacita)
-→ Conclusão → Apelo (cristocêntrico — obediência pela graça)
-
-Aplique TODAS as 17 regras de engenharia do sermão.`;
-        break;
-
-      case "outline_theological":
-        userPrompt = `Gere um ESBOÇO DE SERMÃO TEOLÓGICO completo baseado no seguinte texto:
-
-**Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${pastoralFilter}
-
-## TIPO DE PREGAÇÃO: TEOLÓGICA (conforme Presley Camargo)
-O sermão teológico expõe uma DOUTRINA BÍBLICA profunda, mostrando sua base em VÁRIOS textos. Parte de um tema como "a graça", "a trindade", "a salvação" e percorre diversos textos com base doutrinária. Ensina verdades sólidas da fé e edifica a Igreja com fundamento.
-
-## ESTRUTURA: Título teológico → Boas-vindas (em branco) → Introdução (apresentar doutrina central) → Transição →
-1. Definição bíblica (exegese do original grego/hebraico, citações de dicionários e comentários, referências cruzadas de vários livros)
-2. Fundamentação canônica (a doutrina ao longo do AT e NT — visão panorâmica)
-3. Implicações práticas (como a doutrina transforma a vida cristã com ilustração e aplicação concreta)
-4. Culminação cristocêntrica (CLÍMAX CRISTOCÊNTRICO — como a doutrina aponta para Cristo e Sua obra na cruz)
-→ Conclusão (síntese doutrinária) → Apelo (cristocêntrico — compromisso com a verdade bíblica)
-
-Aplique TODAS as 17 regras de engenharia do sermão.`;
-        break;
+      // outline_descriptive, outline_normative, outline_theological are now handled as "approach" 
+      // parameter within the 3 main types (expository, textual, thematic)
 
       case "question":
         userPrompt = `Sobre o seguinte texto bíblico:
@@ -865,8 +828,89 @@ Retorne exatamente este formato JSON:
 Máximo de 8 sugestões, priorizando as mais impactantes.`;
         break;
 
+      case "lessons_applications":
+        userPrompt = `Extraia LIÇÕES, APLICAÇÕES e REFLEXÕES do seguinte texto bíblico:
+
+**Passagem:** ${passage}
+${materialsSection}${citationRule}
+
+## ANÁLISE DE LIÇÕES, APLICAÇÕES E REFLEXÕES
+
+### 1. 📖 TEXTO NA ÍNTEGRA
+Apresente o texto completo da passagem na versão ACF (Almeida Corrigida Fiel).
+
+### 2. 📝 LIÇÕES DO TEXTO (O que o texto ENSINA?)
+Para cada lição identificada:
+- **Lição:** (declaração clara e objetiva do ensino)
+- **Base textual:** (versículo específico que sustenta a lição)
+- **Explicação:** (por que isso é uma lição importante — contexto exegético breve)
+- **Referência cruzada:** (outro texto bíblico que confirma essa lição)
+Identifique pelo menos 5 lições distintas.
+
+### 3. 🎯 APLICAÇÕES PRÁTICAS (O que FAZER com isso?)
+Para cada aplicação:
+- **Aplicação:** (ação concreta e específica)
+- **Base:** (qual lição sustenta essa aplicação)
+- **Como fazer:** (passos práticos — não genéricos)
+- **Prazo sugerido:** (esta semana, este mês, hábito diário)
+Identifique pelo menos 5 aplicações CONCRETÍSSIMAS.
+
+### 4. 💭 REFLEXÕES PESSOAIS (O que MEDITAR?)
+Para cada reflexão:
+- **Pergunta para reflexão:** (pergunta profunda e pessoal)
+- **Versículo-chave:** (o versículo que provoca a reflexão)
+- **Conexão com a vida:** (como isso se conecta à realidade do leitor)
+Identifique pelo menos 5 reflexões.
+
+### 5. ⛪ CONEXÃO CRISTOCÊNTRICA
+- Como estas lições apontam para Cristo?
+- O que a cruz acrescenta ao entendimento destas verdades?
+
+### 6. 📋 RESUMO PARA ESTUDO
+- **3 lições essenciais** (as mais importantes do texto)
+- **3 ações imediatas** (o que fazer HOJE)
+- **1 versículo para memorizar** (o mais impactante)
+- **1 oração sugerida** (baseada nas lições do texto)
+
+Seja profundo mas acessível. Cada lição, aplicação e reflexão deve ser fundamentada no texto, não inventada.`;
+        break;
+
+      case "generate_map_image":
+        // This type generates an image, not streaming text
+        break;
+
       default:
         userPrompt = passage || question || "Ajude-me a entender princípios de exegese bíblica.";
+    }
+
+    // Handle map image generation separately
+    if (type === "generate_map_image") {
+      const mapInfo = question || `Mapa bíblico de ${passage}`;
+      const imgResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-pro-image-preview",
+          messages: [{ role: "user", content: `Gere uma imagem de um MAPA BÍBLICO detalhado e bonito para a passagem "${passage}". O mapa deve ser estilo cartográfico antigo/pergaminho com os seguintes dados:\n${mapInfo}\n\nO mapa deve mostrar: terreno, rios, mares, cidades marcadas com pontos, rotas tracejadas, e uma legenda. Estilo de mapa antigo bíblico com cores sépia/marrom. Ultra high resolution.` }],
+          modalities: ["image", "text"],
+        }),
+      });
+      
+      if (!imgResponse.ok) {
+        return new Response(JSON.stringify({ error: "Erro ao gerar mapa" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      const imgData = await imgResponse.json();
+      const imageUrl = imgData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      
+      return new Response(JSON.stringify({ image_url: imageUrl || null }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const isJsonType = type === "classify_content" || type === "extract_metadata" || type === "suggest_improvements";

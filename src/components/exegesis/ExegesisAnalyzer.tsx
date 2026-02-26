@@ -9,7 +9,8 @@ import type { ExegesisAnalysis } from '@/hooks/useExegesis';
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
   | 'theological_analysis' | 'application' | 'question'
-  | 'inductive_method' | 'version_comparison' | 'devotional' | 'geographic_historical';
+  | 'inductive_method' | 'version_comparison' | 'devotional' | 'geographic_historical'
+  | 'lessons_applications';
 
 interface Props {
   onSave: (analysis: { passage: string; analysis_type: string; question?: string; content: string }) => Promise<ExegesisAnalysis | null>;
@@ -28,6 +29,7 @@ const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType
   { id: 'version_comparison', label: 'Versões', icon: GitCompare, description: 'Compare diferentes traduções bíblicas' },
   { id: 'devotional', label: 'Devocional', icon: Heart, description: 'Reflexão devocional cristocêntrica' },
   { id: 'geographic_historical', label: 'Geográfico/Histórico', icon: Globe, description: 'Análise geográfica e histórica com mapas' },
+  { id: 'lessons_applications', label: 'Lições e Aplicações', icon: Lightbulb, description: 'Extraia lições, aplicações e reflexões do texto' },
   { id: 'question', label: 'Pergunta Livre', icon: MessageCircleQuestion, description: 'Faça uma pergunta sobre o texto' },
 ];
 
@@ -74,20 +76,19 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
     try {
       const mapDataMatch = content.match(/```MAP_DATA\n([\s\S]*?)```/);
       const mapInfo = mapDataMatch ? mapDataMatch[1] : `Mapa bíblico de ${passage}`;
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({
-          model: "google/gemini-3-pro-image-preview",
-          messages: [{ role: "user", content: `Gere uma imagem de um MAPA BÍBLICO detalhado e bonito para a passagem "${passage}". O mapa deve ser estilo cartográfico antigo/pergaminho com os seguintes dados:\n${mapInfo}\n\nO mapa deve mostrar: terreno, rios, mares, cidades marcadas com pontos, rotas tracejadas, e uma legenda. Estilo de mapa antigo bíblico com cores sépia/marrom.` }],
+          passage,
+          type: 'generate_map_image',
+          question: mapInfo,
         }),
       });
       if (resp.ok) {
         const data = await resp.json();
-        const imageContent = data.choices?.[0]?.message?.content;
-        if (imageContent) {
-          const imgMatch = imageContent.match(/!\[.*?\]\((.*?)\)/);
-          if (imgMatch) setMapImageUrl(imgMatch[1]);
+        if (data.image_url) {
+          setMapImageUrl(data.image_url);
         }
       }
     } catch (e) {
