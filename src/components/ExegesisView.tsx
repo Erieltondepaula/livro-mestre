@@ -67,6 +67,7 @@ export function ExegesisView() {
             getRelevantAnalysesContext={getRelevantAnalysesContext}
             fetchOutlineVersions={fetchOutlineVersions}
             materialsCount={materials.length}
+            materials={materials}
             onSuggestImprovements={suggestImprovements}
           />
         </TabsContent>
