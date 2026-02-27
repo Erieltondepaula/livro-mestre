@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Sparkles, Send, Loader2, Copy, Check, Lightbulb, HelpCircle, Flame, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Sparkles, Send, Loader2, Copy, Check, Lightbulb, HelpCircle, Flame, ShieldCheck, RefreshCw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
@@ -202,6 +202,9 @@ export function SermonTitleGenerator({ getMaterialsContext }: Props) {
                 </Button>
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={handleGenerate}>
                   <RefreshCw className="w-3 h-3" /> Regenerar
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-destructive hover:text-destructive" onClick={() => setResult('')}>
+                  <Trash2 className="w-3 h-3" /> Limpar
                 </Button>
               </div>
             )}
