@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -38,7 +38,8 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
 export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount = 0 }: Props) {
   const [bibleBook, setBibleBook] = useState('');
-  const [chapter, setChapter] = useState('');
+  const [chapterStart, setChapterStart] = useState('');
+  const [chapterEnd, setChapterEnd] = useState('');
   const [verseStart, setVerseStart] = useState('');
   const [verseEnd, setVerseEnd] = useState('');
   const [customPassage, setCustomPassage] = useState('');
@@ -55,15 +56,46 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
 
   const bibleBookNames = getBibleBookNames();
   const chapters = bibleBook ? getChaptersArray(bibleBook) : [];
-  const verses = bibleBook && chapter ? getVersesArray(bibleBook, parseInt(chapter)) : [];
+  const isMultiChapter = chapterStart && chapterEnd && chapterEnd !== chapterStart;
+  const verses = bibleBook && chapterStart && !isMultiChapter ? getVersesArray(bibleBook, parseInt(chapterStart)) : [];
+
+  // Map book names to bibliaonline.com.br slugs
+  const BIBLE_ONLINE_SLUGS: Record<string, string> = {
+    'Gênesis': 'gn', 'Êxodo': 'ex', 'Levítico': 'lv', 'Números': 'nm', 'Deuteronômio': 'dt',
+    'Josué': 'js', 'Juízes': 'jz', 'Rute': 'rt', '1 Samuel': '1sm', '2 Samuel': '2sm',
+    '1 Reis': '1rs', '2 Reis': '2rs', '1 Crônicas': '1cr', '2 Crônicas': '2cr',
+    'Esdras': 'ed', 'Neemias': 'ne', 'Ester': 'et', 'Jó': 'jó',
+    'Salmos': 'sl', 'Provérbios': 'pv', 'Eclesiastes': 'ec', 'Cânticos': 'ct',
+    'Isaías': 'is', 'Jeremias': 'jr', 'Lamentações': 'lm', 'Ezequiel': 'ez', 'Daniel': 'dn',
+    'Oséias': 'os', 'Joel': 'jl', 'Amós': 'am', 'Obadias': 'ob', 'Jonas': 'jn',
+    'Miquéias': 'mq', 'Naum': 'na', 'Habacuque': 'hc', 'Sofonias': 'sf', 'Ageu': 'ag',
+    'Zacarias': 'zc', 'Malaquias': 'ml',
+    'Mateus': 'mt', 'Marcos': 'mc', 'Lucas': 'lc', 'João': 'jo', 'Atos': 'atos',
+    'Romanos': 'rm', '1 Coríntios': '1co', '2 Coríntios': '2co', 'Gálatas': 'gl',
+    'Efésios': 'ef', 'Filipenses': 'fp', 'Colossenses': 'cl',
+    '1 Tessalonicenses': '1ts', '2 Tessalonicenses': '2ts',
+    '1 Timóteo': '1tm', '2 Timóteo': '2tm', 'Tito': 'tt', 'Filemom': 'fm',
+    'Hebreus': 'hb', 'Tiago': 'tg', '1 Pedro': '1pe', '2 Pedro': '2pe',
+    '1 João': '1jo', '2 João': '2jo', '3 João': '3jo', 'Judas': 'jd', 'Apocalipse': 'ap',
+  };
+
+  const getBibleOnlineUrl = () => {
+    if (!bibleBook || !chapterStart) return null;
+    const slug = BIBLE_ONLINE_SLUGS[bibleBook];
+    if (!slug) return null;
+    return `https://www.bibliaonline.com.br/acf/${slug}/${chapterStart}`;
+  };
 
   const getPassageText = () => {
     if (customPassage.trim()) return customPassage.trim();
     if (!bibleBook) return '';
     let passage = bibleBook;
-    if (chapter) {
-      passage += ` ${chapter}`;
-      if (verseStart) {
+    if (chapterStart) {
+      passage += ` ${chapterStart}`;
+      if (chapterEnd && chapterEnd !== chapterStart) {
+        // Multi-chapter range (no verses)
+        passage += `-${chapterEnd}`;
+      } else if (verseStart) {
         passage += `:${verseStart}`;
         if (verseEnd && verseEnd !== verseStart) passage += `-${verseEnd}`;
       }
@@ -174,7 +206,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, question, onSave, getMaterialsContext]);
+  }, [bibleBook, chapterStart, chapterEnd, verseStart, verseEnd, customPassage, selectedType, question, onSave, getMaterialsContext]);
 
   const renderMarkdown = (text: string) => {
     let html = text
@@ -210,36 +242,56 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
           </div>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div className="col-span-2 sm:col-span-1">
             <label className="block text-xs font-medium text-muted-foreground mb-1">Livro</label>
-            <select value={bibleBook} onChange={(e) => { setBibleBook(e.target.value); setChapter(''); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm">
+            <select value={bibleBook} onChange={(e) => { setBibleBook(e.target.value); setChapterStart(''); setChapterEnd(''); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm">
               <option value="">Selecione</option>
               {bibleBookNames.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Capítulo</label>
-            <select value={chapter} onChange={(e) => { setChapter(e.target.value); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm" disabled={!bibleBook}>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Cap. Início</label>
+            <select value={chapterStart} onChange={(e) => { setChapterStart(e.target.value); setChapterEnd(''); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm" disabled={!bibleBook}>
               <option value="">-</option>
               {chapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
             </select>
           </div>
           <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Cap. Fim</label>
+            <select value={chapterEnd} onChange={(e) => { setChapterEnd(e.target.value); if (e.target.value && e.target.value !== chapterStart) { setVerseStart(''); setVerseEnd(''); } }} className="input-library w-full text-sm" disabled={!chapterStart}>
+              <option value="">Mesmo</option>
+              {chapters.filter(ch => ch >= parseInt(chapterStart)).map(ch => <option key={ch} value={ch}>{ch}</option>)}
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Vers. Início</label>
-            <select value={verseStart} onChange={(e) => setVerseStart(e.target.value)} className="input-library w-full text-sm" disabled={!chapter}>
-              <option value="">-</option>
+            <select value={verseStart} onChange={(e) => setVerseStart(e.target.value)} className="input-library w-full text-sm" disabled={!chapterStart || isMultiChapter}>
+              <option value="">{isMultiChapter ? 'N/A' : '-'}</option>
               {verses.map(v => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Vers. Fim</label>
-            <select value={verseEnd} onChange={(e) => setVerseEnd(e.target.value)} className="input-library w-full text-sm" disabled={!verseStart}>
-              <option value="">-</option>
+            <select value={verseEnd} onChange={(e) => setVerseEnd(e.target.value)} className="input-library w-full text-sm" disabled={!verseStart || isMultiChapter}>
+              <option value="">{isMultiChapter ? 'N/A' : '-'}</option>
               {verses.filter(v => !verseStart || v >= parseInt(verseStart)).map(v => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
         </div>
+
+        {/* Bible Online Link */}
+        {getBibleOnlineUrl() && (
+          <a
+            href={getBibleOnlineUrl()!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Ler na Bíblia Online (ACF) — {bibleBook} {chapterStart}{isMultiChapter ? `-${chapterEnd}` : ''}
+          </a>
+        )}
         <div>
           <label className="block text-xs font-medium text-muted-foreground mb-1">Ou cole/digite a referência ou texto bíblico</label>
           <Textarea value={customPassage} onChange={(e) => setCustomPassage(e.target.value)} className="min-h-[60px] text-sm" placeholder="Ex: Romanos 8:28-30 ou cole o texto bíblico direto" />
