@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
-import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin, ExternalLink } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin, ExternalLink, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import type { ExegesisAnalysis } from '@/hooks/useExegesis';
-import { BiblicalMap, extractLocationsFromContent } from './BiblicalMap';
+// AI-generated map image is used instead of interactive Leaflet map
 
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
@@ -360,29 +360,28 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
             </Button>
           </div>
           <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(lastResult.content) }} />
-          {/* Map for Geographic/Historical */}
-          {lastResult.type === 'geographic_historical' && (() => {
-            const locations = extractLocationsFromContent(lastResult.content);
-            return locations.length > 0 ? (
-              <div className="mt-4">
-                <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico Interativo</h4>
-                <BiblicalMap passage={lastResult.passage} locations={locations} />
-              </div>
-            ) : (
-              <div className="mt-4 border border-border rounded-lg p-4">
-                <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico</h4>
-                {mapLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Gerando imagem do mapa...
-                  </div>
-                ) : mapImageUrl ? (
+          {/* Map for Geographic/Historical - AI generated image */}
+          {lastResult.type === 'geographic_historical' && (
+            <div className="mt-4 border border-border rounded-lg p-4">
+              <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico</h4>
+              {mapLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Gerando imagem do mapa com IA...
+                </div>
+              ) : mapImageUrl ? (
+                <div className="space-y-2">
                   <img src={mapImageUrl} alt={`Mapa bíblico de ${lastResult.passage}`} className="w-full rounded-lg shadow-md" />
-                ) : (
-                  <p className="text-xs text-muted-foreground italic text-center py-4">Os dados geográficos estão descritos na análise acima.</p>
-                )}
-              </div>
-            );
-          })()}
+                  <div className="flex justify-end">
+                    <a href={mapImageUrl} download={`mapa-biblico-${lastResult.passage.replace(/\s+/g, '-')}.png`} className="text-xs text-primary hover:underline flex items-center gap-1">
+                      <Download className="w-3 h-3" /> Baixar mapa
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground italic text-center py-4">Não foi possível gerar o mapa. Os dados geográficos estão na análise acima.</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
