@@ -1050,7 +1050,8 @@ Para cada um, explique em 2-3 frases POR QUE ele é poderoso e como usá-lo:
 
 ---
 
-## REGRAS:
+## REGRAS CRÍTICAS:
+- **GERE APENAS o(s) estilo(s) solicitado(s) acima.** Se foi pedido apenas PROVOCATIVO, gere SOMENTE títulos provocativos. Se foi pedido apenas CRIATIVO, gere SOMENTE títulos criativos. NÃO gere estilos que não foram solicitados. Gere TODOS os 4 estilos APENAS quando o estilo for "TODOS".
 - Cada título deve ser CURTO (máx 8 palavras), MEMORÁVEL e PROCLAMÁVEL
 - Os temas devem ser específicos ao texto, não genéricos
 - Os pontos devem ser progressivos (escada espiritual)
