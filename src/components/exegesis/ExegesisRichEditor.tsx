@@ -21,7 +21,7 @@ import {
   List, ListOrdered, Quote,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Highlighter, Link as LinkIcon,
-  Undo, Redo, Pilcrow, Palette, Type, ChevronDown,
+  Undo, Redo, Pilcrow, Palette, Type, ChevronDown, Eye, EyeOff,
 } from 'lucide-react';
 
 interface ExegesisRichEditorProps {
@@ -41,16 +41,17 @@ const FONT_COLORS = [
   '#C026D3', '#DB2777', '#E11D48', '#F43F5E',
 ];
 
-const HIGHLIGHT_COLORS = [
-  { color: '#FEF08A', label: 'Amarelo' },
-  { color: '#BBF7D0', label: 'Verde' },
-  { color: '#BFDBFE', label: 'Azul' },
-  { color: '#FED7AA', label: 'Laranja' },
-  { color: '#FBCFE8', label: 'Rosa' },
-  { color: '#DDD6FE', label: 'Roxo' },
-  { color: '#F5F5F4', label: 'Cinza' },
-  { color: '#FECACA', label: 'Vermelho' },
+// Legenda oficial de cores para sermões/exegese
+const SEMANTIC_HIGHLIGHT_COLORS = [
+  { color: '#BFDBFE', label: 'Azul', meaning: 'Citações Bíblicas', emoji: '🔵' },
+  { color: '#1a1a1a', label: 'Preto', meaning: 'Explanação Principal', emoji: '⚫', isTextColor: true },
+  { color: '#FECACA', label: 'Vermelho', meaning: 'Ilustrações / Ênfase', emoji: '🔴' },
+  { color: '#BBF7D0', label: 'Verde', meaning: 'Aplicação Prática', emoji: '🟢' },
+  { color: '#FEF08A', label: 'Amarelo', meaning: 'Notas Pessoais', emoji: '🟡' },
+  { color: '#DDD6FE', label: 'Roxo', meaning: 'Centralidade de Cristo', emoji: '🟣' },
 ];
+
+const HIGHLIGHT_COLORS = SEMANTIC_HIGHLIGHT_COLORS.filter(c => !c.isTextColor);
 
 const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px'];
 
@@ -107,6 +108,7 @@ export function ExegesisRichEditor({
 }: ExegesisRichEditorProps) {
   const [customColor, setCustomColor] = useState('#000000');
   const [customHighlight, setCustomHighlight] = useState('#FEF08A');
+  const [showLegend, setShowLegend] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -332,6 +334,39 @@ export function ExegesisRichEditor({
             <ToolBtn tooltip="Inserir link" onClick={setLink}>
               <LinkIcon className="h-3.5 w-3.5" />
             </ToolBtn>
+
+            <Separator orientation="vertical" className="h-6 mx-1" />
+
+            {/* Legend toggle */}
+            <ToolBtn tooltip={showLegend ? "Ocultar Legenda" : "Mostrar Legenda"} onClick={() => setShowLegend(!showLegend)}>
+              {showLegend ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            </ToolBtn>
+          </div>
+        )}
+
+        {/* Color Legend Panel */}
+        {showLegend && (
+          <div className="border-b bg-muted/30 px-3 py-2">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">🎨 Legenda de Cores</p>
+            <div className="flex flex-wrap gap-2">
+              {SEMANTIC_HIGHLIGHT_COLORS.map(c => (
+                <button
+                  key={c.color}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs hover:bg-muted/60 transition-colors border border-border/50"
+                  onClick={() => {
+                    if (c.isTextColor) {
+                      editor?.chain().focus().setColor(c.color).run();
+                    } else {
+                      editor?.chain().focus().toggleHighlight({ color: c.color }).run();
+                    }
+                  }}
+                >
+                  <span className="text-sm">{c.emoji}</span>
+                  <span className="w-3 h-3 rounded-sm border border-border/50" style={{ backgroundColor: c.color }} />
+                  <span className="font-medium">{c.meaning}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
