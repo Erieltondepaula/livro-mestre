@@ -105,6 +105,22 @@ PRINCÍPIOS FUNDAMENTAIS:
 7. **4 verbos simultâneos (Olyott)**: Toda pregação proclama, anuncia boas-novas, testemunha fatos e ensina implicações.
 8. **Contra o moralismo (Chapell)**: Sermão sem graça é farisaísmo. A obediência nasce da graça, não do esforço humano.
 
+## OS 4 PILARES QUE TRANSFORMAM UM SERMÃO EM UMA EXPERIÊNCIA QUE MUDA VIDAS:
+
+### 🔥 PILAR 1 — CHOQUE DE REALIDADE (Lado Provocativo)
+O sermão vira ESPELHO. O pregador descreve com precisão a angústia, o medo, o egoísmo que o ouvinte sente em segredo. A provocação nasce do incômodo de se ver "desnudado". A pessoa percebe que sua máscara não serve mais. Aplique isso: em cada ponto, inclua pelo menos um momento de confronto amoroso que faça o ouvinte se reconhecer.
+
+### 💡 PILAR 2 — QUEBRA DE EXPECTATIVA (Lado Criativo)
+Quando o pregador usa metáforas inesperadas ou uma perspectiva cultural nova sobre um texto antigo, o cérebro "acorda". A mensagem sai do "eu já sei isso" para "nunca vi por esse ângulo". Aplique isso: use ilustrações surpreendentes, analogias modernas inesperadas e ângulos contra-intuitivos para manter a atenção.
+
+### ❓ PILAR 3 — A PERGUNTA CERTA (Lado Questionativo)
+O que muda uma pessoa raramente é uma afirmação absoluta, mas uma pergunta que ela não consegue parar de responder. Perguntas como "Por que você faz o que faz?" ou "Quem você seria se ninguém estivesse olhando?" forçam o ouvinte a um diálogo interno. Aplique isso: insira perguntas retóricas profundas em cada ponto — perguntas que ecoam na mente do ouvinte por dias.
+
+### ✅ PILAR 4 — ESPERANÇA AFIRMATIVA (Lado Afirmativo)
+Reflexão sem esperança gera apenas culpa. A mudança real ocorre quando o sermão afirma que há propósito, perdão e identidade nova. Ninguém muda se não acreditar que uma versão melhor de si é possível. Aplique isso: cada ponto deve terminar com uma afirmação de valor em Cristo — uma declaração que dê coragem ao ouvinte para mudar.
+
+**REGRA DOS 4 PILARES EM CADA PONTO DO SERMÃO:** Todo ponto deve conter: (1) um momento PROVOCATIVO (espelho), (2) uma perspectiva CRIATIVA (surpresa), (3) uma PERGUNTA que ecoa, (4) uma AFIRMAÇÃO de esperança. Estes 4 elementos transformam um "discurso religioso" em uma experiência que altera a trajetória de uma vida.
+
 ## ESTRUTURA DA ANÁLISE EXEGÉTICA:
 
 ### 1. CONTEXTO HISTÓRICO-CULTURAL
@@ -953,6 +969,96 @@ Identifique pelo menos 5 reflexões.
 
 Seja profundo mas acessível. Cada lição, aplicação e reflexão deve ser fundamentada no texto, não inventada.`;
         break;
+
+      case "title_generator": {
+        const styleMap: Record<string, string> = {
+          all: 'TODOS os 4 estilos (Criativo, Provocativo, Questionativo, Afirmativo)',
+          creative: 'estilo CRIATIVO',
+          provocative: 'estilo PROVOCATIVO',
+          questioning: 'estilo QUESTIONATIVO',
+          affirmative: 'estilo AFIRMATIVO',
+        };
+        const selectedStyle = question || 'all';
+        const styleLabel = styleMap[selectedStyle] || styleMap.all;
+        userPrompt = `Gere TÍTULOS, TEMAS e PONTOS para sermões baseados na passagem abaixo, usando ${styleLabel}.
+${materialsSection}
+
+**Passagem:** ${passage}
+
+## OS 4 PILARES QUE TRANSFORMAM UM SERMÃO:
+
+### 🔥 PILAR 1 — CHOQUE DE REALIDADE (Provocativo)
+O sermão vira ESPELHO. O pregador não aponta o dedo — descreve com precisão a angústia, o medo, o egoísmo que o ouvinte sente em segredo. A provocação nasce do incômodo de se ver "desnudado". Títulos provocativos confrontam o ouvinte com sua máscara.
+**Técnicas:** Espelhar dores reais, confrontar hipocrisia com amor, revelar o que ninguém fala em voz alta.
+
+### 💡 PILAR 2 — QUEBRA DE EXPECTATIVA (Criativo)
+Quando o pregador usa metáforas inesperadas, perspectivas culturais novas sobre textos antigos, o cérebro "acorda". A mensagem sai do "eu já sei isso" para "nunca vi por esse ângulo". Títulos criativos estimulam a imaginação e geram curiosidade.
+**Técnicas:** Inversão de expectativa, metáforas incomuns, perspectiva contra-intuitiva, títulos que geram curiosidade.
+
+### ❓ PILAR 3 — A PERGUNTA CERTA (Questionativo)
+O que muda uma pessoa raramente é uma afirmação absoluta, mas uma pergunta que ela não consegue parar de responder. Perguntas que questionam motivações do coração forçam o ouvinte a um diálogo interno — deixa de ser espectador e vira protagonista.
+**Técnicas:** Perguntas retóricas poderosas, questionamento de motivações ocultas, perguntas que ecoam por dias.
+
+### ✅ PILAR 4 — ESPERANÇA AFIRMATIVA (Afirmativo)
+A reflexão sem esperança gera apenas culpa. A mudança real ocorre quando o sermão afirma valor, propósito, perdão e identidade nova. Ninguém muda se não acreditar que uma versão melhor de si mesmo é possível. Títulos afirmativos declaram verdades que dão coragem.
+**Técnicas:** Declarações de identidade em Cristo, promessas bíblicas personalizadas, afirmações de valor e propósito.
+
+---
+
+## GERE EXATAMENTE NESTE FORMATO:
+
+${selectedStyle === 'all' || selectedStyle === 'creative' ? `## 💡 TÍTULOS CRIATIVOS
+1. **[Título criativo 1]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+2. **[Título criativo 2]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+3. **[Título criativo 3]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+4. **[Título criativo 4]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+5. **[Título criativo 5]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+` : ''}
+${selectedStyle === 'all' || selectedStyle === 'provocative' ? `## 🔥 TÍTULOS PROVOCATIVOS
+1. **[Título provocativo 1]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+2. **[Título provocativo 2]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+3. **[Título provocativo 3]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+4. **[Título provocativo 4]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+5. **[Título provocativo 5]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+` : ''}
+${selectedStyle === 'all' || selectedStyle === 'questioning' ? `## ❓ TÍTULOS QUESTIONATIVOS
+1. **[Título questionativo 1]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+2. **[Título questionativo 2]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+3. **[Título questionativo 3]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+4. **[Título questionativo 4]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+5. **[Título questionativo 5]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+` : ''}
+${selectedStyle === 'all' || selectedStyle === 'affirmative' ? `## ✅ TÍTULOS AFIRMATIVOS
+1. **[Título afirmativo 1]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+2. **[Título afirmativo 2]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+3. **[Título afirmativo 3]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+4. **[Título afirmativo 4]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+5. **[Título afirmativo 5]** — *Tema: [tema]* — Pontos sugeridos: [ponto 1] | [ponto 2] | [ponto 3]
+` : ''}
+
+---
+
+## 🏆 TOP 3 — OS MELHORES TÍTULOS (independente do estilo)
+Para cada um, explique em 2-3 frases POR QUE ele é poderoso e como usá-lo:
+1. **[Melhor título]** — *Por que funciona:* [explicação]
+2. **[Segundo melhor]** — *Por que funciona:* [explicação]
+3. **[Terceiro melhor]** — *Por que funciona:* [explicação]
+
+---
+
+## REGRAS:
+- Cada título deve ser CURTO (máx 8 palavras), MEMORÁVEL e PROCLAMÁVEL
+- Os temas devem ser específicos ao texto, não genéricos
+- Os pontos devem ser progressivos (escada espiritual)
+- Títulos provocativos confrontam SEM ofender — com amor e verdade
+- Títulos criativos devem surpreender — NUNCA clichês religiosos
+- Títulos questionativos devem provocar reflexão PROFUNDA
+- Títulos afirmativos devem declarar verdades que DÃO CORAGEM
+- TODOS devem ser cristocêntricos — apontar para Cristo
+- Gere 5 títulos por estilo solicitado
+- Cada ponto sugerido deve ser um verbo no infinitivo ou imperativo`;
+        break;
+      }
 
       case "generate_map_image":
         // This type generates an image, not streaming text
