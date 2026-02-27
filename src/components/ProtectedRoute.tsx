@@ -7,11 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { user, isAdmin, isLoading, profile } = useAuth();
-
-  // --- REGRA MESTRA: IDENTIFICAÇÃO DO DONO ---
-  // Verifica se é o seu email (convertendo para minúsculo para evitar erros)
-  const isMaster = user?.email?.toLowerCase().trim() === "erieltondepaulamelo@gmail.com";
+  const { user, isAdmin, isMaster, isLoading, profile } = useAuth();
 
   if (isLoading) {
     return (
@@ -28,8 +24,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to="/auth" replace />;
   }
 
-  // Verifica se a conta está ativa. 
-  // ADIÇÃO: Se for 'isMaster', ignoramos o bloqueio (!profile.is_active)
+  // Master users bypass is_active check
   if (profile && !profile.is_active && !isMaster) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -43,8 +38,7 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     );
   }
 
-  // Verifica permissão de Admin.
-  // ADIÇÃO: Se for 'isMaster', você passa mesmo sem ser admin no banco.
+  // Master users bypass admin requirement
   if (requireAdmin && !isAdmin && !isMaster) {
     return <Navigate to="/" replace />;
   }
