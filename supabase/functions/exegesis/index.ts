@@ -921,7 +921,29 @@ Seja profundo mas acessível. Cada lição, aplicação e reflexão deve ser fun
         },
         body: JSON.stringify({
           model: "google/gemini-3-pro-image-preview",
-          messages: [{ role: "user", content: `Gere uma imagem de um MAPA BÍBLICO detalhado e bonito para a passagem "${passage}". O mapa deve ser estilo cartográfico antigo/pergaminho com os seguintes dados:\n${mapInfo}\n\nO mapa deve mostrar: terreno, rios, mares, cidades marcadas com pontos, rotas tracejadas, e uma legenda. Estilo de mapa antigo bíblico com cores sépia/marrom. Ultra high resolution.` }],
+          messages: [{ role: "user", content: `Generate an ULTRA HIGH RESOLUTION, extremely detailed biblical MAP image for the passage "${passage}". 
+
+CRITICAL QUALITY REQUIREMENTS:
+- Output the LARGEST possible image resolution (at least 2048x2048 pixels or higher)
+- Every label, city name, and text must be SHARP, CRISP, and perfectly LEGIBLE even when zoomed in
+- Use THICK, bold font for all city names and labels
+- Lines, borders, and route paths must be clean and well-defined
+
+MAP STYLE:
+- Ancient cartographic parchment style with warm sepia/brown tones
+- Detailed terrain: mountains drawn with hatching, rivers as flowing lines, seas with wave patterns
+- Cities marked with ornate diamond/dot markers
+- Travel routes shown as bold dashed arrows indicating direction
+- Decorative border with ancient biblical illustrations
+- Title banner at the top with the passage reference
+- Clear legend box showing: cities, routes, maritime paths, land paths, references
+
+MAP DATA:
+${mapInfo}
+
+LANGUAGE: All labels, city names, sea names, region names, and legend text must be in PORTUGUESE (Brazilian Portuguese).
+
+Make this the highest quality, most detailed biblical map possible. Ultra high resolution. 4K quality.` }],
           modalities: ["image", "text"],
         }),
       });
