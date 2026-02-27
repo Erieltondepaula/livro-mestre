@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import type { ExegesisAnalysis } from '@/hooks/useExegesis';
-// AI-generated map image is used instead of interactive Leaflet map
+import { MapImageViewer, appendMapImageUrl } from './MapImageViewer';
 
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
@@ -103,7 +103,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
     return passage;
   };
 
-  const generateMapImage = async (passage: string, content: string) => {
+  const generateMapImage = async (passage: string, content: string, savedAnalysis: any) => {
     setMapLoading(true);
     setMapImageUrl(null);
     try {
@@ -122,6 +122,15 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
         const data = await resp.json();
         if (data.image_url) {
           setMapImageUrl(data.image_url);
+          // Persist map URL in the analysis content
+          if (savedAnalysis?.id) {
+            const { supabase } = await import('@/integrations/supabase/client');
+            const updatedContent = appendMapImageUrl(content, data.image_url);
+            await supabase
+              .from('exegesis_analyses')
+              .update({ content: updatedContent })
+              .eq('id', savedAnalysis.id);
+          }
         }
       }
     } catch (e) {
@@ -189,14 +198,14 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
       setLastResult({ passage, type: selectedType, question: selectedType === 'question' ? question.trim() : undefined, content: fullContent });
       setCurrentStream('');
 
-      // Generate map image for geographic_historical type
-      if (selectedType === 'geographic_historical') {
-        generateMapImage(passage, fullContent);
-      }
-
       // Auto-save
-      const saved = await onSave({ passage, analysis_type: selectedType, question: question.trim() || undefined, content: fullContent });
-      if (saved) { setSaved(true); toast({ title: "Análise salva!", description: "Acesse no Histórico." }); }
+      const savedAnalysis = await onSave({ passage, analysis_type: selectedType, question: question.trim() || undefined, content: fullContent });
+      if (savedAnalysis) { setSaved(true); toast({ title: "Análise salva!", description: "Acesse no Histórico." }); }
+
+      // Generate map image for geographic_historical type (after save so we can persist the URL)
+      if (selectedType === 'geographic_historical') {
+        generateMapImage(passage, fullContent, savedAnalysis);
+      }
 
       setQuestion('');
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -362,25 +371,12 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
           <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(lastResult.content) }} />
           {/* Map for Geographic/Historical - AI generated image */}
           {lastResult.type === 'geographic_historical' && (
-            <div className="mt-4 border border-border rounded-lg p-4">
-              <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico</h4>
-              {mapLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Gerando imagem do mapa com IA...
-                </div>
-              ) : mapImageUrl ? (
-                <div className="space-y-2">
-                  <img src={mapImageUrl} alt={`Mapa bíblico de ${lastResult.passage}`} className="w-full rounded-lg shadow-md" />
-                  <div className="flex justify-end">
-                    <a href={mapImageUrl} download={`mapa-biblico-${lastResult.passage.replace(/\s+/g, '-')}.png`} className="text-xs text-primary hover:underline flex items-center gap-1">
-                      <Download className="w-3 h-3" /> Baixar mapa
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground italic text-center py-4">Não foi possível gerar o mapa. Os dados geográficos estão na análise acima.</p>
-              )}
-            </div>
+            <MapImageViewer
+              imageUrl={mapImageUrl || ''}
+              passage={lastResult.passage}
+              loading={mapLoading}
+              className="mt-4"
+            />
           )}
         </div>
       )}
