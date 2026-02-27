@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { safeParseInt, safeParseFloat } from '@/lib/validations';
 import { PlusCircle, Plus, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -119,11 +120,11 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
     onSubmit({
       livro: livro.trim().toUpperCase(),
       autor: autor.trim() || undefined,
-      ano: ano ? parseInt(ano) : undefined,
-      totalPaginas: parseInt(totalPaginas),
+      ano: ano ? safeParseInt(ano) : undefined,
+      totalPaginas: safeParseInt(totalPaginas, 1),
       tipo: tipo as Book['tipo'],
       categoria: categoria as Book['categoria'],
-      valorPago: parseFloat(valorPago) || 0,
+      valorPago: safeParseFloat(valorPago, 0),
       coverUrl,
       targetCompletionDate: targetCompletionDate || undefined,
     });
