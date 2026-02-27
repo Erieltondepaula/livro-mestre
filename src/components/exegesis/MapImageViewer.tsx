@@ -159,6 +159,8 @@ export function MapImageViewer({ imageUrl, passage, loading = false, className =
             transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
             transition: isDragging ? 'none' : 'transform 0.2s ease-out',
             transformOrigin: 'center center',
+            imageRendering: zoom > 1.5 ? 'auto' as const : 'auto' as const,
+            WebkitBackfaceVisibility: 'hidden',
           }}
         />
       </div>
