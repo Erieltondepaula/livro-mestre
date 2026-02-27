@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import type { ExegesisAnalysis } from '@/hooks/useExegesis';
+import { BiblicalMap, extractLocationsFromContent } from './BiblicalMap';
 
 interface Props {
   analyses: ExegesisAnalysis[];
@@ -103,6 +104,18 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: 
                   <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
                     <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(a.content) }} />
                     
+                    {/* Render map for geographic_historical analyses */}
+                    {(a.analysis_type === 'geographic_historical') && (() => {
+                      const locations = extractLocationsFromContent(a.content);
+                      return locations.length > 0 ? (
+                        <div className="mt-4">
+                          <h4 className="text-sm font-semibold flex items-center gap-2 mb-3">
+                            <MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico Interativo
+                          </h4>
+                          <BiblicalMap passage={a.passage} locations={locations} />
+                        </div>
+                      ) : null;
+                    })()}
                     <div className="border-t border-border pt-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Anotações</span>
