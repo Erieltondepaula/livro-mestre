@@ -16,7 +16,7 @@ import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
 
 type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic';
-type OutlineApproach = 'descriptive' | 'normative' | 'theological' | 'descriptive_normative' | 'theological_doctrinal';
+
 
 interface Props {
   outlines: ExegesisOutline[];
@@ -39,13 +39,6 @@ const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] =
   { id: 'outline_thematic', label: '🎯 Temático', description: 'Tema central com desenvolvimento doutrinário' },
 ];
 
-const OUTLINE_APPROACHES: { id: OutlineApproach; label: string; description: string }[] = [
-  { id: 'descriptive', label: '🔍 Descritivo', description: 'Foca nos fatos bíblicos, história e o que aconteceu' },
-  { id: 'normative', label: '📋 Normativo', description: 'Doutrinário e ético, aplicável a todos os tempos' },
-  { id: 'theological', label: '⛪ Teológico', description: 'Expõe uma doutrina bíblica com profundidade' },
-  { id: 'descriptive_normative', label: '🔍📋 Descritivo + Normativo', description: 'Relata os fatos e extrai normas para hoje' },
-  { id: 'theological_doctrinal', label: '⛪📚 Teológico Doutrinário', description: 'Estudo doutrinário profundo com base canônica' },
-];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -173,7 +166,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [verseEnd, setVerseEnd] = useState('');
   const [customPassage, setCustomPassage] = useState('');
   const [selectedType, setSelectedType] = useState<OutlineType>('outline_expository');
-  const [selectedApproach, setSelectedApproach] = useState<OutlineApproach>('descriptive');
+  
   const [structure, setStructure] = useState<OutlineStructure>(getDefaultStructure());
   const [structureLoaded, setStructureLoaded] = useState(false);
 
@@ -259,7 +252,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         body: JSON.stringify({
           passage,
           type: selectedType,
-          approach: selectedApproach,
+          
           materials_context: getMaterialsContext?.(),
           analyses_context: getRelevantAnalysesContext?.(passage),
           structure_config: structure,
@@ -298,7 +291,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     } catch (e: any) {
       if (e.name !== 'AbortError') toast({ title: "Erro", description: e.message, variant: "destructive" });
     } finally { setIsLoading(false); abortRef.current = null; }
-  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, selectedApproach, structure, onSave, getMaterialsContext, getRelevantAnalysesContext]);
+  }, [bibleBook, chapter, verseStart, verseEnd, customPassage, selectedType, structure, onSave, getMaterialsContext, getRelevantAnalysesContext]);
 
   const handleSaveEdit = async (id: string) => {
     await onUpdateContent(id, editContent);
@@ -427,18 +420,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           </div>
         </div>
 
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-muted-foreground">Abordagem do Sermão <span className="text-[10px] text-muted-foreground/70">(como o texto será tratado)</span></p>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            {OUTLINE_APPROACHES.map(a => (
-              <button key={a.id} onClick={() => setSelectedApproach(a.id)}
-                className={`p-2.5 rounded-lg border text-left transition-all ${selectedApproach === a.id ? 'bg-accent border-primary/30' : 'bg-card border-border hover:bg-muted/50'}`}>
-                <span className="text-xs font-medium">{a.label}</span>
-                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{a.description}</p>
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Structure Editor */}
         <OutlineStructureEditor structure={structure} onChange={handleStructureChange} />
