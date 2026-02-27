@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import { ExegesisRichEditor } from './ExegesisRichEditor';
+import { SermonTitleGenerator } from './SermonTitleGenerator';
 import { OutlineStructureEditor, getDefaultStructure } from './OutlineStructureEditor';
 import { OutlineVersionHistory } from './OutlineVersionHistory';
 import { PreacherMode } from './PreacherMode';
@@ -351,6 +352,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
   return (
     <div className="space-y-6">
+      {/* Title Generator Card */}
+      <SermonTitleGenerator getMaterialsContext={getMaterialsContext} />
+
       {/* Generator */}
       <div className="card-library p-4 sm:p-6 space-y-4">
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
