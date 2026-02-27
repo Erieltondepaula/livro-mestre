@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import type { ExegesisAnalysis } from '@/hooks/useExegesis';
+import { BiblicalMap, extractLocationsFromContent } from './BiblicalMap';
 
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
@@ -307,21 +308,29 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
             </Button>
           </div>
           <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(lastResult.content) }} />
-          {/* Map Image for Geographic/Historical */}
-          {lastResult.type === 'geographic_historical' && (
-            <div className="mt-4 border border-border rounded-lg p-4">
-              <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico</h4>
-              {mapLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Gerando imagem do mapa...
-                </div>
-              ) : mapImageUrl ? (
-                <img src={mapImageUrl} alt={`Mapa bíblico de ${lastResult.passage}`} className="w-full rounded-lg shadow-md" />
-              ) : (
-                <p className="text-xs text-muted-foreground italic text-center py-4">Mapa em processamento ou indisponível. Os dados geográficos estão descritos na análise acima.</p>
-              )}
-            </div>
-          )}
+          {/* Map for Geographic/Historical */}
+          {lastResult.type === 'geographic_historical' && (() => {
+            const locations = extractLocationsFromContent(lastResult.content);
+            return locations.length > 0 ? (
+              <div className="mt-4">
+                <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico Interativo</h4>
+                <BiblicalMap passage={lastResult.passage} locations={locations} />
+              </div>
+            ) : (
+              <div className="mt-4 border border-border rounded-lg p-4">
+                <h4 className="text-sm font-semibold flex items-center gap-2 mb-3"><MapPin className="w-4 h-4 text-primary" /> Mapa Bíblico</h4>
+                {mapLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-8 justify-center">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Gerando imagem do mapa...
+                  </div>
+                ) : mapImageUrl ? (
+                  <img src={mapImageUrl} alt={`Mapa bíblico de ${lastResult.passage}`} className="w-full rounded-lg shadow-md" />
+                ) : (
+                  <p className="text-xs text-muted-foreground italic text-center py-4">Os dados geográficos estão descritos na análise acima.</p>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 

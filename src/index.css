@@ -556,3 +556,38 @@
   font-style: italic;
   color: hsl(var(--muted-foreground));
 }
+
+/* Preacher Mode */
+.preacher-content h1, .preacher-content h2, .preacher-content h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
+.preacher-content h1 { font-size: 1.8em; margin-top: 1em; }
+.preacher-content h2 { font-size: 1.4em; margin-top: 0.8em; }
+.preacher-content h3 { font-size: 1.2em; margin-top: 0.6em; }
+
+.preacher-content mark {
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.preacher-content blockquote {
+  border-left: 4px solid hsl(var(--primary));
+  padding-left: 1.2em;
+  font-style: italic;
+  color: hsl(var(--muted-foreground));
+}
+
+.preacher-content strong {
+  color: hsl(var(--foreground));
+}
+
+/* Dark mode print adjustments */
+@media print {
+  .dark body {
+    background: white !important;
+    color: black !important;
+  }
+}

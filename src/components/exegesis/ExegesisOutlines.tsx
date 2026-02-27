@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
+import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2, Monitor, Presentation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -8,9 +8,11 @@ import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibl
 import { ExegesisRichEditor } from './ExegesisRichEditor';
 import { OutlineStructureEditor, getDefaultStructure } from './OutlineStructureEditor';
 import { OutlineVersionHistory } from './OutlineVersionHistory';
+import { PreacherMode } from './PreacherMode';
+import { MaterialsChecklist } from './MaterialsChecklist';
 import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
-import type { ExegesisOutline } from '@/hooks/useExegesis';
+import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
 
 type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic';
 type OutlineApproach = 'descriptive' | 'normative' | 'theological' | 'descriptive_normative' | 'theological_doctrinal';
@@ -26,6 +28,7 @@ interface Props {
   getRelevantAnalysesContext?: (passage: string) => string | undefined;
   fetchOutlineVersions?: (outlineId: string) => Promise<OutlineVersion[]>;
   materialsCount?: number;
+  materials?: ExegesisMaterial[];
   onSuggestImprovements?: (passage: string, content: string) => Promise<any | null>;
 }
 
@@ -113,6 +116,37 @@ function exportAsPdf(content: string, passage: string) {
   setTimeout(() => printWindow.print(), 500);
 }
 
+function exportAsPptx(content: string, passage: string) {
+  // Generate PPTX-compatible HTML with slide structure
+  const plainText = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+  const sections = plainText.split(/\n{2,}/);
+  
+  const slides = sections.filter(s => s.trim()).map((section, i) => {
+    const lines = section.trim().split('\n');
+    const title = lines[0] || `Slide ${i + 1}`;
+    const body = lines.slice(1).join('\n');
+    return { title, body };
+  });
+
+  const pptxHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:p="urn:schemas-microsoft-com:office:powerpoint" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>${passage}</title>
+<style>
+  .slide { page-break-after: always; padding: 60px; font-family: Calibri, sans-serif; }
+  .slide-title { font-size: 32pt; font-weight: bold; color: #1a1a1a; margin-bottom: 24px; }
+  .slide-body { font-size: 18pt; line-height: 1.6; color: #333; }
+  .slide-body li { margin-bottom: 8px; }
+  mark[style*="BFDBFE"] { background-color: #BFDBFE !important; } /* Azul - Citações */
+  mark[style*="FECACA"] { background-color: #FECACA !important; } /* Vermelho - Ilustrações */
+  mark[style*="BBF7D0"] { background-color: #BBF7D0 !important; } /* Verde - Aplicação */
+  mark[style*="FEF08A"] { background-color: #FEF08A !important; } /* Amarelo - Notas */
+  mark[style*="DDD6FE"] { background-color: #DDD6FE !important; } /* Roxo - Cristo */
+</style></head><body>
+${slides.map(s => `<div class="slide"><div class="slide-title">${s.title}</div><div class="slide-body">${s.body.replace(/\n/g, '<br/>')}</div></div>`).join('\n')}
+</body></html>`;
+
+  downloadBlob(new Blob(['\ufeff' + pptxHtml], { type: 'application/vnd.ms-powerpoint;charset=utf-8' }), `esboço-${passage.replace(/\s+/g, '-')}.ppt`);
+}
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -121,7 +155,7 @@ function downloadBlob(blob: Blob, filename: string) {
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onUpdateContent, onDelete, getMaterialsContext, getRelevantAnalysesContext, fetchOutlineVersions, materialsCount = 0, onSuggestImprovements }: Props) {
+export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onUpdateContent, onDelete, getMaterialsContext, getRelevantAnalysesContext, fetchOutlineVersions, materialsCount = 0, materials = [], onSuggestImprovements }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
   const [verseStart, setVerseStart] = useState('');
@@ -181,6 +215,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [versions, setVersions] = useState<OutlineVersion[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Record<string, any>>({});
+  const [preacherMode, setPreacherMode] = useState<{ content: string; passage: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -472,6 +507,12 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                       <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsMd(o.content, o.passage)}>
                         <Download className="w-3 h-3" /> MD
                       </Button>
+                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPptx(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
+                        <Presentation className="w-3 h-3" /> PPT
+                      </Button>
+                      <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setPreacherMode({ content: isHtml(o.content) ? o.content : renderMarkdown(o.content), passage: o.passage })}>
+                        <Monitor className="w-3 h-3" /> Pregador
+                      </Button>
                     </div>
 
                     {/* AI Suggestions Panel */}
@@ -608,6 +649,11 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         </div>
       )}
 
+      {/* Materials Checklist */}
+      {materials.length > 0 && (
+        <MaterialsChecklist materials={materials} depthLevel={structure.depthLevel} />
+      )}
+
       {/* Version History Dialog */}
       <OutlineVersionHistory
         versions={versions}
@@ -615,6 +661,15 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         onClose={() => setVersionsOpen(null)}
         onRestore={handleRestoreVersion}
       />
+
+      {/* Preacher Mode */}
+      {preacherMode && (
+        <PreacherMode
+          content={preacherMode.content}
+          passage={preacherMode.passage}
+          onClose={() => setPreacherMode(null)}
+        />
+      )}
     </div>
   );
 }

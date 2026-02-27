@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle, Crown, BarChart3, ScrollText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -153,10 +154,11 @@ function SidebarContent({ currentView, onViewChange, onItemClick }: SidebarProps
         <UserMenu />
       </div>
 
-      <div className="px-4 pb-4">
-        <p className="text-xs text-muted-foreground text-center">
+      <div className="px-4 pb-4 flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
           © Planner de Leituras
         </p>
+        <ThemeToggle />
       </div>
     </>
   );
