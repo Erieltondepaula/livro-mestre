@@ -118,35 +118,44 @@ function exportAsPdf(content: string, passage: string) {
   setTimeout(() => printWindow.print(), 500);
 }
 
-function exportAsPptx(content: string, passage: string) {
-  // Generate PPTX-compatible HTML with slide structure
-  const plainText = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
-  const sections = plainText.split(/\n{2,}/);
-  
-  const slides = sections.filter(s => s.trim()).map((section, i) => {
-    const lines = section.trim().split('\n');
-    const title = lines[0] || `Slide ${i + 1}`;
-    const body = lines.slice(1).join('\n');
-    return { title, body };
-  });
+async function exportAsPptx(content: string, passage: string) {
+  const PptxGenJS = (await import('pptxgenjs')).default;
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_WIDE';
+  pptx.author = 'Exegese Bíblica';
+  pptx.title = passage;
 
-  const pptxHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:p="urn:schemas-microsoft-com:office:powerpoint" xmlns="http://www.w3.org/TR/REC-html40">
-<head><meta charset="utf-8"><title>${passage}</title>
-<style>
-  .slide { page-break-after: always; padding: 60px; font-family: Calibri, sans-serif; }
-  .slide-title { font-size: 32pt; font-weight: bold; color: #1a1a1a; margin-bottom: 24px; }
-  .slide-body { font-size: 18pt; line-height: 1.6; color: #333; }
-  .slide-body li { margin-bottom: 8px; }
-  mark[style*="BFDBFE"] { background-color: #BFDBFE !important; } /* Azul - Citações */
-  mark[style*="FECACA"] { background-color: #FECACA !important; } /* Vermelho - Ilustrações */
-  mark[style*="BBF7D0"] { background-color: #BBF7D0 !important; } /* Verde - Aplicação */
-  mark[style*="FEF08A"] { background-color: #FEF08A !important; } /* Amarelo - Notas */
-  mark[style*="DDD6FE"] { background-color: #DDD6FE !important; } /* Roxo - Cristo */
-</style></head><body>
-${slides.map(s => `<div class="slide"><div class="slide-title">${s.title}</div><div class="slide-body">${s.body.replace(/\n/g, '<br/>')}</div></div>`).join('\n')}
-</body></html>`;
+  const plainText = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+  const sections = plainText.split(/\n{2,}/).filter(s => s.trim());
 
-  downloadBlob(new Blob(['\ufeff' + pptxHtml], { type: 'application/vnd.ms-powerpoint;charset=utf-8' }), `esboço-${passage.replace(/\s+/g, '-')}.ppt`);
+  // Title slide
+  const titleSlide = pptx.addSlide();
+  titleSlide.background = { color: '1a1a2e' };
+  titleSlide.addText(passage, { x: 0.5, y: 1.5, w: '90%', h: 2, fontSize: 36, bold: true, color: 'FFFFFF', align: 'center', fontFace: 'Calibri' });
+  titleSlide.addText('Esboço de Sermão', { x: 0.5, y: 3.8, w: '90%', h: 1, fontSize: 18, color: 'AAAAAA', align: 'center', fontFace: 'Calibri' });
+
+  // Content slides
+  for (const section of sections) {
+    const lines = section.trim().split('\n').filter(l => l.trim());
+    if (lines.length === 0) continue;
+    const title = lines[0].replace(/^[#\-*\d.]+\s*/, '').trim();
+    const bodyLines = lines.slice(1).map(l => l.replace(/^[\-*]\s*/, '• ').replace(/^\d+\.\s*/, '').trim()).filter(l => l);
+
+    const slide = pptx.addSlide();
+    slide.background = { color: 'FFFFFF' };
+    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.8, fill: { color: '1a1a2e' } });
+    slide.addText(title, { x: 0.5, y: 0.05, w: '90%', h: 0.7, fontSize: 22, bold: true, color: 'FFFFFF', fontFace: 'Calibri' });
+
+    if (bodyLines.length > 0) {
+      slide.addText(
+        bodyLines.map(l => ({ text: l + '\n', options: { fontSize: 14, color: '333333', fontFace: 'Calibri', breakLine: true } })),
+        { x: 0.5, y: 1.2, w: '90%', h: 4, valign: 'top' }
+      );
+    }
+  }
+
+  const blob = await pptx.write({ outputType: 'blob' }) as Blob;
+  downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.pptx`);
 }
 
 function downloadBlob(blob: Blob, filename: string) {
