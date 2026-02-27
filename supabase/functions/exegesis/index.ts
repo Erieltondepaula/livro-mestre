@@ -980,7 +980,11 @@ Seja profundo mas acessível. Cada lição, aplicação e reflexão deve ser fun
         };
         const selectedStyle = question || 'all';
         const styleLabel = styleMap[selectedStyle] || styleMap.all;
-        userPrompt = `Gere TÍTULOS, TEMAS e PONTOS para sermões baseados na passagem abaixo, usando ${styleLabel}.
+        userPrompt = `**ATENÇÃO — MODO GERADOR DE TÍTULOS APENAS:**
+NÃO faça análise exegética. NÃO inclua contexto histórico, análise textual, análise teológica, síntese ou aplicação.
+Gere APENAS títulos, temas e pontos conforme o formato abaixo. Vá DIRETO ao resultado.
+
+Gere TÍTULOS, TEMAS e PONTOS para sermões baseados na passagem abaixo, usando ${styleLabel}.
 ${materialsSection}
 
 **Passagem:** ${passage}
