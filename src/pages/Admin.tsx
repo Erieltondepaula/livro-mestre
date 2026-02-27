@@ -53,6 +53,14 @@ interface UserProfile {
   roles: string[];
 }
 
+// Helper to mask email for display
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!domain) return email;
+  const visibleChars = Math.min(3, local.length);
+  return `${local.slice(0, visibleChars)}${'•'.repeat(Math.max(0, local.length - visibleChars))}@${domain}`;
+}
+
 export default function Admin() {
   const { profile, isMaster } = useAuth();
   const navigate = useNavigate();
@@ -397,7 +405,7 @@ export default function Admin() {
                             )}
                             <div>
                               <p className="font-medium">{user.display_name || 'Sem nome'}</p>
-                              <p className="text-sm text-muted-foreground">{user.email}</p>
+                              <p className="text-sm text-muted-foreground">{maskEmail(user.email)}</p>
                             </div>
                           </div>
                         </TableCell>

@@ -1,4 +1,5 @@
 import { useState, useEffect, forwardRef } from 'react';
+import { safeParseInt, safeParseFloat } from '@/lib/validations';
 import { X, Save, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -111,11 +112,11 @@ export const BookEditDialog = forwardRef<HTMLDivElement, BookEditDialogProps>(fu
       ...book,
       livro: livro.trim().toUpperCase(),
       autor: autor.trim() || undefined,
-      ano: ano ? parseInt(ano) : undefined,
-      totalPaginas: parseInt(totalPaginas),
+      ano: ano ? safeParseInt(ano) : undefined,
+      totalPaginas: safeParseInt(totalPaginas, 1),
       tipo: tipo as Book['tipo'],
       categoria: categoria as Book['categoria'],
-      valorPago: parseFloat(valorPago) || 0,
+      valorPago: safeParseFloat(valorPago, 0),
       coverUrl,
       targetCompletionDate: targetCompletionDate || undefined,
     });
