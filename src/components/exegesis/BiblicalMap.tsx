@@ -54,10 +54,10 @@ export function BiblicalMap({ passage, locations, className = '', showRoute = tr
       attributionControl: true,
     });
 
-    // Use a visually richer tile layer (Stamen Terrain style via Stadia)
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://stadiamaps.com/">Stadia</a> &copy; <a href="https://stamen.com">Stamen</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18,
+    // Use OpenTopoMap for terrain-like visuals (no API key needed)
+    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 17,
     }).addTo(map);
 
     // Add numbered markers with permanent labels
@@ -301,7 +301,7 @@ export function BiblicalMap({ passage, locations, className = '', showRoute = tr
           </div>
 
           <p className="text-[9px] text-muted-foreground mt-2 border-t border-border pt-1.5">
-            Fonte: OpenStreetMap | Stadia Maps
+            Fonte: OpenStreetMap | OpenTopoMap
           </p>
         </div>
       )}
