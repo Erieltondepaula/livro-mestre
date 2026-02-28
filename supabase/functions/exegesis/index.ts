@@ -221,8 +221,46 @@ serve(async (req) => {
     }
 
     const { passage, question, type, materials_context, analyses_context, structure_config, approach } = await req.json();
+
+    // Handle get_system_prompt request — return the default prompt for the editor
+    if (type === "get_system_prompt") {
+      return new Response(JSON.stringify({ prompt: SYSTEM_PROMPT }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    // Try to load user's custom prompt from DB
+    let effectiveSystemPrompt = SYSTEM_PROMPT;
+    try {
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader) {
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+        const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+          // Extract user from JWT
+          const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
+          const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+          const token = authHeader.replace("Bearer ", "");
+          const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+          if (user) {
+            const { data: promptData } = await supabaseAdmin
+              .from("user_sermon_prompts")
+              .select("prompt_text")
+              .eq("user_id", user.id)
+              .maybeSingle();
+            if (promptData?.prompt_text) {
+              effectiveSystemPrompt = promptData.prompt_text;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error loading custom prompt:", e);
+      // Fall back to default prompt
+    }
 
 
     let userPrompt = "";
@@ -1293,7 +1331,7 @@ Make this the highest quality, most detailed biblical map possible. Ultra high r
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: isJsonType ? "Você é um classificador de conteúdo teológico. Retorne APENAS JSON válido, sem markdown, sem explicações adicionais." : SYSTEM_PROMPT },
+          { role: "system", content: isJsonType ? "Você é um classificador de conteúdo teológico. Retorne APENAS JSON válido, sem markdown, sem explicações adicionais." : effectiveSystemPrompt },
           { role: "user", content: userPrompt },
         ],
         stream: !isJsonType,
