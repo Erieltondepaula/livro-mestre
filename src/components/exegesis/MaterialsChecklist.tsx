@@ -14,10 +14,10 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
   { id: 'midia', label: 'Mídia', icon: Film },
 ];
 
-const MINIMUM_SOURCES: Record<string, number> = {
-  basico: 3,
-  intermediario: 8,
-  avancado: 15,
+const MINIMUM_PERCENT: Record<string, number> = {
+  basico: 0.5,
+  intermediario: 0.5,
+  avancado: 0.5,
 };
 
 const DEPTH_LABELS: Record<string, string> = {
@@ -28,7 +28,7 @@ const DEPTH_LABELS: Record<string, string> = {
 
 export function MaterialsChecklist({ materials, depthLevel }: MaterialsChecklistProps) {
   const total = materials.length;
-  const minimum = MINIMUM_SOURCES[depthLevel] || 3;
+  const minimum = Math.ceil(total * (MINIMUM_PERCENT[depthLevel] || 0.5));
   const isSufficient = total >= minimum;
 
   const categoryCounts = CATEGORIES.map(cat => ({
