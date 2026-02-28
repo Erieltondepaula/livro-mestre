@@ -824,6 +824,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sermon_prompts: {
+        Row: {
+          created_at: string
+          id: string
+          prompt_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prompt_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prompt_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vocabulary: {
         Row: {
           analise_contexto: Json | null
