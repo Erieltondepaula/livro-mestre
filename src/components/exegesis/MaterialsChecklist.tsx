@@ -40,9 +40,11 @@ export function MaterialsChecklist({ materials, depthLevel }: MaterialsChecklist
     <div className="card-library p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📚 Checklist de Materiais</h4>
-        <span className={`text-xs font-bold px-2 py-0.5 rounded ${isSufficient ? 'bg-green-500/10 text-green-600' : 'bg-yellow-500/10 text-yellow-600'}`}>
-          {total}/{minimum} ({DEPTH_LABELS[depthLevel]})
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-bold px-2 py-0.5 rounded ${isSufficient ? 'bg-green-500/10 text-green-600' : 'bg-yellow-500/10 text-yellow-600'}`}>
+            {total} materiais (mín. {minimum} para {DEPTH_LABELS[depthLevel]})
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">

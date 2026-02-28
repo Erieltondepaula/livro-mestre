@@ -11,6 +11,7 @@ import { OutlineStructureEditor, getDefaultStructure } from './OutlineStructureE
 import { OutlineVersionHistory } from './OutlineVersionHistory';
 import { PreacherMode } from './PreacherMode';
 import { MaterialsChecklist } from './MaterialsChecklist';
+import { PromptEditorDialog } from './PromptEditorDialog';
 import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
@@ -424,9 +425,12 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         {/* Structure Editor */}
         <OutlineStructureEditor structure={structure} onChange={handleStructureChange} />
 
-        <Button onClick={handleGenerate} disabled={isLoading || !getPassageText()} className="btn-library-primary">
-          {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</> : <><Send className="w-4 h-4 mr-2" /> Gerar Esboço</>}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleGenerate} disabled={isLoading || !getPassageText()} className="btn-library-primary">
+            {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</> : <><Send className="w-4 h-4 mr-2" /> Gerar Esboço</>}
+          </Button>
+          <PromptEditorDialog />
+        </div>
       </div>
 
       {/* Streaming */}
