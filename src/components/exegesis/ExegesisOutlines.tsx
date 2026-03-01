@@ -221,6 +221,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [suggestionsLoading, setSuggestionsLoading] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Record<string, any>>({});
   const [preacherMode, setPreacherMode] = useState<{ content: string; passage: string } | null>(null);
+  const [titleGenOpen, setTitleGenOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -357,8 +358,19 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
   return (
     <div className="space-y-6">
-      {/* Title Generator Card */}
-      <SermonTitleGenerator getMaterialsContext={getMaterialsContext} />
+      {/* Title Generator Card — starts collapsed */}
+      <div className="card-library overflow-hidden">
+        <button
+          onClick={() => setTitleGenOpen(!titleGenOpen)}
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-muted/30 transition-colors"
+        >
+          <span className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary" /> Gerador de Títulos & Temas Criativos
+          </span>
+          {titleGenOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {titleGenOpen && <SermonTitleGenerator getMaterialsContext={getMaterialsContext} />}
+      </div>
 
       {/* Generator */}
       <div className="card-library p-4 sm:p-6 space-y-4">
