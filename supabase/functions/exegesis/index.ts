@@ -302,8 +302,8 @@ serve(async (req) => {
           const pointLabel = p.name ? `("${p.name}")` : '';
           const secs = p.sections ? formatSections(p.sections) : '';
           const isLast = i === structure_config.pointCount - 1;
-          return `- Ponto ${i+1} ${pointLabel}${isLast ? ' ⛪ [ÚLTIMO PONTO — CLÍMAX CRISTOCÊNTRICO]' : ''}: ${secs || 'sem seções definidas'}`;
-        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos. Se o usuário habilitou "Citações", SEMPRE inclua citações dos materiais formatadas como 「citação」(Autor, Obra). Se habilitou "Ilustração", SEMPRE inclua uma ilustração real e relevante.**\n\n**⛪ REGRA DO ÚLTIMO PONTO CRISTOCÊNTRICO:** O ponto ${structure_config.pointCount} (o ÚLTIMO ponto, seja qual for a quantidade) SEMPRE aponta para a CRUZ DE CRISTO — o sacrifício, a redenção, tudo que Ele fez por nós. Se há 1 ponto, ele é o último. Se há 2, o segundo é o último. Se há 3, o terceiro. E assim por diante. O último ponto é SEMPRE o clímax que revela Cristo crucificado como a resposta final.\n`
+          return `- Ponto ${i+1} ${pointLabel}${isLast ? ' ⛪ [ÚLTIMO PONTO — deve ter TÍTULO PRÓPRIO cristocêntrico, NÃO use "Clímax Cristocêntrico" como título]' : ''}: ${secs || 'sem seções definidas'}`;
+        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos. Se o usuário habilitou "Citações", SEMPRE inclua citações dos materiais formatadas como 「citação」(Autor, Obra). Se habilitou "Ilustração", SEMPRE inclua uma ilustração real e relevante.**\n\n**⛪ REGRA DO ÚLTIMO PONTO CRISTOCÊNTRICO:** O ponto ${structure_config.pointCount} (o ÚLTIMO ponto, seja qual for a quantidade) SEMPRE aponta para a CRUZ DE CRISTO — o sacrifício, a redenção, tudo que Ele fez por nós. MAS o título desse ponto DEVE ser CRIATIVO e TEMÁTICO (ex: "A Resposta Que Vem do Calvário", "O Nome Que Carrega Todo Peso"), NUNCA genérico como "O Foco em Jesus" ou "Clímax Cristocêntrico".\n`
       : "";
 
     const depthLevel = structure_config?.depthLevel || 'basico';
@@ -368,7 +368,7 @@ Ideal para: seminários, conferências, pregadores experientes, estudos aprofund
 
     const pastoralFilter = `\n\n${depthInstructions[depthLevel] || depthInstructions.basico}\n\n**FILTRO DE LINGUAGEM PASTORAL (CONVERSA FAMILIAR):** O esboço final deve ser claro, proclamável e focado em Cristo. Fale como quem conversa com alguém que ama. A profundidade do conteúdo deve ser mantida — o que muda é a LINGUAGEM, não a qualidade da mensagem. Frases curtas de impacto. Use "nós" em vez de "vocês". Conte histórias reais. Faça perguntas que ecoam. NUNCA use as palavras da lista de PALAVRAS PROIBIDAS.\n`;
 
-    const citationRule = `\n\n**REGRA DE CITAÇÕES DOS MATERIAIS:** Quando materiais estiverem disponíveis, EXTRAIA citações diretas e formate SEMPRE assim: **「citação extraída do material」(Autor, Obra, p.XX)**. Use os marcadores 「」 para TODA citação vinda dos materiais. O leitor PRECISA ver de onde veio cada informação. NÃO parafraseie — cite o trecho exato.\n`;
+    const citationRule = `\n\n**REGRA DE CITAÇÕES DOS MATERIAIS:** Quando materiais estiverem disponíveis, EXTRAIA citações diretas e formate SEMPRE assim: **「citação extraída do material」(Autor, Obra, p.XX)**. Use os marcadores 「」 para TODA citação vinda dos materiais. O leitor PRECISA ver de onde veio cada informação. NÃO parafraseie — cite o trecho exato.\n\n**📖 REGRA DE REFERÊNCIAS CRUZADAS BÍBLICAS (BUSCA EM TODA A BÍBLIA — ACF Almeida Corrigida Fiel):**\nPara CADA ponto do sermão, pesquise TODA a Bíblia (Gênesis a Apocalipse) procurando versículos que:\n1. Tratem do MESMO TEMA ou ASSUNTO do ponto\n2. Contenham PALAVRAS-CHAVE semelhantes\n3. Apresentem CONTEXTOS SIMILARES ou situações paralelas\n4. Conectem Antigo e Novo Testamento sobre o mesmo tema\n5. Complementem, ampliem ou confirmem a verdade apresentada\n\nAs referências cruzadas funcionam como "links" que mostram a HARMONIA entre toda a Escritura. Inclua o texto COMPLETO de cada referência no formato:\n👉 [Livro Capítulo:Versículo]: "[texto completo do versículo na ACF]"\n\nMínimo 3-4 referências cruzadas por ponto, buscando em livros DIFERENTES do texto base. Priorize referências que o pregador possa NÃO conhecer — surpreenda com conexões profundas entre os dois testamentos.\n`;
 
     switch (type) {
       case "full_exegesis":
@@ -620,6 +620,7 @@ O ouvinte deve sentir que a BÍBLIA está conduzindo cada palavra, não a opini�
 ## **Tipo:** Expositivo
 
 ## **Texto Base:** ${passage}
+(OBRIGATÓRIO: Transcreva aqui o TEXTO COMPLETO da passagem na íntegra, versículo por versículo, usando a versão ACF como padrão. O pregador precisa ler o texto completo antes de pregar.)
 
 ---
 
@@ -683,8 +684,9 @@ Mínimo de 5 frases. Tom de conversa — como se olhasse nos olhos de cada pesso
 
 ## **TRANSIÇÃO:**
 
-## **4. O FOCO EM JESUS (ÚLTIMO PONTO — CLÍMAX CRISTOCÊNTRICO)**
-**Texto:** (versículo ou trecho base)
+## **4. [TÍTULO PRÓPRIO DO PONTO — CRISTOCÊNTRICO]**
+(Crie um TÍTULO PRÓPRIO e CRIATIVO para o último ponto que aponte para Cristo, mas NÃO use a frase "Clímax Cristocêntrico" ou "O Foco em Jesus" como título. O título deve ser temático, comunicativo e memorável — ex: "O Descanso Que Só a Cruz Oferece", "O Nome Que Silencia Todo Medo", "A Resposta Que Vem do Calvário".)
+**Texto:** (versículo ou trecho base — CITE O TEXTO COMPLETO na íntegra)
 **Explicação:** (explicação exegética que CONDUZ TUDO para a pessoa e obra de Cristo — mostre como Jesus cumpre, responde ou resolve o tema. Tom confrontativo profundo com amor. A cruz de Cristo é revelada plenamente aqui. Mínimo 5 parágrafos.)
 **Ilustração:** (exemplo profundo e pessoal que mostre Cristo como a resposta para toda necessidade revelada nos pontos anteriores)
 **Verdade:** (verdade cristocêntrica em UMA frase — ex: "O nome desse descanso é Jesus Cristo.")
@@ -787,6 +789,7 @@ O texto base NUNCA é abandonado. Em CADA ponto, volte ao texto com frases como:
 ## **Tipo:** Textual
 
 ## **Texto Base:** ${passage}
+(OBRIGATÓRIO: Transcreva aqui o TEXTO COMPLETO da passagem na íntegra, versículo por versículo, usando a versão ACF como padrão. O pregador precisa ler o texto completo antes de pregar.)
 
 ---
 
@@ -843,8 +846,9 @@ O texto base NUNCA é abandonado. Em CADA ponto, volte ao texto com frases como:
 
 ## **TRANSIÇÃO:**
 
-## **4. O FOCO EM JESUS (ÚLTIMO PONTO — CLÍMAX CRISTOCÊNTRICO)**
-**Texto:** (última palavra/expressão-chave — a que aponta para Cristo)
+## **4. [TÍTULO PRÓPRIO DO PONTO — CRISTOCÊNTRICO]**
+(Crie um TÍTULO PRÓPRIO e CRIATIVO para o último ponto que aponte para Cristo, mas NÃO use "Clímax Cristocêntrico" ou "O Foco em Jesus" como título. O título deve ser temático, comunicativo e memorável.)
+**Texto:** (última palavra/expressão-chave — a que aponta para Cristo — CITE O TEXTO COMPLETO na íntegra)
 **Explicação:** (conduza TUDO para Cristo. A cruz é revelada plenamente aqui. Mínimo 5 parágrafos.)
 **Ilustração:** (exemplo profundo que mostre Cristo como resposta)
 **Verdade:** (verdade cristocêntrica em UMA frase)
@@ -903,6 +907,7 @@ Mesmo sendo temático com múltiplos textos, o TEXTO BASE nunca é abandonado. E
 ## **Tipo:** Temático
 
 ## **Texto Base:** ${passage}
+(OBRIGATÓRIO: Transcreva aqui o TEXTO COMPLETO da passagem na íntegra, versículo por versículo, usando a versão ACF como padrão. O pregador precisa ler o texto completo antes de pregar.)
 
 ---
 
@@ -959,8 +964,9 @@ Mesmo sendo temático com múltiplos textos, o TEXTO BASE nunca é abandonado. E
 
 ## **TRANSIÇÃO:**
 
-## **4. O FOCO EM JESUS (ÚLTIMO PONTO — CLÍMAX CRISTOCÊNTRICO)**
-**Texto:** (passagem climática que aponta para Cristo)
+## **4. [TÍTULO PRÓPRIO DO PONTO — CRISTOCÊNTRICO]**
+(Crie um TÍTULO PRÓPRIO e CRIATIVO para o último ponto que aponte para Cristo, mas NÃO use "Clímax Cristocêntrico" ou "O Foco em Jesus" como título. O título deve ser temático, comunicativo e memorável.)
+**Texto:** (passagem climática que aponta para Cristo — CITE O TEXTO COMPLETO na íntegra)
 **Explicação:** (conduza TUDO para a pessoa e obra de Cristo. A cruz revelada plenamente. Mínimo 5 parágrafos.)
 **Ilustração:** (exemplo profundo mostrando Cristo como resposta)
 **Verdade:** (verdade cristocêntrica em UMA frase)
