@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle, Crown, BarChart3, ScrollText } from 'lucide-react';
+import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle, Crown, BarChart3, ScrollText, Activity } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico';
 
 interface SidebarProps {
   currentView: View;
@@ -36,6 +36,7 @@ const navItems = [
   { id: 'exegese' as View, label: 'Exegese Bíblica', icon: ScrollText },
   { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
   { id: 'relatorios' as View, label: 'Relatórios', icon: BarChart3 },
+  { id: 'diagnostico' as View, label: 'Diagnóstico', icon: Activity, masterOnly: true },
   { id: 'ajuda' as View, label: 'Ajuda', icon: HelpCircle },
 ];
 
@@ -101,10 +102,13 @@ function UserMenu() {
 }
 
 function SidebarContent({ currentView, onViewChange, onItemClick }: SidebarProps & { onItemClick?: () => void }) {
-  const { hasModuleAccess } = useAuth();
+  const { hasModuleAccess, isMaster } = useAuth();
   
-  // Filter nav items based on user permissions
-  const accessibleItems = navItems.filter(item => hasModuleAccess(item.id));
+  // Filter nav items based on user permissions + masterOnly flag
+  const accessibleItems = navItems.filter(item => {
+    if ((item as any).masterOnly && !isMaster) return false;
+    return hasModuleAccess(item.id);
+  });
 
   return (
     <>
