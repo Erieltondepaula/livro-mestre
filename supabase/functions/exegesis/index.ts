@@ -372,20 +372,63 @@ Ideal para: seminários, conferências, pregadores experientes, estudos aprofund
 
     switch (type) {
       case "full_exegesis":
-        userPrompt = `Faça uma exegese completa e detalhada do seguinte texto bíblico:
+        userPrompt = `Faça uma exegese COMPLETA, PROFUNDA e DETALHADA do seguinte texto bíblico:
 
 **Passagem:** ${passage}
 ${materialsSection}${citationRule}
-Siga a estrutura completa de análise exegética conforme Gorman (7 elementos):
-1. Pesquisa preliminar
-2. Análise contextual (histórico-cultural)
-3. Análise formal (gênero e estrutura)
-4. Análise detalhada (palavras-chave no original, gramática)
-5. Síntese do significado
-6. Reflexão teológica (relação com Cristo e o cânon)
-7. Aplicação contemporânea
 
-Seja detalhado e profundo. Inclua referências cruzadas e notas sobre o texto original.`;
+**ESTRUTURA OBRIGATÓRIA — Método Exegético Completo (baseado em Gorman, Fee, Stuart e Kaiser):**
+
+## 1. PESQUISA PRELIMINAR
+- Leitura repetida do texto (mínimo 3 observações iniciais)
+- Perguntas que o texto levanta
+- Impressões iniciais e tensões do texto
+- Palavras repetidas, contrastes, comparações
+
+## 2. ANÁLISE CONTEXTUAL (Histórico-Cultural e Literária)
+- **Autor:** Quem escreveu? Circunstâncias pessoais do autor
+- **Destinatários:** Para quem? Situação socioeconômica, política e religiosa
+- **Data e local:** Quando e onde foi escrito
+- **Ocasião:** Por que foi escrito? Problema ou necessidade que motivou
+- **Contexto imediato:** O que vem ANTES e DEPOIS do texto (capítulos anteriores e posteriores)
+- **Contexto remoto:** Como se encaixa no livro, na seção e no cânon bíblico
+- **Pano de fundo cultural:** Costumes, práticas e crenças da época que iluminam o texto
+
+## 3. ANÁLISE FORMAL (Gênero e Estrutura)
+- **Gênero literário:** Narrativa, poesia, profecia, epístola, apocalíptico, sabedoria, lei
+- **Estrutura do texto:** Divisão em seções/estrofes com justificativa
+- **Recursos literários:** Paralelismo, quiasmo, inclusão, clímax, ironia, metáfora
+- **Fluxo argumentativo:** Como as ideias se conectam e progridem
+
+## 4. ANÁLISE DETALHADA (Palavras-Chave e Gramática)
+- **Para CADA palavra-chave:**
+  - Termo original em hebraico/grego (transliterado) com Strong's number quando possível
+  - Campo semântico completo e significados possíveis
+  - Usos em outros contextos bíblicos (mínimo 3 referências)
+  - Análise morfológica (tempo verbal, voz, modo)
+- **Análise sintática:** Estrutura das frases, conectivos lógicos (γάρ, οὖν, δέ, כִּי)
+- **Variantes textuais:** Se houver diferenças significativas entre manuscritos
+
+## 5. SÍNTESE DO SIGNIFICADO
+- O que o autor QUIS DIZER aos destinatários originais?
+- Resumo da mensagem central em 2-3 frases
+- Como cada parte do texto contribui para a mensagem central
+- O que este texto NÃO está dizendo (erros comuns de interpretação)
+
+## 6. REFLEXÃO TEOLÓGICA
+- **Teologia do texto:** Que verdades sobre Deus, Cristo, Espírito Santo, humanidade são reveladas?
+- **Relação cristológica:** Como este texto aponta para Cristo (tipologia, profecia, cumprimento)
+- **Teologia bíblica:** Como se conecta com a grande narrativa da Escritura (criação → queda → redenção → consumação)
+- **Diálogo canônico:** Textos paralelos e complementares em TODA a Bíblia
+
+## 7. APLICAÇÃO CONTEMPORÂNEA
+- **Princípio atemporal:** Que verdade transcultural emerge do texto?
+- **Aplicação pessoal:** Como isso muda minha vida hoje?
+- **Aplicação comunitária:** Como isso impacta a igreja?
+- **Aplicação missional:** Como isso se relaciona com a missão de Deus no mundo?
+- **Perguntas para reflexão:** 3-5 perguntas provocativas para estudo individual ou em grupo
+
+Seja EXTREMAMENTE detalhado e profundo. Cite o texto original (hebraico/grego) quando relevante. Inclua referências cruzadas abundantes com texto completo na ACF. NÃO seja superficial — cada seção deve ter NO MÍNIMO 3-4 parágrafos substanciais.`;
         break;
 
       case "context_analysis":

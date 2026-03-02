@@ -66,10 +66,15 @@ const MONTH_MAP: Record<string, number> = {
   'maio': 4, 'junho': 5, 'julho': 6, 'agosto': 7,
   'setembro': 8, 'outubro': 9, 'novembro': 10, 'dezembro': 11,
 };
-function dateFromDayMonth(dia: number, mes: string): Date {
+function dateFromDayMonth(dia: number, mes: string, createdAt?: string | Date | null): Date {
+  // If we have a created_at timestamp, use its time component for accuracy
+  const createdDate = createdAt ? safeDate(createdAt) : null;
   const monthIdx = MONTH_MAP[mes.toLowerCase().trim()] ?? 0;
-  const year = new Date().getFullYear();
-  return new Date(year, monthIdx, dia, 12, 0, 0);
+  const year = createdDate?.getFullYear() || new Date().getFullYear();
+  const hours = createdDate?.getHours() ?? 0;
+  const minutes = createdDate?.getMinutes() ?? 0;
+  const seconds = createdDate?.getSeconds() ?? 0;
+  return new Date(year, monthIdx, dia, hours, minutes, seconds);
 }
 
 function formatSafeDate(d: Date | null, fmt: string): string {
@@ -239,7 +244,7 @@ export function BookTimelineDialog({
 
       dayGroups.forEach((group, key) => {
         const firstReading = group[0];
-        const date = safeDate(firstReading.dataInicio) || safeDate(firstReading.dataFim) || dateFromDayMonth(firstReading.dia, firstReading.mes);
+        const date = safeDate(firstReading.dataInicio) || safeDate(firstReading.dataFim) || dateFromDayMonth(firstReading.dia, firstReading.mes, (firstReading as any).created_at);
         const totalPages = group.reduce((sum, r) => sum + (r.quantidadePaginas || (r.paginaFinal - r.paginaInicial)), 0);
         const totalTime = group.reduce((sum, r) => sum + (r.tempoGasto || 0), 0);
         const startPage = Math.min(...group.map(r => r.paginaInicial));
@@ -290,7 +295,7 @@ export function BookTimelineDialog({
     } else {
       // Non-Bible: one event per reading
       bookReadings.forEach(r => {
-        const date = safeDate(r.dataInicio) || safeDate(r.dataFim) || dateFromDayMonth(r.dia, r.mes);
+        const date = safeDate(r.dataInicio) || safeDate(r.dataFim) || dateFromDayMonth(r.dia, r.mes, (r as any).created_at);
         const pagesRead = r.quantidadePaginas || (r.paginaFinal - r.paginaInicial);
         const details: string[] = [];
         details.push(`📄 Páginas ${r.paginaInicial} → ${r.paginaFinal} (${pagesRead} págs)`);
