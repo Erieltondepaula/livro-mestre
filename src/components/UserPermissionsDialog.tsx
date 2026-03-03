@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked, Star, Quote, Book, StickyNote } from 'lucide-react';
+import { Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked, Star, Quote, Book, StickyNote, ScrollText, BarChart3, Activity, HelpCircle } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -30,7 +30,7 @@ interface UserPermissionsDialogProps {
   isMasterEditing?: boolean;
 }
 
-// Lista completa de módulos incluindo Notas
+// Lista completa de módulos
 const MODULES = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'cadastrar', label: 'Cadastrar Livro', icon: PlusCircle },
@@ -41,7 +41,11 @@ const MODULES = [
   { key: 'citacoes', label: 'Citações', icon: Quote },
   { key: 'notas', label: 'Notas', icon: StickyNote },
   { key: 'biblia', label: 'Progresso Bíblia', icon: Book },
+  { key: 'exegese', label: 'Exegese Bíblica', icon: ScrollText },
   { key: 'dicionario', label: 'Dicionário', icon: Book },
+  { key: 'relatorios', label: 'Relatórios', icon: BarChart3 },
+  { key: 'diagnostico', label: 'Diagnóstico', icon: Activity },
+  { key: 'ajuda', label: 'Ajuda', icon: HelpCircle },
 ];
 
 export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMasterEditing }: UserPermissionsDialogProps) {
