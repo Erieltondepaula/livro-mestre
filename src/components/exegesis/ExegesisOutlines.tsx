@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2, Monitor, Presentation } from 'lucide-react';
+import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2, Monitor, Presentation, Search, Tag, Filter, CopyPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -18,6 +18,14 @@ import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
 
 type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic';
 
+const OUTLINE_TAGS = [
+  { id: 'evangelistico', label: '🔥 Evangelístico', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
+  { id: 'devocional', label: '🙏 Devocional', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
+  { id: 'doutrinario', label: '📚 Doutrinário', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20' },
+  { id: 'ocasional', label: '🎉 Ocasional', color: 'bg-amber-500/10 text-amber-700 border-amber-500/20' },
+  { id: 'pastoral', label: '🤝 Pastoral', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
+  { id: 'missionario', label: '🌍 Missionário', color: 'bg-teal-500/10 text-teal-700 border-teal-500/20' },
+];
 
 interface Props {
   outlines: ExegesisOutline[];
@@ -40,7 +48,6 @@ const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] =
   { id: 'outline_thematic', label: '🎯 Temático', description: 'Tema central com desenvolvimento doutrinário' },
 ];
 
-
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
 function markdownToHtml(md: string): string {
@@ -50,7 +57,6 @@ function markdownToHtml(md: string): string {
     .replace(/^# (.*$)/gm, '<h1>$1</h1>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    // Convert citations to TipTap-compatible <mark> + <strong> so they survive editing
     .replace(/「(.*?)」(\(.*?\))/g, '<mark style="background-color: #FEF3C7">"$1"</mark> <strong>$2</strong>')
     .replace(/^- (.*$)/gm, '<li>$1</li>')
     .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
@@ -120,33 +126,120 @@ async function exportAsPptx(content: string, passage: string) {
   pptx.title = passage;
 
   const plainText = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-  const sections = plainText.split(/\n{2,}/).filter(s => s.trim());
+  
+  // Parse structured content
+  const lines = plainText.split('\n').filter(l => l.trim());
+  
+  // Extract title, theme, base text
+  let sermonTitle = passage;
+  let sermonTheme = '';
+  let baseText = '';
+  const points: { title: string; body: string[]; references: string[] }[] = [];
+  const applications: string[] = [];
+  let currentPoint: { title: string; body: string[]; references: string[] } | null = null;
+  let inApplications = false;
 
-  // Title slide
-  const titleSlide = pptx.addSlide();
-  titleSlide.background = { color: '1a1a2e' };
-  titleSlide.addText(passage, { x: 0.5, y: 1.5, w: '90%', h: 2, fontSize: 36, bold: true, color: 'FFFFFF', align: 'center', fontFace: 'Calibri' });
-  titleSlide.addText('Esboço de Sermão', { x: 0.5, y: 3.8, w: '90%', h: 1, fontSize: 18, color: 'AAAAAA', align: 'center', fontFace: 'Calibri' });
-
-  // Content slides
-  for (const section of sections) {
-    const lines = section.trim().split('\n').filter(l => l.trim());
-    if (lines.length === 0) continue;
-    const title = lines[0].replace(/^[#\-*\d.]+\s*/, '').trim();
-    const bodyLines = lines.slice(1).map(l => l.replace(/^[\-*]\s*/, '• ').replace(/^\d+\.\s*/, '').trim()).filter(l => l);
-
-    const slide = pptx.addSlide();
-    slide.background = { color: 'FFFFFF' };
-    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.8, fill: { color: '1a1a2e' } });
-    slide.addText(title, { x: 0.5, y: 0.05, w: '90%', h: 0.7, fontSize: 22, bold: true, color: 'FFFFFF', fontFace: 'Calibri' });
-
-    if (bodyLines.length > 0) {
-      slide.addText(
-        bodyLines.map(l => ({ text: l + '\n', options: { fontSize: 14, color: '333333', fontFace: 'Calibri', breakLine: true } })),
-        { x: 0.5, y: 1.2, w: '90%', h: 4, valign: 'top' }
-      );
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^(TÍTULO|Título)\s*[:：]/i.test(trimmed)) {
+      sermonTitle = trimmed.replace(/^(TÍTULO|Título)\s*[:：]\s*/i, '').trim();
+    } else if (/^(TEMA|Tema)\s*[:：]/i.test(trimmed)) {
+      sermonTheme = trimmed.replace(/^(TEMA|Tema)\s*[:：]\s*/i, '').trim();
+    } else if (/^(TEXTO BASE|Texto Base)\s*[:：]/i.test(trimmed)) {
+      baseText = trimmed.replace(/^(TEXTO BASE|Texto Base)\s*[:：]\s*/i, '').trim();
+    } else if (/^(PONTO|PONT)\s*\d+|^[IVX]+\.|^\d+[\.\)]\s*[A-ZÀ-Ú]/i.test(trimmed) || /^#+\s*\d+[\.\)]?\s/i.test(trimmed)) {
+      if (currentPoint) points.push(currentPoint);
+      const title = trimmed.replace(/^#+\s*/, '').replace(/^\*+/, '').replace(/\*+$/, '').trim();
+      currentPoint = { title, body: [], references: [] };
+      inApplications = false;
+    } else if (/^(APLICAÇ|APELO|CONCLUS)/i.test(trimmed)) {
+      if (currentPoint) { points.push(currentPoint); currentPoint = null; }
+      inApplications = true;
+    } else if (trimmed.startsWith('👉') || /^\[.*\d+:\d+/.test(trimmed)) {
+      if (currentPoint) currentPoint.references.push(trimmed);
+      else if (inApplications) applications.push(trimmed);
+    } else {
+      if (inApplications) applications.push(trimmed);
+      else if (currentPoint) currentPoint.body.push(trimmed);
     }
   }
+  if (currentPoint) points.push(currentPoint);
+
+  // Colors
+  const PRIMARY = '1a1a2e';
+  const ACCENT = '8B5E3C';
+  const LIGHT_BG = 'FDF8F0';
+  const TEXT_DARK = '1a1a1a';
+  const TEXT_MED = '555555';
+
+  // === SLIDE 1: Title ===
+  const titleSlide = pptx.addSlide();
+  titleSlide.background = { color: PRIMARY };
+  titleSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.15, fill: { color: ACCENT } });
+  titleSlide.addText(sermonTitle, { x: 0.8, y: 1.2, w: 11.5, h: 2, fontSize: 40, bold: true, color: 'FFFFFF', align: 'center', fontFace: 'Calibri' });
+  if (sermonTheme) {
+    titleSlide.addText(sermonTheme, { x: 0.8, y: 3.3, w: 11.5, h: 0.8, fontSize: 20, color: 'CCCCCC', align: 'center', fontFace: 'Calibri', italic: true });
+  }
+  if (baseText) {
+    titleSlide.addText(`📖 ${baseText}`, { x: 0.8, y: 4.3, w: 11.5, h: 0.6, fontSize: 16, color: ACCENT, align: 'center', fontFace: 'Calibri' });
+  }
+  titleSlide.addShape(pptx.ShapeType.rect, { x: 4.5, y: 5.2, w: 4, h: 0.04, fill: { color: ACCENT } });
+
+  // === SLIDES PER POINT ===
+  points.forEach((point, idx) => {
+    const slide = pptx.addSlide();
+    slide.background = { color: LIGHT_BG };
+    
+    // Header bar
+    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 1, fill: { color: PRIMARY } });
+    slide.addText(`PONTO ${idx + 1}`, { x: 0.5, y: 0.05, w: 2, h: 0.35, fontSize: 11, color: ACCENT, fontFace: 'Calibri', bold: true });
+    slide.addText(point.title.replace(/^(PONTO\s*\d+\s*[-:.]?\s*)/i, ''), { x: 0.5, y: 0.3, w: 12, h: 0.6, fontSize: 22, bold: true, color: 'FFFFFF', fontFace: 'Calibri' });
+
+    // Body content (limit to fit slide)
+    const bodyText = point.body.slice(0, 8).map(l => {
+      const clean = l.replace(/^[\-•*]\s*/, '').trim();
+      return { text: `• ${clean}\n`, options: { fontSize: 13, color: TEXT_DARK, fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.3 } as any };
+    });
+    
+    if (bodyText.length > 0) {
+      slide.addText(bodyText, { x: 0.5, y: 1.3, w: 8.5, h: 3.8, valign: 'top' });
+    }
+
+    // References sidebar
+    if (point.references.length > 0) {
+      slide.addShape(pptx.ShapeType.rect, { x: 9.3, y: 1.3, w: 3.5, h: 3.8, fill: { color: 'F5E6D0' }, rectRadius: 0.1 });
+      slide.addText('📖 Referências', { x: 9.5, y: 1.4, w: 3.1, h: 0.4, fontSize: 11, bold: true, color: ACCENT, fontFace: 'Calibri' });
+      const refTexts = point.references.slice(0, 5).map(r => ({
+        text: `${r.replace('👉 ', '').substring(0, 80)}\n`,
+        options: { fontSize: 9, color: TEXT_MED, fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.2 } as any,
+      }));
+      slide.addText(refTexts, { x: 9.5, y: 1.85, w: 3.1, h: 3, valign: 'top' });
+    }
+
+    // Footer
+    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 7.1, w: '100%', h: 0.4, fill: { color: PRIMARY } });
+    slide.addText(passage, { x: 0.5, y: 7.1, w: 12, h: 0.4, fontSize: 10, color: '999999', fontFace: 'Calibri', align: 'right' });
+  });
+
+  // === FINAL SLIDE: Applications ===
+  if (applications.length > 0) {
+    const appSlide = pptx.addSlide();
+    appSlide.background = { color: PRIMARY };
+    appSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.15, fill: { color: ACCENT } });
+    appSlide.addText('✅ APLICAÇÕES PRÁTICAS', { x: 0.5, y: 0.5, w: 12, h: 0.8, fontSize: 28, bold: true, color: 'FFFFFF', fontFace: 'Calibri', align: 'center' });
+    const appTexts = applications.slice(0, 8).map(a => ({
+      text: `• ${a.replace(/^[\-•*]\s*/, '').trim()}\n\n`,
+      options: { fontSize: 16, color: 'DDDDDD', fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.4 } as any,
+    }));
+    appSlide.addText(appTexts, { x: 1, y: 1.8, w: 11, h: 4.5, valign: 'top' });
+    appSlide.addShape(pptx.ShapeType.rect, { x: 4.5, y: 6.8, w: 4, h: 0.04, fill: { color: ACCENT } });
+  }
+
+  // === CLOSING SLIDE ===
+  const closeSlide = pptx.addSlide();
+  closeSlide.background = { color: PRIMARY };
+  closeSlide.addText('"Prega a palavra, insta a tempo e fora de tempo"', { x: 1, y: 2, w: 11, h: 1.5, fontSize: 24, italic: true, color: 'CCCCCC', align: 'center', fontFace: 'Georgia' });
+  closeSlide.addText('2 Timóteo 4:2 (ACF)', { x: 1, y: 3.5, w: 11, h: 0.6, fontSize: 14, color: ACCENT, align: 'center', fontFace: 'Calibri' });
 
   const blob = await pptx.write({ outputType: 'blob' }) as Blob;
   downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.pptx`);
@@ -170,6 +263,11 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   
   const [structure, setStructure] = useState<OutlineStructure>(getDefaultStructure());
   const [structureLoaded, setStructureLoaded] = useState(false);
+
+  // Library filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterTags, setFilterTags] = useState<string[]>([]);
 
   // Load structure from database on mount
   useEffect(() => {
@@ -196,7 +294,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
   const handleStructureChange = (s: OutlineStructure) => {
     setStructure(s);
-    // Debounce save to DB (500ms)
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
       try {
@@ -238,6 +335,58 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     return p;
   };
 
+  // Filter outlines
+  const filteredOutlines = useMemo(() => {
+    return outlines.filter(o => {
+      // Search by passage or content
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchPassage = o.passage.toLowerCase().includes(q);
+        const matchContent = o.content.replace(/<[^>]+>/g, '').toLowerCase().includes(q);
+        if (!matchPassage && !matchContent) return false;
+      }
+      // Filter by type
+      if (filterType && o.outline_type !== filterType) return false;
+      // Filter by tags
+      if (filterTags.length > 0) {
+        const outlineTags = (o as any).tags || [];
+        if (!filterTags.some(t => outlineTags.includes(t))) return false;
+      }
+      return true;
+    });
+  }, [outlines, searchQuery, filterType, filterTags]);
+
+  const handleToggleFilterTag = (tagId: string) => {
+    setFilterTags(prev => prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]);
+  };
+
+  const handleUpdateTags = async (outlineId: string, tags: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('exegesis_outlines')
+        .update({ tags } as any)
+        .eq('id', outlineId);
+      if (error) throw error;
+      onFetch();
+      toast({ title: 'Tags atualizadas!' });
+    } catch {
+      toast({ title: 'Erro ao salvar tags', variant: 'destructive' });
+    }
+  };
+
+  const handleDuplicate = async (outline: ExegesisOutline) => {
+    const newPassage = `${outline.passage} (cópia)`;
+    const saved = await onSave({ passage: newPassage, outline_type: outline.outline_type, content: outline.content });
+    if (saved) {
+      // Copy tags if available
+      const tags = (outline as any).tags || [];
+      if (tags.length > 0) {
+        await supabase.from('exegesis_outlines').update({ tags } as any).eq('id', saved.id);
+      }
+      toast({ title: 'Esboço duplicado!', description: `"${newPassage}" criado com sucesso.` });
+    }
+  };
+
   const handleGenerate = useCallback(async () => {
     const passage = getPassageText();
     if (!passage) { toast({ title: "Selecione uma passagem", variant: "destructive" }); return; }
@@ -254,7 +403,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         body: JSON.stringify({
           passage,
           type: selectedType,
-          
           materials_context: getMaterialsContext?.(),
           analyses_context: getRelevantAnalysesContext?.(passage),
           structure_config: structure,
@@ -299,7 +447,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     await onUpdateContent(id, editContent);
     setEditingId(null);
     toast({ title: "Esboço atualizado!" });
-    // Auto-suggest improvements after saving
     if (onSuggestImprovements) {
       const outline = outlines.find(o => o.id === id);
       if (outline) {
@@ -343,7 +490,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       .replace(/^# (.*$)/gm, '<h1 class="text-lg font-bold mt-3 mb-1 text-foreground">$1</h1>')
       .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Convert citations to mark tags for consistency
       .replace(/「(.*?)」(\(.*?\))/g, '<mark style="background-color:#FEF3C7;border-left:3px solid #D97706;padding:2px 6px;border-radius:3px;font-style:italic;display:inline;">"$1"</mark> <strong style="color:#92400E;font-size:0.85em;">$2</strong>')
       .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-xs">$1</li>')
       .replace(/^(\d+)\. (.*$)/gm, '<li class="ml-4 list-decimal text-xs">$2</li>')
@@ -353,7 +499,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   };
 
   const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático', outline_descriptive: 'Descritivo', outline_normative: 'Normativo', outline_theological: 'Teológico' };
-  const approachLabels: Record<string, string> = { descriptive: 'Descritivo', normative: 'Normativo', theological: 'Teológico', descriptive_normative: 'Descritivo+Normativo', theological_doctrinal: 'Teológico Doutrinário' };
   const isHtml = (content: string) => content.includes('<h1') || content.includes('<h2') || content.includes('<p>') || content.includes('<strong>');
 
   return (
@@ -433,7 +578,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           </div>
         </div>
 
-
         {/* Structure Editor */}
         <OutlineStructureEditor structure={structure} onChange={handleStructureChange} />
 
@@ -453,217 +597,317 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         </div>
       )}
 
-      {/* Saved Outlines */}
+      {/* ========= OUTLINE LIBRARY ========= */}
       {outlines.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Esboços Salvos</h3>
-          {outlines.map(o => {
-            const isExp = expandedId === o.id;
-            const isEditing = editingId === o.id;
-            return (
-              <div key={o.id} className="card-library overflow-hidden">
-                <div className="p-4 flex items-start justify-between gap-2 cursor-pointer" onClick={() => setExpandedId(isExp ? null : o.id)}>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">{typeLabels[o.outline_type] || o.outline_type}</span>
-                      <span className="text-xs text-muted-foreground truncate">📖 {o.passage}</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{new Date(o.created_at).toLocaleDateString('pt-BR')}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(o.content.replace(/<[^>]+>/g, '')); setCopiedId(o.id); setTimeout(() => setCopiedId(null), 2000); toast({ title: "Copiado!" }); }}>
-                      {copiedId === o.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(o.id); }}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                    {isExp ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                  </div>
-                </div>
-                {isExp && (
-                  <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
-                        if (isEditing) { handleSaveEdit(o.id); } else {
-                          let htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
-                          // Convert legacy citation spans to TipTap-compatible <mark> tags
-                          htmlContent = htmlContent
-                            .replace(/<span[^>]*class="citation-highlight"[^>]*>(.*?)<\/span>/g, '<mark style="background-color: #FEF3C7">$1</mark>')
-                            .replace(/<span[^>]*class="citation-source"[^>]*>(.*?)<\/span>/g, '<strong>$1</strong>')
-                            .replace(/<span[^>]*style="[^"]*background-color:\s*#FEF3C7[^"]*"[^>]*>(.*?)<\/span>/g, '<mark style="background-color: #FEF3C7">$1</mark>')
-                            .replace(/<span[^>]*style="[^"]*color:\s*#92400E[^"]*"[^>]*>(.*?)<\/span>/g, '<strong>$1</strong>');
-                          setEditContent(htmlContent);
-                          setEditingId(o.id);
-                        }
-                      }}>
-                        {isEditing ? <><Save className="w-3.5 h-3.5" /> Salvar</> : <><Edit3 className="w-3.5 h-3.5" /> Editar</>}
-                      </Button>
-                      {isEditing && (
-                        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setEditingId(null)}>
-                          <Eye className="w-3.5 h-3.5" /> Cancelar
-                        </Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => handleShowVersions(o.id)}>
-                        <History className="w-3.5 h-3.5" /> Versões
-                      </Button>
-                      {onSuggestImprovements && (
-                        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => handleRequestSuggestions(o)} disabled={suggestionsLoading === o.id}>
-                          {suggestionsLoading === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                          {suggestionsLoading === o.id ? 'Analisando...' : 'Sugestões IA'}
-                        </Button>
-                      )}
-                      <div className="flex-1" />
-                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPdf(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
-                        <Download className="w-3 h-3" /> PDF
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsDocx(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
-                        <Download className="w-3 h-3" /> Word
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsTxt(o.content, o.passage)}>
-                        <Download className="w-3 h-3" /> TXT
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsMd(o.content, o.passage)}>
-                        <Download className="w-3 h-3" /> MD
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPptx(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
-                        <Presentation className="w-3 h-3" /> PPT
-                      </Button>
-                      <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setPreacherMode({ content: isHtml(o.content) ? o.content : renderMarkdown(o.content), passage: o.passage })}>
-                        <Monitor className="w-3 h-3" /> Pregador
-                      </Button>
-                    </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <FileText className="w-4 h-4" /> Biblioteca de Esboços
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{outlines.length}</span>
+            </h3>
+          </div>
 
-                    {/* AI Suggestions Panel */}
-                    {suggestions[o.id] && (
-                      <div className="bg-muted/20 border border-border rounded-lg p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> Sugestões de Melhoria</h4>
-                          <div className="flex items-center gap-2">
-                            {suggestions[o.id].overall_score && (
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded ${suggestions[o.id].overall_score >= 80 ? 'bg-green-500/10 text-green-600' : suggestions[o.id].overall_score >= 60 ? 'bg-yellow-500/10 text-yellow-600' : 'bg-red-500/10 text-red-600'}`}>
-                                Nota: {suggestions[o.id].overall_score}/100
-                              </span>
-                            )}
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setSuggestions(prev => { const next = { ...prev }; delete next[o.id]; return next; })}>
-                              ✕
+          {/* Search & Filters */}
+          <div className="card-library p-3 space-y-3">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por passagem, tema ou conteúdo..."
+                className="input-library w-full pl-9 text-sm"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="input-library text-xs py-1 px-2"
+              >
+                <option value="">Todos os tipos</option>
+                {OUTLINE_TYPES.map(t => (
+                  <option key={t.id} value={t.id}>{t.label.replace(/[^\w\s]/g, '').trim()}</option>
+                ))}
+              </select>
+
+              <span className="text-[10px] text-muted-foreground mx-1">|</span>
+              <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+              {OUTLINE_TAGS.map(tag => (
+                <button
+                  key={tag.id}
+                  onClick={() => handleToggleFilterTag(tag.id)}
+                  className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
+                    filterTags.includes(tag.id) ? tag.color + ' font-semibold' : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'
+                  }`}
+                >
+                  {tag.label}
+                </button>
+              ))}
+              {(searchQuery || filterType || filterTags.length > 0) && (
+                <button
+                  onClick={() => { setSearchQuery(''); setFilterType(''); setFilterTags([]); }}
+                  className="text-[10px] text-muted-foreground hover:text-foreground underline ml-1"
+                >
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+
+            {filteredOutlines.length !== outlines.length && (
+              <p className="text-[10px] text-muted-foreground">{filteredOutlines.length} de {outlines.length} esboços</p>
+            )}
+          </div>
+
+          {/* Outline List */}
+          <div className="space-y-3">
+            {filteredOutlines.map(o => {
+              const isExp = expandedId === o.id;
+              const isEditing = editingId === o.id;
+              const outlineTags: string[] = (o as any).tags || [];
+              return (
+                <div key={o.id} className="card-library overflow-hidden">
+                  <div className="p-4 flex items-start justify-between gap-2 cursor-pointer" onClick={() => setExpandedId(isExp ? null : o.id)}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">{typeLabels[o.outline_type] || o.outline_type}</span>
+                        <span className="text-xs text-muted-foreground truncate">📖 {o.passage}</span>
+                        {outlineTags.map(tid => {
+                          const tagDef = OUTLINE_TAGS.find(t => t.id === tid);
+                          return tagDef ? <span key={tid} className={`text-[9px] px-1.5 py-0.5 rounded-full border ${tagDef.color}`}>{tagDef.label}</span> : null;
+                        })}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">{new Date(o.created_at).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar" onClick={(e) => { e.stopPropagation(); handleDuplicate(o); }}>
+                        <CopyPlus className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(o.content.replace(/<[^>]+>/g, '')); setCopiedId(o.id); setTimeout(() => setCopiedId(null), 2000); toast({ title: "Copiado!" }); }}>
+                        {copiedId === o.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(o.id); }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                      {isExp ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                    </div>
+                  </div>
+                  {isExp && (
+                    <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
+                      {/* Tags Editor */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground font-medium">Tags:</span>
+                        {OUTLINE_TAGS.map(tag => (
+                          <button
+                            key={tag.id}
+                            onClick={() => {
+                              const newTags = outlineTags.includes(tag.id) ? outlineTags.filter(t => t !== tag.id) : [...outlineTags, tag.id];
+                              handleUpdateTags(o.id, newTags);
+                            }}
+                            className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
+                              outlineTags.includes(tag.id) ? tag.color + ' font-semibold' : 'bg-muted/20 text-muted-foreground border-border/50 hover:bg-muted/40'
+                            }`}
+                          >
+                            {tag.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
+                          if (isEditing) { handleSaveEdit(o.id); } else {
+                            let htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
+                            htmlContent = htmlContent
+                              .replace(/<span[^>]*class="citation-highlight"[^>]*>(.*?)<\/span>/g, '<mark style="background-color: #FEF3C7">$1</mark>')
+                              .replace(/<span[^>]*class="citation-source"[^>]*>(.*?)<\/span>/g, '<strong>$1</strong>')
+                              .replace(/<span[^>]*style="[^"]*background-color:\s*#FEF3C7[^"]*"[^>]*>(.*?)<\/span>/g, '<mark style="background-color: #FEF3C7">$1</mark>')
+                              .replace(/<span[^>]*style="[^"]*color:\s*#92400E[^"]*"[^>]*>(.*?)<\/span>/g, '<strong>$1</strong>');
+                            setEditContent(htmlContent);
+                            setEditingId(o.id);
+                          }
+                        }}>
+                          {isEditing ? <><Save className="w-3.5 h-3.5" /> Salvar</> : <><Edit3 className="w-3.5 h-3.5" /> Editar</>}
+                        </Button>
+                        {isEditing && (
+                          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setEditingId(null)}>
+                            <Eye className="w-3.5 h-3.5" /> Cancelar
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => handleShowVersions(o.id)}>
+                          <History className="w-3.5 h-3.5" /> Versões
+                        </Button>
+                        {onSuggestImprovements && (
+                          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => handleRequestSuggestions(o)} disabled={suggestionsLoading === o.id}>
+                            {suggestionsLoading === o.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                            {suggestionsLoading === o.id ? 'Analisando...' : 'Sugestões IA'}
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => handleDuplicate(o)}>
+                          <CopyPlus className="w-3.5 h-3.5" /> Duplicar
+                        </Button>
+                        <div className="flex-1" />
+                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPdf(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
+                          <Download className="w-3 h-3" /> PDF
+                        </Button>
+                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsDocx(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
+                          <Download className="w-3 h-3" /> Word
+                        </Button>
+                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsTxt(o.content, o.passage)}>
+                          <Download className="w-3 h-3" /> TXT
+                        </Button>
+                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsMd(o.content, o.passage)}>
+                          <Download className="w-3 h-3" /> MD
+                        </Button>
+                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPptx(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
+                          <Presentation className="w-3 h-3" /> PPT
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setPreacherMode({ content: isHtml(o.content) ? o.content : renderMarkdown(o.content), passage: o.passage })}>
+                          <Monitor className="w-3 h-3" /> Pregador
+                        </Button>
+                      </div>
+
+                      {/* AI Suggestions Panel */}
+                      {suggestions[o.id] && (
+                        <div className="bg-muted/20 border border-border rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-semibold flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> Sugestões de Melhoria</h4>
+                            <div className="flex items-center gap-2">
+                              {suggestions[o.id].overall_score && (
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded ${suggestions[o.id].overall_score >= 80 ? 'bg-green-500/10 text-green-600' : suggestions[o.id].overall_score >= 60 ? 'bg-yellow-500/10 text-yellow-600' : 'bg-red-500/10 text-red-600'}`}>
+                                  Nota: {suggestions[o.id].overall_score}/100
+                                </span>
+                              )}
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setSuggestions(prev => { const next = { ...prev }; delete next[o.id]; return next; })}>
+                                ✕
+                              </Button>
+                            </div>
+                          </div>
+                          {suggestions[o.id].strengths?.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pontos fortes</p>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {suggestions[o.id].strengths.map((s: string, i: number) => (
+                                  <span key={i} className="text-[10px] bg-green-500/10 text-green-700 px-2 py-0.5 rounded flex items-center gap-1">
+                                    <CheckCircle2 className="w-2.5 h-2.5" /> {s}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {suggestions[o.id].homiletics_notes && (
+                            <div className="text-xs bg-primary/5 p-2.5 rounded border border-primary/10">
+                              <p className="font-semibold text-primary mb-0.5">📖 Homilética</p>
+                              <p className="text-foreground/80">{suggestions[o.id].homiletics_notes}</p>
+                            </div>
+                          )}
+                          {suggestions[o.id].oratory_notes && (
+                            <div className="text-xs bg-accent/30 p-2.5 rounded border border-accent/50">
+                              <p className="font-semibold text-foreground mb-0.5">🎙️ Oratória</p>
+                              <p className="text-foreground/80">{suggestions[o.id].oratory_notes}</p>
+                            </div>
+                          )}
+                          <div className="space-y-2">
+                            {suggestions[o.id].suggestions?.map((s: any, i: number) => (
+                              <div key={i} className="flex gap-2.5 items-start text-xs border-b border-border/50 pb-2 last:border-0">
+                                <div className="shrink-0 mt-0.5">
+                                  {s.severity === 'warning' ? <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" /> :
+                                   s.severity === 'improvement' ? <Sparkles className="w-3.5 h-3.5 text-primary" /> :
+                                   <Info className="w-3.5 h-3.5 text-blue-500" />}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-foreground">{s.title} <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">{s.area}</span></p>
+                                  <p className="text-muted-foreground mt-0.5">{s.description}</p>
+                                  {s.example && <p className="text-primary/80 mt-1 italic">💡 {s.example}</p>}
+                                </div>
+                                <div className="flex gap-1 shrink-0">
+                                  {s.example && (
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="shrink-0 text-[10px] h-7 gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                                        onClick={() => {
+                                          const htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
+                                          setEditContent(htmlContent + `\n<p><strong>📝 [Sugestão aplicada — ${s.title}]:</strong> ${s.example}</p>`);
+                                          setEditingId(o.id);
+                                          toast({ title: 'Sugestão adicionada ao esboço — revise e salve.' });
+                                        }}
+                                      >
+                                        <Check className="w-3 h-3" /> Aplicar
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="shrink-0 text-[10px] h-7 gap-1"
+                                        onClick={() => {
+                                          const newExample = prompt('Editar sugestão:', s.example);
+                                          if (newExample !== null) {
+                                            setSuggestions(prev => {
+                                              const updated = { ...prev };
+                                              const suggList = [...updated[o.id].suggestions];
+                                              suggList[i] = { ...suggList[i], example: newExample };
+                                              updated[o.id] = { ...updated[o.id], suggestions: suggList };
+                                              return updated;
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        <Edit3 className="w-3 h-3" /> Editar
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-2 pt-2 border-t border-border/50">
+                            <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleRequestSuggestions(o)} disabled={suggestionsLoading === o.id}>
+                              {suggestionsLoading === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                              Regenerar Sugestões
                             </Button>
                           </div>
                         </div>
-                        {suggestions[o.id].strengths?.length > 0 && (
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Pontos fortes</p>
-                            <div className="flex gap-1.5 flex-wrap">
-                              {suggestions[o.id].strengths.map((s: string, i: number) => (
-                                <span key={i} className="text-[10px] bg-green-500/10 text-green-700 px-2 py-0.5 rounded flex items-center gap-1">
-                                  <CheckCircle2 className="w-2.5 h-2.5" /> {s}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        {suggestions[o.id].homiletics_notes && (
-                          <div className="text-xs bg-primary/5 p-2.5 rounded border border-primary/10">
-                            <p className="font-semibold text-primary mb-0.5">📖 Homilética</p>
-                            <p className="text-foreground/80">{suggestions[o.id].homiletics_notes}</p>
-                          </div>
-                        )}
-                        {suggestions[o.id].oratory_notes && (
-                          <div className="text-xs bg-accent/30 p-2.5 rounded border border-accent/50">
-                            <p className="font-semibold text-foreground mb-0.5">🎙️ Oratória</p>
-                            <p className="text-foreground/80">{suggestions[o.id].oratory_notes}</p>
-                          </div>
-                        )}
-                        <div className="space-y-2">
-                          {suggestions[o.id].suggestions?.map((s: any, i: number) => (
-                            <div key={i} className="flex gap-2.5 items-start text-xs border-b border-border/50 pb-2 last:border-0">
-                              <div className="shrink-0 mt-0.5">
-                                {s.severity === 'warning' ? <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" /> :
-                                 s.severity === 'improvement' ? <Sparkles className="w-3.5 h-3.5 text-primary" /> :
-                                 <Info className="w-3.5 h-3.5 text-blue-500" />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-foreground">{s.title} <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded ml-1">{s.area}</span></p>
-                                <p className="text-muted-foreground mt-0.5">{s.description}</p>
-                                {s.example && <p className="text-primary/80 mt-1 italic">💡 {s.example}</p>}
-                              </div>
-                              <div className="flex gap-1 shrink-0">
-                                {s.example && (
-                                  <>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="shrink-0 text-[10px] h-7 gap-1 border-primary/30 text-primary hover:bg-primary/10"
-                                      onClick={() => {
-                                        const htmlContent = isHtml(o.content) ? o.content : markdownToHtml(o.content);
-                                        setEditContent(htmlContent + `\n<p><strong>📝 [Sugestão aplicada — ${s.title}]:</strong> ${s.example}</p>`);
-                                        setEditingId(o.id);
-                                        toast({ title: 'Sugestão adicionada ao esboço — revise e salve.' });
-                                      }}
-                                    >
-                                      <Check className="w-3 h-3" /> Aplicar
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="shrink-0 text-[10px] h-7 gap-1"
-                                      onClick={() => {
-                                        const newExample = prompt('Editar sugestão:', s.example);
-                                        if (newExample !== null) {
-                                          setSuggestions(prev => {
-                                            const updated = { ...prev };
-                                            const suggList = [...updated[o.id].suggestions];
-                                            suggList[i] = { ...suggList[i], example: newExample };
-                                            updated[o.id] = { ...updated[o.id], suggestions: suggList };
-                                            return updated;
-                                          });
-                                        }
-                                      }}
-                                    >
-                                      <Edit3 className="w-3 h-3" /> Editar
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex gap-2 pt-2 border-t border-border/50">
-                          <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => handleRequestSuggestions(o)} disabled={suggestionsLoading === o.id}>
-                            {suggestionsLoading === o.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                            Regenerar Sugestões
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                      )}
 
-                    {isEditing ? (
-                      <ExegesisRichEditor content={editContent} onChange={setEditContent} placeholder="Edite o esboço..." minHeight="400px" />
-                    ) : (
-                      isHtml(o.content) ? (
-                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: o.content }} />
+                      {isEditing ? (
+                        <ExegesisRichEditor content={editContent} onChange={setEditContent} placeholder="Edite o esboço..." minHeight="400px" />
                       ) : (
-                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(o.content) }} />
-                      )
-                    )}
+                        isHtml(o.content) ? (
+                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: o.content }} />
+                        ) : (
+                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(o.content) }} />
+                        )
+                      )}
 
-                    <div className="border-t border-border pt-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Anotações</span>
-                        <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => {
-                          if (editingNotesId === o.id) { onUpdateNotes(o.id, notesValue); setEditingNotesId(null); toast({ title: "Salvo!" }); } else { setEditingNotesId(o.id); setNotesValue(o.notes || ''); }
-                        }}>{editingNotesId === o.id ? 'Salvar' : 'Editar'}</Button>
+                      <div className="border-t border-border pt-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Anotações</span>
+                          <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => {
+                            if (editingNotesId === o.id) { onUpdateNotes(o.id, notesValue); setEditingNotesId(null); toast({ title: "Salvo!" }); } else { setEditingNotesId(o.id); setNotesValue(o.notes || ''); }
+                          }}>{editingNotesId === o.id ? 'Salvar' : 'Editar'}</Button>
+                        </div>
+                        {editingNotesId === o.id ? (
+                          <Textarea value={notesValue} onChange={(e) => setNotesValue(e.target.value)} placeholder="Anotações..." className="min-h-[80px] text-sm" />
+                        ) : o.notes ? (
+                          <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-muted/30 p-3 rounded">{o.notes}</p>
+                        ) : <p className="text-xs text-muted-foreground italic">Sem anotações</p>}
                       </div>
-                      {editingNotesId === o.id ? (
-                        <Textarea value={notesValue} onChange={(e) => setNotesValue(e.target.value)} placeholder="Anotações..." className="min-h-[80px] text-sm" />
-                      ) : o.notes ? (
-                        <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-muted/30 p-3 rounded">{o.notes}</p>
-                      ) : <p className="text-xs text-muted-foreground italic">Sem anotações</p>}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              );
+            })}
+            {filteredOutlines.length === 0 && outlines.length > 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Nenhum esboço encontrado com os filtros selecionados.</p>
+                <button onClick={() => { setSearchQuery(''); setFilterType(''); setFilterTags([]); }} className="text-xs text-primary hover:underline mt-1">Limpar filtros</button>
               </div>
-            );
-          })}
+            )}
+          </div>
         </div>
       )}
 

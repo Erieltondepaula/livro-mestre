@@ -377,13 +377,14 @@ Ideal para: seminários, conferências, pregadores experientes, estudos aprofund
 **Passagem:** ${passage}
 ${materialsSection}${citationRule}
 
-**ESTRUTURA OBRIGATÓRIA — Método Exegético Completo (baseado em Gorman, Fee, Stuart e Kaiser):**
+**ESTRUTURA OBRIGATÓRIA — Método Exegético Completo (baseado em Gorman, Fee, Stuart, Kaiser e Klein):**
 
 ## 1. PESQUISA PRELIMINAR
 - Leitura repetida do texto (mínimo 3 observações iniciais)
 - Perguntas que o texto levanta
 - Impressões iniciais e tensões do texto
 - Palavras repetidas, contrastes, comparações
+- **Delimitação da perícope:** Justifique por que o texto começa e termina onde está. Quais marcadores textuais indicam a unidade?
 
 ## 2. ANÁLISE CONTEXTUAL (Histórico-Cultural e Literária)
 - **Autor:** Quem escreveu? Circunstâncias pessoais do autor
@@ -393,42 +394,80 @@ ${materialsSection}${citationRule}
 - **Contexto imediato:** O que vem ANTES e DEPOIS do texto (capítulos anteriores e posteriores)
 - **Contexto remoto:** Como se encaixa no livro, na seção e no cânon bíblico
 - **Pano de fundo cultural:** Costumes, práticas e crenças da época que iluminam o texto
+- **Contexto sociopolítico:** Estrutura de poder (Romano, Grego, Persa, Babilônico), condições econômicas, tensões sociais que influenciam o texto
+- **Intertextualidade:** Quais textos do AT o autor está citando, aludindo ou ecoando? Liste CADA referência com análise de como o autor a reinterpreta
 
 ## 3. ANÁLISE FORMAL (Gênero e Estrutura)
 - **Gênero literário:** Narrativa, poesia, profecia, epístola, apocalíptico, sabedoria, lei
 - **Estrutura do texto:** Divisão em seções/estrofes com justificativa
 - **Recursos literários:** Paralelismo, quiasmo, inclusão, clímax, ironia, metáfora
 - **Fluxo argumentativo:** Como as ideias se conectam e progridem
+- **Diagrama estrutural:** Apresente a estrutura lógica do argumento mostrando relações de causa-efeito, condição-resultado, meio-fim
 
-## 4. ANÁLISE DETALHADA (Palavras-Chave e Gramática)
-- **Para CADA palavra-chave:**
-  - Termo original em hebraico/grego (transliterado) com Strong's number quando possível
+## 4. ANÁLISE DETALHADA (Morfologia, Sintaxe e Léxico)
+- **Para CADA palavra-chave (mínimo 5-8 palavras):**
+  - Termo original em hebraico/grego (transliterado) com **Strong's number** (ex: ἀγάπη [agapē, G26])
+  - **Análise morfológica COMPLETA:**
+    - Para verbos: tempo (presente, aoristo, perfeito, imperfeito, futuro, mais-que-perfeito), voz (ativa, passiva, média), modo (indicativo, subjuntivo, imperativo, infinitivo, particípio), pessoa e número
+    - Para substantivos: caso (nominativo, genitivo, dativo, acusativo, vocativo), número, gênero
+    - Para particípios: classificação (adverbial, adjetival, substantivado) e função na oração
+  - **Significado teológico:** Como o significado técnico da palavra impacta a interpretação
   - Campo semântico completo e significados possíveis
-  - Usos em outros contextos bíblicos (mínimo 3 referências)
-  - Análise morfológica (tempo verbal, voz, modo)
-- **Análise sintática:** Estrutura das frases, conectivos lógicos (γάρ, οὖν, δέ, כִּי)
-- **Variantes textuais:** Se houver diferenças significativas entre manuscritos
+  - Usos em outros contextos bíblicos (mínimo 3 referências com contexto)
+  - **Usos na LXX** (Septuaginta): Como a palavra grega traduz termos hebraicos — que campo semântico do AT ela carrega?
+- **Análise sintática detalhada:**
+  - Estrutura das frases, conectivos lógicos (γάρ [gar], οὖν [oun], δέ [de], ἀλλά [alla], ἵνα [hina], ὅτι [hoti], כִּי [ki], לְמַעַן [lema'an])
+  - Função de cada conectivo no fluxo argumentativo
+  - Orações subordinadas e sua relação com a principal
+  - **Ênfases do texto original:** Inversões de ordem, posição enfática de termos, construções perifrásticas
+- **Hapax legomena:** Se há palavras que aparecem apenas aqui na Bíblia — qual é a importância disso?
 
-## 5. SÍNTESE DO SIGNIFICADO
+## 5. VARIANTES TEXTUAIS (Crítica Textual)
+- **Manuscritos principais:** Liste os manuscritos mais relevantes para este texto (Sinaiticus, Vaticanus, Alexandrinus, papiros, etc.)
+- **Variantes significativas:** Para cada variante que afeta o significado:
+  - Qual é a leitura dos principais manuscritos?
+  - Qual leitura é considerada original e por quê? (critérios: leitura mais difícil, mais curta, melhor atestada)
+  - Como a variante afeta a interpretação?
+- **Aparato crítico:** Se o texto tem variantes conhecidas no aparato do NA28/UBS5, mencione
+- Se NÃO houver variantes significativas, explique brevemente por que o texto é considerado seguro
+
+## 6. SÍNTESE DO SIGNIFICADO
 - O que o autor QUIS DIZER aos destinatários originais?
 - Resumo da mensagem central em 2-3 frases
 - Como cada parte do texto contribui para a mensagem central
-- O que este texto NÃO está dizendo (erros comuns de interpretação)
+- O que este texto NÃO está dizendo (erros comuns de interpretação — eisegese)
+- **Princípio hermenêutico:** Qual regra de interpretação é mais relevante aqui? (conforme Klein: significado autoral pretendido)
 
-## 6. REFLEXÃO TEOLÓGICA
+## 7. REFLEXÃO TEOLÓGICA E NARRATIVA REDENTIVA
 - **Teologia do texto:** Que verdades sobre Deus, Cristo, Espírito Santo, humanidade são reveladas?
-- **Relação cristológica:** Como este texto aponta para Cristo (tipologia, profecia, cumprimento)
-- **Teologia bíblica:** Como se conecta com a grande narrativa da Escritura (criação → queda → redenção → consumação)
-- **Diálogo canônico:** Textos paralelos e complementares em TODA a Bíblia
+- **Relação cristológica:** Como este texto aponta para Cristo:
+  - **Tipologia:** Pessoas, eventos ou instituições que prefiguram Cristo
+  - **Promessa-Cumprimento:** Promessas do AT cumpridas em Cristo
+  - **Analogia:** Padrões que refletem a obra de Cristo
+  - **Contraste:** O que o texto mostra que só Cristo pode resolver
+- **Narrativa Redentiva — As 4 Fases:**
+  1. **CRIAÇÃO:** Como este texto reflete o design original de Deus? Que aspecto do "muito bom" está em jogo?
+  2. **QUEDA:** Que consequência do pecado ou condição decaída (FCF de Chapell) este texto revela ou pressupõe?
+  3. **REDENÇÃO:** Como a obra de Cristo responde diretamente à necessidade apresentada? Onde está a graça?
+  4. **CONSUMAÇÃO:** Como a esperança escatológica ilumina este texto? Para onde ele aponta no plano final de Deus?
+- **Teologia bíblica progressiva:** Trace o DESENVOLVIMENTO do tema central deste texto ao longo da Escritura:
+  - Onde o tema aparece no Pentateuco?
+  - Como os Profetas desenvolvem?
+  - Como os Escritos/Sabedoria abordam?
+  - Como Jesus transforma?
+  - Como as Epístolas aplicam?
+  - Como o Apocalipse consuma?
+- **Diálogo canônico:** Textos paralelos e complementares em TODA a Bíblia (mínimo 8-10 referências com texto completo na ACF)
 
-## 7. APLICAÇÃO CONTEMPORÂNEA
+## 8. APLICAÇÃO CONTEMPORÂNEA
 - **Princípio atemporal:** Que verdade transcultural emerge do texto?
 - **Aplicação pessoal:** Como isso muda minha vida hoje?
 - **Aplicação comunitária:** Como isso impacta a igreja?
 - **Aplicação missional:** Como isso se relaciona com a missão de Deus no mundo?
-- **Perguntas para reflexão:** 3-5 perguntas provocativas para estudo individual ou em grupo
+- **Aplicação cultural:** Como este texto confronta ou afirma valores da cultura contemporânea?
+- **Perguntas para reflexão:** 5-7 perguntas provocativas para estudo individual ou em grupo
 
-Seja EXTREMAMENTE detalhado e profundo. Cite o texto original (hebraico/grego) quando relevante. Inclua referências cruzadas abundantes com texto completo na ACF. NÃO seja superficial — cada seção deve ter NO MÍNIMO 3-4 parágrafos substanciais.`;
+Seja EXTREMAMENTE detalhado e profundo. Cite o texto original (hebraico/grego) com transliteração E Strong's number. Inclua análise morfológica COMPLETA de cada palavra-chave. Inclua referências cruzadas abundantes com texto completo na ACF. NÃO seja superficial — cada seção deve ter NO MÍNIMO 4-5 parágrafos substanciais. A seção de Narrativa Redentiva deve ser ESPECIALMENTE profunda, conectando o texto com toda a história da Bíblia.`;
         break;
 
       case "context_analysis":
