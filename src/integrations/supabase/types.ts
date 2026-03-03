@@ -278,6 +278,7 @@ export type Database = {
           notes: string | null
           outline_type: string
           passage: string
+          tags: string[] | null
           updated_at: string
           user_id: string
         }
@@ -288,6 +289,7 @@ export type Database = {
           notes?: string | null
           outline_type?: string
           passage: string
+          tags?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -298,6 +300,7 @@ export type Database = {
           notes?: string | null
           outline_type?: string
           passage?: string
+          tags?: string[] | null
           updated_at?: string
           user_id?: string
         }
