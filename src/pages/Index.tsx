@@ -14,13 +14,14 @@ import { EnhancedNotesView } from '@/components/notes/EnhancedNotesView';
 import { ReadingReportsView } from '@/components/ReadingReportsView';
 import { ExegesisView } from '@/components/ExegesisView';
 import { SystemDiagnosticsView } from '@/components/SystemDiagnosticsView';
+import { FlashcardsView } from '@/components/FlashcardsView';
 import { SubscriptionBlocker } from '@/components/SubscriptionBlocker';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { toast } from '@/hooks/use-toast';
 import type { Book, Note } from '@/types/library';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico' | 'flashcards';
 
 // Keys for session persistence
 const STORAGE_KEYS = {
@@ -251,6 +252,8 @@ const Index = () => {
         return <ReadingReportsView books={books} readings={readings} statuses={statuses} />;
       case 'exegese':
         return <ExegesisView />;
+      case 'flashcards':
+        return <FlashcardsView />;
       case 'diagnostico':
         return <SystemDiagnosticsView />;
       case 'ajuda':

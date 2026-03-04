@@ -68,6 +68,7 @@ export interface Quote {
   livro: string;
   pagina: number;
   created_at?: string;
+  tags?: string[];
   // Bible-specific reference fields
   bibleBook?: string;
   bibleChapter?: number;

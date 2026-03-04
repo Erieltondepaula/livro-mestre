@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked, Star, Quote, Book, StickyNote, ScrollText, BarChart3, Activity, HelpCircle } from 'lucide-react';
+import { Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked, Star, Quote, Book, StickyNote, ScrollText, BarChart3, Activity, HelpCircle, Brain } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -43,6 +43,7 @@ const MODULES = [
   { key: 'biblia', label: 'Progresso Bíblia', icon: Book },
   { key: 'exegese', label: 'Exegese Bíblica', icon: ScrollText },
   { key: 'dicionario', label: 'Dicionário', icon: Book },
+  { key: 'flashcards', label: 'Flashcards', icon: Brain },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3 },
   { key: 'diagnostico', label: 'Diagnóstico', icon: Activity },
   { key: 'ajuda', label: 'Ajuda', icon: HelpCircle },
