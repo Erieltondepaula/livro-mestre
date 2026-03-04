@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
+import { GamificationWidget } from '@/components/GamificationWidget';
 
 interface DashboardProps {
   stats: DashboardStats;
@@ -184,6 +185,9 @@ export function Dashboard({ stats, recentStatuses, books, readings, onNavigateTo
           </div>
         </div>
       </div>
+
+      {/* Gamification Widget */}
+      <GamificationWidget readings={readings} />
 
       {/* Recent Status with Filters */}
       <div className="card-library p-4 md:p-6">

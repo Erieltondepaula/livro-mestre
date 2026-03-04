@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle, Crown, BarChart3, ScrollText, Activity } from 'lucide-react';
+import { BookOpen, LayoutDashboard, PlusCircle, BookMarked, Star, Quote, Library, Book, Menu, LogOut, Settings, Shield, User, HelpCircle, Crown, BarChart3, ScrollText, Activity, Brain } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico';
+type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico' | 'flashcards';
 
 interface SidebarProps {
   currentView: View;
@@ -35,6 +35,7 @@ const navItems = [
   { id: 'biblia' as View, label: 'Progresso Bíblia', icon: Book },
   { id: 'exegese' as View, label: 'Exegese Bíblica', icon: ScrollText },
   { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
+  { id: 'flashcards' as View, label: 'Flashcards', icon: Brain },
   { id: 'relatorios' as View, label: 'Relatórios', icon: BarChart3 },
   { id: 'diagnostico' as View, label: 'Diagnóstico', icon: Activity, masterOnly: true },
   { id: 'ajuda' as View, label: 'Ajuda', icon: HelpCircle },

@@ -1,14 +1,27 @@
 import { useState, useMemo } from 'react';
-import { Quote as QuoteIcon, Save, Trash2, Calendar } from 'lucide-react';
+import { Quote as QuoteIcon, Save, Trash2, Calendar, Tag, Search } from 'lucide-react';
 import type { Book, Quote } from '@/types/library';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+
+const QUOTE_TAGS = [
+  { id: 'motivação', label: '💪 Motivação', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
+  { id: 'sabedoria', label: '🦉 Sabedoria', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
+  { id: 'fé', label: '✝️ Fé', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20' },
+  { id: 'liderança', label: '👑 Liderança', color: 'bg-amber-500/10 text-amber-700 border-amber-500/20' },
+  { id: 'amor', label: '❤️ Amor', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
+  { id: 'esperança', label: '🌟 Esperança', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
+  { id: 'coragem', label: '🦁 Coragem', color: 'bg-teal-500/10 text-teal-700 border-teal-500/20' },
+  { id: 'outro', label: '📝 Outro', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
+];
 
 interface QuotesViewProps {
   books: Book[];
   quotes: Quote[];
-  onSubmit: (quote: Omit<Quote, 'id'>) => void;
+  onSubmit: (quote: Omit<Quote, 'id'> & { tags?: string[] }) => void;
   onDelete: (id: string) => void;
 }
 
@@ -24,7 +37,9 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
 
   // Filter state for saved quotes
   const [filterBookId, setFilterBookId] = useState('');
-
+  const [filterTag, setFilterTag] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const selectedBook = books.find(b => b.id === livroId);
   const isBibleCategory = selectedBook?.categoria?.toLowerCase() === 'bíblia' || 
                           selectedBook?.categoria?.toLowerCase() === 'biblia';
@@ -49,17 +64,25 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
     if (filterBookId) {
       filtered = filtered.filter(q => q.livroId === filterBookId);
     }
+
+    if (filterTag) {
+      filtered = filtered.filter(q => (q as any).tags?.includes(filterTag));
+    }
+
+    if (searchText.trim()) {
+      const query = searchText.toLowerCase();
+      filtered = filtered.filter(q => q.citacao.toLowerCase().includes(query));
+    }
     
     // Sort by creation date descending (newest first) and take only 4
     filtered.sort((a, b) => {
-      // Use created_at for proper chronological ordering
       const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
       const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
       return dateB - dateA;
     });
     
-    return filtered.slice(0, 4);
-  }, [quotes, filterBookId]);
+    return filtered.slice(0, 8);
+  }, [quotes, filterBookId, filterTag, searchText]);
 
   const handleBookChange = (bookId: string) => {
     setLivroId(bookId);
@@ -98,7 +121,8 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
       bibleBook: isBibleCategory ? bibleBook : undefined,
       bibleChapter: isBibleCategory && bibleChapter ? parseInt(bibleChapter) : undefined,
       bibleVerse: isBibleCategory && bibleVerse ? parseInt(bibleVerse) : undefined,
-    });
+      tags: selectedTags.length > 0 ? selectedTags : undefined,
+    } as any);
 
     // Reset form
     setCitacao('');
@@ -246,6 +270,31 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
               />
             </div>
 
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                <Tag className="w-3.5 h-3.5 inline mr-1" /> Tags (opcional)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {QUOTE_TAGS.map(tag => (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-all ${
+                      selectedTags.includes(tag.id)
+                        ? tag.color + ' ring-1 ring-primary/30'
+                        : 'border-border text-muted-foreground hover:border-primary/30'
+                    }`}
+                    onClick={() => setSelectedTags(prev => 
+                      prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id]
+                    )}
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button type="submit" className="btn-primary w-full">
               <Save className="w-5 h-5" />
               Salvar Citação
@@ -256,20 +305,41 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
         <div className="space-y-4">
           <h3 className="font-display text-xl font-semibold text-foreground">Citações Guardadas</h3>
           
-          {/* Filter by book dropdown */}
-          <div>
-            <select
-              value={filterBookId}
-              onChange={(e) => setFilterBookId(e.target.value)}
-              className="input-library"
-            >
-              <option value="">Todos os livros</option>
-              {booksWithQuotes.map((book) => (
-                <option key={book.id} value={book.id}>
-                  {book.livro}
-                </option>
-              ))}
-            </select>
+          {/* Search + Filters */}
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar nas citações..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <select
+                value={filterBookId}
+                onChange={(e) => setFilterBookId(e.target.value)}
+                className="input-library text-sm h-8 w-auto"
+              >
+                <option value="">Todos os livros</option>
+                {booksWithQuotes.map((book) => (
+                  <option key={book.id} value={book.id}>
+                    {book.livro}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterTag}
+                onChange={(e) => setFilterTag(e.target.value)}
+                className="input-library text-sm h-8 w-auto"
+              >
+                <option value="">Todas as tags</option>
+                {QUOTE_TAGS.map(tag => (
+                  <option key={tag.id} value={tag.id}>{tag.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Display only the 4 most recent quotes */}
@@ -300,6 +370,18 @@ export function QuotesView({ books, quotes, onSubmit, onDelete }: QuotesViewProp
                         <span>Página {quote.pagina}</span>
                       )}
                     </div>
+                    {(quote.tags && quote.tags.length > 0) && (
+                      <div className="flex gap-1 mt-2 flex-wrap">
+                        {quote.tags.map(tagId => {
+                          const tagDef = QUOTE_TAGS.find(t => t.id === tagId);
+                          return tagDef ? (
+                            <span key={tagId} className={`text-[10px] px-2 py-0.5 rounded-full border ${tagDef.color}`}>
+                              {tagDef.label}
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
                     {createdDate && (
                       <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground/70">
                         <Calendar className="w-3 h-3" />

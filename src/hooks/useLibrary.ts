@@ -203,6 +203,7 @@ export function useLibrary() {
           livro: (q.books as any)?.name || '',
           pagina: q.page || 0,
           created_at: q.created_at || undefined,
+          tags: Array.isArray((q as any).tags) ? (q as any).tags : [],
           bibleBook: (q as any).bible_book || undefined,
           bibleChapter: (q as any).bible_chapter || undefined,
           bibleVerse: (q as any).bible_verse || undefined,
@@ -656,6 +657,7 @@ export function useLibrary() {
         bible_book: quote.bibleBook || null,
         bible_chapter: quote.bibleChapter || null,
         bible_verse: quote.bibleVerse || null,
+        tags: quote.tags || [],
         user_id: user.id,
       } as any)
       .select()

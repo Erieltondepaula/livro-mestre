@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       book_categories: {
         Row: {
           created_at: string | null
@@ -357,6 +390,53 @@ export type Database = {
           },
         ]
       }
+      flashcard_reviews: {
+        Row: {
+          created_at: string
+          ease_factor: number
+          id: string
+          interval_days: number
+          last_review_date: string | null
+          next_review_date: string
+          repetitions: number
+          updated_at: string
+          user_id: string
+          vocabulary_id: string
+        }
+        Insert: {
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_review_date?: string | null
+          next_review_date?: string
+          repetitions?: number
+          updated_at?: string
+          user_id: string
+          vocabulary_id: string
+        }
+        Update: {
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_review_date?: string | null
+          next_review_date?: string
+          repetitions?: number
+          updated_at?: string
+          user_id?: string
+          vocabulary_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_reviews_vocabulary_id_fkey"
+            columns: ["vocabulary_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       note_book_links: {
         Row: {
           book_id: string
@@ -600,6 +680,7 @@ export type Database = {
           id: string
           page: number | null
           quote: string
+          tags: string[] | null
           user_id: string | null
         }
         Insert: {
@@ -611,6 +692,7 @@ export type Database = {
           id?: string
           page?: number | null
           quote: string
+          tags?: string[] | null
           user_id?: string | null
         }
         Update: {
@@ -622,6 +704,7 @@ export type Database = {
           id?: string
           page?: number | null
           quote?: string
+          tags?: string[] | null
           user_id?: string | null
         }
         Relationships: [
@@ -633,6 +716,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reading_goals: {
+        Row: {
+          created_at: string
+          current_streak: number
+          daily_page_goal: number
+          id: string
+          last_reading_date: string | null
+          longest_streak: number
+          total_badges: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          daily_page_goal?: number
+          id?: string
+          last_reading_date?: string | null
+          longest_streak?: number
+          total_badges?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          daily_page_goal?: number
+          id?: string
+          last_reading_date?: string | null
+          longest_streak?: number
+          total_badges?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       readings: {
         Row: {
