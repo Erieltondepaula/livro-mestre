@@ -1,10 +1,11 @@
-import { BookOpen, History, FileText, Library } from 'lucide-react';
+import { BookOpen, History, FileText, Library, Link2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useExegesis } from '@/hooks/useExegesis';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
 import { ExegesisHistory } from '@/components/exegesis/ExegesisHistory';
 import { ExegesisOutlines } from '@/components/exegesis/ExegesisOutlines';
 import { ExegesisMaterials } from '@/components/exegesis/ExegesisMaterials';
+import { CrossReferencesView } from '@/components/exegesis/CrossReferencesView';
 import { useEffect } from 'react';
 
 export function ExegesisView() {
@@ -31,9 +32,12 @@ export function ExegesisView() {
       </div>
 
       <Tabs defaultValue="analyze" className="w-full">
-        <TabsList className="w-full grid grid-cols-4">
+        <TabsList className="w-full grid grid-cols-5">
           <TabsTrigger value="analyze" className="gap-1.5 text-xs sm:text-sm">
             <BookOpen className="w-4 h-4 hidden sm:block" /> Analisar
+          </TabsTrigger>
+          <TabsTrigger value="cross_refs" className="gap-1.5 text-xs sm:text-sm">
+            <Link2 className="w-4 h-4 hidden sm:block" /> Ref. Cruzadas
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-1.5 text-xs sm:text-sm">
             <History className="w-4 h-4 hidden sm:block" /> Histórico
@@ -49,6 +53,10 @@ export function ExegesisView() {
 
         <TabsContent value="analyze">
           <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
+        </TabsContent>
+
+        <TabsContent value="cross_refs">
+          <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
         </TabsContent>
 
         <TabsContent value="history">

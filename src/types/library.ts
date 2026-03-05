@@ -37,6 +37,7 @@ export interface DailyReading {
   bibleChapter?: number;
   bibleVerseStart?: number;
   bibleVerseEnd?: number;
+  created_at?: string;
 }
 
 export interface BookStatus {
