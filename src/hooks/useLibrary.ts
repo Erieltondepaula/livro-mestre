@@ -170,8 +170,26 @@ export function useLibrary() {
             paginaFinal: r.end_page,
             tempoGasto: tempoGastoMinutes, // Em minutos (decimal)
             quantidadePaginas: r.end_page - r.start_page,
-            dataInicio: (r as any).start_date ? new Date((r as any).start_date + 'T12:00:00') : undefined,
-            dataFim: (r as any).end_date ? new Date((r as any).end_date + 'T12:00:00') : undefined,
+            dataInicio: (r as any).start_date
+              ? (() => {
+                  // Use created_at time component instead of fixed 12:00
+                  const createdAt = r.created_at ? new Date(r.created_at) : null;
+                  const timePart = createdAt
+                    ? `T${String(createdAt.getHours()).padStart(2, '0')}:${String(createdAt.getMinutes()).padStart(2, '0')}:${String(createdAt.getSeconds()).padStart(2, '0')}`
+                    : `T${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}:${String(new Date().getSeconds()).padStart(2, '0')}`;
+                  return new Date((r as any).start_date + timePart);
+                })()
+              : undefined,
+            dataFim: (r as any).end_date
+              ? (() => {
+                  const createdAt = r.created_at ? new Date(r.created_at) : null;
+                  const timePart = createdAt
+                    ? `T${String(createdAt.getHours()).padStart(2, '0')}:${String(createdAt.getMinutes()).padStart(2, '0')}:${String(createdAt.getSeconds()).padStart(2, '0')}`
+                    : `T${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}:${String(new Date().getSeconds()).padStart(2, '0')}`;
+                  return new Date((r as any).end_date + timePart);
+                })()
+              : undefined,
+            created_at: r.created_at || undefined,
             bibleBook: (r as any).bible_book || undefined,
             bibleChapter: (r as any).bible_chapter || undefined,
             bibleVerseStart: (r as any).bible_verse_start || undefined,

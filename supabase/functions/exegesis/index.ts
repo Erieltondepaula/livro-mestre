@@ -1253,6 +1253,121 @@ Identifique pelo menos 5 reflexões.
 Seja profundo mas acessível. Cada lição, aplicação e reflexão deve ser fundamentada no texto, não inventada.`;
         break;
 
+      case "cross_references": {
+        const refTypeMap: Record<string, string> = {
+          thematic: 'TEMÁTICAS — versículos que tratam do mesmo assunto ou tema',
+          vocabulary: 'VOCABULARES — mesma palavra-chave no original (hebraico/grego) usada em contextos diferentes',
+          typological: 'TIPOLÓGICAS — AT prefigurando o NT (tipos, sombras e cumprimentos)',
+          prophetic: 'PROFÉTICAS — profecia no AT e cumprimento no NT',
+          contextual: 'CONTEXTUAIS — situações históricas semelhantes, paralelos narrativos',
+          doctrinal: 'DOUTRINÁRIAS — notas doutrinárias e estudo sistemático da doutrina no texto',
+          all: 'TODAS AS CATEGORIAS — busca completa em temáticas, vocabulares, tipológicas, proféticas, contextuais e doutrinárias',
+        };
+        const refType = question || 'all';
+        const refLabel = refTypeMap[refType] || refTypeMap.all;
+
+        userPrompt = `Faça uma busca EXAUSTIVA de REFERÊNCIAS CRUZADAS para o seguinte texto bíblico:
+
+**Passagem:** ${passage}
+${materialsSection}
+
+## TIPO DE REFERÊNCIA SOLICITADO: ${refLabel}
+
+## MÉTODO DE BUSCA — BÍBLIA DE ESTUDO ACF (Almeida Corrigida Fiel)
+
+**FONTES PRIMÁRIAS OBRIGATÓRIAS:**
+1. **Bíblia ACF** — Almeida Corrigida Fiel da Sociedade Bíblica Trinitariana do Brasil
+2. **Sistema de referências cruzadas** — Mais de 63.000 conexões entre textos bíblicos
+3. **Notas doutrinárias** — Estudo sistemático dos ensinamentos da Bíblia
+4. **Perfis de personagens bíblicos** — Informações sobre homens e mulheres da Bíblia
+5. **Sítios arqueológicos** — Locais significativos mencionados na Bíblia
+
+## ESTRUTURA OBRIGATÓRIA DA RESPOSTA:
+
+### 📖 TEXTO BASE
+Apresente o texto completo da passagem na versão ACF.
+
+### 🔍 PALAVRAS-CHAVE IDENTIFICADAS
+Para cada palavra-chave do texto:
+- Termo original (hebraico/grego) com transliteração e Strong's number
+- Significado principal e campo semântico
+- Ocorrências significativas em outros textos
+
+${refType === 'all' || refType === 'thematic' ? `### 📖 REFERÊNCIAS TEMÁTICAS
+Versículos que tratam do MESMO TEMA ou ASSUNTO:
+Para cada referência:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Conexão:** Explique como se relaciona com o texto base
+- **Categoria:** (mesmo tema / assunto paralelo / complemento)
+Mínimo 8 referências temáticas de livros DIFERENTES.
+` : ''}
+${refType === 'all' || refType === 'vocabulary' ? `### 📝 REFERÊNCIAS VOCABULARES
+Textos que usam a MESMA PALAVRA-CHAVE no original (hebraico/grego):
+Para cada referência:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Palavra original:** termo (transliteração, Strong's)
+- **Uso neste contexto:** como a mesma palavra é usada diferentemente
+Mínimo 6 referências vocabulares.
+` : ''}
+${refType === 'all' || refType === 'typological' ? `### 🔗 REFERÊNCIAS TIPOLÓGICAS
+AT prefigurando o NT — tipos, sombras e cumprimentos:
+Para cada referência:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Tipo:** O que prefigura no AT
+- **Antítipo:** O cumprimento no NT
+- **Significado:** Por que essa tipologia é importante
+Mínimo 4 referências tipológicas.
+` : ''}
+${refType === 'all' || refType === 'prophetic' ? `### 🔮 REFERÊNCIAS PROFÉTICAS
+Profecia e cumprimento entre AT e NT:
+Para cada referência:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Profecia:** O que foi predito
+- **Cumprimento:** Onde e como foi cumprido
+Mínimo 4 referências proféticas.
+` : ''}
+${refType === 'all' || refType === 'contextual' ? `### 🗺️ REFERÊNCIAS CONTEXTUAIS
+Situações históricas semelhantes e paralelos narrativos:
+Para cada referência:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Paralelo:** Situação semelhante descrita
+- **Lição:** O que se aprende ao comparar os dois contextos
+Mínimo 4 referências contextuais.
+` : ''}
+${refType === 'all' || refType === 'doctrinal' ? `### ⛪ NOTAS DOUTRINÁRIAS
+Doutrinas bíblicas presentes ou relacionadas ao texto (seguindo o sistema de notas doutrinárias da Bíblia de Estudo ACF):
+Para cada doutrina identificada:
+- **Nome da doutrina:** (ex: Graça de Deus, Santificação, etc.)
+- **Referência primária:** Onde esta doutrina é apresentada pela primeira vez na Escritura
+- **Referência principal:** Onde a explicação mais completa aparece
+- **Conexão com o texto:** Como esta doutrina se manifesta na passagem em estudo
+- **Trajetória bíblica:** Como esta doutrina se desenvolve ao longo da Escritura (AT → NT)
+- **Aplicação:** Significado prático desta doutrina para o cristão hoje
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+Identifique pelo menos 3 doutrinas relevantes.
+` : ''}
+
+### 📊 MAPA DE CONEXÕES
+Apresente um resumo visual das conexões encontradas:
+- Total de referências por categoria
+- Livros bíblicos mais conectados
+- Temas centrais que emergem das referências
+- Como estas referências confirmam a unidade das Escrituras
+
+### 🏆 TOP 5 — REFERÊNCIAS MAIS IMPORTANTES
+Liste as 5 referências cruzadas mais significativas e explique por que são essenciais para entender o texto.
+
+## REGRAS:
+- Use SEMPRE o texto na versão ACF (Almeida Corrigida Fiel)
+- Cada referência deve incluir o TEXTO COMPLETO do versículo
+- Busque em livros DIFERENTES do texto base — surpreenda com conexões profundas
+- Priorize referências que conectem AT e NT
+- Inclua referências que o estudante talvez NÃO conheça
+- Formato obrigatório: 👉 [Livro Capítulo:Versículo]: "[texto completo]"
+- Seja EXAUSTIVO e PROFUNDO — esta é uma ferramenta de estudo acadêmico`;
+        break;
+      }
+
       case "title_generator": {
         const styleMap: Record<string, string> = {
           all: 'TODOS os 4 estilos (Criativo, Provocativo, Questionativo, Afirmativo)',
