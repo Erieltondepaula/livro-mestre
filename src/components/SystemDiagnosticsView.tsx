@@ -28,12 +28,19 @@ interface DiagnosticCheck {
   count?: number;
 }
 
+interface ImprovementPrompt {
+  title: string;
+  prompt: string;
+  type: 'fix' | 'feature' | 'optimization';
+  status?: 'pending' | 'resolved' | 'new';
+}
+
 interface ModuleDiagnostic {
   module: string;
   icon: typeof BookOpen;
   label: string;
   checks: DiagnosticCheck[];
-  improvementPrompts: { title: string; prompt: string; type: 'fix' | 'feature' | 'optimization' }[];
+  improvementPrompts: ImprovementPrompt[];
 }
 
 const SEVERITY_CONFIG: Record<Severity, { color: string; icon: typeof CheckCircle; label: string }> = {
@@ -80,6 +87,14 @@ export function SystemDiagnosticsView() {
     toast({ title: "Prompt copiado!", description: "Cole no chat do Lovable para executar." });
   };
 
+  // Known implemented features — marked as RESOLVED
+  const IMPLEMENTED_FEATURES = new Set([
+    'flashcards-vocabulary', 'quiz-vocabulary', 'tags-quotes', 'gamification-reading',
+    'note-templates', 'audit-log', 'cross-references-12', 'exegesis-morphology',
+    'pptx-export', 'outline-library', 'permission-profiles', 'timeline-time-fix',
+    'theme-query-crossref',
+  ]);
+
   const runDiagnostics = async () => {
     setIsRunning(true);
     const modules: ModuleDiagnostic[] = [];
@@ -93,20 +108,18 @@ export function SystemDiagnosticsView() {
       const booksZeroPages = books?.filter(b => b.total_pages === 0) || [];
 
       modules.push({
-        module: 'books',
-        icon: BookOpen,
-        label: 'Minha Biblioteca',
+        module: 'books', icon: BookOpen, label: 'Minha Biblioteca',
         checks: [
           { id: 'books-total', module: 'books', title: `${booksCount || 0} livros cadastrados`, description: 'Total de livros no sistema', severity: 'ok' },
-          { id: 'books-no-author', module: 'books', title: 'Livros sem autor', description: `${booksWithoutAuthor.length} livros não possuem autor definido`, severity: booksWithoutAuthor.length > 0 ? 'warning' : 'ok', count: booksWithoutAuthor.length, details: booksWithoutAuthor.slice(0, 5).map(b => b.name).join(', ') },
+          { id: 'books-no-author', module: 'books', title: 'Livros sem autor', description: `${booksWithoutAuthor.length} livros sem autor`, severity: booksWithoutAuthor.length > 0 ? 'warning' : 'ok', count: booksWithoutAuthor.length, details: booksWithoutAuthor.slice(0, 5).map(b => b.name).join(', ') },
           { id: 'books-no-category', module: 'books', title: 'Livros sem categoria', description: `${booksWithoutCategory.length} livros sem categoria`, severity: booksWithoutCategory.length > 0 ? 'info' : 'ok', count: booksWithoutCategory.length },
           { id: 'books-no-cover', module: 'books', title: 'Livros sem capa', description: `${booksWithoutCover.length} livros sem imagem de capa`, severity: booksWithoutCover.length > 3 ? 'info' : 'ok', count: booksWithoutCover.length },
           { id: 'books-zero-pages', module: 'books', title: 'Livros com 0 páginas', description: `${booksZeroPages.length} livros com total de páginas = 0`, severity: booksZeroPages.length > 0 ? 'critical' : 'ok', count: booksZeroPages.length, details: booksZeroPages.slice(0, 5).map(b => b.name).join(', ') },
         ],
         improvementPrompts: [
-          { title: 'Completar dados de livros', type: 'fix', prompt: 'Verifique todos os livros cadastrados e identifique aqueles sem autor, sem categoria ou sem capa. Crie um fluxo para preencher esses dados em lote, sugerindo autores e categorias com base no nome do livro.' },
-          { title: 'Busca avançada de livros', type: 'feature', prompt: 'Adicione busca avançada na biblioteca com filtros por: autor, categoria, tipo, ano, faixa de páginas, nota de avaliação e status de leitura. Inclua ordenação por múltiplos critérios.' },
-          { title: 'Importação em lote', type: 'feature', prompt: 'Crie funcionalidade de importação em lote de livros via CSV/Excel com mapeamento automático de colunas e validação de dados antes da importação.' },
+          ...(booksWithoutAuthor.length > 0 ? [{ title: 'Completar dados de livros', type: 'fix' as const, prompt: `Há ${booksWithoutAuthor.length} livros sem autor e ${booksWithoutCategory.length} sem categoria. Preencha esses dados.` }] : []),
+          ...(booksZeroPages.length > 0 ? [{ title: 'Corrigir livros com 0 páginas', type: 'fix' as const, prompt: `${booksZeroPages.length} livros têm 0 páginas: ${booksZeroPages.slice(0, 3).map(b => b.name).join(', ')}.` }] : []),
+          { title: 'Importação em lote (CSV)', type: 'feature' as const, prompt: 'Crie importação em lote de livros via CSV com mapeamento e validação.' },
         ],
       });
 
@@ -117,9 +130,7 @@ export function SystemDiagnosticsView() {
       const readingsInvalidPages = readings?.filter(r => r.end_page <= r.start_page) || [];
 
       modules.push({
-        module: 'readings',
-        icon: BookOpen,
-        label: 'Planner de Leituras',
+        module: 'readings', icon: BookOpen, label: 'Planner de Leituras',
         checks: [
           { id: 'readings-total', module: 'readings', title: `${readingsCount || 0} registros de leitura`, description: 'Total de sessões registradas', severity: 'ok' },
           { id: 'readings-no-time', module: 'readings', title: 'Leituras sem tempo', description: `${readingsNoTime.length} leituras sem tempo registrado`, severity: readingsNoTime.length > 5 ? 'warning' : 'ok', count: readingsNoTime.length },
@@ -127,9 +138,12 @@ export function SystemDiagnosticsView() {
           { id: 'readings-invalid-pages', module: 'readings', title: 'Páginas inválidas', description: `${readingsInvalidPages.length} leituras onde página final ≤ página inicial`, severity: readingsInvalidPages.length > 0 ? 'critical' : 'ok', count: readingsInvalidPages.length },
         ],
         improvementPrompts: [
-          { title: 'Corrigir leituras sem tempo', type: 'fix', prompt: 'Identifique todas as leituras que não possuem tempo registrado (time_spent nulo ou "0:00") e sugira uma forma de estimar o tempo baseado na quantidade de páginas lidas e na velocidade média do usuário.' },
-          { title: 'Lembretes de leitura', type: 'feature', prompt: 'Implemente um sistema de lembretes de leitura com notificações push (PWA) que lembre o usuário de ler diariamente. Inclua configuração de horário preferido e frequência.' },
-          { title: 'Meta diária de leitura', type: 'feature', prompt: 'Crie um sistema de metas diárias de leitura com: meta de páginas por dia, streak de dias consecutivos, badges de conquista e gráfico de consistência.' },
+          ...(readingsNoTime.length > 0 ? [{ title: 'Estimar tempo de leituras sem registro', type: 'fix' as const, prompt: `${readingsNoTime.length} leituras sem tempo. Estime baseado em páginas × velocidade média.` }] : []),
+          ...(readingsInvalidPages.length > 0 ? [{ title: 'Corrigir leituras com páginas inválidas', type: 'fix' as const, prompt: `${readingsInvalidPages.length} leituras têm página final ≤ inicial. Corrija esses registros.` }] : []),
+          { title: '✅ RESOLVIDO: Timeline com horário real', type: 'optimization' as const, prompt: '', status: 'resolved' as const },
+          { title: '✅ RESOLVIDO: Gamificação (streaks/badges/metas)', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          { title: 'Notificações PWA de leitura', type: 'feature' as const, prompt: 'Implemente notificações push (PWA) com lembretes diários, horário configurável e frequência.' },
+          { title: 'Gráfico de velocidade ao longo do tempo', type: 'feature' as const, prompt: 'Gráfico de páginas/hora ao longo do tempo no dashboard.' },
         ],
       });
 
@@ -138,15 +152,13 @@ export function SystemDiagnosticsView() {
       const booksWithoutStatus = (books || []).filter(b => !statusData?.find(s => s.book_id === b.id));
 
       modules.push({
-        module: 'statuses',
-        icon: BarChart3,
-        label: 'Status dos Livros',
+        module: 'statuses', icon: BarChart3, label: 'Status dos Livros',
         checks: [
-          { id: 'status-orphan', module: 'statuses', title: 'Livros sem status', description: `${booksWithoutStatus.length} livros não possuem registro de status`, severity: booksWithoutStatus.length > 0 ? 'warning' : 'ok', count: booksWithoutStatus.length, details: booksWithoutStatus.slice(0, 5).map(b => b.name).join(', ') },
+          { id: 'status-orphan', module: 'statuses', title: 'Livros sem status', description: `${booksWithoutStatus.length} livros sem registro de status`, severity: booksWithoutStatus.length > 0 ? 'warning' : 'ok', count: booksWithoutStatus.length, details: booksWithoutStatus.slice(0, 5).map(b => b.name).join(', ') },
         ],
         improvementPrompts: [
-          { title: 'Criar status automático', type: 'fix', prompt: 'Crie um mecanismo automático que gere o registro de status para todos os livros que ainda não possuem, definindo o status como "Não iniciado" e pages_read como 0.' },
-          { title: 'Dashboard de progresso', type: 'feature', prompt: 'Melhore o dashboard de status com: gráfico de velocidade de leitura ao longo do tempo, previsão de conclusão baseada no ritmo atual, e comparativo mensal de produtividade.' },
+          ...(booksWithoutStatus.length > 0 ? [{ title: 'Criar status automático', type: 'fix' as const, prompt: `${booksWithoutStatus.length} livros sem status. Crie registros com status="Não iniciado" e pages_read=0.` }] : []),
+          { title: 'Comparativo mensal de produtividade', type: 'feature' as const, prompt: 'Comparativo mensal: páginas lidas, livros concluídos, tempo investido — mês atual vs anterior.' },
         ],
       });
 
@@ -156,51 +168,51 @@ export function SystemDiagnosticsView() {
       const booksWithoutEval = completedBooks.filter(s => !evals?.find(e => e.book_id === s.book_id));
 
       modules.push({
-        module: 'evaluations',
-        icon: Star,
-        label: 'Avaliações',
+        module: 'evaluations', icon: Star, label: 'Avaliações',
         checks: [
           { id: 'eval-total', module: 'evaluations', title: `${evals?.length || 0} avaliações`, description: 'Total de livros avaliados', severity: 'ok' },
-          { id: 'eval-missing', module: 'evaluations', title: 'Livros concluídos sem avaliação', description: `${booksWithoutEval.length} livros finalizados ainda não foram avaliados`, severity: booksWithoutEval.length > 0 ? 'info' : 'ok', count: booksWithoutEval.length },
+          { id: 'eval-missing', module: 'evaluations', title: 'Livros concluídos sem avaliação', description: `${booksWithoutEval.length} livros finalizados sem avaliação`, severity: booksWithoutEval.length > 0 ? 'info' : 'ok', count: booksWithoutEval.length },
         ],
         improvementPrompts: [
-          { title: 'Lembrete de avaliação', type: 'feature', prompt: 'Adicione um lembrete automático para avaliar livros que foram concluídos mas ainda não possuem avaliação. Mostre um banner sutil no dashboard com a lista de livros pendentes de avaliação.' },
+          ...(booksWithoutEval.length > 0 ? [{ title: 'Lembrete de avaliação', type: 'fix' as const, prompt: `${booksWithoutEval.length} livros concluídos sem avaliação. Mostre banner no dashboard.` }] : []),
         ],
       });
 
       // ========== 5. CITAÇÕES ==========
       const { data: quotesData } = await supabase.from('quotes').select('*');
       const quotesWithoutPage = quotesData?.filter(q => !q.page && !q.bible_book) || [];
+      const quotesWithoutTags = quotesData?.filter(q => !q.tags || q.tags.length === 0) || [];
 
       modules.push({
-        module: 'quotes',
-        icon: Quote,
-        label: 'Citações',
+        module: 'quotes', icon: Quote, label: 'Citações',
         checks: [
           { id: 'quotes-total', module: 'quotes', title: `${quotesData?.length || 0} citações salvas`, description: 'Total de citações', severity: 'ok' },
           { id: 'quotes-no-page', module: 'quotes', title: 'Citações sem referência', description: `${quotesWithoutPage.length} citações sem página ou referência bíblica`, severity: quotesWithoutPage.length > 3 ? 'info' : 'ok', count: quotesWithoutPage.length },
+          { id: 'quotes-no-tags', module: 'quotes', title: 'Citações sem tags', description: `${quotesWithoutTags.length} citações sem tags temáticas`, severity: quotesWithoutTags.length > 5 ? 'info' : 'ok', count: quotesWithoutTags.length },
         ],
         improvementPrompts: [
-          { title: 'Exportar citações', type: 'feature', prompt: 'Crie funcionalidade de exportação de citações em formato PDF estilizado, com opções de filtro por livro, com layout para impressão tipo cartão de citação.' },
-          { title: 'Tags em citações', type: 'feature', prompt: 'Adicione sistema de tags/categorias para citações, permitindo classificar por tema (motivação, sabedoria, fé, etc.) e filtrar/buscar por tags.' },
+          { title: '✅ RESOLVIDO: Tags temáticas em citações', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          ...(quotesWithoutTags.length > 0 ? [{ title: 'Classificar citações sem tags com IA', type: 'optimization' as const, prompt: `${quotesWithoutTags.length} citações sem tags. Sugira tags automaticamente com IA.` }] : []),
+          { title: 'Exportar citações em PDF', type: 'feature' as const, prompt: 'Exportação de citações em PDF estilizado com layout tipo cartão.' },
         ],
       });
 
       // ========== 6. VOCABULÁRIO ==========
       const { data: vocabData } = await supabase.from('vocabulary').select('id, palavra, book_id, definicoes', { count: 'exact' });
       const vocabWithoutBook = vocabData?.filter(v => !v.book_id) || [];
+      const { data: flashcardData } = await supabase.from('flashcard_reviews').select('id', { count: 'exact' });
 
       modules.push({
-        module: 'vocabulary',
-        icon: Brain,
-        label: 'Dicionário / Vocabulário',
+        module: 'vocabulary', icon: Brain, label: 'Dicionário / Vocabulário',
         checks: [
           { id: 'vocab-total', module: 'vocabulary', title: `${vocabData?.length || 0} palavras salvas`, description: 'Total de vocabulário', severity: 'ok' },
-          { id: 'vocab-no-book', module: 'vocabulary', title: 'Palavras sem livro vinculado', description: `${vocabWithoutBook.length} palavras não estão associadas a nenhum livro`, severity: vocabWithoutBook.length > 0 ? 'info' : 'ok', count: vocabWithoutBook.length },
+          { id: 'vocab-no-book', module: 'vocabulary', title: 'Palavras sem livro vinculado', description: `${vocabWithoutBook.length} palavras não associadas`, severity: vocabWithoutBook.length > 0 ? 'info' : 'ok', count: vocabWithoutBook.length },
+          { id: 'vocab-flashcards', module: 'vocabulary', title: `${flashcardData?.length || 0} flashcards ativos`, description: 'Cards no sistema de repetição espaçada', severity: 'ok' },
         ],
         improvementPrompts: [
-          { title: 'Flashcards de vocabulário', type: 'feature', prompt: 'Crie um módulo de flashcards para revisar o vocabulário salvo usando repetição espaçada (Spaced Repetition). Inclua: cartão com palavra na frente e definição no verso, botões de "Fácil/Médio/Difícil", e estatísticas de revisão.' },
-          { title: 'Quiz de vocabulário', type: 'feature', prompt: 'Implemente um quiz interativo de vocabulário onde o sistema apresenta definições e o usuário deve selecionar a palavra correta entre opções. Inclua pontuação e histórico de acertos.' },
+          { title: '✅ RESOLVIDO: Flashcards com repetição espaçada (SM-2)', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          { title: '✅ RESOLVIDO: Quiz interativo de vocabulário', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          { title: 'Exportar vocabulário para Anki', type: 'feature' as const, prompt: 'Exportação do vocabulário para formato Anki (.apkg) para estudo offline.' },
         ],
       });
 
@@ -210,54 +222,57 @@ export function SystemDiagnosticsView() {
       const notesWithoutFolder = notesData?.filter(n => !n.folder_id) || [];
 
       modules.push({
-        module: 'notes',
-        icon: StickyNote,
-        label: 'Notas',
+        module: 'notes', icon: StickyNote, label: 'Notas',
         checks: [
           { id: 'notes-total', module: 'notes', title: `${notesData?.length || 0} notas`, description: 'Total de notas criadas', severity: 'ok' },
           { id: 'notes-empty', module: 'notes', title: 'Notas vazias/curtas', description: `${emptyNotes.length} notas com menos de 10 caracteres`, severity: emptyNotes.length > 0 ? 'warning' : 'ok', count: emptyNotes.length },
-          { id: 'notes-no-folder', module: 'notes', title: 'Notas sem pasta', description: `${notesWithoutFolder.length} notas não organizadas em pastas`, severity: notesWithoutFolder.length > 10 ? 'info' : 'ok', count: notesWithoutFolder.length },
+          { id: 'notes-no-folder', module: 'notes', title: 'Notas sem pasta', description: `${notesWithoutFolder.length} notas não organizadas`, severity: notesWithoutFolder.length > 10 ? 'info' : 'ok', count: notesWithoutFolder.length },
         ],
         improvementPrompts: [
-          { title: 'Organização automática', type: 'optimization', prompt: 'Crie um assistente que analise notas sem pasta e sugira automaticamente a pasta mais adequada com base no conteúdo, título e tags da nota. O usuário aprova ou rejeita a sugestão.' },
-          { title: 'Templates de notas', type: 'feature', prompt: 'Adicione templates prontos para notas: Resumo de Capítulo, Reflexão Devocional, Análise de Personagem Bíblico, Estudo Temático, Lista de Aplicações Práticas.' },
+          { title: '✅ RESOLVIDO: Templates de notas (5 modelos)', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          ...(notesWithoutFolder.length > 5 ? [{ title: 'Organizar notas sem pasta com IA', type: 'optimization' as const, prompt: `${notesWithoutFolder.length} notas sem pasta. Sugira pastas automaticamente com IA.` }] : []),
+          ...(emptyNotes.length > 0 ? [{ title: 'Limpar notas vazias', type: 'fix' as const, prompt: `${emptyNotes.length} notas com menos de 10 caracteres. Liste e ofereça exclusão em lote.` }] : []),
         ],
       });
 
       // ========== 8. EXEGESE ==========
       const { data: exegesisData } = await supabase.from('exegesis_analyses').select('id, analysis_type, passage');
       const { data: outlinesData } = await supabase.from('exegesis_outlines').select('id, outline_type, passage');
+      const { data: materialsData } = await supabase.from('exegesis_materials').select('id', { count: 'exact' });
 
       modules.push({
-        module: 'exegesis',
-        icon: ScrollText,
-        label: 'Exegese Bíblica',
+        module: 'exegesis', icon: ScrollText, label: 'Exegese Bíblica',
         checks: [
-          { id: 'exegesis-analyses', module: 'exegesis', title: `${exegesisData?.length || 0} análises exegéticas`, description: 'Total de análises realizadas', severity: 'ok' },
-          { id: 'exegesis-outlines', module: 'exegesis', title: `${outlinesData?.length || 0} esboços gerados`, description: 'Total de esboços de sermão', severity: 'ok' },
+          { id: 'exegesis-analyses', module: 'exegesis', title: `${exegesisData?.length || 0} análises exegéticas`, description: 'Total de análises', severity: 'ok' },
+          { id: 'exegesis-outlines', module: 'exegesis', title: `${outlinesData?.length || 0} esboços gerados`, description: 'Total de esboços', severity: 'ok' },
+          { id: 'exegesis-materials', module: 'exegesis', title: `${materialsData?.length || 0} materiais na base`, description: 'Fontes de referência', severity: 'ok' },
         ],
         improvementPrompts: [
-          { title: 'Melhorar Exegese Completa', type: 'optimization', prompt: 'Analise o módulo de Exegese Completa e melhore a lógica de interpretação: adicione análise morfológica mais detalhada do texto original (hebraico/grego), inclua variantes textuais significativas, e amplie a seção de teologia bíblica conectando o texto com a narrativa redentiva de toda a Escritura.' },
-          { title: 'Biblioteca de esboços', type: 'feature', prompt: 'Crie uma biblioteca de esboços com: busca por passagem ou tema, tags classificatórias (evangelístico, devocional, doutrinário, ocasional), filtro por tipo de esboço, e opção de duplicar/adaptar esboços existentes.' },
-          { title: 'Exportar esboço para PPTX', type: 'feature', prompt: 'Melhore a exportação de esboços para PowerPoint: crie slides automáticos com o título do sermão, cada ponto principal em um slide separado, referências bíblicas destacadas, e um slide final com aplicações práticas.' },
+          { title: '✅ RESOLVIDO: Exegese 8 estágios com morfologia', type: 'optimization' as const, prompt: '', status: 'resolved' as const },
+          { title: '✅ RESOLVIDO: Referências cruzadas 12 categorias', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          { title: '✅ RESOLVIDO: Busca por tema/pergunta/afirmação', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          { title: '✅ RESOLVIDO: Exportação PPTX com slides', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          { title: 'Detector de heresias interpretativas', type: 'feature' as const, prompt: 'Sistema que detecte eisegese, texto fora de contexto, doutrina baseada em texto único.' },
+          { title: 'Modo Professor de Seminário', type: 'feature' as const, prompt: 'Modo avançado: debate entre posições teológicas, 5+ comentaristas, avaliação crítica.' },
         ],
       });
 
       // ========== 9. USUÁRIOS ==========
       const { data: profilesData } = await supabase.from('profiles').select('id, user_id, display_name, is_active, is_master, created_at');
       const inactiveUsers = profilesData?.filter(p => !p.is_active) || [];
+      const { data: auditData } = await supabase.from('audit_log').select('id', { count: 'exact' });
 
       modules.push({
-        module: 'users',
-        icon: Users,
-        label: 'Gerenciamento de Usuários',
+        module: 'users', icon: Users, label: 'Gerenciamento de Usuários',
         checks: [
-          { id: 'users-total', module: 'users', title: `${profilesData?.length || 0} usuários registrados`, description: 'Total de contas no sistema', severity: 'ok' },
+          { id: 'users-total', module: 'users', title: `${profilesData?.length || 0} usuários registrados`, description: 'Total de contas', severity: 'ok' },
           { id: 'users-inactive', module: 'users', title: 'Usuários inativos', description: `${inactiveUsers.length} contas desativadas`, severity: inactiveUsers.length > 0 ? 'info' : 'ok', count: inactiveUsers.length },
+          { id: 'users-audit', module: 'users', title: `${auditData?.length || 0} registros de auditoria`, description: 'Ações no audit_log', severity: 'ok' },
         ],
         improvementPrompts: [
-          { title: 'Log de ações do mestre', type: 'feature', prompt: 'Crie uma tabela de log de ações administrativas (audit_log) que registre: quem fez a ação, o que foi feito, quando, e dados antes/depois da alteração. Mostre o histórico no painel de administração.' },
-          { title: 'Controle granular de módulos', type: 'optimization', prompt: 'Melhore o controle de permissões: adicione perfis pré-definidos (Leitor Básico, Leitor Avançado, Pregador, Administrador) com conjuntos de permissões padrão que podem ser personalizados por usuário.' },
+          { title: '✅ RESOLVIDO: Tabela audit_log', type: 'feature' as const, prompt: '', status: 'resolved' as const },
+          { title: '✅ RESOLVIDO: Controle de permissões por módulo', type: 'optimization' as const, prompt: '', status: 'resolved' as const },
+          { title: 'Relatório de atividade por usuário', type: 'feature' as const, prompt: 'Relatório visual: livros lidos, notas criadas, análises feitas, último acesso — com gráfico temporal.' },
         ],
       });
 
@@ -416,13 +431,24 @@ export function SystemDiagnosticsView() {
                         {mod.improvementPrompts.map((ip, idx) => {
                           const promptId = `${mod.module}-${idx}`;
                           const isPromptExpanded = expandedPrompts.has(promptId);
+                          const isResolved = ip.status === 'resolved' || ip.title.startsWith('✅');
                           const typeConfig = {
                             fix: { icon: Bug, label: 'Correção', badgeVariant: 'destructive' as const },
                             feature: { icon: Zap, label: 'Novo recurso', badgeVariant: 'default' as const },
                             optimization: { icon: Lightbulb, label: 'Otimização', badgeVariant: 'secondary' as const },
                           };
                           const tc = typeConfig[ip.type];
-                          const TypeIcon = tc.icon;
+                          const TypeIcon = isResolved ? CheckCircle : tc.icon;
+
+                          if (isResolved) {
+                            return (
+                              <div key={promptId} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/5 border border-green-500/20">
+                                <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                                <span className="text-sm text-green-600 dark:text-green-400 flex-1 line-through opacity-70">{ip.title.replace('✅ RESOLVIDO: ', '')}</span>
+                                <Badge variant="secondary" className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400">Resolvido</Badge>
+                              </div>
+                            );
+                          }
 
                           return (
                             <div key={promptId} className="border rounded-lg overflow-hidden">
@@ -435,7 +461,7 @@ export function SystemDiagnosticsView() {
                                 <span className="text-sm font-medium flex-1">{ip.title}</span>
                                 <Badge variant={tc.badgeVariant} className="text-[10px]">{tc.label}</Badge>
                               </button>
-                              {isPromptExpanded && (
+                              {isPromptExpanded && ip.prompt && (
                                 <div className="px-3 pb-3 space-y-2">
                                   <div className="bg-muted/50 rounded-lg p-3 text-xs text-foreground font-mono leading-relaxed whitespace-pre-wrap">
                                     {ip.prompt}

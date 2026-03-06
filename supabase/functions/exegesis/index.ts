@@ -220,7 +220,7 @@ serve(async (req) => {
       );
     }
 
-    const { passage, question, type, materials_context, analyses_context, structure_config, approach } = await req.json();
+    const { passage, question, type, materials_context, analyses_context, structure_config, approach, query_mode } = await req.json();
 
     // Handle get_system_prompt request — return the default prompt for the editor
     if (type === "get_system_prompt") {
@@ -1271,9 +1271,36 @@ Seja profundo mas acessível. Cada lição, aplicação e reflexão deve ser fun
         const refType = question || 'all';
         const refLabel = refTypeMap[refType] || refTypeMap.all;
 
-        userPrompt = `Atue como um SISTEMA AVANÇADO DE ESTUDO BÍBLICO EXEGÉTICO — um motor teológico completo — para buscar REFERÊNCIAS CRUZADAS do seguinte texto:
+        const isThemeQuery = query_mode === 'theme';
 
-**Passagem:** ${passage}
+        userPrompt = `Atue como um SISTEMA AVANÇADO DE ESTUDO BÍBLICO EXEGÉTICO — um motor teológico completo — para buscar REFERÊNCIAS CRUZADAS ${isThemeQuery ? 'sobre o seguinte TEMA/PERGUNTA/AFIRMAÇÃO' : 'do seguinte texto bíblico'}:
+
+**${isThemeQuery ? 'Consulta' : 'Passagem'}:** ${passage}
+
+${isThemeQuery ? `## INTERPRETAÇÃO DA CONSULTA DO USUÁRIO
+O usuário digitou um tema, pergunta ou afirmação. Você DEVE:
+
+### 1. Extração de Palavras-Chave
+Identifique os termos centrais da consulta. Exemplo:
+- Consulta: "Como o arrependimento gera frutos?"
+- Palavras-chave: arrependimento, frutos, transformação
+
+### 2. Classificação da Intenção
+Determine se a entrada é:
+- **Pergunta teológica** → busque textos que RESPONDAM ao problema
+- **Afirmação doutrinária** → busque textos que CONFIRMEM, AMPLIEM ou EQUILIBREM
+- **Tema de estudo** → busque panorama bíblico COMPLETO
+- **Comparação teológica** → busque textos que mostrem CONTRASTES e HARMONIAS
+- **Problema interpretativo** → busque textos que ESCLAREÇAM a dúvida
+
+### 3. Direcionamento da Busca
+- Perguntas → buscar textos que respondam ao problema
+- Afirmações → buscar textos que confirmem, ampliem ou equilibrem
+- Temas → buscar panorama bíblico completo
+- Comparações → buscar textos com contraste e harmonia
+
+Apresente PRIMEIRO a interpretação da consulta (palavras-chave + classificação + intenção) antes das referências.
+` : ''}
 ${materialsSection}
 
 ## TIPO DE REFERÊNCIA SOLICITADO: ${refLabel}
