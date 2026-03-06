@@ -56,6 +56,8 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   const [verseStart, setVerseStart] = useState('');
   const [verseEnd, setVerseEnd] = useState('');
   const [customPassage, setCustomPassage] = useState('');
+  const [themeQuery, setThemeQuery] = useState('');
+  const [queryType, setQueryType] = useState<'passage' | 'theme'>('passage');
   const [selectedRefType, setSelectedRefType] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
@@ -78,6 +80,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   };
 
   const getPassageText = () => {
+    if (queryType === 'theme') return themeQuery.trim();
     if (customPassage.trim()) return customPassage.trim();
     if (!bibleBook) return '';
     let passage = bibleBook;
@@ -112,6 +115,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
           passage,
           type: 'cross_references',
           question: selectedRefType,
+          query_mode: queryType,
           materials_context: getMaterialsContext?.(),
         }),
         signal: controller.signal,
@@ -196,11 +200,28 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
 
   return (
     <div className="space-y-6">
-      {/* Passage Selection */}
+      {/* Query Mode Toggle */}
       <div className="card-library p-4 sm:p-6 space-y-4">
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <Search className="w-4 h-4" /> Selecionar Passagem
+          <Search className="w-4 h-4" /> Modo de Pesquisa
         </h3>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setQueryType('passage')}
+            className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all text-sm font-medium ${queryType === 'passage' ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border hover:bg-muted/50 text-muted-foreground'}`}
+          >
+            <BookMarked className="w-4 h-4" />
+            Passagem Bíblica
+          </button>
+          <button
+            onClick={() => setQueryType('theme')}
+            className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all text-sm font-medium ${queryType === 'theme' ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-card border-border hover:bg-muted/50 text-muted-foreground'}`}
+          >
+            <Send className="w-4 h-4" />
+            Tema / Pergunta / Afirmação
+          </button>
+        </div>
 
         {materialsCount > 0 && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center gap-2">
@@ -211,60 +232,89 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
           </div>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          <div className="col-span-2 sm:col-span-1">
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Livro</label>
-            <select value={bibleBook} onChange={(e) => { setBibleBook(e.target.value); setChapterStart(''); setChapterEnd(''); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm">
-              <option value="">Selecione</option>
-              {bibleBookNames.map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Cap. Início</label>
-            <select value={chapterStart} onChange={(e) => { setChapterStart(e.target.value); setChapterEnd(''); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm" disabled={!bibleBook}>
-              <option value="">-</option>
-              {chapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Cap. Fim</label>
-            <select value={chapterEnd} onChange={(e) => { setChapterEnd(e.target.value); if (e.target.value && e.target.value !== chapterStart) { setVerseStart(''); setVerseEnd(''); } }} className="input-library w-full text-sm" disabled={!chapterStart}>
-              <option value="">Mesmo</option>
-              {chapters.filter(ch => ch >= parseInt(chapterStart)).map(ch => <option key={ch} value={ch}>{ch}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Vers. Início</label>
-            <select value={verseStart} onChange={(e) => setVerseStart(e.target.value)} className="input-library w-full text-sm" disabled={!chapterStart || !!isMultiChapter}>
-              <option value="">{isMultiChapter ? 'N/A' : '-'}</option>
-              {verses.map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1">Vers. Fim</label>
-            <select value={verseEnd} onChange={(e) => setVerseEnd(e.target.value)} className="input-library w-full text-sm" disabled={!verseStart || !!isMultiChapter}>
-              <option value="">{isMultiChapter ? 'N/A' : '-'}</option>
-              {verses.filter(v => !verseStart || v >= parseInt(verseStart)).map(v => <option key={v} value={v}>{v}</option>)}
-            </select>
-          </div>
-        </div>
+        {queryType === 'passage' ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="col-span-2 sm:col-span-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Livro</label>
+                <select value={bibleBook} onChange={(e) => { setBibleBook(e.target.value); setChapterStart(''); setChapterEnd(''); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm">
+                  <option value="">Selecione</option>
+                  {bibleBookNames.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Cap. Início</label>
+                <select value={chapterStart} onChange={(e) => { setChapterStart(e.target.value); setChapterEnd(''); setVerseStart(''); setVerseEnd(''); }} className="input-library w-full text-sm" disabled={!bibleBook}>
+                  <option value="">-</option>
+                  {chapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Cap. Fim</label>
+                <select value={chapterEnd} onChange={(e) => { setChapterEnd(e.target.value); if (e.target.value && e.target.value !== chapterStart) { setVerseStart(''); setVerseEnd(''); } }} className="input-library w-full text-sm" disabled={!chapterStart}>
+                  <option value="">Mesmo</option>
+                  {chapters.filter(ch => ch >= parseInt(chapterStart)).map(ch => <option key={ch} value={ch}>{ch}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Vers. Início</label>
+                <select value={verseStart} onChange={(e) => setVerseStart(e.target.value)} className="input-library w-full text-sm" disabled={!chapterStart || !!isMultiChapter}>
+                  <option value="">{isMultiChapter ? 'N/A' : '-'}</option>
+                  {verses.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Vers. Fim</label>
+                <select value={verseEnd} onChange={(e) => setVerseEnd(e.target.value)} className="input-library w-full text-sm" disabled={!verseStart || !!isMultiChapter}>
+                  <option value="">{isMultiChapter ? 'N/A' : '-'}</option>
+                  {verses.filter(v => !verseStart || v >= parseInt(verseStart)).map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+            </div>
 
-        {getBibleOnlineUrl() && (
-          <a href={getBibleOnlineUrl()!} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
-            <ExternalLink className="w-3.5 h-3.5" />
-            Ler na Bíblia Online (ACF) — {bibleBook} {chapterStart}{isMultiChapter ? `-${chapterEnd}` : ''}
-          </a>
+            {getBibleOnlineUrl() && (
+              <a href={getBibleOnlineUrl()!} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
+                <ExternalLink className="w-3.5 h-3.5" />
+                Ler na Bíblia Online (ACF) — {bibleBook} {chapterStart}{isMultiChapter ? `-${chapterEnd}` : ''}
+              </a>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Ou cole/digite a referência</label>
+              <Textarea value={customPassage} onChange={(e) => setCustomPassage(e.target.value)} className="min-h-[50px] text-sm" placeholder="Ex: Romanos 8:28-30" />
+            </div>
+          </>
+        ) : (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Digite um tema, pergunta ou afirmação teológica
+              </label>
+              <Textarea
+                value={themeQuery}
+                onChange={(e) => setThemeQuery(e.target.value)}
+                className="min-h-[80px] text-sm"
+                placeholder={`Exemplos:\n• Como o arrependimento gera frutos?\n• A justiça de Deus\n• A tristeza segundo Deus produz arrependimento\n• Qual a relação entre fé e obras?`}
+              />
+            </div>
+            <div className="bg-accent/30 border border-accent/50 rounded-lg p-3 space-y-1.5">
+              <p className="text-xs font-semibold text-foreground">💡 O sistema irá automaticamente:</p>
+              <ul className="text-xs text-muted-foreground space-y-0.5 ml-3 list-disc">
+                <li>Extrair as <strong>palavras-chave</strong> da sua consulta</li>
+                <li>Classificar a <strong>intenção</strong> (pergunta, afirmação, tema ou comparação)</li>
+                <li>Buscar referências em toda a Bíblia com base na classificação</li>
+                <li>Organizar um <strong>esboço de estudo</strong> com introdução, desenvolvimento e aplicação</li>
+              </ul>
+            </div>
+          </div>
         )}
-
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1">Ou cole/digite a referência</label>
-          <Textarea value={customPassage} onChange={(e) => setCustomPassage(e.target.value)} className="min-h-[50px] text-sm" placeholder="Ex: Romanos 8:28-30" />
-        </div>
 
         {getPassageText() && (
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-            <p className="text-sm font-medium text-primary">📖 Passagem: {getPassageText()}</p>
+            <p className="text-sm font-medium text-primary">
+              {queryType === 'theme' ? '🔍 Consulta' : '📖 Passagem'}: {getPassageText()}
+            </p>
           </div>
         )}
       </div>
