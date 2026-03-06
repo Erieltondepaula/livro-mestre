@@ -1255,30 +1255,40 @@ Seja profundo mas acessível. Cada lição, aplicação e reflexão deve ser fun
 
       case "cross_references": {
         const refTypeMap: Record<string, string> = {
-          thematic: 'TEMÁTICAS — versículos que tratam do mesmo assunto ou tema',
-          vocabulary: 'VOCABULARES — mesma palavra-chave no original (hebraico/grego) usada em contextos diferentes',
-          typological: 'TIPOLÓGICAS — AT prefigurando o NT (tipos, sombras e cumprimentos)',
-          prophetic: 'PROFÉTICAS — profecia no AT e cumprimento no NT',
-          contextual: 'CONTEXTUAIS — situações históricas semelhantes, paralelos narrativos',
-          doctrinal: 'DOUTRINÁRIAS — notas doutrinárias e estudo sistemático da doutrina no texto',
-          all: 'TODAS AS CATEGORIAS — busca completa em temáticas, vocabulares, tipológicas, proféticas, contextuais e doutrinárias',
+          thematic: 'TEMÁTICAS — versículos que tratam do mesmo assunto ou conceito, mesmo sem usar a mesma palavra',
+          vocabulary: 'VOCABULARES (CONCORDÂNCIA) — todas as ocorrências das palavras pesquisadas com análise hebraico/grego',
+          linguistic: 'LINGUÍSTICAS — análise dos termos no hebraico, aramaico e grego com significado original e variações de tradução',
+          contextual: 'CONTEXTUAIS (HISTÓRIA E ARQUEOLOGIA) — contexto histórico, costumes, cultura, locais bíblicos',
+          typological: 'TIPOLÓGICAS (SOMBRA → REALIDADE) — AT prefigurando o NT (tipos, sombras e cumprimentos)',
+          prophetic: 'PROFÉTICAS (PROMESSA → CUMPRIMENTO) — profecia no AT e cumprimento no NT, identificando texto hebraico vs Septuaginta',
+          doctrinal: 'DOUTRINÁRIAS (BASE TEOLÓGICA) — relação com doutrinas centrais: salvação, santificação, graça, justiça, natureza de Cristo',
+          narrative: 'NARRATIVAS — exemplos históricos e personagens que demonstram o princípio bíblico (ex: arrependimento → Davi, Pedro, Nínive)',
+          comparative: 'COMPARATIVAS — textos que apresentam contraste ou equilíbrio teológico (fé vs obras, justiça vs graça, lei vs evangelho)',
+          apostolic: 'APOSTÓLICAS — citações do AT feitas pelos autores do NT, mostrando como os apóstolos interpretaram os textos',
+          eschatological: 'ESCATOLÓGICAS — relação com juízo final, reino de Deus, segunda vinda, consumação da história',
+          all: 'PANORAMA GERAL — busca completa em todas as 12 categorias + síntese panorâmica de como toda a Bíblia trata o tema',
         };
         const refType = question || 'all';
         const refLabel = refTypeMap[refType] || refTypeMap.all;
 
-        userPrompt = `Faça uma busca EXAUSTIVA de REFERÊNCIAS CRUZADAS para o seguinte texto bíblico:
+        userPrompt = `Atue como um SISTEMA AVANÇADO DE ESTUDO BÍBLICO EXEGÉTICO — um motor teológico completo — para buscar REFERÊNCIAS CRUZADAS do seguinte texto:
 
 **Passagem:** ${passage}
 ${materialsSection}
 
 ## TIPO DE REFERÊNCIA SOLICITADO: ${refLabel}
 
+## 1. INTERPRETAÇÃO DA CONSULTA
+- Extraia as **palavras-chave** do texto base
+- Classifique a intenção: pergunta teológica, afirmação doutrinária, tema de estudo, problema interpretativo ou comparação teológica
+- Direcione a busca conforme a classificação
+
 ## MÉTODO DE BUSCA — BÍBLIA DE ESTUDO ACF (Almeida Corrigida Fiel)
 
 **FONTES PRIMÁRIAS OBRIGATÓRIAS:**
 1. **Bíblia ACF** — Almeida Corrigida Fiel da Sociedade Bíblica Trinitariana do Brasil
 2. **Sistema de referências cruzadas** — Mais de 63.000 conexões entre textos bíblicos
-3. **Notas doutrinárias** — Estudo sistemático dos ensinamentos da Bíblia
+3. **Notas doutrinárias** — Estudo sistemático dos ensinamentos da Bíblia (conforme índice ACF)
 4. **Perfis de personagens bíblicos** — Informações sobre homens e mulheres da Bíblia
 5. **Sítios arqueológicos** — Locais significativos mencionados na Bíblia
 
@@ -1287,84 +1297,133 @@ ${materialsSection}
 ### 📖 TEXTO BASE
 Apresente o texto completo da passagem na versão ACF.
 
-### 🔍 PALAVRAS-CHAVE IDENTIFICADAS
+### 🔍 PALAVRAS-CHAVE E ANÁLISE LINGUÍSTICA
 Para cada palavra-chave do texto:
 - Termo original (hebraico/grego) com transliteração e Strong's number
-- Significado principal e campo semântico
+- Significado principal, campo semântico e variações de tradução
 - Ocorrências significativas em outros textos
 
-${refType === 'all' || refType === 'thematic' ? `### 📖 REFERÊNCIAS TEMÁTICAS
-Versículos que tratam do MESMO TEMA ou ASSUNTO:
+${refType === 'all' || refType === 'thematic' ? `### 📖 1. REFERÊNCIAS TEMÁTICAS (Conceituais)
+Versículos que tratam do MESMO CONCEITO, mesmo quando não usam a mesma palavra:
 Para cada referência:
 👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
-- **Conexão:** Explique como se relaciona com o texto base
-- **Categoria:** (mesmo tema / assunto paralelo / complemento)
-Mínimo 8 referências temáticas de livros DIFERENTES.
+- **Conexão:** Como se relaciona com o texto base
+Mínimo 8 referências de livros DIFERENTES.
 ` : ''}
-${refType === 'all' || refType === 'vocabulary' ? `### 📝 REFERÊNCIAS VOCABULARES
-Textos que usam a MESMA PALAVRA-CHAVE no original (hebraico/grego):
-Para cada referência:
+${refType === 'all' || refType === 'vocabulary' ? `### 📝 2. REFERÊNCIAS VOCABULARES (Concordância)
+Mapeie TODAS as ocorrências das palavras pesquisadas. Analise significado no hebraico, grego, variações de uso:
 👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
 - **Palavra original:** termo (transliteração, Strong's)
 - **Uso neste contexto:** como a mesma palavra é usada diferentemente
-Mínimo 6 referências vocabulares.
+Mínimo 6 referências.
 ` : ''}
-${refType === 'all' || refType === 'typological' ? `### 🔗 REFERÊNCIAS TIPOLÓGICAS
-AT prefigurando o NT — tipos, sombras e cumprimentos:
-Para cada referência:
+${refType === 'all' || refType === 'linguistic' ? `### 🔤 3. REFERÊNCIAS LINGUÍSTICAS
+Análise das palavras no hebraico, aramaico e grego — significado original, variações de tradução, uso na LXX:
 👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
-- **Tipo:** O que prefigura no AT
-- **Antítipo:** O cumprimento no NT
-- **Significado:** Por que essa tipologia é importante
-Mínimo 4 referências tipológicas.
+- **Termo original:** com análise morfológica (tempo, voz, modo para verbos; caso, número, gênero para substantivos)
+- **Campo semântico:** significados possíveis e nuances
+Mínimo 4 referências.
 ` : ''}
-${refType === 'all' || refType === 'prophetic' ? `### 🔮 REFERÊNCIAS PROFÉTICAS
-Profecia e cumprimento entre AT e NT:
-Para cada referência:
+${refType === 'all' || refType === 'contextual' ? `### 🗺️ 4. REFERÊNCIAS CONTEXTUAIS (História e Arqueologia)
+Contexto histórico, cultural, situação do autor, público original, costumes, geografia, situação política:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Paralelo histórico:** Situação semelhante
+- **Lição:** O que se aprende ao comparar os contextos
+Mínimo 4 referências.
+` : ''}
+${refType === 'all' || refType === 'typological' ? `### 🔗 5. REFERÊNCIAS TIPOLÓGICAS (Sombra → Realidade)
+AT prefigurando o NT — tipos, sombras e cumprimentos:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Tipo (AT):** O que prefigura
+- **Antítipo (NT):** O cumprimento
+- **Significado:** Por que essa tipologia é importante
+Mínimo 4 referências.
+` : ''}
+${refType === 'all' || refType === 'prophetic' ? `### 🔮 6. REFERÊNCIAS PROFÉTICAS (Promessa → Cumprimento)
+Profecia e cumprimento. Identifique se a citação vem do texto hebraico ou da Septuaginta (LXX):
 👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
 - **Profecia:** O que foi predito
-- **Cumprimento:** Onde e como foi cumprido
-Mínimo 4 referências proféticas.
+- **Cumprimento:** Onde e como (literal ou progressivo)
+- **Fonte:** Texto hebraico (MT) ou Septuaginta (LXX)
+Mínimo 4 referências.
 ` : ''}
-${refType === 'all' || refType === 'contextual' ? `### 🗺️ REFERÊNCIAS CONTEXTUAIS
-Situações históricas semelhantes e paralelos narrativos:
-Para cada referência:
+${refType === 'all' || refType === 'doctrinal' ? `### ⛪ 7. REFERÊNCIAS DOUTRINÁRIAS (Base Teológica)
+Doutrinas centrais presentes no texto (conforme sistema de notas doutrinárias ACF):
+- **Nome da doutrina:** (ex: Graça de Deus, Salvação, Fé, Santificação, Natureza de Cristo, Pecado)
+- **Referência primária:** Primeira aparição na Escritura
+- **Referência principal:** Explicação mais completa
+- **Trajetória bíblica:** Desenvolvimento AT → NT
 👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
-- **Paralelo:** Situação semelhante descrita
-- **Lição:** O que se aprende ao comparar os dois contextos
-Mínimo 4 referências contextuais.
+Identifique pelo menos 3 doutrinas.
 ` : ''}
-${refType === 'all' || refType === 'doctrinal' ? `### ⛪ NOTAS DOUTRINÁRIAS
-Doutrinas bíblicas presentes ou relacionadas ao texto (seguindo o sistema de notas doutrinárias da Bíblia de Estudo ACF):
-Para cada doutrina identificada:
-- **Nome da doutrina:** (ex: Graça de Deus, Santificação, etc.)
-- **Referência primária:** Onde esta doutrina é apresentada pela primeira vez na Escritura
-- **Referência principal:** Onde a explicação mais completa aparece
-- **Conexão com o texto:** Como esta doutrina se manifesta na passagem em estudo
-- **Trajetória bíblica:** Como esta doutrina se desenvolve ao longo da Escritura (AT → NT)
-- **Aplicação:** Significado prático desta doutrina para o cristão hoje
+${refType === 'all' || refType === 'narrative' ? `### 📜 8. REFERÊNCIAS NARRATIVAS
+Exemplos históricos e personagens que DEMONSTRAM o princípio bíblico:
 👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
-Identifique pelo menos 3 doutrinas relevantes.
+- **Personagem/Evento:** Quem viveu esse princípio
+- **Contexto:** O que aconteceu
+- **Lição:** O que se aprende deste exemplo
+Mínimo 4 referências.
+` : ''}
+${refType === 'all' || refType === 'comparative' ? `### ⚖️ 9. REFERÊNCIAS COMPARATIVAS
+Textos que apresentam CONTRASTE ou EQUILÍBRIO TEOLÓGICO (fé vs obras, justiça vs graça, lei vs evangelho):
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Contraste:** Que tensão teológica apresenta
+- **Equilíbrio:** Como a Bíblia harmoniza estas verdades
+Mínimo 3 referências.
+` : ''}
+${refType === 'all' || refType === 'apostolic' ? `### ✉️ 10. REFERÊNCIAS APOSTÓLICAS
+Citações do AT feitas pelos autores do NT — como os APÓSTOLOS interpretaram os textos:
+👉 [Livro Capítulo:Versículo (NT)]: "[texto completo na ACF]"
+  ↳ Citando [Livro Capítulo:Versículo (AT)]: "[texto original]"
+- **Interpretação apostólica:** Como o autor do NT usou/reinterpretou o texto do AT
+Mínimo 3 referências.
+` : ''}
+${refType === 'all' || refType === 'eschatological' ? `### 🌅 11. REFERÊNCIAS ESCATOLÓGICAS
+Relação com juízo final, reino de Deus, segunda vinda, consumação da história:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Tema escatológico:** Que aspecto dos últimos tempos se conecta
+- **Conexão:** Como o texto base se relaciona com o destino final
+Mínimo 3 referências.
+` : ''}
+${refType === 'all' ? `### 🌐 12. PANORAMA BÍBLICO
+Síntese integradora de como TODA A BÍBLIA trata o tema:
+- Como o tema aparece no Pentateuco, Históricos, Poéticos, Profetas, Evangelhos, Atos, Epístolas, Apocalipse
+- Arco narrativo: Criação → Queda → Redenção → Consumação
+- A unidade das Escrituras demonstrada através deste tema
 ` : ''}
 
 ### 📊 MAPA DE CONEXÕES
-Apresente um resumo visual das conexões encontradas:
 - Total de referências por categoria
 - Livros bíblicos mais conectados
-- Temas centrais que emergem das referências
-- Como estas referências confirmam a unidade das Escrituras
+- Temas centrais que emergem
+- Como as referências confirmam a unidade das Escrituras
 
 ### 🏆 TOP 5 — REFERÊNCIAS MAIS IMPORTANTES
-Liste as 5 referências cruzadas mais significativas e explique por que são essenciais para entender o texto.
+As 5 referências cruzadas mais significativas e por que são essenciais.
+
+### ⚠️ ALERTA INTERPRETATIVO
+- Referências cruzadas NÃO são inspiradas — são ferramentas editoriais
+- Todo versículo deve ser verificado no contexto do capítulo e do livro
+- Evitar o uso de versículos como pretexto para ideias isoladas
+- "Texto fora de contexto é pretexto para heresia"
+
+### 📋 ESBOÇO SUGERIDO PARA ESTUDO
+Organize os resultados em estrutura lógica:
+1. **Introdução** — Conceito central do tema
+2. **Fundamento Bíblico** — Versículos principais
+3. **Exemplos Bíblicos** — Personagens ou narrativas
+4. **Resultado Espiritual** — Efeitos práticos
+5. **Aplicação Devocional** — Implicações para a vida cristã
 
 ## REGRAS:
 - Use SEMPRE o texto na versão ACF (Almeida Corrigida Fiel)
-- Cada referência deve incluir o TEXTO COMPLETO do versículo
+- Cada referência DEVE incluir o TEXTO COMPLETO do versículo
 - Busque em livros DIFERENTES do texto base — surpreenda com conexões profundas
 - Priorize referências que conectem AT e NT
 - Inclua referências que o estudante talvez NÃO conheça
 - Formato obrigatório: 👉 [Livro Capítulo:Versículo]: "[texto completo]"
-- Seja EXAUSTIVO e PROFUNDO — esta é uma ferramenta de estudo acadêmico`;
+- Quando envolver personagens bíblicos, inclua perfil, contexto histórico e lições espirituais
+- Seja EXAUSTIVO e PROFUNDO — esta é uma ferramenta de estudo nível seminário`;
         break;
       }
 
