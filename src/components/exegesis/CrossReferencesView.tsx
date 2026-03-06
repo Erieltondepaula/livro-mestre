@@ -16,13 +16,18 @@ interface Props {
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
 const CROSS_REF_TYPES = [
-  { id: 'thematic', label: 'Temáticas', icon: '📖', description: 'Versículos que tratam do mesmo assunto' },
-  { id: 'vocabulary', label: 'Vocabulares', icon: '📝', description: 'Mesma palavra-chave no original (hebraico/grego)' },
-  { id: 'typological', label: 'Tipológicas', icon: '🔗', description: 'AT prefigurando o NT (tipos e sombras)' },
-  { id: 'prophetic', label: 'Proféticas', icon: '🔮', description: 'Profecia e cumprimento entre AT e NT' },
-  { id: 'contextual', label: 'Contextuais', icon: '🗺️', description: 'Situações históricas semelhantes' },
-  { id: 'doctrinal', label: 'Doutrinárias', icon: '⛪', description: 'Notas doutrinárias e estudo sistemático' },
-  { id: 'all', label: 'Todas', icon: '🌐', description: 'Busca completa em todas as categorias' },
+  { id: 'thematic', label: 'Temáticas', icon: '📖', description: 'Versículos que tratam do mesmo assunto ou conceito, mesmo sem a mesma palavra' },
+  { id: 'vocabulary', label: 'Vocabulares', icon: '📝', description: 'Mesma palavra-chave no original (hebraico/grego) em contextos diferentes' },
+  { id: 'linguistic', label: 'Linguísticas', icon: '🔤', description: 'Análise de termos no hebraico, aramaico e grego com variações de tradução' },
+  { id: 'contextual', label: 'Contextuais', icon: '🗺️', description: 'Contexto histórico, cultural e situação do autor/público original' },
+  { id: 'typological', label: 'Tipológicas', icon: '🔗', description: 'AT prefigurando o NT — tipos, sombras e cumprimentos' },
+  { id: 'prophetic', label: 'Proféticas', icon: '🔮', description: 'Profecia e cumprimento entre AT e NT (literal e progressivo)' },
+  { id: 'doctrinal', label: 'Doutrinárias', icon: '⛪', description: 'Notas doutrinárias e estudo sistemático da doutrina' },
+  { id: 'narrative', label: 'Narrativas', icon: '📜', description: 'Exemplos históricos que demonstram o princípio bíblico' },
+  { id: 'comparative', label: 'Comparativas', icon: '⚖️', description: 'Textos com contraste ou equilíbrio teológico (fé vs obras, justiça vs graça)' },
+  { id: 'apostolic', label: 'Apostólicas', icon: '✉️', description: 'Citações do AT feitas pelos autores do NT — como os apóstolos interpretaram' },
+  { id: 'eschatological', label: 'Escatológicas', icon: '🌅', description: 'Relação com juízo final, reino de Deus, segunda vinda, consumação' },
+  { id: 'all', label: 'Panorama Geral', icon: '🌐', description: 'Busca completa nas 12 categorias + síntese panorâmica de toda a Bíblia' },
 ];
 
 const BIBLE_ONLINE_SLUGS: Record<string, string> = {
@@ -269,7 +274,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           <Link2 className="w-4 h-4" /> Tipo de Referência Cruzada
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
           {CROSS_REF_TYPES.map(type => {
             const isActive = selectedRefType === type.id;
             return (
