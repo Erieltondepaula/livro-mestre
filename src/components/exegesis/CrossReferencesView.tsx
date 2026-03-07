@@ -379,6 +379,28 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         )}
       </div>
 
+      {/* Visual Reference Map */}
+      {displayContent && !isLoading && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowMap(!showMap)}
+              className={`flex items-center gap-2 text-sm font-medium transition-colors ${showMap ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Map className="w-4 h-4" />
+              {showMap ? 'Ocultar Mapa Visual' : 'Mostrar Mapa Visual'}
+            </button>
+          </div>
+          {showMap && (
+            <ReferenceMapView
+              centralTheme={lastResult?.passage || getPassageText()}
+              content={displayContent}
+              keywords={extractedKeywords}
+            />
+          )}
+        </div>
+      )}
+
       {/* Results */}
       {displayContent && (
         <div ref={resultRef} className="card-library p-4 sm:p-6 space-y-4">
