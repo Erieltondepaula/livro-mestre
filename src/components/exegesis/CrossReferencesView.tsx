@@ -197,23 +197,11 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   const [showMap, setShowMap] = useState(true);
 
   const renderMarkdown = (text: string) => {
-    // First highlight keywords in bold throughout the content
-    let processed = text;
-    if (extractedKeywords.length > 0) {
-      const kwPattern = new RegExp(
-        `(?<![\\*\\w])(${extractedKeywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})(?![\\*\\w])`,
-        'gi'
-      );
-      processed = processed.replace(kwPattern, '**$1**');
-      // Clean up any triple/quadruple ** caused by already-bold text
-      processed = processed.replace(/\*{3,}/g, '**');
-    }
-
-    let html = processed
+    let html = text
       .replace(/^### (.*$)/gm, '<h3 class="text-base font-bold mt-4 mb-2 text-foreground">$1</h3>')
       .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-5 mb-2 text-foreground">$1</h2>')
       .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h1>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-foreground" style="background: linear-gradient(to top, hsl(var(--accent) / 0.25) 40%, transparent 40%);">$1</strong>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-foreground">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/👉\s*\[(.*?)\]:\s*"(.*?)"/g, '<div style="background-color:hsl(var(--accent)/0.3);border-left:3px solid hsl(var(--primary));padding:8px 12px;border-radius:6px;margin:6px 0;"><strong style="color:hsl(var(--primary));">👉 $1</strong><br/><em style="font-size:0.9em;">"$2"</em></div>')
       .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-sm">$1</li>')
