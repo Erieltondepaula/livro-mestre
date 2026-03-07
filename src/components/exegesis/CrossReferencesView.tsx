@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
-import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink } from 'lucide-react';
+import { useState, useCallback, useRef, useMemo } from 'react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink, Map } from 'lucide-react';
+import { ReferenceMapView } from './ReferenceMapView';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
