@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
-import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink } from 'lucide-react';
+import { useState, useCallback, useRef, useMemo } from 'react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink, Map } from 'lucide-react';
+import { ReferenceMapView } from './ReferenceMapView';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -180,12 +181,39 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
     }
   };
 
+  // Extract keywords from the query for highlighting
+  const extractedKeywords = useMemo(() => {
+    const text = queryType === 'theme' ? themeQuery : getPassageText();
+    if (!text) return [];
+    // Remove common words and extract meaningful terms
+    const stopWords = new Set(['como', 'que', 'de', 'do', 'da', 'dos', 'das', 'em', 'no', 'na', 'nos', 'nas', 'um', 'uma', 'o', 'a', 'os', 'as', 'e', 'ou', 'para', 'por', 'com', 'se', 'ao', 'aos', 'à', 'às', 'é', 'são', 'foi', 'ser', 'ter', 'está', 'entre', 'qual', 'quais', 'isso', 'isso', 'esse', 'esta', 'este']);
+    return text
+      .split(/[\s,?!.;:]+/)
+      .filter(w => w.length > 2 && !stopWords.has(w.toLowerCase()))
+      .map(w => w.trim())
+      .filter(Boolean);
+  }, [queryType, themeQuery, bibleBook, chapterStart]);
+
+  const [showMap, setShowMap] = useState(true);
+
   const renderMarkdown = (text: string) => {
-    let html = text
+    // First highlight keywords in bold throughout the content
+    let processed = text;
+    if (extractedKeywords.length > 0) {
+      const kwPattern = new RegExp(
+        `(?<![\\*\\w])(${extractedKeywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})(?![\\*\\w])`,
+        'gi'
+      );
+      processed = processed.replace(kwPattern, '**$1**');
+      // Clean up any triple/quadruple ** caused by already-bold text
+      processed = processed.replace(/\*{3,}/g, '**');
+    }
+
+    let html = processed
       .replace(/^### (.*$)/gm, '<h3 class="text-base font-bold mt-4 mb-2 text-foreground">$1</h3>')
       .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-5 mb-2 text-foreground">$1</h2>')
       .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h1>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-foreground" style="background: linear-gradient(to top, hsl(var(--accent) / 0.25) 40%, transparent 40%);">$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/👉\s*\[(.*?)\]:\s*"(.*?)"/g, '<div style="background-color:hsl(var(--accent)/0.3);border-left:3px solid hsl(var(--primary));padding:8px 12px;border-radius:6px;margin:6px 0;"><strong style="color:hsl(var(--primary));">👉 $1</strong><br/><em style="font-size:0.9em;">"$2"</em></div>')
       .replace(/^- (.*$)/gm, '<li class="ml-4 list-disc text-sm">$1</li>')
@@ -350,6 +378,28 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
           </Button>
         )}
       </div>
+
+      {/* Visual Reference Map */}
+      {displayContent && !isLoading && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowMap(!showMap)}
+              className={`flex items-center gap-2 text-sm font-medium transition-colors ${showMap ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              <Map className="w-4 h-4" />
+              {showMap ? 'Ocultar Mapa Visual' : 'Mostrar Mapa Visual'}
+            </button>
+          </div>
+          {showMap && (
+            <ReferenceMapView
+              centralTheme={lastResult?.passage || getPassageText()}
+              content={displayContent}
+              keywords={extractedKeywords}
+            />
+          )}
+        </div>
+      )}
 
       {/* Results */}
       {displayContent && (
