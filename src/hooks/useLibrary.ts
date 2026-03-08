@@ -234,7 +234,7 @@ export function useLibrary() {
           const links = noteLinksData?.filter(link => link.note_id === n.id) || [];
           const linkedBooks = links.map(link => ({
             id: link.book_id,
-            name: (link.books as any)?.name || '',
+            name: getBookName(link.books),
           }));
 
           return {
