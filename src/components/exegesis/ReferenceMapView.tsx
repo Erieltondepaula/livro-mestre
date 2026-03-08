@@ -114,27 +114,27 @@ function getBibleUrl(ref: string): string | null {
   return `https://www.bibliaonline.com.br/acf/${slug}/${match[2]}`;
 }
 
-// Rainbow-inspired vibrant colors for categories
+// Rainbow-inspired vibrant colors for categories (high contrast)
 const categoryColors: Record<string, string> = {
-  'TEMÁTICAS': 'hsl(0, 85%, 55%)',        // Red
-  'VOCABULARES': 'hsl(30, 90%, 50%)',      // Orange
-  'LINGUÍSTICAS': 'hsl(50, 95%, 45%)',     // Yellow
-  'CONTEXTUAIS': 'hsl(120, 70%, 40%)',     // Green
-  'TIPOLÓGICAS': 'hsl(170, 75%, 40%)',     // Teal
-  'PROFÉTICAS': 'hsl(200, 85%, 50%)',      // Sky Blue
-  'DOUTRINÁRIAS': 'hsl(240, 70%, 55%)',    // Blue/Indigo
-  'NARRATIVAS': 'hsl(270, 70%, 55%)',      // Purple
-  'COMPARATIVAS': 'hsl(300, 65%, 50%)',    // Magenta
-  'APOSTÓLICAS': 'hsl(330, 80%, 50%)',     // Pink
-  'ESCATOLÓGICAS': 'hsl(60, 85%, 42%)',    // Lime/Olive
-  'PANORAMA': 'hsl(150, 70%, 42%)',        // Emerald
-  'TOP': 'hsl(350, 90%, 50%)',             // Crimson
+  'TEMÁTICAS': 'hsl(0, 98%, 52%)',
+  'VOCABULARES': 'hsl(28, 100%, 50%)',
+  'LINGUÍSTICAS': 'hsl(48, 100%, 52%)',
+  'CONTEXTUAIS': 'hsl(120, 90%, 45%)',
+  'TIPOLÓGICAS': 'hsl(165, 95%, 45%)',
+  'PROFÉTICAS': 'hsl(200, 100%, 50%)',
+  'DOUTRINÁRIAS': 'hsl(230, 95%, 55%)',
+  'NARRATIVAS': 'hsl(255, 95%, 60%)',
+  'COMPARATIVAS': 'hsl(285, 95%, 58%)',
+  'APOSTÓLICAS': 'hsl(320, 100%, 55%)',
+  'ESCATOLÓGICAS': 'hsl(72, 95%, 46%)',
+  'PANORAMA': 'hsl(145, 92%, 44%)',
+  'TOP': 'hsl(350, 100%, 52%)',
 };
 
 // Generate rainbow color for individual nodes (fallback when category is GERAL)
 function getRainbowColor(index: number, total: number): string {
-  const hue = Math.round((index / total) * 360);
-  return `hsl(${hue}, 80%, 50%)`;
+  const hue = Math.round((index / Math.max(total, 1)) * 360);
+  return `hsl(${hue}, 96%, 52%)`;
 }
 
 function extractReferences(content: string): { ref: string; category: string; color: string; order: number; snippet: string }[] {
@@ -282,14 +282,22 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     [highlightWords]
   );
 
-  // Highlight keywords in verse text
+  const highlightRoots = useMemo(() => {
+    const roots = new Set<string>();
+    normalizedHighlightWords.forEach((word) => {
+      const stem = word.replace(/(coes|cao|mente|amentos?|imentos?|ados?|adas?|idos?|idas?|s)$/g, '');
+      [stem, word.slice(0, 6), word.slice(0, 5)].forEach((candidate) => {
+        if (candidate.length >= 4) roots.add(candidate);
+      });
+    });
+    return Array.from(roots);
+  }, [normalizedHighlightWords]);
+
+  // Split by tokens so we can always highlight per word in tooltip/sidebar
   const renderHighlightedText = useCallback((text: string) => {
-    if (!highlightWords.length || !text) return `"${text}"`;
-    // Build regex that matches the ENTIRE word containing any keyword
-    const pattern = highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    const regex = new RegExp(`(\\S*(?:${pattern})\\S*)`, 'gi');
-    return text.split(regex);
-  }, [highlightWords]);
+    if (!text) return [] as string[];
+    return text.split(/(\s+)/).filter(part => part.length > 0);
+  }, []);
 
   const isHighlightedSegment = useCallback((segment: string) => {
     const normalized = segment
@@ -298,8 +306,11 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]/g, '');
 
-    return normalizedHighlightWords.some(word => normalized.includes(word));
-  }, [normalizedHighlightWords]);
+    if (normalized.length < 3) return false;
+
+    return normalizedHighlightWords.some(word => normalized.includes(word) || word.includes(normalized))
+      || highlightRoots.some(root => normalized.includes(root));
+  }, [normalizedHighlightWords, highlightRoots]);
 
   // Fetch verse text on hover
   useEffect(() => {
@@ -565,9 +576,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 x1={CX} y1={CY}
                 x2={pos.x} y2={pos.y}
                 stroke={ref.color}
-                strokeWidth={isSelected ? 2 : 1}
+                strokeWidth={isSelected ? 2.6 : 1.4}
                 strokeDasharray={isSelected ? 'none' : '6,4'}
-                opacity={isSelected ? 0.7 : 0.25}
+                opacity={isSelected ? 0.95 : 0.45}
               />
             );
           })}
@@ -583,10 +594,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 key={`chain-${i}`}
                 x1={prev.x} y1={prev.y}
                 x2={curr.x} y2={curr.y}
-                stroke={isInChain ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
-                strokeWidth={isInChain ? 1.2 : 0.4}
+                stroke={isInChain ? ref.color : references[i - 1].color}
+                strokeWidth={isInChain ? 2 : 0.9}
                 strokeDasharray="6,4"
-                opacity={isInChain ? 0.6 : 0.12}
+                opacity={isInChain ? 0.75 : 0.3}
               />
             );
           })}
@@ -687,11 +698,11 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 {/* Glow on selected */}
                 {isSelected && (
                   <rect
-                    x={pos.x - boxW / 2 - 4} y={pos.y - boxH / 2 - 4}
-                    width={boxW + 8} height={boxH + 8}
-                    rx="12"
+                    x={pos.x - boxW / 2 - 6} y={pos.y - boxH / 2 - 6}
+                    width={boxW + 12} height={boxH + 12}
+                    rx="13"
                     fill={ref.color}
-                    opacity="0.12"
+                    opacity="0.22"
                   />
                 )}
 
@@ -700,9 +711,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   x={pos.x - boxW / 2} y={pos.y - boxH / 2}
                   width={boxW} height={boxH}
                   rx="8"
-                  fill="hsl(var(--card))"
+                  fill={isSelected ? ref.color : 'hsl(var(--card))'}
+                  fillOpacity={isSelected ? 0.16 : 1}
                   stroke={ref.color}
-                  strokeWidth={isSelected ? 2.5 : 1.5}
+                  strokeWidth={isSelected ? 3 : 2}
                   opacity={1}
                 />
 
