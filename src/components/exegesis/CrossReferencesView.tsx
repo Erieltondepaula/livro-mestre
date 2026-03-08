@@ -188,7 +188,6 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
       const result = { passage, content: fullContent, keywords: currentKeywords };
       setLastResult(result);
       setCurrentStream('');
-      try { localStorage.setItem('crossref_last_result', JSON.stringify(result)); } catch {}
 
       const savedAnalysis = await onSave({ passage, analysis_type: 'cross_references', question: selectedRefType, content: fullContent });
       if (savedAnalysis) { setSaved(true); toast({ title: "Referências salvas!", description: "Acesse no Histórico." }); }
