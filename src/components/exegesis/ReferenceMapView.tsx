@@ -433,7 +433,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   }, []);
 
   // Detect mobile early (before any calculations that depend on it)
-  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 640;
+  const [screenWidth, setScreenWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  useEffect(() => {
+    const handler = () => setScreenWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  const isMobileScreen = screenWidth < 640;
 
   const count = references.length;
   // Layout: evenly spaced radial pattern. Center at (500, 500).
@@ -442,15 +448,15 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   // Adaptive central shape based on text length
   const isLongTheme = centralTheme.length > 15;
-  const centralW = isLongTheme ? Math.min(320, Math.max(160, centralTheme.length * 10 + 40)) : 140;
-  const centralH = isLongTheme ? 70 : 140;
-  const CENTER_R = isLongTheme ? 0 : 70;
-  const centralRx = isLongTheme ? 35 : 0;
+  const centralW = isLongTheme ? Math.min(isMobileScreen ? 260 : 320, Math.max(140, centralTheme.length * (isMobileScreen ? 8 : 10) + 40)) : (isMobileScreen ? 110 : 140);
+  const centralH = isLongTheme ? (isMobileScreen ? 60 : 70) : (isMobileScreen ? 110 : 140);
+  const CENTER_R = isLongTheme ? 0 : (isMobileScreen ? 55 : 70);
+  const centralRx = isLongTheme ? 30 : 0;
 
   // Adaptive ring sizing — tighter on mobile for better fit
-  const NODES_PER_RING = Math.min(8, Math.max(5, Math.ceil(count / 3)));
-  const RING_BASE = isLongTheme ? Math.max(isMobileScreen ? 180 : 220, centralW / 2 + (isMobileScreen ? 110 : 150)) : (isMobileScreen ? 180 : 220);
-  const RING_SPACING = isMobileScreen ? 140 : 180;
+  const NODES_PER_RING = isMobileScreen ? Math.min(6, Math.max(4, Math.ceil(count / 3))) : Math.min(8, Math.max(5, Math.ceil(count / 3)));
+  const RING_BASE = isLongTheme ? Math.max(isMobileScreen ? 140 : 220, centralW / 2 + (isMobileScreen ? 80 : 150)) : (isMobileScreen ? 140 : 220);
+  const RING_SPACING = isMobileScreen ? 110 : 180;
 
   const getNodePos = (i: number) => {
     const ringIndex = Math.floor(i / NODES_PER_RING);
