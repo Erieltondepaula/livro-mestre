@@ -593,22 +593,22 @@ export function SystemDiagnosticsView() {
               <Card key={mod.module} className="overflow-hidden">
                 <Collapsible open={isExpanded} onOpenChange={() => toggleModule(mod.module)}>
                   <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                          <Icon className="w-5 h-5 text-primary" />
-                          <CardTitle className="text-base">{mod.label}</CardTitle>
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3 sm:py-4 px-3 sm:px-6">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          {isExpanded ? <ChevronDown className="w-4 h-4 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+                          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                          <CardTitle className="text-sm sm:text-base truncate">{mod.label}</CardTitle>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                           <SeverityIcon className={`w-4 h-4 ${SEVERITY_CONFIG[worstSeverity].color}`} />
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs hidden sm:inline-flex">
                             {mod.checks.length} verificações
                           </Badge>
                           {newPromptCount > 0 && (
-                            <Badge className="text-xs gap-1 bg-primary">
+                            <Badge className="text-[10px] sm:text-xs gap-1 bg-primary">
                               <Zap className="w-3 h-3" />
-                              {newPromptCount} novos
+                              {newPromptCount}
                             </Badge>
                           )}
                         </div>
