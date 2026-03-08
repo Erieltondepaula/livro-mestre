@@ -43,8 +43,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<SubscriptionStatus>(defaultSubscription);
   const [isLoading, setIsLoading] = useState(true);
 
-  const MASTER_EMAIL = "erieltondepaulamelo@gmail.com";
-
   const checkSubscription = useCallback(async () => {
     if (!session || !user) {
       setSubscription(defaultSubscription);
@@ -52,9 +50,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // 1. REGRA MESTRA (Modo Deus) - ACESSO VITALÍCIO GARANTIDO
+    // 1. REGRA MESTRA (Modo Deus) - Verifica is_master no banco
     const userEmail = user.email?.toLowerCase().trim();
-    if (userEmail === MASTER_EMAIL) {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('is_master')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profileData?.is_master) {
       console.log("👑 Modo Deus Ativado - Acesso Vitalício");
       setSubscription({
         subscribed: true,

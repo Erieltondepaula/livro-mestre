@@ -229,37 +229,39 @@ const Index = () => {
   };
 
   const renderView = () => {
+    const fallback = <DashboardSkeleton />;
+
     switch (currentView) {
       case 'dashboard':
         return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} readings={readings} onNavigateToBooks={handleNavigateToBooks} />;
       case 'cadastrar':
-        return <BookForm onSubmit={handleAddBook} currentBookCount={books.length} />;
+        return <Suspense fallback={fallback}><BookForm onSubmit={handleAddBook} currentBookCount={books.length} /></Suspense>;
       case 'livros':
-        return <BooksListView books={books} statuses={statuses} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} notes={notes} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} initialFilter={booksFilter} onNavigateToNotes={() => setCurrentView('notas')} />;
+        return <Suspense fallback={fallback}><BooksListView books={books} statuses={statuses} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} notes={notes} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} initialFilter={booksFilter} onNavigateToNotes={() => setCurrentView('notas')} /></Suspense>;
       case 'leitura':
-        return <ReadingForm books={books} onSubmit={handleAddReading} />;
+        return <Suspense fallback={fallback}><ReadingForm books={books} onSubmit={handleAddReading} /></Suspense>;
       case 'status':
-        return <StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} onUpdateReading={handleUpdateReading} />;
+        return <Suspense fallback={fallback}><StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} onUpdateReading={handleUpdateReading} /></Suspense>;
       case 'avaliacao':
-        return <EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} />;
+        return <Suspense fallback={fallback}><EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} /></Suspense>;
       case 'citacoes':
-        return <QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} />;
+        return <Suspense fallback={fallback}><QuotesView books={books} quotes={quotes} onSubmit={handleAddQuote} onDelete={handleDeleteQuote} /></Suspense>;
       case 'notas':
-        return <EnhancedNotesView books={books} />;
+        return <Suspense fallback={fallback}><EnhancedNotesView books={books} /></Suspense>;
       case 'biblia':
-        return <BibleProgressView readings={readings} books={books} />;
+        return <Suspense fallback={fallback}><BibleProgressView readings={readings} books={books} /></Suspense>;
       case 'dicionario':
-        return <DictionaryView />;
+        return <Suspense fallback={fallback}><DictionaryView /></Suspense>;
       case 'relatorios':
-        return <ReadingReportsView books={books} readings={readings} statuses={statuses} />;
+        return <Suspense fallback={fallback}><ReadingReportsView books={books} readings={readings} statuses={statuses} /></Suspense>;
       case 'exegese':
-        return <ExegesisView />;
+        return <Suspense fallback={fallback}><ExegesisView /></Suspense>;
       case 'flashcards':
-        return <FlashcardsView />;
+        return <Suspense fallback={fallback}><FlashcardsView /></Suspense>;
       case 'diagnostico':
-        return <SystemDiagnosticsView />;
+        return <Suspense fallback={fallback}><SystemDiagnosticsView /></Suspense>;
       case 'ajuda':
-        return <HelpView />;
+        return <Suspense fallback={fallback}><HelpView /></Suspense>;
       default:
         return <Dashboard stats={getDashboardStats()} recentStatuses={statuses} books={books} readings={readings} onNavigateToBooks={handleNavigateToBooks} />;
     }

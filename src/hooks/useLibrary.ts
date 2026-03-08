@@ -66,52 +66,26 @@ export function useLibrary() {
     }
 
     try {
-      // Load books
-      const { data: booksData } = await supabase
-        .from('books')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      // Load statuses with book info
-      const { data: statusesData } = await supabase
-        .from('statuses')
-        .select('*, books(name, total_pages)')
-        .order('created_at', { ascending: true });
-
-      // Load readings with book info
-      const { data: readingsData } = await supabase
-        .from('readings')
-        .select('*, books(name)')
-        .order('created_at', { ascending: true });
-
-      // Load evaluations with book info
-      const { data: evaluationsData } = await supabase
-        .from('evaluations')
-        .select('*, books(name)')
-        .order('created_at', { ascending: true });
-
-      // Load quotes with book info
-      const { data: quotesData } = await supabase
-        .from('quotes')
-        .select('*, books(name)')
-        .order('created_at', { ascending: false });
-
-      // Load vocabulary with book info
-      const { data: vocabularyData } = await supabase
-        .from('vocabulary')
-        .select('*, books(name)')
-        .order('created_at', { ascending: false });
-
-      // Load notes with book info and linked books
-      const { data: notesData } = await supabase
-        .from('notes')
-        .select('*, books(name)')
-        .order('created_at', { ascending: false });
-
-      // Load note book links
-      const { data: noteLinksData } = await supabase
-        .from('note_book_links')
-        .select('*, books(name)');
+      // Load all data in parallel for better performance
+      const [
+        { data: booksData },
+        { data: statusesData },
+        { data: readingsData },
+        { data: evaluationsData },
+        { data: quotesData },
+        { data: vocabularyData },
+        { data: notesData },
+        { data: noteLinksData },
+      ] = await Promise.all([
+        supabase.from('books').select('*').order('created_at', { ascending: true }).limit(500),
+        supabase.from('statuses').select('*, books(name, total_pages)').order('created_at', { ascending: true }).limit(500),
+        supabase.from('readings').select('*, books(name)').order('created_at', { ascending: true }).limit(1000),
+        supabase.from('evaluations').select('*, books(name)').order('created_at', { ascending: true }).limit(500),
+        supabase.from('quotes').select('*, books(name)').order('created_at', { ascending: false }).limit(1000),
+        supabase.from('vocabulary').select('*, books(name)').order('created_at', { ascending: false }).limit(1000),
+        supabase.from('notes').select('*, books(name)').order('created_at', { ascending: false }).limit(500),
+        supabase.from('note_book_links').select('*, books(name)').limit(1000),
+      ]);
 
       if (booksData) {
         setBooks(booksData.map((b, index) => ({
