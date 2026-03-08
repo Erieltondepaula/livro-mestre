@@ -482,9 +482,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
       {/* Interactive SVG Map - full width, auto-height, no clipping */}
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-lg border border-border bg-background/50"
+        className={`relative w-full overflow-hidden rounded-lg border border-border bg-background/50 ${isFullscreen ? 'flex-1' : ''}`}
         style={{
-          height: `${containerHeight}px`,
+          height: isFullscreen ? undefined : `${containerHeight}px`,
           cursor: isPanning ? 'grabbing' : 'grab',
           touchAction: 'none',
         }}
