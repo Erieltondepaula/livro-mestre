@@ -275,16 +275,31 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     return Array.from(words);
   }, [keywords, centralTheme]);
 
+  const normalizedHighlightWords = useMemo(
+    () => highlightWords
+      .map(w => w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+      .filter(Boolean),
+    [highlightWords]
+  );
+
   // Highlight keywords in verse text
   const renderHighlightedText = useCallback((text: string) => {
     if (!highlightWords.length || !text) return `"${text}"`;
     // Build regex that matches the ENTIRE word containing any keyword
     const pattern = highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    // Match whole words that contain any of the keywords
     const regex = new RegExp(`(\\S*(?:${pattern})\\S*)`, 'gi');
-    const parts = text.split(regex);
-    return parts;
+    return text.split(regex);
   }, [highlightWords]);
+
+  const isHighlightedSegment = useCallback((segment: string) => {
+    const normalized = segment
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+    return normalizedHighlightWords.some(word => normalized.includes(word));
+  }, [normalizedHighlightWords]);
 
   // Fetch verse text on hover
   useEffect(() => {
