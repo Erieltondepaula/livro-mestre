@@ -788,14 +788,14 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
                 {/* Order badge */}
                 <circle
-                  cx={pos.x - boxW / 2 + 14} cy={pos.y}
-                  r="9"
+                  cx={pos.x - boxW / 2 + (isMobileScreen ? 12 : 14)} cy={pos.y}
+                  r={isMobileScreen ? "7" : "9"}
                   fill={ref.color}
                 />
                 <text
-                  x={pos.x - boxW / 2 + 14} y={pos.y + 4}
+                  x={pos.x - boxW / 2 + (isMobileScreen ? 12 : 14)} y={pos.y + (isMobileScreen ? 3 : 4)}
                   textAnchor="middle"
-                  fontSize="10"
+                  fontSize={isMobileScreen ? "8" : "10"}
                   fontWeight="800"
                   fill="white"
                 >
@@ -804,9 +804,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
                 {/* Reference text */}
                 <text
-                  x={pos.x + 8} y={pos.y + 5}
+                  x={pos.x + (isMobileScreen ? 4 : 8)} y={pos.y + (isMobileScreen ? 4 : 5)}
                   textAnchor="middle"
-                  fontSize="13"
+                  fontSize={isMobileScreen ? "10" : "13"}
                   fontWeight="800"
                   fill="hsl(var(--foreground))"
                 >
