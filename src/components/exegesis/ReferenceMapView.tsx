@@ -59,17 +59,41 @@ async function fetchVerseText(ref: string): Promise<string> {
   if (!bookSlug) return '';
 
   const verseRef = `${bookSlug}+${match[2]}:${match[3]}`;
-  try {
-    // Use ONLY Portuguese translation (Almeida) — never fallback to English
-    const res = await fetch(`https://bible-api.com/${verseRef}?translation=almeida`);
-    if (!res.ok) return '';
-    const data = await res.json();
-    const text = data.text?.trim() || '';
-    if (text) verseCache.set(ref, text);
-    return text;
-  } catch {
-    return '';
+  
+  // Try almeida first, then fallback to default (KJV-like but still gets text)
+  const translations = ['almeida', 'chevalier'];
+  for (const translation of translations) {
+    try {
+      const url = translation ? `https://bible-api.com/${verseRef}?translation=${translation}` : `https://bible-api.com/${verseRef}`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const text = data.text?.trim() || '';
+      if (text) {
+        verseCache.set(ref, text);
+        return text;
+      }
+    } catch {
+      continue;
+    }
   }
+  
+  // Final fallback: try without any translation parameter
+  try {
+    const res = await fetch(`https://bible-api.com/${verseRef}`);
+    if (res.ok) {
+      const data = await res.json();
+      const text = data.text?.trim() || '';
+      if (text) {
+        verseCache.set(ref, text);
+        return text;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  
+  return '';
 }
 
 interface ReferenceMapProps {
