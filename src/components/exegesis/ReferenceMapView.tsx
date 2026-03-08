@@ -639,8 +639,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
             const textLen = ref.ref.length;
-            const boxW = Math.max(100, textLen * 8 + 30);
-            const boxH = 32;
+            const boxW = Math.max(120, textLen * 8.8 + 34);
+            const boxH = 36;
 
             return (
               <g
