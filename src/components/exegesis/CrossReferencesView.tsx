@@ -62,7 +62,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   const [selectedRefType, setSelectedRefType] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
-  const [lastResult, setLastResult] = useState<{ passage: string; content: string } | null>(() => {
+  const [lastResult, setLastResult] = useState<{ passage: string; content: string; keywords?: string[] } | null>(() => {
     try {
       const cached = localStorage.getItem('crossref_last_result');
       return cached ? JSON.parse(cached) : null;
@@ -161,7 +161,8 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) fullContent += c; } catch {}
       }
 
-      const result = { passage, content: fullContent };
+      const currentKeywords = extractedKeywords.length > 0 ? extractedKeywords : [];
+      const result = { passage, content: fullContent, keywords: currentKeywords };
       setLastResult(result);
       setCurrentStream('');
       try { localStorage.setItem('crossref_last_result', JSON.stringify(result)); } catch {}
@@ -390,7 +391,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
             <ReferenceMapView
               centralTheme={lastResult?.passage || getPassageText()}
               content={displayContent}
-              keywords={extractedKeywords}
+              keywords={lastResult?.keywords || extractedKeywords}
             />
           )}
         </div>
