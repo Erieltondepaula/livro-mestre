@@ -139,32 +139,41 @@ function extractReferences(content: string): { ref: string; category: string; co
 
   for (let li = 0; li < lines.length; li++) {
     const line = lines[li];
-    const catMatch = line.match(/#{2,3}\s*[📖📝🔤🗺️🔗🔮⛪📜⚖️✉️🌅🌐🏆]?\s*\d*\.?\s*(.*?)(?:\s*[\(（]|$)/);
-    if (catMatch) {
-      const headerText = catMatch[1].toUpperCase();
+    // Detect category headers — broad match for markdown headers with or without emojis
+    if (/^#{2,3}\s/.test(line)) {
+      const headerText = line.toUpperCase();
       for (const cat of Object.keys(categoryColors)) {
         if (headerText.includes(cat)) { currentCategory = cat; break; }
       }
       if (headerText.includes('TOP')) currentCategory = 'TOP';
     }
 
-    const refPattern = /(?:👉\s*\[?)?((?:\d\s?)?[A-ZÀ-Ú][a-zà-ú]*(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/g;
+    // Very broad reference pattern: captures "BookName chapter:verse" anywhere in the line
+    // Supports numbered books (1 Samuel, 2 Reis, etc.) and accented characters
+    const refPattern = /((?:\d\s?)?[A-ZÀ-Ú][a-zà-úÀ-Ú]*(?:\s(?:de\s)?[a-zà-úÀ-Ú]+)?)\s+(\d+):(\d+(?:\s?[-–,]\s?\d+)*)/g;
     let match;
     while ((match = refPattern.exec(line)) !== null) {
-      const fullRef = `${match[1]} ${match[2]}:${match[3]}`;
+      const bookName = match[1].trim();
+      // Skip false positives: must be a known Bible book or at least look like one
+      if (bookName.length < 2) continue;
+      // Skip if it's clearly not a book reference (common false matches)
+      const skipWords = new Set(['Strong', 'Campo', 'Verso', 'Nota', 'Item', 'Seção', 'Parte', 'Total', 'Tipo']);
+      if (skipWords.has(bookName)) continue;
+      
+      const fullRef = `${bookName} ${match[2]}:${match[3]}`;
       if (!seen.has(fullRef)) {
         seen.add(fullRef);
         const color = categoryColors[currentCategory] || 'hsl(345, 50%, 30%)';
         // Extract snippet - text after the reference on the same line + continuation lines
         let snippetParts: string[] = [];
-        const afterRef = line.slice(match.index + match[0].length).replace(/^[\s\-–—:]+/, '').replace(/[*_`\[\]]/g, '').trim();
+        const afterRef = line.slice(match.index + match[0].length).replace(/^[\s\]\)\-–—:*"]+/, '').replace(/[*_`\[\]]/g, '').trim();
         if (afterRef) snippetParts.push(afterRef);
-        // Gather continuation lines (non-empty, not a header, not containing a new reference)
+        // Gather continuation lines
         for (let ci = li + 1; ci < lines.length; ci++) {
           const contLine = lines[ci].trim();
-          if (!contLine) break; // empty line = end of block
-          if (contLine.startsWith('#')) break; // new header
-          if (/(?:👉\s*\[?)?((?:\d\s)?[A-ZÀ-Ú][a-zà-ú]+(?:\s[a-zà-ú]+)?)\s+\d+:\d+/.test(contLine)) break; // new reference
+          if (!contLine) break;
+          if (contLine.startsWith('#')) break;
+          if (/((?:\d\s?)?[A-ZÀ-Ú][a-zà-úÀ-Ú]+(?:\s[a-zà-úÀ-Ú]+)?)\s+\d+:\d+/.test(contLine)) break;
           snippetParts.push(contLine.replace(/[*_`\[\]]/g, ''));
         }
         const snippet = snippetParts.join(' ').trim();
