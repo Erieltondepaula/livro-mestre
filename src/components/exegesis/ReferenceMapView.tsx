@@ -239,20 +239,24 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   // Layout: evenly spaced radial pattern. Center at (500, 500).
   const CX = 500;
   const CY = 500;
-  const CENTER_R = 70;
+
+  // Adaptive central shape based on text length
+  const isLongTheme = centralTheme.length > 15;
+  const centralW = isLongTheme ? Math.min(320, Math.max(160, centralTheme.length * 10 + 40)) : 140;
+  const centralH = isLongTheme ? 70 : 140;
+  const CENTER_R = isLongTheme ? 0 : 70; // 0 means rect mode
+  const centralRx = isLongTheme ? 35 : 0;
 
   // Adaptive ring sizing based on node count
-  // Fewer nodes per ring = more spacing between them
   const NODES_PER_RING = Math.min(8, Math.max(5, Math.ceil(count / 3)));
-  const RING_BASE = 220; // First ring well clear of center
-  const RING_SPACING = 180; // Generous gap between rings
+  const RING_BASE = isLongTheme ? Math.max(220, centralW / 2 + 150) : 220;
+  const RING_SPACING = 180;
 
   const getNodePos = (i: number) => {
     const ringIndex = Math.floor(i / NODES_PER_RING);
     const posInRing = i % NODES_PER_RING;
     const nodesInThisRing = Math.min(NODES_PER_RING, count - ringIndex * NODES_PER_RING);
     const radius = RING_BASE + ringIndex * RING_SPACING;
-    // Offset each ring slightly so nodes don't align radially
     const angleOffset = ringIndex * (Math.PI / NODES_PER_RING);
     const angle = (posInRing / nodesInThisRing) * 2 * Math.PI - Math.PI / 2 + angleOffset;
     return {
@@ -266,10 +270,12 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const xs = allPositions.map(p => p.x);
   const ys = allPositions.map(p => p.y);
   const padding = 150;
-  const minX = Math.min(CX - CENTER_R, ...xs) - padding;
-  const minY = Math.min(CY - CENTER_R, ...ys) - padding;
-  const maxX = Math.max(CX + CENTER_R, ...xs) + padding;
-  const maxY = Math.max(CY + CENTER_R, ...ys) + padding;
+  const halfW = isLongTheme ? centralW / 2 : CENTER_R;
+  const halfH = isLongTheme ? centralH / 2 : CENTER_R;
+  const minX = Math.min(CX - halfW, ...xs) - padding;
+  const minY = Math.min(CY - halfH, ...ys) - padding;
+  const maxX = Math.max(CX + halfW, ...xs) + padding;
+  const maxY = Math.max(CY + halfH, ...ys) + padding;
   const vbW = maxX - minX;
   const vbH = maxY - minY;
 
@@ -290,11 +296,29 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     if (nextRef) setSelectedRef(nextRef.ref);
   };
 
-  // Bold keywords in central theme
-  const themeLabel = centralTheme.length > 40 ? centralTheme.slice(0, 40) + '…' : centralTheme;
+  // Full theme label — no truncation, let the shape adapt
+  const themeLabel = centralTheme;
+  // Split long text into multiple lines for SVG
+  const themeLines: string[] = [];
+  if (isLongTheme) {
+    const words = centralTheme.split(' ');
+    let line = '';
+    const maxCharsPerLine = Math.floor(centralW / 10);
+    for (const word of words) {
+      if ((line + ' ' + word).trim().length > maxCharsPerLine && line) {
+        themeLines.push(line.trim());
+        line = word;
+      } else {
+        line = line ? line + ' ' + word : word;
+      }
+    }
+    if (line) themeLines.push(line.trim());
+  } else {
+    themeLines.push(centralTheme.length > 12 ? centralTheme.slice(0, 12) + '…' : centralTheme);
+  }
 
-  // Make container tall enough to show the map clearly
-  const containerHeight = Math.max(550, Math.min(800, vbH * 0.6));
+  // Responsive container height — smaller on mobile
+  const containerHeight = Math.max(400, Math.min(800, vbH * 0.6));
 
   return (
     <div className="card-library p-4 sm:p-6 space-y-4">
