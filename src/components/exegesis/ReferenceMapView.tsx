@@ -592,26 +592,25 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 className="transition-transform"
               >
                 {/* Glow on selected */}
+                {/* Glow on selected */}
                 {isSelected && (
                   <rect
-                    x={pos.x - boxW / 2 - 3} y={pos.y - boxH / 2 - 3}
-                    width={boxW + 6} height={boxH + 6}
-                    rx="10"
-                    fill="none"
-                    stroke={ref.color}
-                    strokeWidth="2"
-                    opacity="0.4"
+                    x={pos.x - boxW / 2 - 4} y={pos.y - boxH / 2 - 4}
+                    width={boxW + 8} height={boxH + 8}
+                    rx="12"
+                    fill={ref.color}
+                    opacity="0.12"
                   />
                 )}
 
-                {/* Card background */}
+                {/* Card background with color tint */}
                 <rect
                   x={pos.x - boxW / 2} y={pos.y - boxH / 2}
                   width={boxW} height={boxH}
                   rx="8"
                   fill="hsl(var(--card))"
                   stroke={ref.color}
-                  strokeWidth={isSelected ? 2 : 1}
+                  strokeWidth={isSelected ? 2.5 : 1.5}
                   opacity={1}
                 />
 
