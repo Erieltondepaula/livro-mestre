@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { ExternalLink, ZoomIn, ZoomOut, Maximize2, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
+import { ExternalLink, ZoomIn, ZoomOut, Maximize2, Minimize2, ChevronRight, ChevronDown, Loader2, Maximize, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Mapping Portuguese book names (full + abbreviated) to bible-api.com English slugs
