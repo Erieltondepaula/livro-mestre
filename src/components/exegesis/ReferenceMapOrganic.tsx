@@ -125,9 +125,9 @@ function extractReferences(content: string): RefData[] {
     }
   }
 
-  // Assign warm colors
-  refs.forEach((r, i) => {
-    r.color = warmColors[i % warmColors.length];
+  // Assign colors by category
+  refs.forEach((r) => {
+    r.color = getCategoryColor(r.category);
   });
 
   return refs;
