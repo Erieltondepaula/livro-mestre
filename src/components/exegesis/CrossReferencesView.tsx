@@ -53,6 +53,7 @@ const BIBLE_ONLINE_SLUGS: Record<string, string> = {
 };
 
 export function CrossReferencesView({ onSave, getMaterialsContext, materialsCount = 0 }: Props) {
+  const { user } = useAuth();
   const [bibleBook, setBibleBook] = useState('');
   const [chapterStart, setChapterStart] = useState('');
   const [chapterEnd, setChapterEnd] = useState('');
