@@ -475,7 +475,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const allPositions = count > 0 ? references.map((_, i) => getNodePos(i)) : [];
   const xs = allPositions.map(p => p.x);
   const ys = allPositions.map(p => p.y);
-  const padding = isMobileScreen ? 80 : 150;
+  const padding = isMobileScreen ? 50 : 150;
   const halfW = isLongTheme ? centralW / 2 : CENTER_R;
   const halfH = isLongTheme ? centralH / 2 : CENTER_R;
   const minX = count > 0 ? Math.min(CX - halfW, ...xs) - padding : CX - 300;
@@ -485,22 +485,25 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const vbW = maxX - minX;
   const vbH = maxY - minY;
 
-  // Dynamic container height
-  const baseHeight = isMobileScreen ? Math.min(380, window.innerHeight * 0.5) : Math.max(500, Math.min(1000, vbH * 0.8));
+  // Dynamic container height — use most of screen on mobile
+  const baseHeight = isMobileScreen ? Math.max(350, window.innerHeight * 0.6) : Math.max(500, Math.min(1000, vbH * 0.8));
   const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(isMobileScreen ? 500 : 700, baseHeight * 1.4) : baseHeight;
 
   // Auto-fit zoom on mobile so map fills the container
   useEffect(() => {
     if (!isMobileScreen || count === 0) return;
-    requestAnimationFrame(() => {
+    const timer = setTimeout(() => {
       if (!containerRef.current) return;
       const cW = containerRef.current.clientWidth;
       const cH = containerRef.current.clientHeight || baseHeight;
-      const autoZoom = Math.max(0.9, Math.min(2.5, (cW / vbW) * 1.15));
-      setZoom(autoZoom);
-    });
+      const fitW = cW / vbW;
+      const fitH = cH / vbH;
+      const autoZoom = Math.min(fitW, fitH) * 1.05;
+      setZoom(Math.max(0.5, Math.min(3, autoZoom)));
+    }, 100);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, isMobileScreen]);
+  }, [count, isMobileScreen, screenWidth]);
 
   if (count === 0) return null;
 
