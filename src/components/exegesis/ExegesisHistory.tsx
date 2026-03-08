@@ -28,6 +28,7 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesValue, setNotesValue] = useState('');
+  const [historyMapStyle, setHistoryMapStyle] = useState<'geometric' | 'organic'>('geometric');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
