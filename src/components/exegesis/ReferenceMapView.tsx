@@ -282,14 +282,22 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     [highlightWords]
   );
 
-  // Highlight keywords in verse text
+  const highlightRoots = useMemo(() => {
+    const roots = new Set<string>();
+    normalizedHighlightWords.forEach((word) => {
+      const stem = word.replace(/(coes|cao|mente|amentos?|imentos?|ados?|adas?|idos?|idas?|s)$/g, '');
+      [stem, word.slice(0, 6), word.slice(0, 5)].forEach((candidate) => {
+        if (candidate.length >= 4) roots.add(candidate);
+      });
+    });
+    return Array.from(roots);
+  }, [normalizedHighlightWords]);
+
+  // Split by tokens so we can always highlight per word in tooltip/sidebar
   const renderHighlightedText = useCallback((text: string) => {
-    if (!highlightWords.length || !text) return `"${text}"`;
-    // Build regex that matches the ENTIRE word containing any keyword
-    const pattern = highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    const regex = new RegExp(`(\\S*(?:${pattern})\\S*)`, 'gi');
-    return text.split(regex);
-  }, [highlightWords]);
+    if (!text) return [] as string[];
+    return text.split(/(\s+)/).filter(part => part.length > 0);
+  }, []);
 
   const isHighlightedSegment = useCallback((segment: string) => {
     const normalized = segment
@@ -298,8 +306,11 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]/g, '');
 
-    return normalizedHighlightWords.some(word => normalized.includes(word));
-  }, [normalizedHighlightWords]);
+    if (normalized.length < 3) return false;
+
+    return normalizedHighlightWords.some(word => normalized.includes(word) || word.includes(normalized))
+      || highlightRoots.some(root => normalized.includes(root));
+  }, [normalizedHighlightWords, highlightRoots]);
 
   // Fetch verse text on hover
   useEffect(() => {
