@@ -400,6 +400,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           <span className="text-[10px] text-muted-foreground w-10 text-center">{Math.round(zoom * 100)}%</span>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn}><ZoomIn className="w-3.5 h-3.5" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset}><Maximize2 className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2" onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? '⊟ Reduzir' : '⊞ Expandir'}
+          </Button>
         </div>
       </div>
 
