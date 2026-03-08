@@ -81,7 +81,7 @@ function extractReferences(content: string): RefData[] {
     const line = lines[li];
     if (/^#{2,3}\s/.test(line)) {
       const headerText = line.toUpperCase();
-      for (const cat of Object.keys(categoryColors)) {
+      for (const cat of Object.keys(categoryColorMap)) {
         if (headerText.includes(cat)) { currentCategory = cat; break; }
       }
       if (headerText.includes('TOP')) currentCategory = 'TOP';
