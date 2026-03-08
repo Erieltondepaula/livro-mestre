@@ -708,6 +708,7 @@ export function HelpView({ initialSection }: HelpViewProps) {
             <img 
               src={image.src} 
               alt={image.caption}
+              loading="lazy"
               className="w-full object-contain transition-transform group-hover:scale-[1.01]"
             />
             {/* Overlay com ícone de zoom */}
