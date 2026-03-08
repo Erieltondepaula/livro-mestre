@@ -355,8 +355,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     themeLines.push(centralTheme.length > 12 ? centralTheme.slice(0, 12) + '…' : centralTheme);
   }
 
-  // Responsive container height — smaller on mobile
-  const containerHeight = Math.max(400, Math.min(800, vbH * 0.6));
+  // Expanded container height for better visibility
+  const containerHeight = Math.max(500, Math.min(1000, vbH * 0.8));
 
   return (
     <div className="card-library p-4 sm:p-6 space-y-4">
