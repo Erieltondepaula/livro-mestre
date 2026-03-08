@@ -800,13 +800,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
                   </div>
                 ) : hoveredVerseText ? (
-                  <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[120px] overflow-y-auto">
+                  <p className="text-sm text-popover-foreground leading-7 max-h-[140px] overflow-y-auto">
                     "{(() => {
                       const parts = renderHighlightedText(hoveredVerseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => 
                         isHighlightedSegment(part)
-                          ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
+                          ? <strong key={i} className="font-black bg-primary/30 text-foreground px-0.5 rounded-sm">{part}</strong>
                           : part
                       );
                     })()}"
