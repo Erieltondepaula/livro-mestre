@@ -249,9 +249,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   // Highlight keywords in verse text
   const renderHighlightedText = useCallback((text: string) => {
     if (!highlightWords.length || !text) return `"${text}"`;
-    // Build regex pattern
+    // Build regex that matches the ENTIRE word containing any keyword
     const pattern = highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    const regex = new RegExp(`(${pattern})`, 'gi');
+    // Match whole words that contain any of the keywords
+    const regex = new RegExp(`(\\S*(?:${pattern})\\S*)`, 'gi');
     const parts = text.split(regex);
     return parts;
   }, [highlightWords]);
