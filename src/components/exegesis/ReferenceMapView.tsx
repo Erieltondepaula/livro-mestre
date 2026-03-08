@@ -186,11 +186,7 @@ function extractReferences(content: string): { ref: string; category: string; co
 }
 
 export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceMapProps) {
-  const references = useMemo(() => {
-    const refs = extractReferences(content);
-    console.log('[ReferenceMapView] Extracted references:', refs.length, 'from content length:', content.length, 'first 200 chars:', content.substring(0, 200));
-    return refs;
-  }, [content]);
+  const references = useMemo(() => extractReferences(content), [content]);
   const [selectedRef, setSelectedRef] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
