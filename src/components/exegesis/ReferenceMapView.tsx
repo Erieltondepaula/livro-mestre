@@ -115,19 +115,19 @@ function getBibleUrl(ref: string): string | null {
 }
 
 const categoryColors: Record<string, string> = {
-  'TEMÁTICAS': 'hsl(345, 50%, 30%)',
-  'VOCABULARES': 'hsl(210, 50%, 45%)',
-  'LINGUÍSTICAS': 'hsl(38, 70%, 50%)',
-  'CONTEXTUAIS': 'hsl(145, 45%, 35%)',
-  'TIPOLÓGICAS': 'hsl(270, 40%, 45%)',
-  'PROFÉTICAS': 'hsl(30, 60%, 45%)',
-  'DOUTRINÁRIAS': 'hsl(0, 50%, 40%)',
-  'NARRATIVAS': 'hsl(180, 40%, 40%)',
-  'COMPARATIVAS': 'hsl(200, 50%, 40%)',
-  'APOSTÓLICAS': 'hsl(320, 40%, 40%)',
-  'ESCATOLÓGICAS': 'hsl(50, 60%, 40%)',
-  'PANORAMA': 'hsl(160, 40%, 35%)',
-  'TOP': 'hsl(345, 50%, 30%)',
+  'TEMÁTICAS': 'hsl(345, 70%, 50%)',
+  'VOCABULARES': 'hsl(210, 70%, 55%)',
+  'LINGUÍSTICAS': 'hsl(38, 85%, 55%)',
+  'CONTEXTUAIS': 'hsl(145, 65%, 45%)',
+  'TIPOLÓGICAS': 'hsl(270, 60%, 55%)',
+  'PROFÉTICAS': 'hsl(25, 80%, 55%)',
+  'DOUTRINÁRIAS': 'hsl(0, 65%, 50%)',
+  'NARRATIVAS': 'hsl(180, 60%, 45%)',
+  'COMPARATIVAS': 'hsl(200, 70%, 50%)',
+  'APOSTÓLICAS': 'hsl(320, 60%, 55%)',
+  'ESCATOLÓGICAS': 'hsl(50, 80%, 48%)',
+  'PANORAMA': 'hsl(160, 60%, 45%)',
+  'TOP': 'hsl(345, 70%, 50%)',
 };
 
 function extractReferences(content: string): { ref: string; category: string; color: string; order: number; snippet: string }[] {
