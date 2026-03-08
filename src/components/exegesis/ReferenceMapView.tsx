@@ -858,7 +858,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
       {/* Fullscreen sidebar with verse texts */}
       {isFullscreen && (
-        <div className="w-[380px] flex-shrink-0 overflow-y-auto border border-border rounded-lg bg-card p-4 space-y-3">
+        <div className="w-full sm:w-[380px] flex-shrink-0 overflow-y-auto border border-border rounded-lg bg-card p-4 space-y-3 max-h-[40vh] sm:max-h-none">
           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">📋 Referências em Ordem</h4>
           {references.map((ref) => {
             const verseText = sidebarVerses[ref.ref];
