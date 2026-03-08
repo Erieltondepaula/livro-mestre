@@ -246,7 +246,20 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     return () => document.removeEventListener('keydown', handler);
   }, [isFullscreen]);
 
-  // Build highlight words from keywords + centralTheme words
+  // Fetch all verses when entering fullscreen (for sidebar)
+  useEffect(() => {
+    if (!isFullscreen || references.length === 0) return;
+    const fetchAll = async () => {
+      const newVerses: Record<string, string> = {};
+      for (const ref of references) {
+        const text = await fetchVerseText(ref.ref);
+        if (text) newVerses[ref.ref] = text;
+      }
+      setSidebarVerses(newVerses);
+    };
+    fetchAll();
+  }, [isFullscreen, references]);
+
   const highlightWords = useMemo(() => {
     const words = new Set<string>();
     // Add keywords
