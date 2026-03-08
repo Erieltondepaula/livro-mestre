@@ -521,7 +521,7 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
                   color: isDimmed ? 'hsl(var(--muted-foreground))' : catInfo.color,
                   backgroundColor: isActive ? `${catInfo.color}20` : 'transparent',
                   opacity: isDimmed ? 0.4 : 1,
-                  ringColor: catInfo.color,
+                  outlineColor: isActive ? catInfo.color : undefined,
                 }}
                 title={catInfo.meaning}
               >
