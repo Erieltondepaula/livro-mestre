@@ -92,24 +92,30 @@ export function useLibrary() {
           id: b.id,
           numero: index + 1,
           livro: b.name,
-          autor: (b as any).author || undefined,
-          ano: (b as any).year || undefined,
+          autor: b.author || undefined,
+          ano: b.year || undefined,
           totalPaginas: b.total_pages,
           tipo: b.type as Book['tipo'],
           categoria: b.category as Book['categoria'],
           valorPago: Number(b.paid_value) || 0,
-          coverUrl: (b as any).cover_url || undefined,
-          targetCompletionDate: (b as any).target_completion_date || undefined,
+          coverUrl: b.cover_url || undefined,
+          targetCompletionDate: b.target_completion_date || undefined,
           created_at: b.created_at || undefined,
         })));
       }
+
+      // Helper to safely extract joined book name
+      const getBookName = (books: unknown): string => {
+        if (books && typeof books === 'object' && 'name' in books) return (books as { name: string }).name || '';
+        return '';
+      };
 
       if (statusesData) {
         setStatuses(statusesData.map((s, index) => ({
           id: s.id,
           numero: index + 1,
           livroId: s.book_id,
-          livro: (s.books as any)?.name || '',
+          livro: getBookName(s.books),
           status: s.status as BookStatus['status'],
           quantidadeLida: s.pages_read,
         })));
@@ -117,57 +123,44 @@ export function useLibrary() {
 
       if (readingsData) {
         setReadings(readingsData.map(r => {
-          // Parse time_spent - formato correto é MM:SS ou apenas MM (minutos)
-          // O campo armazena MINUTOS (ex: "10:30" = 10 minutos e 30 segundos)
-          // O resultado tempoGasto é TAMBÉM em minutos (decimal)
           let tempoGastoMinutes = 0;
           const timeSpentStr = r.time_spent || '0';
           if (timeSpentStr.includes(':')) {
             const parts = timeSpentStr.split(':').map(Number);
             if (parts.length === 2) {
-              // Formato MM:SS (ex: "10:30" = 10 minutos e 30 segundos = 10.5 minutos)
               const [mins, secs] = parts;
               tempoGastoMinutes = mins + (secs / 60);
             }
           } else {
-            // Número sem ":" = SEMPRE minutos (ex: "20" = 20 minutos)
             tempoGastoMinutes = parseFloat(timeSpentStr) || 0;
           }
+
+          const buildDate = (dateStr: string | null): Date | undefined => {
+            if (!dateStr) return undefined;
+            const createdAt = r.created_at ? new Date(r.created_at) : null;
+            const timePart = createdAt
+              ? `T${String(createdAt.getHours()).padStart(2, '0')}:${String(createdAt.getMinutes()).padStart(2, '0')}:${String(createdAt.getSeconds()).padStart(2, '0')}`
+              : `T${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}:${String(new Date().getSeconds()).padStart(2, '0')}`;
+            return new Date(dateStr + timePart);
+          };
 
           return {
             id: r.id,
             dia: r.day,
             mes: r.month,
             livroId: r.book_id,
-            livroLido: (r.books as any)?.name || '',
+            livroLido: getBookName(r.books),
             paginaInicial: r.start_page,
             paginaFinal: r.end_page,
-            tempoGasto: tempoGastoMinutes, // Em minutos (decimal)
+            tempoGasto: tempoGastoMinutes,
             quantidadePaginas: r.end_page - r.start_page,
-            dataInicio: (r as any).start_date
-              ? (() => {
-                  // Use created_at time component instead of fixed 12:00
-                  const createdAt = r.created_at ? new Date(r.created_at) : null;
-                  const timePart = createdAt
-                    ? `T${String(createdAt.getHours()).padStart(2, '0')}:${String(createdAt.getMinutes()).padStart(2, '0')}:${String(createdAt.getSeconds()).padStart(2, '0')}`
-                    : `T${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}:${String(new Date().getSeconds()).padStart(2, '0')}`;
-                  return new Date((r as any).start_date + timePart);
-                })()
-              : undefined,
-            dataFim: (r as any).end_date
-              ? (() => {
-                  const createdAt = r.created_at ? new Date(r.created_at) : null;
-                  const timePart = createdAt
-                    ? `T${String(createdAt.getHours()).padStart(2, '0')}:${String(createdAt.getMinutes()).padStart(2, '0')}:${String(createdAt.getSeconds()).padStart(2, '0')}`
-                    : `T${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}:${String(new Date().getSeconds()).padStart(2, '0')}`;
-                  return new Date((r as any).end_date + timePart);
-                })()
-              : undefined,
+            dataInicio: buildDate(r.start_date),
+            dataFim: buildDate(r.end_date),
             created_at: r.created_at || undefined,
-            bibleBook: (r as any).bible_book || undefined,
-            bibleChapter: (r as any).bible_chapter || undefined,
-            bibleVerseStart: (r as any).bible_verse_start || undefined,
-            bibleVerseEnd: (r as any).bible_verse_end || undefined,
+            bibleBook: r.bible_book || undefined,
+            bibleChapter: r.bible_chapter || undefined,
+            bibleVerseStart: r.bible_verse_start || undefined,
+            bibleVerseEnd: r.bible_verse_end || undefined,
           };
         }));
       }
@@ -176,14 +169,14 @@ export function useLibrary() {
         setEvaluations(evaluationsData.map(e => ({
           id: e.id,
           livroId: e.book_id,
-          livro: (e.books as any)?.name || '',
+          livro: getBookName(e.books),
           criatividade: e.creativity || 0,
           escrita: e.writing || 0,
           aprendizados: e.learnings || 0,
           prazer: e.pleasure || 0,
           impacto: e.impact || 0,
           notaFinal: Number(e.final_grade) || 0,
-          observacoes: (e as any).observations || undefined,
+          observacoes: e.observations || undefined,
         })));
       }
 
@@ -192,13 +185,13 @@ export function useLibrary() {
           id: q.id,
           citacao: q.quote,
           livroId: q.book_id,
-          livro: (q.books as any)?.name || '',
+          livro: getBookName(q.books),
           pagina: q.page || 0,
           created_at: q.created_at || undefined,
-          tags: Array.isArray((q as any).tags) ? (q as any).tags : [],
-          bibleBook: (q as any).bible_book || undefined,
-          bibleChapter: (q as any).bible_chapter || undefined,
-          bibleVerse: (q as any).bible_verse || undefined,
+          tags: Array.isArray(q.tags) ? q.tags : [],
+          bibleBook: q.bible_book || undefined,
+          bibleChapter: q.bible_chapter || undefined,
+          bibleVerse: q.bible_verse || undefined,
         })));
       }
 
@@ -225,7 +218,7 @@ export function useLibrary() {
             observacoes: v.observacoes || null,
             analise_contexto: v.analise_contexto as { frase: string; sentidoIdentificado: string; explicacao: string; sentidosNaoAplicaveis: string[]; sinonimosAdequados: string[]; fraseReescrita: string; observacao: string } | null,
             book_id: v.book_id,
-            bookName: (v.books as any)?.name || null,
+            bookName: getBookName(v.books),
             pagina,
             source_type: v.source_type || null,
             source_details: sourceDetails || null,
@@ -241,7 +234,7 @@ export function useLibrary() {
           const links = noteLinksData?.filter(link => link.note_id === n.id) || [];
           const linkedBooks = links.map(link => ({
             id: link.book_id,
-            name: (link.books as any)?.name || '',
+            name: getBookName(link.books),
           }));
 
           return {
@@ -254,7 +247,7 @@ export function useLibrary() {
             noteType: (n.note_type as Note['noteType']) || 'permanent',
             folderId: n.folder_id || null,
             bookId: n.book_id,
-            bookName: (n.books as any)?.name || null,
+            bookName: getBookName(n.books),
             linkedBooks,
             isPinned: n.is_pinned || false,
             archived: n.archived || false,
@@ -269,6 +262,14 @@ export function useLibrary() {
       setIsLoaded(true);
     } catch (error) {
       console.error('Error loading data:', error);
+      // Import toast dynamically to avoid circular deps
+      import('@/hooks/use-toast').then(({ toast }) => {
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar seus dados. Tente recarregar a página.",
+          variant: "destructive",
+        });
+      });
       setIsLoaded(true);
     }
   }, [user]);
