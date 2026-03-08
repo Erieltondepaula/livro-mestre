@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { ExternalLink, ZoomIn, ZoomOut, Maximize2, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
+import { ExternalLink, ZoomIn, ZoomOut, Maximize2, Minimize2, ChevronRight, ChevronDown, Loader2, Maximize, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Mapping Portuguese book names (full + abbreviated) to bible-api.com English slugs
@@ -198,6 +198,37 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const [hoveredVerseText, setHoveredVerseText] = useState<string>('');
   const [isLoadingVerse, setIsLoadingVerse] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const fullscreenRef = useRef<HTMLDivElement>(null);
+
+  // Fullscreen toggle
+  const toggleFullscreen = useCallback(() => {
+    if (!fullscreenRef.current) return;
+    if (!document.fullscreenElement) {
+      fullscreenRef.current.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  // ESC to exit fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isFullscreen]);
 
   // Build highlight words from keywords + centralTheme words
   const highlightWords = useMemo(() => {
@@ -393,10 +424,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   // Dynamic container height — expandable
   const baseHeight = Math.max(500, Math.min(1000, vbH * 0.8));
-  const containerHeight = isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
+  const containerHeight = isFullscreen ? '100vh' : isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
 
   return (
-    <div className="card-library p-4 sm:p-6 space-y-4">
+    <div ref={fullscreenRef} className={`${isFullscreen ? 'bg-background' : 'card-library'} p-4 sm:p-6 space-y-4 ${isFullscreen ? 'flex flex-col h-screen' : ''}`}>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           🗺️ Mapa de Referências Cruzadas
@@ -409,8 +440,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           <span className="text-[10px] text-muted-foreground w-10 text-center">{Math.round(zoom * 100)}%</span>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn}><ZoomIn className="w-3.5 h-3.5" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset}><Maximize2 className="w-3.5 h-3.5" /></Button>
-          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2" onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? '⊟ Reduzir' : '⊞ Expandir'}
+          {!isFullscreen && (
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2" onClick={() => setIsExpanded(!isExpanded)}>
+              {isExpanded ? '⊟ Reduzir' : '⊞ Expandir'}
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleFullscreen} title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}>
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
           </Button>
         </div>
       </div>
@@ -446,9 +482,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
       {/* Interactive SVG Map - full width, auto-height, no clipping */}
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-lg border border-border bg-background/50"
+        className={`relative w-full overflow-hidden rounded-lg border border-border bg-background/50 ${isFullscreen ? 'flex-1' : ''}`}
         style={{
-          height: `${containerHeight}px`,
+          height: isFullscreen ? undefined : `${containerHeight}px`,
           cursor: isPanning ? 'grabbing' : 'grab',
           touchAction: 'none',
         }}
