@@ -541,6 +541,11 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
               {isExpanded ? '⊟ Reduzir' : '⊞ Expandir'}
             </Button>
           )}
+          {isFullscreen && (
+            <Button variant="ghost" size="icon" className="h-7 w-7 sm:hidden" onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setIsFullscreen(false); }}>
+              <X className="w-4 h-4" />
+            </Button>
+          )}
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleFullscreen} title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}>
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
           </Button>
