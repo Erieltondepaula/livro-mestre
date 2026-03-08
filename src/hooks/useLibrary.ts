@@ -92,14 +92,14 @@ export function useLibrary() {
           id: b.id,
           numero: index + 1,
           livro: b.name,
-          autor: (b as any).author || undefined,
-          ano: (b as any).year || undefined,
+          autor: b.author || undefined,
+          ano: b.year || undefined,
           totalPaginas: b.total_pages,
           tipo: b.type as Book['tipo'],
           categoria: b.category as Book['categoria'],
           valorPago: Number(b.paid_value) || 0,
-          coverUrl: (b as any).cover_url || undefined,
-          targetCompletionDate: (b as any).target_completion_date || undefined,
+          coverUrl: b.cover_url || undefined,
+          targetCompletionDate: b.target_completion_date || undefined,
           created_at: b.created_at || undefined,
         })));
       }
