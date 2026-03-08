@@ -262,6 +262,14 @@ export function useLibrary() {
       setIsLoaded(true);
     } catch (error) {
       console.error('Error loading data:', error);
+      // Import toast dynamically to avoid circular deps
+      import('@/hooks/use-toast').then(({ toast }) => {
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar seus dados. Tente recarregar a página.",
+          variant: "destructive",
+        });
+      });
       setIsLoaded(true);
     }
   }, [user]);
