@@ -570,36 +570,61 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           })}
         </svg>
 
-        {/* Hover tooltip */}
+        {/* Hover/Tap tooltip — positioned above node on desktop, fixed bottom on mobile */}
         {hoveredRef && (
-          <div
-            className="absolute z-50 pointer-events-none animate-fade-in"
-            style={{
-              left: `${hoveredRef.x}px`,
-              top: `${hoveredRef.y - 50}px`,
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5 max-w-[360px] min-w-[200px]">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
-                <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
-                <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
-              </div>
-              {isLoadingVerse && !hoveredVerseText ? (
-                <div className="flex items-center gap-1.5 py-1">
-                  <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
+          <>
+            {/* Desktop tooltip */}
+            <div
+              className="absolute z-50 pointer-events-none animate-fade-in hidden sm:block"
+              style={{
+                left: `${hoveredRef.x}px`,
+                top: `${hoveredRef.y - 50}px`,
+                transform: 'translate(-50%, -100%)',
+              }}
+            >
+              <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5 max-w-[360px] min-w-[200px]">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
+                  <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
+                  <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
                 </div>
-              ) : hoveredVerseText ? (
-                <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[250px] overflow-y-auto">
-                  "{hoveredVerseText}"
-                </p>
-              ) : (
-                <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
-              )}
+                {isLoadingVerse && !hoveredVerseText ? (
+                  <div className="flex items-center gap-1.5 py-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
+                  </div>
+                ) : hoveredVerseText ? (
+                  <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[250px] overflow-y-auto">
+                    "{hoveredVerseText}"
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
+                )}
+              </div>
             </div>
-          </div>
+            {/* Mobile tooltip — fixed at bottom of map container */}
+            <div className="absolute bottom-2 left-2 right-2 z-50 sm:hidden animate-fade-in">
+              <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
+                  <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
+                  <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
+                </div>
+                {isLoadingVerse && !hoveredVerseText ? (
+                  <div className="flex items-center gap-1.5 py-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
+                  </div>
+                ) : hoveredVerseText ? (
+                  <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[120px] overflow-y-auto">
+                    "{hoveredVerseText}"
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
