@@ -188,6 +188,33 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const [hoveredRef, setHoveredRef] = useState<{ ref: typeof references[0]; x: number; y: number } | null>(null);
   const [hoveredVerseText, setHoveredVerseText] = useState<string>('');
   const [isLoadingVerse, setIsLoadingVerse] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Build highlight words from keywords + centralTheme words
+  const highlightWords = useMemo(() => {
+    const words = new Set<string>();
+    // Add keywords
+    keywords.forEach(k => {
+      if (k.length >= 3) words.add(k.toLowerCase());
+    });
+    // Add words from theme (min 3 chars, skip common words)
+    const skipWords = new Set(['que', 'para', 'com', 'por', 'uma', 'dos', 'das', 'nos', 'nas', 'seu', 'sua', 'são', 'não', 'tem', 'ele', 'ela']);
+    centralTheme.split(/\s+/).forEach(w => {
+      const clean = w.toLowerCase().replace(/[^a-záàãâéêíóôõúç]/gi, '');
+      if (clean.length >= 3 && !skipWords.has(clean)) words.add(clean);
+    });
+    return Array.from(words);
+  }, [keywords, centralTheme]);
+
+  // Highlight keywords in verse text
+  const renderHighlightedText = useCallback((text: string) => {
+    if (!highlightWords.length || !text) return `"${text}"`;
+    // Build regex pattern
+    const pattern = highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    const regex = new RegExp(`(${pattern})`, 'gi');
+    const parts = text.split(regex);
+    return parts;
+  }, [highlightWords]);
 
   // Fetch verse text on hover
   useEffect(() => {
