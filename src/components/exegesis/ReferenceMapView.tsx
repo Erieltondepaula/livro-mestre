@@ -60,11 +60,8 @@ async function fetchVerseText(ref: string): Promise<string> {
 
   const verseRef = `${bookSlug}+${match[2]}:${match[3]}`;
   try {
-    // Try almeida first, fallback to default translation
-    let res = await fetch(`https://bible-api.com/${verseRef}?translation=almeida`);
-    if (!res.ok) {
-      res = await fetch(`https://bible-api.com/${verseRef}`);
-    }
+    // Use ONLY Portuguese translation (Almeida) — never fallback to English
+    const res = await fetch(`https://bible-api.com/${verseRef}?translation=almeida`);
     if (!res.ok) return '';
     const data = await res.json();
     const text = data.text?.trim() || '';
