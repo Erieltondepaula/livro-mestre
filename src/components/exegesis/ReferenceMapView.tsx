@@ -796,7 +796,64 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         )}
       </div>
 
-      {/* Category legend */}
+      {/* Fullscreen sidebar with verse texts */}
+      {isFullscreen && (
+        <div className="w-[380px] flex-shrink-0 overflow-y-auto border border-border rounded-lg bg-card p-4 space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">📋 Referências em Ordem</h4>
+          {references.map((ref) => {
+            const verseText = sidebarVerses[ref.ref];
+            const isSelected = selectedRef === ref.ref;
+            const url = getBibleUrl(ref.ref);
+            return (
+              <div
+                key={ref.order}
+                className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary border-primary/30 bg-primary/5' : 'border-border hover:bg-muted/30'}`}
+                onClick={() => setSelectedRef(ref.ref)}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white flex-shrink-0"
+                    style={{ backgroundColor: ref.color }}>
+                    {ref.order}
+                  </span>
+                  <span className="text-sm font-bold" style={{ color: ref.color }}>{ref.ref}</span>
+                  <span className="text-[9px] text-muted-foreground">({ref.category})</span>
+                  {url && (
+                    <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                      className="ml-auto flex-shrink-0 opacity-50 hover:opacity-100">
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+                {verseText ? (
+                  <p className="text-xs text-foreground/80 leading-relaxed italic">
+                    "{(() => {
+                      const parts = renderHighlightedText(verseText);
+                      if (typeof parts === 'string') return parts;
+                      return parts.map((part, i) => {
+                        const isMatch = highlightWords.some(w => part.toLowerCase().includes(w.toLowerCase()));
+                        return isMatch
+                          ? <strong key={i} className="font-extrabold not-italic" style={{ color: ref.color }}>{part}</strong>
+                          : <span key={i}>{part}</span>;
+                      });
+                    })()}"
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Carregando...
+                  </p>
+                )}
+                {ref.snippet && (
+                  <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">
+                    💡 {ref.snippet.slice(0, 150)}{ref.snippet.length > 150 ? '...' : ''}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      </div>{/* end flex row wrapper */}
+
       <div className="flex flex-wrap gap-1.5">
         {Array.from(new Set(references.map(r => r.category))).map(cat => {
           const c = references.filter(r => r.category === cat).length;
