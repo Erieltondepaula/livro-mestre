@@ -62,7 +62,12 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   const [selectedRefType, setSelectedRefType] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
-  const [lastResult, setLastResult] = useState<{ passage: string; content: string } | null>(null);
+  const [lastResult, setLastResult] = useState<{ passage: string; content: string } | null>(() => {
+    try {
+      const cached = localStorage.getItem('crossref_last_result');
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
