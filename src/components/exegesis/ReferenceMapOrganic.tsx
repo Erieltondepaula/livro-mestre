@@ -497,22 +497,35 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
         </svg>
       </div>
 
-      {/* Category legend */}
-      {!isFullscreen && (
-        <div className="flex flex-wrap gap-1.5 mt-3">
+      {/* Category legend with meanings */}
+      <div className="mt-3 space-y-2">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">🎨 Legenda de Cores</p>
+        <div className="flex flex-wrap gap-1.5">
           {Array.from(new Set(references.map(r => r.category))).map(cat => {
             const c = references.filter(r => r.category === cat).length;
-            const color = references.find(r => r.category === cat)?.color || 'hsl(25, 50%, 45%)';
+            const catInfo = categoryColorMap[cat] || { color: 'hsl(25, 55%, 42%)', meaning: 'Referência', icon: '📌' };
             return (
-              <span key={cat} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border"
-                style={{ borderColor: color, color }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
-                {cat} ({c})
+              <span key={cat} className="group relative inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full border cursor-help"
+                style={{ borderColor: catInfo.color, color: catInfo.color, backgroundColor: `${catInfo.color}10` }}
+                title={catInfo.meaning}>
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: catInfo.color }} />
+                <span>{catInfo.icon} {cat}</span>
+                <span className="text-muted-foreground">({c})</span>
               </span>
             );
           })}
         </div>
-      )}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+          {Array.from(new Set(references.map(r => r.category))).map(cat => {
+            const catInfo = categoryColorMap[cat] || { color: 'hsl(25, 55%, 42%)', meaning: 'Referência', icon: '📌' };
+            return (
+              <span key={`desc-${cat}`} className="text-[9px] text-muted-foreground">
+                <span className="font-semibold" style={{ color: catInfo.color }}>{catInfo.icon} {cat}:</span> {catInfo.meaning}
+              </span>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
