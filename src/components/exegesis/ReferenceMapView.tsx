@@ -458,7 +458,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   return (
     <div ref={fullscreenRef} className={`${isFullscreen ? 'bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-screen overflow-hidden' : 'space-y-4'}`}>
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className={`flex items-center justify-between flex-wrap gap-2 ${isFullscreen ? 'mb-3' : ''}`}>
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           🗺️ Mapa de Referências Cruzadas
           <span className="text-[10px] font-normal normal-case bg-primary/10 text-primary px-2 py-0.5 rounded-full">
