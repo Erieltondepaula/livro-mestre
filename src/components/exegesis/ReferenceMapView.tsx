@@ -424,10 +424,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   // Dynamic container height — expandable
   const baseHeight = Math.max(500, Math.min(1000, vbH * 0.8));
-  const containerHeight = isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
+  const containerHeight = isFullscreen ? '100vh' : isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
 
   return (
-    <div className="card-library p-4 sm:p-6 space-y-4">
+    <div ref={fullscreenRef} className={`${isFullscreen ? 'bg-background' : 'card-library'} p-4 sm:p-6 space-y-4 ${isFullscreen ? 'flex flex-col h-screen' : ''}`}>
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           🗺️ Mapa de Referências Cruzadas
@@ -440,8 +440,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           <span className="text-[10px] text-muted-foreground w-10 text-center">{Math.round(zoom * 100)}%</span>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn}><ZoomIn className="w-3.5 h-3.5" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset}><Maximize2 className="w-3.5 h-3.5" /></Button>
-          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2" onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? '⊟ Reduzir' : '⊞ Expandir'}
+          {!isFullscreen && (
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2" onClick={() => setIsExpanded(!isExpanded)}>
+              {isExpanded ? '⊟ Reduzir' : '⊞ Expandir'}
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleFullscreen} title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}>
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
           </Button>
         </div>
       </div>
