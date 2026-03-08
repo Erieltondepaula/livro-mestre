@@ -433,7 +433,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   }, []);
 
   // Detect mobile early (before any calculations that depend on it)
-  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 640;
+  const [screenWidth, setScreenWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  useEffect(() => {
+    const handler = () => setScreenWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  const isMobileScreen = screenWidth < 640;
 
   const count = references.length;
   // Layout: evenly spaced radial pattern. Center at (500, 500).
@@ -442,15 +448,15 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   // Adaptive central shape based on text length
   const isLongTheme = centralTheme.length > 15;
-  const centralW = isLongTheme ? Math.min(320, Math.max(160, centralTheme.length * 10 + 40)) : 140;
-  const centralH = isLongTheme ? 70 : 140;
-  const CENTER_R = isLongTheme ? 0 : 70;
-  const centralRx = isLongTheme ? 35 : 0;
+  const centralW = isLongTheme ? Math.min(isMobileScreen ? 260 : 320, Math.max(140, centralTheme.length * (isMobileScreen ? 8 : 10) + 40)) : (isMobileScreen ? 110 : 140);
+  const centralH = isLongTheme ? (isMobileScreen ? 60 : 70) : (isMobileScreen ? 110 : 140);
+  const CENTER_R = isLongTheme ? 0 : (isMobileScreen ? 55 : 70);
+  const centralRx = isLongTheme ? 30 : 0;
 
   // Adaptive ring sizing — tighter on mobile for better fit
-  const NODES_PER_RING = Math.min(8, Math.max(5, Math.ceil(count / 3)));
-  const RING_BASE = isLongTheme ? Math.max(isMobileScreen ? 180 : 220, centralW / 2 + (isMobileScreen ? 110 : 150)) : (isMobileScreen ? 180 : 220);
-  const RING_SPACING = isMobileScreen ? 140 : 180;
+  const NODES_PER_RING = isMobileScreen ? Math.min(6, Math.max(4, Math.ceil(count / 3))) : Math.min(8, Math.max(5, Math.ceil(count / 3)));
+  const RING_BASE = isLongTheme ? Math.max(isMobileScreen ? 140 : 220, centralW / 2 + (isMobileScreen ? 80 : 150)) : (isMobileScreen ? 140 : 220);
+  const RING_SPACING = isMobileScreen ? 110 : 180;
 
   const getNodePos = (i: number) => {
     const ringIndex = Math.floor(i / NODES_PER_RING);
@@ -469,7 +475,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const allPositions = count > 0 ? references.map((_, i) => getNodePos(i)) : [];
   const xs = allPositions.map(p => p.x);
   const ys = allPositions.map(p => p.y);
-  const padding = isMobileScreen ? 80 : 150;
+  const padding = isMobileScreen ? 50 : 150;
   const halfW = isLongTheme ? centralW / 2 : CENTER_R;
   const halfH = isLongTheme ? centralH / 2 : CENTER_R;
   const minX = count > 0 ? Math.min(CX - halfW, ...xs) - padding : CX - 300;
@@ -479,22 +485,25 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const vbW = maxX - minX;
   const vbH = maxY - minY;
 
-  // Dynamic container height
-  const baseHeight = isMobileScreen ? Math.min(380, window.innerHeight * 0.5) : Math.max(500, Math.min(1000, vbH * 0.8));
+  // Dynamic container height — use most of screen on mobile
+  const baseHeight = isMobileScreen ? Math.max(350, window.innerHeight * 0.6) : Math.max(500, Math.min(1000, vbH * 0.8));
   const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(isMobileScreen ? 500 : 700, baseHeight * 1.4) : baseHeight;
 
   // Auto-fit zoom on mobile so map fills the container
   useEffect(() => {
     if (!isMobileScreen || count === 0) return;
-    requestAnimationFrame(() => {
+    const timer = setTimeout(() => {
       if (!containerRef.current) return;
       const cW = containerRef.current.clientWidth;
       const cH = containerRef.current.clientHeight || baseHeight;
-      const autoZoom = Math.max(0.9, Math.min(2.5, (cW / vbW) * 1.15));
-      setZoom(autoZoom);
-    });
+      const fitW = cW / vbW;
+      const fitH = cH / vbH;
+      const autoZoom = Math.min(fitW, fitH) * 1.05;
+      setZoom(Math.max(0.5, Math.min(3, autoZoom)));
+    }, 100);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [count, isMobileScreen]);
+  }, [count, isMobileScreen, screenWidth]);
 
   if (count === 0) return null;
 
@@ -672,27 +681,27 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           {isLongTheme ? (
             <>
               <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="url(#centerGlow)" />
-              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" opacity="0.7" />
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth={isMobileScreen ? "2" : "2.5"} opacity="0.7" />
             </>
           ) : (
             <>
-              <circle cx={CX} cy={CY} r={70} fill="url(#centerGlow)" />
-              <circle cx={CX} cy={CY} r={70} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" opacity="0.7" />
+              <circle cx={CX} cy={CY} r={CENTER_R} fill="url(#centerGlow)" />
+              <circle cx={CX} cy={CY} r={CENTER_R} fill="none" stroke="hsl(var(--primary))" strokeWidth={isMobileScreen ? "2" : "2.5"} opacity="0.7" />
             </>
           )}
 
           {/* Central theme text — multiline for long text */}
           {themeLines.map((line, li) => {
             const totalLines = themeLines.length;
-            const lineHeight = 18;
+            const lineHeight = isMobileScreen ? 14 : 18;
             const startY = CY - ((totalLines - 1) * lineHeight) / 2 - 6;
             return (
-              <text key={`tl-${li}`} x={CX} y={startY + li * lineHeight} textAnchor="middle" fontSize={isLongTheme ? "15" : "18"} fontWeight="800" fill="hsl(var(--primary))" className="font-display">
+              <text key={`tl-${li}`} x={CX} y={startY + li * lineHeight} textAnchor="middle" fontSize={isMobileScreen ? (isLongTheme ? "11" : "13") : (isLongTheme ? "15" : "18")} fontWeight="800" fill="hsl(var(--primary))" className="font-display">
                 {line}
               </text>
             );
           })}
-          <text x={CX} y={CY + (isLongTheme ? centralH / 2 - 8 : 18)} textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" opacity="0.7">
+          <text x={CX} y={CY + (isLongTheme ? centralH / 2 - 8 : (isMobileScreen ? 12 : 18))} textAnchor="middle" fontSize={isMobileScreen ? "8" : "11"} fill="hsl(var(--muted-foreground))" opacity="0.7">
             {references.length} referências cruzadas
           </text>
 
@@ -701,8 +710,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
             const textLen = ref.ref.length;
-            const boxW = Math.max(120, textLen * 8.8 + 34);
-            const boxH = 36;
+            const boxW = isMobileScreen ? Math.max(100, textLen * 7.5 + 28) : Math.max(120, textLen * 8.8 + 34);
+            const boxH = isMobileScreen ? 32 : 36;
 
             return (
               <g
@@ -779,14 +788,14 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
                 {/* Order badge */}
                 <circle
-                  cx={pos.x - boxW / 2 + 14} cy={pos.y}
-                  r="9"
+                  cx={pos.x - boxW / 2 + (isMobileScreen ? 12 : 14)} cy={pos.y}
+                  r={isMobileScreen ? "7" : "9"}
                   fill={ref.color}
                 />
                 <text
-                  x={pos.x - boxW / 2 + 14} y={pos.y + 4}
+                  x={pos.x - boxW / 2 + (isMobileScreen ? 12 : 14)} y={pos.y + (isMobileScreen ? 3 : 4)}
                   textAnchor="middle"
-                  fontSize="10"
+                  fontSize={isMobileScreen ? "8" : "10"}
                   fontWeight="800"
                   fill="white"
                 >
@@ -795,9 +804,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
                 {/* Reference text */}
                 <text
-                  x={pos.x + 8} y={pos.y + 5}
+                  x={pos.x + (isMobileScreen ? 4 : 8)} y={pos.y + (isMobileScreen ? 4 : 5)}
                   textAnchor="middle"
-                  fontSize="13"
+                  fontSize={isMobileScreen ? "10" : "13"}
                   fontWeight="800"
                   fill="hsl(var(--foreground))"
                 >
