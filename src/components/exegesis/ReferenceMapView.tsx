@@ -710,8 +710,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
             const textLen = ref.ref.length;
-            const boxW = Math.max(120, textLen * 8.8 + 34);
-            const boxH = 36;
+            const boxW = isMobileScreen ? Math.max(100, textLen * 7.5 + 28) : Math.max(120, textLen * 8.8 + 34);
+            const boxH = isMobileScreen ? 32 : 36;
 
             return (
               <g
