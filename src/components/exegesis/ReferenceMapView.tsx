@@ -101,9 +101,10 @@ const BIBLE_ONLINE_SLUGS: Record<string, string> = {
 };
 
 function getBibleUrl(ref: string): string | null {
-  const match = ref.match(/^((?:\d\s)?[A-ZÀ-Ú][a-zà-ú]+(?:\s[a-zà-ú]+)?)\s+(\d+)/);
+  const match = ref.match(/^((?:\d\s?)?[A-ZÀ-Ú][a-zà-ú]*(?:\s[a-zà-ú]+)?)\s+(\d+)/);
   if (!match) return null;
-  const slug = BIBLE_ONLINE_SLUGS[match[1]];
+  const bookName = match[1].trim();
+  const slug = BIBLE_ONLINE_SLUGS[bookName];
   if (!slug) return null;
   return `https://www.bibliaonline.com.br/acf/${slug}/${match[2]}`;
 }
