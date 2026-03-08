@@ -770,7 +770,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
                   </div>
                 ) : hoveredVerseText ? (
-                  <p className="text-sm text-popover-foreground leading-7 max-h-[250px] overflow-y-auto">
+                  <p className="text-sm text-popover-foreground leading-7">
                     "{(() => {
                       const parts = renderHighlightedText(hoveredVerseText);
                       if (typeof parts === 'string') return parts;
