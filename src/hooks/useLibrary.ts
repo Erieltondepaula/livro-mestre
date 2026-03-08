@@ -218,7 +218,7 @@ export function useLibrary() {
             observacoes: v.observacoes || null,
             analise_contexto: v.analise_contexto as { frase: string; sentidoIdentificado: string; explicacao: string; sentidosNaoAplicaveis: string[]; sinonimosAdequados: string[]; fraseReescrita: string; observacao: string } | null,
             book_id: v.book_id,
-            bookName: (v.books as any)?.name || null,
+            bookName: getBookName(v.books),
             pagina,
             source_type: v.source_type || null,
             source_details: sourceDetails || null,
