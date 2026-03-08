@@ -50,15 +50,21 @@ const verseCache = new Map<string, string>();
 async function fetchVerseText(ref: string): Promise<string> {
   if (verseCache.has(ref)) return verseCache.get(ref)!;
 
-  const match = ref.match(/^((?:\d\s)?[A-ZÀ-Ú][a-zà-ú]+(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/);
+  // Match full names, abbreviated names (2-3 chars), and numbered books
+  const match = ref.match(/^((?:\d\s?)?[A-ZÀ-Ú][a-zà-ú]*(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/);
   if (!match) return '';
 
-  const bookSlug = BOOK_SLUGS_API[match[1]];
+  const bookName = match[1].trim();
+  const bookSlug = BOOK_SLUGS_API[bookName];
   if (!bookSlug) return '';
 
   const verseRef = `${bookSlug}+${match[2]}:${match[3]}`;
   try {
-    const res = await fetch(`https://bible-api.com/${verseRef}?translation=almeida`);
+    // Try almeida first, fallback to default translation
+    let res = await fetch(`https://bible-api.com/${verseRef}?translation=almeida`);
+    if (!res.ok) {
+      res = await fetch(`https://bible-api.com/${verseRef}`);
+    }
     if (!res.ok) return '';
     const data = await res.json();
     const text = data.text?.trim() || '';
