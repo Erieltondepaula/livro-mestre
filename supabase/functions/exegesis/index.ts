@@ -1465,7 +1465,16 @@ Organize os resultados em estrutura lógica:
 - Inclua referências que o estudante talvez NÃO conheça
 - Formato obrigatório: 👉 [Livro Capítulo:Versículo]: "[texto completo]"
 - Quando envolver personagens bíblicos, inclua perfil, contexto histórico e lições espirituais
-- Seja EXAUSTIVO e PROFUNDO — esta é uma ferramenta de estudo nível seminário`;
+- Seja EXAUSTIVO e PROFUNDO — esta é uma ferramenta de estudo nível seminário
+
+## ⚠️ REGRA CRÍTICA DE PRECISÃO NAS REFERÊNCIAS BÍBLICAS:
+ANTES de incluir qualquer referência, VERIFIQUE que o TEXTO DO VERSÍCULO corresponde EXATAMENTE à referência citada.
+- **NUNCA confunda livros com nomes semelhantes:** "João" (Evangelho) ≠ "1 João" (Epístola) ≠ "2 João" ≠ "3 João". "Samuel" ≠ "1 Samuel" ≠ "2 Samuel". "Reis" ≠ "1 Reis" ≠ "2 Reis". "Coríntios" ≠ "1 Coríntios" ≠ "2 Coríntios". "Pedro" ≠ "1 Pedro" ≠ "2 Pedro". "Timóteo" ≠ "1 Timóteo" ≠ "2 Timóteo". "Tessalonicenses" ≠ "1 Tessalonicenses" ≠ "2 Tessalonicenses". "Crônicas" ≠ "1 Crônicas" ≠ "2 Crônicas".
+- **SEMPRE use o prefixo numérico correto** (1, 2 ou 3) quando aplicável.
+- **VERIFIQUE que o versículo citado existe** no capítulo referenciado — não invente referências.
+- **VERIFIQUE a relevância temática:** O texto do versículo DEVE ter relação direta com o tema pesquisado. Se o versículo fala de algo completamente diferente do tema, NÃO o inclua.
+- **Exemplo de ERRO a evitar:** Se o tema é "amor de Deus", NÃO cite "João 4:8" (que fala dos discípulos comprando comida) quando deveria citar "1 João 4:8" (que diz "Deus é amor").
+- **TESTE MENTAL:** Para cada referência, pergunte: "Se eu ler APENAS este versículo, ele faz sentido dentro do tema?" Se a resposta for NÃO, remova-o.`;
         break;
       }
 
