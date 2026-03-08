@@ -152,6 +152,30 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const containerRef = useRef<HTMLDivElement>(null);
   const [showReadingList, setShowReadingList] = useState(false);
   const [hoveredRef, setHoveredRef] = useState<{ ref: typeof references[0]; x: number; y: number } | null>(null);
+  const [hoveredVerseText, setHoveredVerseText] = useState<string>('');
+  const [isLoadingVerse, setIsLoadingVerse] = useState(false);
+
+  // Fetch verse text on hover
+  useEffect(() => {
+    if (!hoveredRef) {
+      setHoveredVerseText('');
+      return;
+    }
+    let cancelled = false;
+    const cached = verseCache.get(hoveredRef.ref.ref);
+    if (cached) {
+      setHoveredVerseText(cached);
+      return;
+    }
+    setIsLoadingVerse(true);
+    fetchVerseText(hoveredRef.ref.ref).then(text => {
+      if (!cancelled) {
+        setHoveredVerseText(text);
+        setIsLoadingVerse(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [hoveredRef?.ref.ref]);
 
   // Touch support
   const lastTouchDistance = useRef<number | null>(null);
