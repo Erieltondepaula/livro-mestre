@@ -425,16 +425,19 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
           {/* Curved arrow connections from center to each node */}
           {references.map((ref, i) => {
             const isSelected = selectedRef === ref.ref;
+            const isCatActive = !activeCategory || ref.category === activeCategory;
+            const dimmed = activeCategory && ref.category !== activeCategory;
             return (
               <path
                 key={`curve-${i}`}
                 d={getCurvedPath(i)}
                 fill="none"
                 stroke={ref.color}
-                strokeWidth={isSelected ? 2.5 : 1.5}
+                strokeWidth={isSelected ? 2.5 : isCatActive ? 1.8 : 1}
                 strokeDasharray={isSelected ? 'none' : undefined}
-                opacity={isSelected ? 0.9 : 0.45}
+                opacity={dimmed ? 0.1 : isSelected ? 0.9 : 0.45}
                 markerEnd="url(#arrowOrganic)"
+                style={{ transition: 'opacity 0.3s, stroke-width 0.3s' }}
               />
             );
           })}
@@ -455,10 +458,11 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
             );
           })}
 
-          {/* Reference nodes — concept label + bible ref as sub-text */}
+          {/* Reference nodes */}
           {references.map((ref, i) => {
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
+            const dimmed = activeCategory && ref.category !== activeCategory;
             const labelLen = ref.conceptLabel.length;
             const refLen = ref.ref.length;
             const boxW = isMobile ? Math.max(90, Math.max(labelLen, refLen) * 7 + 20) : Math.max(110, Math.max(labelLen, refLen) * 8.5 + 24);
@@ -467,29 +471,22 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
               <g
                 key={`node-${i}`}
                 onClick={(e) => { e.stopPropagation(); setSelectedRef(selectedRef === ref.ref ? null : ref.ref); }}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', opacity: dimmed ? 0.12 : 1, transition: 'opacity 0.3s' }}
               >
-                {/* Selection glow */}
                 {isSelected && (
                   <ellipse cx={pos.x} cy={pos.y} rx={boxW / 2 + 8} ry={isMobile ? 26 : 30}
                     fill={ref.color} opacity="0.15" />
                 )}
-
-                {/* Concept label (bold, larger) */}
                 <text x={pos.x} y={pos.y - (isMobile ? 5 : 7)} textAnchor="middle"
                   fontSize={isMobile ? "11" : "14"} fontWeight="800"
                   fill={ref.color} fontFamily="Georgia, serif">
                   {ref.conceptLabel}
                 </text>
-
-                {/* Bible reference (smaller, below) */}
                 <text x={pos.x} y={pos.y + (isMobile ? 10 : 12)} textAnchor="middle"
                   fontSize={isMobile ? "8" : "10"} fontWeight="600"
                   fill="hsl(25, 40%, 50%)" opacity="0.85">
                   • {ref.ref}
                 </text>
-
-                {/* Invisible hit area for better touch */}
                 <rect x={pos.x - boxW / 2} y={pos.y - 20} width={boxW} height={40}
                   fill="transparent" />
               </g>
