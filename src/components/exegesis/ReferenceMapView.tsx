@@ -576,9 +576,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 x1={CX} y1={CY}
                 x2={pos.x} y2={pos.y}
                 stroke={ref.color}
-                strokeWidth={isSelected ? 2 : 1}
+                strokeWidth={isSelected ? 2.6 : 1.4}
                 strokeDasharray={isSelected ? 'none' : '6,4'}
-                opacity={isSelected ? 0.7 : 0.25}
+                opacity={isSelected ? 0.95 : 0.45}
               />
             );
           })}
@@ -594,10 +594,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 key={`chain-${i}`}
                 x1={prev.x} y1={prev.y}
                 x2={curr.x} y2={curr.y}
-                stroke={isInChain ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
-                strokeWidth={isInChain ? 1.2 : 0.4}
+                stroke={isInChain ? ref.color : references[i - 1].color}
+                strokeWidth={isInChain ? 2 : 0.9}
                 strokeDasharray="6,4"
-                opacity={isInChain ? 0.6 : 0.12}
+                opacity={isInChain ? 0.75 : 0.3}
               />
             );
           })}
