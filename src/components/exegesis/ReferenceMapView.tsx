@@ -522,8 +522,22 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   // Dynamic container height — expandable, smaller on mobile
   const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 640;
-  const baseHeight = isMobileScreen ? Math.max(350, Math.min(600, vbH * 0.6)) : Math.max(500, Math.min(1000, vbH * 0.8));
+  const baseHeight = isMobileScreen ? Math.min(420, window.innerHeight * 0.55) : Math.max(500, Math.min(1000, vbH * 0.8));
   const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(isMobileScreen ? 500 : 700, baseHeight * 1.4) : baseHeight;
+
+  // Auto-fit zoom on mobile so map fills the container
+  useEffect(() => {
+    if (!isMobileScreen || !containerRef.current) return;
+    const containerW = containerRef.current.clientWidth;
+    const containerH = containerHeight || containerW;
+    const scaleX = containerW / vbW;
+    const scaleY = containerH / vbH;
+    const fitZoom = Math.min(scaleX, scaleY) * (vbW / containerW) * 1.1;
+    if (fitZoom > 0.3 && fitZoom < 4) {
+      setZoom(Math.max(0.8, fitZoom));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [references.length]);
 
   return (
     <div ref={fullscreenRef} className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-full overflow-hidden' : 'space-y-4'}`}>
