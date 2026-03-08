@@ -735,9 +735,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 <text
                   x={pos.x + 8} y={pos.y + 5}
                   textAnchor="middle"
-                  fontSize="12"
-                  fontWeight="700"
-                  fill={ref.color}
+                  fontSize="13"
+                  fontWeight="800"
+                  fill="hsl(var(--foreground))"
                 >
                   {ref.ref}
                 </text>
