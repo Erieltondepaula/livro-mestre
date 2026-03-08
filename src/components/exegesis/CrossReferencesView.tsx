@@ -65,13 +65,33 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   const [selectedRefType, setSelectedRefType] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
-  const [lastResult, setLastResult] = useState<{ passage: string; content: string; keywords?: string[] } | null>(() => {
-    try {
-      const cached = localStorage.getItem('crossref_last_result');
-      return cached ? JSON.parse(cached) : null;
-    } catch { return null; }
-  });
+  const [lastResult, setLastResult] = useState<{ passage: string; content: string; keywords?: string[] } | null>(null);
   const [saved, setSaved] = useState(false);
+  const [loadingLast, setLoadingLast] = useState(true);
+
+  // Load last cross_references analysis from database on mount
+  useEffect(() => {
+    if (!user) { setLoadingLast(false); return; }
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('exegesis_analyses')
+          .select('passage, content, question')
+          .eq('analysis_type', 'cross_references')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        if (data) {
+          // Extract keywords from passage
+          const stopWords = new Set(['como', 'que', 'de', 'do', 'da', 'dos', 'das', 'em', 'no', 'na', 'nos', 'nas', 'um', 'uma', 'o', 'a', 'os', 'as', 'e', 'ou', 'para', 'por', 'com', 'se', 'ao', 'aos', 'à', 'às', 'é', 'são', 'foi', 'ser', 'ter', 'está', 'entre', 'qual', 'quais', 'isso', 'esse', 'esta', 'este']);
+          const kw = data.passage.split(/[\s,?!.;:]+/).filter((w: string) => w.length > 2 && !stopWords.has(w.toLowerCase()));
+          setLastResult({ passage: data.passage, content: data.content, keywords: kw });
+          setSaved(true);
+        }
+      } catch {}
+      setLoadingLast(false);
+    })();
+  }, [user]);
   const [copied, setCopied] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
