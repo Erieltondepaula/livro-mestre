@@ -688,7 +688,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     });
                   }
                 }}
-                onMouseLeave={() => setHoveredRef(null)}
+                onMouseLeave={() => { /* keep tooltip visible until another node is hovered */ }}
                 style={{ cursor: 'pointer' }}
                 className="transition-transform"
               >
