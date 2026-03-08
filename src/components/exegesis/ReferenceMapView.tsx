@@ -198,6 +198,37 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const [hoveredVerseText, setHoveredVerseText] = useState<string>('');
   const [isLoadingVerse, setIsLoadingVerse] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const fullscreenRef = useRef<HTMLDivElement>(null);
+
+  // Fullscreen toggle
+  const toggleFullscreen = useCallback(() => {
+    if (!fullscreenRef.current) return;
+    if (!document.fullscreenElement) {
+      fullscreenRef.current.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  // ESC to exit fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isFullscreen]);
 
   // Build highlight words from keywords + centralTheme words
   const highlightWords = useMemo(() => {
