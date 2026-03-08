@@ -465,27 +465,45 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     };
   };
 
-  // ViewBox with generous padding so nothing clips
-  const allPositions = references.map((_, i) => getNodePos(i));
+  // ViewBox with padding — less on mobile for tighter fit
+  const allPositions = count > 0 ? references.map((_, i) => getNodePos(i)) : [];
   const xs = allPositions.map(p => p.x);
   const ys = allPositions.map(p => p.y);
-  const padding = 150;
+  const padding = isMobileScreen ? 80 : 150;
   const halfW = isLongTheme ? centralW / 2 : CENTER_R;
   const halfH = isLongTheme ? centralH / 2 : CENTER_R;
-  const minX = Math.min(CX - halfW, ...xs) - padding;
-  const minY = Math.min(CY - halfH, ...ys) - padding;
-  const maxX = Math.max(CX + halfW, ...xs) + padding;
-  const maxY = Math.max(CY + halfH, ...ys) + padding;
+  const minX = count > 0 ? Math.min(CX - halfW, ...xs) - padding : CX - 300;
+  const minY = count > 0 ? Math.min(CY - halfH, ...ys) - padding : CY - 300;
+  const maxX = count > 0 ? Math.max(CX + halfW, ...xs) + padding : CX + 300;
+  const maxY = count > 0 ? Math.max(CY + halfH, ...ys) + padding : CY + 300;
   const vbW = maxX - minX;
   const vbH = maxY - minY;
 
+  // Dynamic container height
+  const baseHeight = isMobileScreen ? Math.min(380, window.innerHeight * 0.5) : Math.max(500, Math.min(1000, vbH * 0.8));
+  const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(isMobileScreen ? 500 : 700, baseHeight * 1.4) : baseHeight;
+
+  // Auto-fit zoom on mobile so map fills the container
+  useEffect(() => {
+    if (!isMobileScreen || count === 0) return;
+    requestAnimationFrame(() => {
+      if (!containerRef.current) return;
+      const cW = containerRef.current.clientWidth;
+      const cH = containerRef.current.clientHeight || baseHeight;
+      const autoZoom = Math.max(0.9, Math.min(2.5, (cW / vbW) * 1.15));
+      setZoom(autoZoom);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [count, isMobileScreen]);
+
+  if (count === 0) return null;
+
   const selectedData = selectedRef ? references.find(r => r.ref === selectedRef) : null;
   const selectedUrl = selectedRef ? getBibleUrl(selectedRef) : null;
-  // Always provide a next reference — wrap from last to first
   const nextRef = selectedData
     ? selectedData.order < references.length
       ? references.find(r => r.order === selectedData.order + 1)
-      : references[0] // wrap around
+      : references[0]
     : null;
 
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.3, 4));
@@ -500,8 +518,6 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     if (nextRef) setSelectedRef(nextRef.ref);
   };
 
-  // Full theme label — no truncation, let the shape adapt
-  const themeLabel = centralTheme;
   // Split long text into multiple lines for SVG
   const themeLines: string[] = [];
   if (isLongTheme) {
@@ -520,25 +536,6 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   } else {
     themeLines.push(centralTheme.length > 12 ? centralTheme.slice(0, 12) + '…' : centralTheme);
   }
-
-  // Dynamic container height — expandable, smaller on mobile
-  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 640;
-  const baseHeight = isMobileScreen ? Math.min(420, window.innerHeight * 0.55) : Math.max(500, Math.min(1000, vbH * 0.8));
-  const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(isMobileScreen ? 500 : 700, baseHeight * 1.4) : baseHeight;
-
-  // Auto-fit zoom on mobile so map fills the container
-  useEffect(() => {
-    if (!isMobileScreen || !containerRef.current) return;
-    const containerW = containerRef.current.clientWidth;
-    const containerH = containerHeight || containerW;
-    const scaleX = containerW / vbW;
-    const scaleY = containerH / vbH;
-    const fitZoom = Math.min(scaleX, scaleY) * (vbW / containerW) * 1.1;
-    if (fitZoom > 0.3 && fitZoom < 4) {
-      setZoom(Math.max(0.8, fitZoom));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [references.length]);
 
   return (
     <div ref={fullscreenRef} className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-full overflow-hidden' : 'space-y-4'}`}>
