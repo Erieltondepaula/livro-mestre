@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { ExternalLink, ZoomIn, ZoomOut, Maximize2, ChevronRight } from 'lucide-react';
+import { ExternalLink, ZoomIn, ZoomOut, Maximize2, ChevronRight, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ReferenceMapProps {
@@ -51,14 +51,15 @@ const categoryColors: Record<string, string> = {
   'TOP': 'hsl(345, 50%, 30%)',
 };
 
-function extractReferences(content: string): { ref: string; category: string; color: string; order: number }[] {
-  const refs: { ref: string; category: string; color: string; order: number }[] = [];
+function extractReferences(content: string): { ref: string; category: string; color: string; order: number; snippet: string }[] {
+  const refs: { ref: string; category: string; color: string; order: number; snippet: string }[] = [];
   const seen = new Set<string>();
   let currentCategory = '';
   let orderCounter = 1;
   const lines = content.split('\n');
 
-  for (const line of lines) {
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
     const catMatch = line.match(/#{2,3}\s*[📖📝🔤🗺️🔗🔮⛪📜⚖️✉️🌅🌐🏆]?\s*\d*\.?\s*(.*?)(?:\s*[\(（]|$)/);
     if (catMatch) {
       const headerText = catMatch[1].toUpperCase();
@@ -74,8 +75,11 @@ function extractReferences(content: string): { ref: string; category: string; co
       const fullRef = `${match[1]} ${match[2]}:${match[3]}`;
       if (!seen.has(fullRef)) {
         seen.add(fullRef);
-        const color = categoryColors[currentCategory] || 'hsl(var(--primary))';
-        refs.push({ ref: fullRef, category: currentCategory || 'GERAL', color, order: orderCounter++ });
+        const color = categoryColors[currentCategory] || 'hsl(345, 50%, 30%)';
+        // Extract snippet - text after the reference on the same line
+        const afterRef = line.slice(match.index + match[0].length).replace(/^[\s\-–—:]+/, '').replace(/[*_`]/g, '').trim();
+        const snippet = afterRef.slice(0, 60) || '';
+        refs.push({ ref: fullRef, category: currentCategory || 'GERAL', color, order: orderCounter++, snippet });
       }
     }
   }
@@ -86,17 +90,18 @@ function extractReferences(content: string): { ref: string; category: string; co
 export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceMapProps) {
   const references = useMemo(() => extractReferences(content), [content]);
   const [selectedRef, setSelectedRef] = useState<string | null>(null);
-  const [revealedCount, setRevealedCount] = useState(5);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
-  const svgContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [showReadingList, setShowReadingList] = useState(false);
 
-  const visibleRefs = useMemo(() => references.slice(0, revealedCount), [references, revealedCount]);
-  const hasMore = revealedCount < references.length;
+  // Touch support
+  const lastTouchDistance = useRef<number | null>(null);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('a')) return;
     setIsPanning(true);
     panStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
   }, [pan]);
@@ -113,109 +118,138 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    setZoom(z => Math.max(0.5, Math.min(3, z - e.deltaY * 0.002)));
+    setZoom(z => Math.max(0.3, Math.min(4, z - e.deltaY * 0.002)));
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDistance.current = Math.sqrt(dx * dx + dy * dy);
+    } else if (e.touches.length === 1) {
+      setIsPanning(true);
+      panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, panX: pan.x, panY: pan.y };
+    }
+  }, [pan]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 2 && lastTouchDistance.current !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const scale = dist / lastTouchDistance.current;
+      setZoom(z => Math.max(0.3, Math.min(4, z * scale)));
+      lastTouchDistance.current = dist;
+    } else if (isPanning && e.touches.length === 1) {
+      setPan({
+        x: panStart.current.panX + (e.touches[0].clientX - panStart.current.x),
+        y: panStart.current.panY + (e.touches[0].clientY - panStart.current.y),
+      });
+    }
+  }, [isPanning]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsPanning(false);
+    lastTouchDistance.current = null;
   }, []);
 
   if (references.length === 0) return null;
 
-  // Progressive ring layout - inner refs first, expanding outward
-  const getPos = (i: number, count: number) => {
-    // Distribute in concentric rings of ~8 nodes each
-    const nodesPerRing = 8;
-    const ringIndex = Math.floor(i / nodesPerRing);
-    const posInRing = i % nodesPerRing;
-    const ringCount = Math.min(nodesPerRing, count - ringIndex * nodesPerRing);
-    const baseRadius = 28;
-    const ringSpacing = 16;
-    const radius = baseRadius + ringIndex * ringSpacing;
-    const angleOffset = ringIndex * 0.3; // stagger rings
+  const count = references.length;
+  // Layout: distribute nodes in a clean radial pattern with enough spacing
+  // Use a large viewBox so nothing clips. Center at (500, 500).
+  const CX = 500;
+  const CY = 500;
+  const CENTER_R = 70; // Central circle radius
+
+  // Distribute in rings of up to 10 nodes
+  const NODES_PER_RING = 10;
+  const RING_BASE = 180; // First ring distance from center
+  const RING_SPACING = 140; // Between rings
+
+  const getNodePos = (i: number) => {
+    const ringIndex = Math.floor(i / NODES_PER_RING);
+    const posInRing = i % NODES_PER_RING;
+    const ringCount = Math.min(NODES_PER_RING, count - ringIndex * NODES_PER_RING);
+    const radius = RING_BASE + ringIndex * RING_SPACING;
+    const angleOffset = ringIndex * 0.25;
     const angle = (posInRing / ringCount) * 2 * Math.PI - Math.PI / 2 + angleOffset;
     return {
-      x: 50 + radius * Math.cos(angle),
-      y: 50 + radius * Math.sin(angle),
+      x: CX + radius * Math.cos(angle),
+      y: CY + radius * Math.sin(angle),
     };
   };
 
+  // Calculate viewBox to contain all nodes with padding
+  const allPositions = references.map((_, i) => getNodePos(i));
+  const xs = allPositions.map(p => p.x);
+  const ys = allPositions.map(p => p.y);
+  const padding = 120;
+  const minX = Math.min(CX - CENTER_R - 50, ...xs) - padding;
+  const minY = Math.min(CY - CENTER_R - 50, ...ys) - padding;
+  const maxX = Math.max(CX + CENTER_R + 50, ...xs) + padding;
+  const maxY = Math.max(CY + CENTER_R + 50, ...ys) + padding;
+  const vbW = maxX - minX;
+  const vbH = maxY - minY;
+
+  const selectedData = selectedRef ? references.find(r => r.ref === selectedRef) : null;
   const selectedUrl = selectedRef ? getBibleUrl(selectedRef) : null;
-  const selectedOrder = selectedRef ? references.find(r => r.ref === selectedRef)?.order : null;
+  const nextRef = selectedData && selectedData.order < references.length
+    ? references.find(r => r.order === selectedData.order + 1) : null;
 
-  // Find next ref in reading order
-  const nextRef = selectedOrder && selectedOrder < references.length
-    ? references.find(r => r.order === selectedOrder + 1) : null;
-
-  // Zoom/pan handlers
-  const handleZoomIn = () => setZoom(z => Math.min(z + 0.3, 3));
-  const handleZoomOut = () => setZoom(z => Math.max(z - 0.3, 0.5));
+  const handleZoomIn = () => setZoom(z => Math.min(z + 0.3, 4));
+  const handleZoomOut = () => setZoom(z => Math.max(z - 0.3, 0.3));
   const handleReset = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
 
   const handleNodeClick = (ref: typeof references[0]) => {
     setSelectedRef(selectedRef === ref.ref ? null : ref.ref);
-    // Auto-reveal more if clicking last visible
-    if (ref.order === revealedCount && hasMore) {
-      setRevealedCount(c => Math.min(c + 5, references.length));
-    }
-  };
-
-  const handleRevealMore = () => {
-    setRevealedCount(c => Math.min(c + 5, references.length));
   };
 
   const handleGoToNext = () => {
-    if (nextRef) {
-      setSelectedRef(nextRef.ref);
-      if (nextRef.order > revealedCount) {
-        setRevealedCount(nextRef.order);
-      }
-    }
+    if (nextRef) setSelectedRef(nextRef.ref);
   };
 
-  // Bold the central theme keywords
-  const renderCentralTheme = () => {
-    let text = centralTheme.length > 50 ? centralTheme.slice(0, 50) + '…' : centralTheme;
-    if (keywords.length > 0) {
-      // Wrap keywords in bold styling - return JSX
-      const regex = new RegExp(`(${keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
-      const parts = text.split(regex);
-      return parts.map((part, i) =>
-        keywords.some(k => k.toLowerCase() === part.toLowerCase())
-          ? <tspan key={i} fontWeight="900" fill="hsl(var(--primary))">{part}</tspan>
-          : <tspan key={i}>{part}</tspan>
-      );
-    }
-    return text;
-  };
+  // Bold keywords in central theme
+  const themeLabel = centralTheme.length > 40 ? centralTheme.slice(0, 40) + '…' : centralTheme;
 
-  // SVG viewBox adjusts based on revealed refs
-  const maxRing = Math.floor((visibleRefs.length - 1) / 8);
-  const viewSize = 100 + maxRing * 32;
-  const viewOffset = -(viewSize - 100) / 2;
+  // Aspect ratio based on actual content
+  const aspectRatio = vbW / vbH;
+  const containerHeight = Math.max(500, Math.min(700, 500 / aspectRatio * 1.2));
 
   return (
     <div className="card-library p-4 sm:p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           🗺️ Mapa de Referências Cruzadas
+          <span className="text-[10px] font-normal normal-case bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+            {references.length} referências
+          </span>
         </h3>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomOut}><ZoomOut className="w-3.5 h-3.5" /></Button>
-          <span className="text-[10px] text-muted-foreground w-8 text-center">{Math.round(zoom * 100)}%</span>
+          <span className="text-[10px] text-muted-foreground w-10 text-center">{Math.round(zoom * 100)}%</span>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn}><ZoomIn className="w-3.5 h-3.5" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset}><Maximize2 className="w-3.5 h-3.5" /></Button>
         </div>
       </div>
 
       {/* Selected reference action bar */}
-      {selectedRef && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-primary/5 border border-primary/20 rounded-lg p-3 animate-in fade-in">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">{selectedOrder}</span>
-            <span className="text-sm font-bold text-primary">📖 {selectedRef}</span>
+      {selectedData && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-primary/5 border border-primary/20 rounded-lg p-3 animate-fade-in">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white" style={{ backgroundColor: selectedData.color }}>
+              {selectedData.order}
+            </span>
+            <span className="text-sm font-bold" style={{ color: selectedData.color }}>📖 {selectedData.ref}</span>
+            {selectedData.snippet && (
+              <span className="text-xs text-muted-foreground italic hidden sm:inline">— {selectedData.snippet}</span>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {selectedUrl && (
               <a href={selectedUrl} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline bg-primary/10 px-3 py-1.5 rounded-md">
-                <ExternalLink className="w-3.5 h-3.5" /> Ler na Bíblia Online (ACF)
+                <ExternalLink className="w-3.5 h-3.5" /> Ler na Bíblia (ACF)
               </a>
             )}
             {nextRef && (
@@ -227,19 +261,26 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         </div>
       )}
 
-      {/* Interactive SVG Map */}
+      {/* Interactive SVG Map - full width, auto-height, no clipping */}
       <div
-        ref={svgContainerRef}
+        ref={containerRef}
         className="relative w-full overflow-hidden rounded-lg border border-border bg-background/50"
-        style={{ height: 'clamp(350px, 60vw, 550px)', cursor: isPanning ? 'grabbing' : 'grab' }}
+        style={{
+          height: `${containerHeight}px`,
+          cursor: isPanning ? 'grabbing' : 'grab',
+          touchAction: 'none',
+        }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <svg
-          viewBox={`${viewOffset} ${viewOffset} ${viewSize} ${viewSize}`}
+          viewBox={`${minX} ${minY} ${vbW} ${vbH}`}
           className="w-full h-full select-none"
           preserveAspectRatio="xMidYMid meet"
           style={{
@@ -248,98 +289,116 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             transition: isPanning ? 'none' : 'transform 0.2s ease-out',
           }}
         >
-          {/* Connection lines - progressive chain */}
-          {visibleRefs.map((ref, i) => {
-            const pos = getPos(i, visibleRefs.length);
-            // Connect to center
+          {/* Subtle radial lines from center to each node */}
+          {references.map((ref, i) => {
+            const pos = getNodePos(i);
+            const isSelected = selectedRef === ref.ref;
             return (
-              <g key={`lines-${i}`}>
-                <line
-                  x1="50" y1="50"
-                  x2={pos.x} y2={pos.y}
-                  stroke={ref.color}
-                  strokeWidth="0.15"
-                  strokeDasharray="0.8,0.5"
-                  opacity={selectedRef === ref.ref ? 0.8 : 0.25}
-                />
-                {/* Chain line to next ref */}
-                {i < visibleRefs.length - 1 && (() => {
-                  const nextPos = getPos(i + 1, visibleRefs.length);
-                  return (
-                    <line
-                      x1={pos.x} y1={pos.y}
-                      x2={nextPos.x} y2={nextPos.y}
-                      stroke="hsl(var(--primary))"
-                      strokeWidth="0.1"
-                      strokeDasharray="0.4,0.3"
-                      opacity={0.15}
-                    />
-                  );
-                })()}
-              </g>
+              <line
+                key={`line-${i}`}
+                x1={CX} y1={CY}
+                x2={pos.x} y2={pos.y}
+                stroke={isSelected ? ref.color : 'hsl(var(--border))'}
+                strokeWidth={isSelected ? 1.5 : 0.7}
+                strokeDasharray={isSelected ? 'none' : '4,4'}
+                opacity={isSelected ? 0.8 : 0.3}
+              />
+            );
+          })}
+
+          {/* Sequential chain lines connecting nodes in order */}
+          {references.map((ref, i) => {
+            if (i === 0) return null;
+            const prev = getNodePos(i - 1);
+            const curr = getNodePos(i);
+            const isInChain = selectedData && (ref.order === selectedData.order || ref.order === selectedData.order + 1 || references[i - 1].order === selectedData.order);
+            return (
+              <line
+                key={`chain-${i}`}
+                x1={prev.x} y1={prev.y}
+                x2={curr.x} y2={curr.y}
+                stroke={isInChain ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
+                strokeWidth={isInChain ? 1.2 : 0.4}
+                strokeDasharray="6,4"
+                opacity={isInChain ? 0.6 : 0.12}
+              />
             );
           })}
 
           {/* Central circle */}
-          <circle cx="50" cy="50" r="10" fill="hsl(var(--primary))" opacity="0.1" />
-          <circle cx="50" cy="50" r="10" fill="none" stroke="hsl(var(--primary))" strokeWidth="0.3" />
+          <circle cx={CX} cy={CY} r={CENTER_R} fill="hsl(var(--primary))" opacity="0.08" />
+          <circle cx={CX} cy={CY} r={CENTER_R} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
 
-          {/* Central text with bold keywords */}
-          <text x="50" y="49" textAnchor="middle" fontSize="2.2" fontWeight="700" fill="hsl(var(--primary))" className="font-display">
-            {renderCentralTheme()}
+          {/* Central theme text */}
+          <text x={CX} y={CY - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill="hsl(var(--primary))" className="font-display">
+            {themeLabel}
           </text>
-          <text x="50" y="52.5" textAnchor="middle" fontSize="1.4" fill="hsl(var(--muted-foreground))" opacity="0.7">
-            {references.length} referências
+          <text x={CX} y={CY + 18} textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" opacity="0.7">
+            {references.length} referências cruzadas
           </text>
 
           {/* Reference nodes */}
-          {visibleRefs.map((ref, i) => {
-            const pos = getPos(i, visibleRefs.length);
+          {references.map((ref, i) => {
+            const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
             const textLen = ref.ref.length;
-            const boxW = Math.max(14, textLen * 0.95 + 4);
-            const boxH = 5;
+            const boxW = Math.max(100, textLen * 8 + 30);
+            const boxH = 32;
 
             return (
               <g
                 key={`node-${i}`}
                 onClick={(e) => { e.stopPropagation(); handleNodeClick(ref); }}
                 style={{ cursor: 'pointer' }}
+                className="transition-transform"
               >
-                {/* Node background */}
+                {/* Glow on selected */}
+                {isSelected && (
+                  <rect
+                    x={pos.x - boxW / 2 - 3} y={pos.y - boxH / 2 - 3}
+                    width={boxW + 6} height={boxH + 6}
+                    rx="10"
+                    fill="none"
+                    stroke={ref.color}
+                    strokeWidth="2"
+                    opacity="0.4"
+                  />
+                )}
+
+                {/* Card background */}
                 <rect
                   x={pos.x - boxW / 2} y={pos.y - boxH / 2}
                   width={boxW} height={boxH}
-                  rx="1.5"
-                  fill={isSelected ? ref.color : 'hsl(var(--card))'}
-                  opacity={isSelected ? 0.15 : 1}
+                  rx="8"
+                  fill="hsl(var(--card))"
                   stroke={ref.color}
-                  strokeWidth={isSelected ? '0.4' : '0.2'}
+                  strokeWidth={isSelected ? 2 : 1}
+                  opacity={1}
                 />
-                {/* Order number badge */}
+
+                {/* Order badge */}
                 <circle
-                  cx={pos.x - boxW / 2 + 2} cy={pos.y}
-                  r="1.8"
+                  cx={pos.x - boxW / 2 + 14} cy={pos.y}
+                  r="9"
                   fill={ref.color}
-                  opacity={0.9}
                 />
                 <text
-                  x={pos.x - boxW / 2 + 2} y={pos.y + 0.6}
+                  x={pos.x - boxW / 2 + 14} y={pos.y + 4}
                   textAnchor="middle"
-                  fontSize="1.5"
+                  fontSize="10"
                   fontWeight="800"
                   fill="white"
                 >
                   {ref.order}
                 </text>
+
                 {/* Reference text */}
                 <text
-                  x={pos.x + 1.5} y={pos.y + 0.6}
+                  x={pos.x + 8} y={pos.y + 5}
                   textAnchor="middle"
-                  fontSize="1.7"
+                  fontSize="12"
                   fontWeight="700"
                   fill={ref.color}
-                  className="font-body"
                 >
                   {ref.ref}
                 </text>
@@ -349,69 +408,58 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         </svg>
       </div>
 
-      {/* Progressive reveal button */}
-      {hasMore && (
-        <div className="flex items-center justify-center">
-          <Button variant="outline" size="sm" className="gap-2 text-xs" onClick={handleRevealMore}>
-            <ChevronRight className="w-3.5 h-3.5" />
-            Revelar mais referências ({revealedCount}/{references.length})
-          </Button>
-        </div>
-      )}
-
-      {/* Legend */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted-foreground">
-          📊 {references.length} referências • {new Set(references.map(r => r.category)).size} categorias
-          • Mostrando {visibleRefs.length} de {references.length}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {Array.from(new Set(references.map(r => r.category))).map(cat => {
-            const count = references.filter(r => r.category === cat).length;
-            const color = references.find(r => r.category === cat)?.color || 'hsl(var(--primary))';
-            return (
-              <span key={cat} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border"
-                style={{ borderColor: color, color, backgroundColor: `${color}10` }}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
-                {cat} ({count})
-              </span>
-            );
-          })}
-        </div>
+      {/* Category legend */}
+      <div className="flex flex-wrap gap-1.5">
+        {Array.from(new Set(references.map(r => r.category))).map(cat => {
+          const c = references.filter(r => r.category === cat).length;
+          const color = references.find(r => r.category === cat)?.color || 'hsl(var(--primary))';
+          return (
+            <span key={cat} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border"
+              style={{ borderColor: color, color, backgroundColor: `${color}10` }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+              {cat} ({c})
+            </span>
+          );
+        })}
       </div>
 
-      {/* Sequential reading list */}
+      {/* Expandable reading list */}
       <div className="space-y-1">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📋 Ordem de Leitura Progressiva</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 max-h-72 overflow-y-auto">
-          {references.map((ref) => {
-            const url = getBibleUrl(ref.ref);
-            const isSelected = selectedRef === ref.ref;
-            return (
-              <button
-                key={ref.order}
-                onClick={() => {
-                  setSelectedRef(ref.ref);
-                  if (ref.order > revealedCount) setRevealedCount(ref.order);
-                }}
-                className={`flex items-center gap-2 px-2.5 py-2 rounded-md border text-xs font-medium transition-all text-left ${isSelected ? 'ring-2 ring-primary bg-primary/5 border-primary/30' : 'hover:bg-muted/50 border-border'}`}
-              >
-                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold flex-shrink-0"
-                  style={{ backgroundColor: ref.color, color: 'white' }}>
-                  {ref.order}
-                </span>
-                <span className="font-bold truncate" style={{ color: ref.color }}>{ref.ref}</span>
-                <span className="text-[9px] text-muted-foreground truncate">{ref.category}</span>
-                {url && (
-                  <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                    className="ml-auto flex-shrink-0 opacity-50 hover:opacity-100">
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <button
+          onClick={() => setShowReadingList(!showReadingList)}
+          className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+        >
+          {showReadingList ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          📋 Ordem de Leitura Progressiva ({references.length})
+        </button>
+        {showReadingList && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 max-h-72 overflow-y-auto mt-2 animate-fade-in">
+            {references.map((ref) => {
+              const url = getBibleUrl(ref.ref);
+              const isSelected = selectedRef === ref.ref;
+              return (
+                <button
+                  key={ref.order}
+                  onClick={() => setSelectedRef(ref.ref)}
+                  className={`flex items-center gap-2 px-2.5 py-2 rounded-md border text-xs font-medium transition-all text-left ${isSelected ? 'ring-2 ring-primary bg-primary/5 border-primary/30' : 'hover:bg-muted/50 border-border'}`}
+                >
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold flex-shrink-0 text-white"
+                    style={{ backgroundColor: ref.color }}>
+                    {ref.order}
+                  </span>
+                  <span className="font-bold truncate" style={{ color: ref.color }}>{ref.ref}</span>
+                  <span className="text-[9px] text-muted-foreground truncate hidden sm:inline">{ref.category}</span>
+                  {url && (
+                    <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                      className="ml-auto flex-shrink-0 opacity-50 hover:opacity-100">
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
