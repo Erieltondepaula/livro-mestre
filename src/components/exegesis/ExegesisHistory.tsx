@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import type { ExegesisAnalysis } from '@/hooks/useExegesis';
 import { MapImageViewer, extractMapImageUrl } from './MapImageViewer';
+import { ReferenceMapView } from './ReferenceMapView';
 
 interface Props {
   analyses: ExegesisAnalysis[];
