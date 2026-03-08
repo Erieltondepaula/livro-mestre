@@ -350,6 +350,27 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
               <g
                 key={`node-${i}`}
                 onClick={(e) => { e.stopPropagation(); handleNodeClick(ref); }}
+                onMouseEnter={(e) => {
+                  const svgEl = containerRef.current?.querySelector('svg');
+                  if (svgEl) {
+                    const rect = svgEl.getBoundingClientRect();
+                    const viewBox = svgEl.viewBox.baseVal;
+                    const scaleX = rect.width / viewBox.width;
+                    const scaleY = rect.height / viewBox.height;
+                    const scale = Math.min(scaleX, scaleY);
+                    const offsetX = (rect.width - viewBox.width * scale) / 2;
+                    const offsetY = (rect.height - viewBox.height * scale) / 2;
+                    const screenX = (pos.x - viewBox.x) * scale + offsetX + rect.left;
+                    const screenY = (pos.y - viewBox.y) * scale + offsetY + rect.top;
+                    const containerRect = containerRef.current!.getBoundingClientRect();
+                    setHoveredRef({
+                      ref,
+                      x: (screenX - containerRect.left) * (1 / zoom) + pan.x * (1 / zoom - 1),
+                      y: (screenY - containerRect.top) * (1 / zoom) + pan.y * (1 / zoom - 1),
+                    });
+                  }
+                }}
+                onMouseLeave={() => setHoveredRef(null)}
                 style={{ cursor: 'pointer' }}
                 className="transition-transform"
               >
