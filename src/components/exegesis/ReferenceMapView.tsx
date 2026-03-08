@@ -570,7 +570,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
       )}
 
       {/* Fullscreen layout: map + sidebar */}
-      <div className={isFullscreen ? 'flex flex-1 gap-4 overflow-hidden' : ''}>
+      <div className={isFullscreen ? 'flex flex-col sm:flex-row flex-1 gap-4 overflow-hidden' : ''}>
       {/* Interactive SVG Map - full width, auto-height, no clipping */}
       <div
         ref={containerRef}
