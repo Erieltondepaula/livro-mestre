@@ -250,13 +250,19 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenRef = useRef<HTMLDivElement>(null);
 
-  // Fullscreen toggle
+  // Fullscreen toggle — use native API when available, CSS fallback for iOS
   const toggleFullscreen = useCallback(() => {
     if (!fullscreenRef.current) return;
-    if (!document.fullscreenElement) {
-      fullscreenRef.current.requestFullscreen().catch(() => {});
-    } else {
+    if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
+    } else if (fullscreenRef.current.requestFullscreen) {
+      fullscreenRef.current.requestFullscreen().catch(() => {
+        // Fallback: CSS-based fullscreen for iOS
+        setIsFullscreen(prev => !prev);
+      });
+    } else {
+      // No native fullscreen API (iOS Safari) — toggle CSS fullscreen
+      setIsFullscreen(prev => !prev);
     }
   }, []);
 
