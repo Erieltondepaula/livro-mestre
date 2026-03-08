@@ -131,10 +131,10 @@ const categoryColors: Record<string, string> = {
   'TOP': 'hsl(350, 100%, 52%)',
 };
 
-// Generate rainbow color for individual nodes (fallback when category is GERAL)
-function getRainbowColor(index: number, total: number): string {
-  const hue = Math.round((index / Math.max(total, 1)) * 360);
-  return `hsl(${hue}, 96%, 52%)`;
+// Generate high-contrast distinct color for each node
+function getRainbowColor(index: number, _total: number): string {
+  const hue = Math.round((index * 137.508) % 360); // golden-angle distribution (less repetition)
+  return `hsl(${hue}, 96%, 50%)`;
 }
 
 function extractReferences(content: string): { ref: string; category: string; color: string; order: number; snippet: string }[] {
@@ -189,12 +189,10 @@ function extractReferences(content: string): { ref: string; category: string; co
     }
   }
 
-  // Assign rainbow colors to refs that have no specific category color
+  // Assign a unique vivid color to each reference (better contrast and less repetition)
   const total = refs.length;
   refs.forEach((r, i) => {
-    if (r.category === 'GERAL') {
-      r.color = getRainbowColor(i, total);
-    }
+    r.color = getRainbowColor(i, total);
   });
 
   return refs;
@@ -514,7 +512,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white" style={{ backgroundColor: selectedData.color }}>
               {selectedData.order}
             </span>
-            <span className="text-sm font-bold" style={{ color: selectedData.color }}>📖 {selectedData.ref}</span>
+            <span className="text-sm font-bold text-foreground">📖 {selectedData.ref}</span>
             {selectedData.snippet && (
               <span className="text-xs text-muted-foreground italic hidden sm:inline">— {selectedData.snippet}</span>
             )}
@@ -576,9 +574,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 x1={CX} y1={CY}
                 x2={pos.x} y2={pos.y}
                 stroke={ref.color}
-                strokeWidth={isSelected ? 2.6 : 1.4}
+                strokeWidth={isSelected ? 3 : 1.8}
                 strokeDasharray={isSelected ? 'none' : '6,4'}
-                opacity={isSelected ? 0.95 : 0.45}
+                opacity={isSelected ? 0.98 : 0.62}
               />
             );
           })}
@@ -595,9 +593,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 x1={prev.x} y1={prev.y}
                 x2={curr.x} y2={curr.y}
                 stroke={isInChain ? ref.color : references[i - 1].color}
-                strokeWidth={isInChain ? 2 : 0.9}
+                strokeWidth={isInChain ? 2.4 : 1.3}
                 strokeDasharray="6,4"
-                opacity={isInChain ? 0.75 : 0.3}
+                opacity={isInChain ? 0.85 : 0.5}
               />
             );
           })}
@@ -641,8 +639,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
             const textLen = ref.ref.length;
-            const boxW = Math.max(100, textLen * 8 + 30);
-            const boxH = 32;
+            const boxW = Math.max(120, textLen * 8.8 + 34);
+            const boxH = 36;
 
             return (
               <g
@@ -702,7 +700,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     width={boxW + 12} height={boxH + 12}
                     rx="13"
                     fill={ref.color}
-                    opacity="0.22"
+                    opacity="0.26"
                   />
                 )}
 
@@ -711,10 +709,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   x={pos.x - boxW / 2} y={pos.y - boxH / 2}
                   width={boxW} height={boxH}
                   rx="8"
-                  fill={isSelected ? ref.color : 'hsl(var(--card))'}
-                  fillOpacity={isSelected ? 0.16 : 1}
+                  fill="hsl(var(--background))"
                   stroke={ref.color}
-                  strokeWidth={isSelected ? 3 : 2}
+                  strokeWidth={isSelected ? 3.2 : 2.2}
                   opacity={1}
                 />
 
@@ -738,9 +735,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 <text
                   x={pos.x + 8} y={pos.y + 5}
                   textAnchor="middle"
-                  fontSize="12"
-                  fontWeight="700"
-                  fill={ref.color}
+                  fontSize="13"
+                  fontWeight="800"
+                  fill="hsl(var(--foreground))"
                 >
                   {ref.ref}
                 </text>
@@ -764,7 +761,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
               <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5 max-w-[360px] min-w-[200px]">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
-                  <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
+                  <span className="text-xs font-bold text-foreground">{hoveredRef.ref.ref}</span>
                   <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
                 </div>
                 {isLoadingVerse && !hoveredVerseText ? (
@@ -773,13 +770,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
                   </div>
                 ) : hoveredVerseText ? (
-                  <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[250px] overflow-y-auto">
+                  <p className="text-sm text-popover-foreground leading-7 max-h-[250px] overflow-y-auto">
                     "{(() => {
                       const parts = renderHighlightedText(hoveredVerseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => 
                         isHighlightedSegment(part)
-                          ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
+                          ? <strong key={i} className="font-black bg-primary/30 text-foreground px-0.5 rounded-sm">{part}</strong>
                           : part
                       );
                     })()}"
@@ -794,7 +791,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
               <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
-                  <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
+                  <span className="text-xs font-bold text-foreground">{hoveredRef.ref.ref}</span>
                   <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
                 </div>
                 {isLoadingVerse && !hoveredVerseText ? (
@@ -803,13 +800,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
                   </div>
                 ) : hoveredVerseText ? (
-                  <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[120px] overflow-y-auto">
+                  <p className="text-sm text-popover-foreground leading-7 max-h-[140px] overflow-y-auto">
                     "{(() => {
                       const parts = renderHighlightedText(hoveredVerseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => 
                         isHighlightedSegment(part)
-                          ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
+                          ? <strong key={i} className="font-black bg-primary/30 text-foreground px-0.5 rounded-sm">{part}</strong>
                           : part
                       );
                     })()}"
@@ -842,7 +839,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     style={{ backgroundColor: ref.color }}>
                     {ref.order}
                   </span>
-                  <span className="text-sm font-bold" style={{ color: ref.color }}>{ref.ref}</span>
+                  <span className="text-sm font-bold text-foreground">{ref.ref}</span>
                   <span className="text-[9px] text-muted-foreground">({ref.category})</span>
                   {url && (
                     <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
@@ -852,14 +849,14 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   )}
                 </div>
                 {verseText ? (
-                  <p className="text-xs text-foreground/80 leading-relaxed italic">
+                  <p className="text-sm text-foreground leading-7">
                     "{(() => {
                       const parts = renderHighlightedText(verseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => {
                         const isMatch = isHighlightedSegment(part);
                         return isMatch
-                          ? <strong key={i} className="font-extrabold not-italic" style={{ color: ref.color }}>{part}</strong>
+                          ? <strong key={i} className="font-black bg-primary/30 text-foreground px-0.5 rounded-sm">{part}</strong>
                           : <span key={i}>{part}</span>;
                       });
                     })()}"
@@ -922,7 +919,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                       style={{ backgroundColor: ref.color }}>
                       {ref.order}
                     </span>
-                    <span className="font-bold truncate" style={{ color: ref.color }}>{ref.ref}</span>
+                    <span className="font-bold truncate text-foreground">{ref.ref}</span>
                     <span className="text-[9px] text-muted-foreground truncate hidden sm:inline">{ref.category}</span>
                     {url && (
                       <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
