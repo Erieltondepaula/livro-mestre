@@ -429,15 +429,31 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             );
           })}
 
-          {/* Central circle */}
-          <circle cx={CX} cy={CY} r={CENTER_R} fill="hsl(var(--primary))" opacity="0.08" />
-          <circle cx={CX} cy={CY} r={CENTER_R} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+          {/* Central shape — circle or rounded rect based on text length */}
+          {isLongTheme ? (
+            <>
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="hsl(var(--primary))" opacity="0.08" />
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+            </>
+          ) : (
+            <>
+              <circle cx={CX} cy={CY} r={70} fill="hsl(var(--primary))" opacity="0.08" />
+              <circle cx={CX} cy={CY} r={70} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+            </>
+          )}
 
-          {/* Central theme text */}
-          <text x={CX} y={CY - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill="hsl(var(--primary))" className="font-display">
-            {themeLabel}
-          </text>
-          <text x={CX} y={CY + 18} textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" opacity="0.7">
+          {/* Central theme text — multiline for long text */}
+          {themeLines.map((line, li) => {
+            const totalLines = themeLines.length;
+            const lineHeight = 18;
+            const startY = CY - ((totalLines - 1) * lineHeight) / 2 - 6;
+            return (
+              <text key={`tl-${li}`} x={CX} y={startY + li * lineHeight} textAnchor="middle" fontSize={isLongTheme ? "15" : "18"} fontWeight="800" fill="hsl(var(--primary))" className="font-display">
+                {line}
+              </text>
+            );
+          })}
+          <text x={CX} y={CY + (isLongTheme ? centralH / 2 - 8 : 18)} textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" opacity="0.7">
             {references.length} referências cruzadas
           </text>
 
