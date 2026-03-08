@@ -463,7 +463,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             transition: isPanning ? 'none' : 'transform 0.2s ease-out',
           }}
         >
-          {/* Subtle radial lines from center to each node */}
+          {/* Colorful radial lines from center to each node */}
           {references.map((ref, i) => {
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
@@ -472,10 +472,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 key={`line-${i}`}
                 x1={CX} y1={CY}
                 x2={pos.x} y2={pos.y}
-                stroke={isSelected ? ref.color : 'hsl(var(--border))'}
-                strokeWidth={isSelected ? 1.5 : 0.7}
-                strokeDasharray={isSelected ? 'none' : '4,4'}
-                opacity={isSelected ? 0.8 : 0.3}
+                stroke={ref.color}
+                strokeWidth={isSelected ? 2 : 1}
+                strokeDasharray={isSelected ? 'none' : '6,4'}
+                opacity={isSelected ? 0.7 : 0.25}
               />
             );
           })}
