@@ -189,6 +189,14 @@ function extractReferences(content: string): { ref: string; category: string; co
     }
   }
 
+  // Assign rainbow colors to refs that have no specific category color
+  const total = refs.length;
+  refs.forEach((r, i) => {
+    if (r.category === 'GERAL') {
+      r.color = getRainbowColor(i, total);
+    }
+  });
+
   return refs;
 }
 
