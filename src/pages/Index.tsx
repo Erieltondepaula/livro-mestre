@@ -1,27 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
-import { BookForm } from '@/components/BookForm';
-import { ReadingForm } from '@/components/ReadingForm';
-import { StatusView } from '@/components/StatusView';
-import { EvaluationForm } from '@/components/EvaluationForm';
-import { QuotesView } from '@/components/QuotesView';
-import { BooksListView } from '@/components/BooksListView';
-import { DictionaryView } from '@/components/DictionaryView';
-import { BibleProgressView } from '@/components/BibleProgressView';
-import { HelpView } from '@/components/HelpView';
-import { EnhancedNotesView } from '@/components/notes/EnhancedNotesView';
-import { ReadingReportsView } from '@/components/ReadingReportsView';
-import { ExegesisView } from '@/components/ExegesisView';
-import { SystemDiagnosticsView } from '@/components/SystemDiagnosticsView';
-import { FlashcardsView } from '@/components/FlashcardsView';
 import { SubscriptionBlocker } from '@/components/SubscriptionBlocker';
+import { DashboardSkeleton } from '@/components/ui/skeleton-card';
 import { useLibrary } from '@/hooks/useLibrary';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { toast } from '@/hooks/use-toast';
 import type { Book, Note } from '@/types/library';
+import type { View } from '@/types/views';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico' | 'flashcards';
+// Lazy load heavy components for code splitting
+const BookForm = lazy(() => import('@/components/BookForm').then(m => ({ default: m.BookForm })));
+const ReadingForm = lazy(() => import('@/components/ReadingForm').then(m => ({ default: m.ReadingForm })));
+const StatusView = lazy(() => import('@/components/StatusView').then(m => ({ default: m.StatusView })));
+const EvaluationForm = lazy(() => import('@/components/EvaluationForm').then(m => ({ default: m.EvaluationForm })));
+const QuotesView = lazy(() => import('@/components/QuotesView').then(m => ({ default: m.QuotesView })));
+const BooksListView = lazy(() => import('@/components/BooksListView').then(m => ({ default: m.BooksListView })));
+const DictionaryView = lazy(() => import('@/components/DictionaryView').then(m => ({ default: m.DictionaryView })));
+const BibleProgressView = lazy(() => import('@/components/BibleProgressView').then(m => ({ default: m.BibleProgressView })));
+const HelpView = lazy(() => import('@/components/HelpView').then(m => ({ default: m.HelpView })));
+const EnhancedNotesView = lazy(() => import('@/components/notes/EnhancedNotesView').then(m => ({ default: m.EnhancedNotesView })));
+const ReadingReportsView = lazy(() => import('@/components/ReadingReportsView').then(m => ({ default: m.ReadingReportsView })));
+const ExegesisView = lazy(() => import('@/components/ExegesisView').then(m => ({ default: m.ExegesisView })));
+const SystemDiagnosticsView = lazy(() => import('@/components/SystemDiagnosticsView').then(m => ({ default: m.SystemDiagnosticsView })));
+const FlashcardsView = lazy(() => import('@/components/FlashcardsView').then(m => ({ default: m.FlashcardsView })));
 
 // Keys for session persistence
 const STORAGE_KEYS = {
