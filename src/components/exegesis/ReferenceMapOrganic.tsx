@@ -323,7 +323,7 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
   const selectedUrl = selectedRef ? getBibleUrl(selectedRef) : null;
 
   return (
-    <div ref={fullscreenRef} className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-full overflow-hidden' : 'space-y-4'}`}>
+    <div ref={fullscreenRef} className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-full overflow-auto' : 'space-y-4 overflow-visible'}`}>
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
