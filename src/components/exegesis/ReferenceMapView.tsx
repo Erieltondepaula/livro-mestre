@@ -511,9 +511,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     themeLines.push(centralTheme.length > 12 ? centralTheme.slice(0, 12) + '…' : centralTheme);
   }
 
-  // Dynamic container height — expandable
-  const baseHeight = Math.max(500, Math.min(1000, vbH * 0.8));
-  const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
+  // Dynamic container height — expandable, smaller on mobile
+  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 640;
+  const baseHeight = isMobileScreen ? Math.max(350, Math.min(600, vbH * 0.6)) : Math.max(500, Math.min(1000, vbH * 0.8));
+  const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(isMobileScreen ? 500 : 700, baseHeight * 1.4) : baseHeight;
 
   return (
     <div ref={fullscreenRef} className={`${isFullscreen ? 'bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-screen overflow-hidden' : 'space-y-4'}`}>
