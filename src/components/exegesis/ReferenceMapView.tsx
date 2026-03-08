@@ -695,7 +695,15 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   </div>
                 ) : hoveredVerseText ? (
                   <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[120px] overflow-y-auto">
-                    "{hoveredVerseText}"
+                    "{(() => {
+                      const parts = renderHighlightedText(hoveredVerseText);
+                      if (typeof parts === 'string') return parts;
+                      return parts.map((part, i) => 
+                        highlightWords.some(w => part.toLowerCase() === w.toLowerCase())
+                          ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
+                          : part
+                      );
+                    })()}"
                   </p>
                 ) : (
                   <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
