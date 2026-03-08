@@ -39,31 +39,27 @@ function getBibleUrl(ref: string): string | null {
   return `https://www.bibliaonline.com.br/acf/${slug}/${match[2]}`;
 }
 
-// Warm color palette inspired by the reference image
-const warmColors = [
-  'hsl(25, 65%, 42%)',   // brown
-  'hsl(35, 70%, 48%)',   // golden brown
-  'hsl(15, 60%, 45%)',   // dark warm
-  'hsl(30, 55%, 40%)',   // earth
-  'hsl(20, 70%, 38%)',   // terracotta
-  'hsl(40, 60%, 45%)',   // amber
-  'hsl(10, 55%, 42%)',   // rust
-  'hsl(45, 50%, 40%)',   // olive gold
-  'hsl(28, 75%, 44%)',   // copper
-  'hsl(18, 65%, 40%)',   // sienna
-  'hsl(33, 60%, 46%)',   // caramel
-  'hsl(8, 50%, 44%)',    // burnt umber
-];
-
-const categoryColors: Record<string, string> = {
-  'TEMÁTICAS': 'hsl(0, 98%, 52%)', 'VOCABULARES': 'hsl(28, 100%, 50%)',
-  'LINGUÍSTICAS': 'hsl(48, 100%, 52%)', 'CONTEXTUAIS': 'hsl(120, 90%, 45%)',
-  'TIPOLÓGICAS': 'hsl(165, 95%, 45%)', 'PROFÉTICAS': 'hsl(200, 100%, 50%)',
-  'DOUTRINÁRIAS': 'hsl(230, 95%, 55%)', 'NARRATIVAS': 'hsl(255, 95%, 60%)',
-  'COMPARATIVAS': 'hsl(285, 95%, 58%)', 'APOSTÓLICAS': 'hsl(320, 100%, 55%)',
-  'ESCATOLÓGICAS': 'hsl(72, 95%, 46%)', 'PANORAMA': 'hsl(145, 92%, 44%)',
-  'TOP': 'hsl(350, 100%, 52%)',
+// Semantic color palette — each category has a meaningful color
+const categoryColorMap: Record<string, { color: string; meaning: string; icon: string }> = {
+  'TEMÁTICAS':       { color: 'hsl(0, 75%, 48%)',   meaning: 'Conexões por tema central',        icon: '🎯' },
+  'VOCABULARES':     { color: 'hsl(28, 85%, 48%)',   meaning: 'Palavras-chave compartilhadas',    icon: '📝' },
+  'LINGUÍSTICAS':    { color: 'hsl(45, 85%, 45%)',   meaning: 'Estrutura linguística similar',     icon: '🔤' },
+  'CONTEXTUAIS':     { color: 'hsl(140, 60%, 38%)',  meaning: 'Mesmo contexto histórico',          icon: '📜' },
+  'TIPOLÓGICAS':     { color: 'hsl(170, 65%, 38%)',  meaning: 'Tipo → Antítipo (sombra e cumprimento)', icon: '🪞' },
+  'PROFÉTICAS':      { color: 'hsl(210, 75%, 48%)',  meaning: 'Profecia e cumprimento',            icon: '🔮' },
+  'DOUTRINÁRIAS':    { color: 'hsl(240, 65%, 52%)',  meaning: 'Fundamento doutrinário',            icon: '⛪' },
+  'NARRATIVAS':      { color: 'hsl(270, 60%, 52%)',  meaning: 'Paralelos narrativos',              icon: '📖' },
+  'COMPARATIVAS':    { color: 'hsl(300, 55%, 48%)',  meaning: 'Contraste ou comparação',           icon: '⚖️' },
+  'APOSTÓLICAS':     { color: 'hsl(330, 70%, 48%)',  meaning: 'Ensino apostólico',                 icon: '✉️' },
+  'ESCATOLÓGICAS':   { color: 'hsl(75, 65%, 40%)',   meaning: 'Últimos tempos e eternidade',       icon: '⏳' },
+  'PANORAMA':        { color: 'hsl(155, 60%, 38%)',  meaning: 'Visão panorâmica bíblica',          icon: '🌍' },
+  'TOP':             { color: 'hsl(350, 80%, 48%)',  meaning: 'Referências principais',            icon: '⭐' },
+  'GERAL':           { color: 'hsl(25, 55%, 42%)',   meaning: 'Referência geral',                  icon: '📌' },
 };
+
+function getCategoryColor(cat: string): string {
+  return categoryColorMap[cat]?.color || 'hsl(25, 55%, 42%)';
+}
 
 interface RefData {
   ref: string;
