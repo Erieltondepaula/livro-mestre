@@ -499,16 +499,22 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             );
           })}
 
-          {/* Central shape — circle or rounded rect based on text length */}
+          {/* Central shape — vibrant gradient fill */}
+          <defs>
+            <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.05" />
+            </radialGradient>
+          </defs>
           {isLongTheme ? (
             <>
-              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="hsl(var(--primary))" opacity="0.08" />
-              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="url(#centerGlow)" />
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" opacity="0.7" />
             </>
           ) : (
             <>
-              <circle cx={CX} cy={CY} r={70} fill="hsl(var(--primary))" opacity="0.08" />
-              <circle cx={CX} cy={CY} r={70} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+              <circle cx={CX} cy={CY} r={70} fill="url(#centerGlow)" />
+              <circle cx={CX} cy={CY} r={70} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" opacity="0.7" />
             </>
           )}
 
