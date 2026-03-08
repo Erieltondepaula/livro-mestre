@@ -309,8 +309,12 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   const selectedData = selectedRef ? references.find(r => r.ref === selectedRef) : null;
   const selectedUrl = selectedRef ? getBibleUrl(selectedRef) : null;
-  const nextRef = selectedData && selectedData.order < references.length
-    ? references.find(r => r.order === selectedData.order + 1) : null;
+  // Always provide a next reference — wrap from last to first
+  const nextRef = selectedData
+    ? selectedData.order < references.length
+      ? references.find(r => r.order === selectedData.order + 1)
+      : references[0] // wrap around
+    : null;
 
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.3, 4));
   const handleZoomOut = () => setZoom(z => Math.max(z - 0.3, 0.3));
