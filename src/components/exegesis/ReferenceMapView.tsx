@@ -268,7 +268,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   // Listen for fullscreen changes
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      // Only sync from native fullscreen — CSS fallback manages its own state
+      if (!document.fullscreenElement) setIsFullscreen(false);
+    };
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
