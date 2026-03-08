@@ -495,33 +495,69 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
         </svg>
       </div>
 
-      {/* Category legend with meanings */}
+      {/* Interactive category legend */}
       <div className="mt-3 space-y-2">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">🎨 Legenda de Cores</p>
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">🎨 Legenda — toque para filtrar</p>
+          {activeCategory && (
+            <button onClick={() => setActiveCategory(null)} className="text-[10px] text-primary underline">
+              Mostrar todas
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {Array.from(new Set(references.map(r => r.category))).map(cat => {
             const c = references.filter(r => r.category === cat).length;
             const catInfo = categoryColorMap[cat] || { color: 'hsl(25, 55%, 42%)', meaning: 'Referência', icon: '📌' };
+            const isActive = activeCategory === cat;
+            const isDimmed = activeCategory && !isActive;
             return (
-              <span key={cat} className="group relative inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full border cursor-help"
-                style={{ borderColor: catInfo.color, color: catInfo.color, backgroundColor: `${catInfo.color}10` }}
-                title={catInfo.meaning}>
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: catInfo.color }} />
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(isActive ? null : cat)}
+                className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg border transition-all duration-200 ${isActive ? 'ring-2 ring-offset-1 shadow-md scale-105' : ''}`}
+                style={{
+                  borderColor: catInfo.color,
+                  color: isDimmed ? 'hsl(var(--muted-foreground))' : catInfo.color,
+                  backgroundColor: isActive ? `${catInfo.color}20` : 'transparent',
+                  opacity: isDimmed ? 0.4 : 1,
+                  ringColor: catInfo.color,
+                }}
+                title={catInfo.meaning}
+              >
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: catInfo.color }} />
                 <span>{catInfo.icon} {cat}</span>
-                <span className="text-muted-foreground">({c})</span>
-              </span>
+                <span className="opacity-60">({c})</span>
+              </button>
             );
           })}
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-          {Array.from(new Set(references.map(r => r.category))).map(cat => {
-            const catInfo = categoryColorMap[cat] || { color: 'hsl(25, 55%, 42%)', meaning: 'Referência', icon: '📌' };
-            return (
-              <span key={`desc-${cat}`} className="text-[9px] text-muted-foreground">
-                <span className="font-semibold" style={{ color: catInfo.color }}>{catInfo.icon} {cat}:</span> {catInfo.meaning}
+        {/* Meaning description — show active or all */}
+        <div className="bg-accent/10 rounded-lg px-3 py-2 border border-border/50">
+          {activeCategory ? (
+            <p className="text-[11px]">
+              <span className="font-bold" style={{ color: (categoryColorMap[activeCategory] || { color: '' }).color }}>
+                {(categoryColorMap[activeCategory] || { icon: '📌' }).icon} {activeCategory}:
+              </span>{' '}
+              <span className="text-muted-foreground">{(categoryColorMap[activeCategory] || { meaning: '' }).meaning}</span>
+              <span className="text-muted-foreground ml-1">
+                — {references.filter(r => r.category === activeCategory).length} referência(s)
               </span>
-            );
-          })}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
+              {Array.from(new Set(references.map(r => r.category))).map(cat => {
+                const catInfo = categoryColorMap[cat] || { color: 'hsl(25, 55%, 42%)', meaning: 'Referência', icon: '📌' };
+                return (
+                  <p key={`desc-${cat}`} className="text-[10px] text-muted-foreground leading-relaxed">
+                    <span className="font-bold" style={{ color: catInfo.color }}>{catInfo.icon}</span>{' '}
+                    <span className="font-semibold" style={{ color: catInfo.color }}>{cat}:</span>{' '}
+                    {catInfo.meaning}
+                  </p>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
