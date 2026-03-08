@@ -76,9 +76,19 @@ function extractReferences(content: string): { ref: string; category: string; co
       if (!seen.has(fullRef)) {
         seen.add(fullRef);
         const color = categoryColors[currentCategory] || 'hsl(345, 50%, 30%)';
-        // Extract snippet - text after the reference on the same line
+        // Extract snippet - text after the reference on the same line + continuation lines
+        let snippetParts: string[] = [];
         const afterRef = line.slice(match.index + match[0].length).replace(/^[\s\-–—:]+/, '').replace(/[*_`\[\]]/g, '').trim();
-        const snippet = afterRef || '';
+        if (afterRef) snippetParts.push(afterRef);
+        // Gather continuation lines (non-empty, not a header, not containing a new reference)
+        for (let ci = li + 1; ci < lines.length; ci++) {
+          const contLine = lines[ci].trim();
+          if (!contLine) break; // empty line = end of block
+          if (contLine.startsWith('#')) break; // new header
+          if (/(?:👉\s*\[?)?((?:\d\s)?[A-ZÀ-Ú][a-zà-ú]+(?:\s[a-zà-ú]+)?)\s+\d+:\d+/.test(contLine)) break; // new reference
+          snippetParts.push(contLine.replace(/[*_`\[\]]/g, ''));
+        }
+        const snippet = snippetParts.join(' ').trim();
         refs.push({ ref: fullRef, category: currentCategory || 'GERAL', color, order: orderCounter++, snippet });
       }
     }
