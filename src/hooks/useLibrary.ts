@@ -247,7 +247,7 @@ export function useLibrary() {
             noteType: (n.note_type as Note['noteType']) || 'permanent',
             folderId: n.folder_id || null,
             bookId: n.book_id,
-            bookName: (n.books as any)?.name || null,
+            bookName: getBookName(n.books),
             linkedBooks,
             isPinned: n.is_pinned || false,
             archived: n.archived || false,
