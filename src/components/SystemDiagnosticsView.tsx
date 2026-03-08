@@ -532,40 +532,40 @@ export function SystemDiagnosticsView() {
 
       {/* Summary Cards */}
       {diagnostics.length > 0 && !isRunning && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Card className="border-destructive/30">
-            <CardContent className="p-4 text-center">
-              <AlertTriangle className="w-5 h-5 text-destructive mx-auto mb-1" />
-              <p className="text-2xl font-bold text-destructive">{summary.critical}</p>
-              <p className="text-xs text-muted-foreground">Críticos</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-destructive mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-destructive">{summary.critical}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Críticos</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-500/30">
-            <CardContent className="p-4 text-center">
-              <AlertTriangle className="w-5 h-5 text-yellow-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-yellow-500">{summary.warning}</p>
-              <p className="text-xs text-muted-foreground">Alertas</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-yellow-500">{summary.warning}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Alertas</p>
             </CardContent>
           </Card>
           <Card className="border-blue-500/30">
-            <CardContent className="p-4 text-center">
-              <Lightbulb className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-blue-500">{summary.info}</p>
-              <p className="text-xs text-muted-foreground">Sugestões</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-blue-500">{summary.info}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Sugestões</p>
             </CardContent>
           </Card>
           <Card className="border-green-500/30">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="w-5 h-5 text-green-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-green-500">{summary.ok}</p>
-              <p className="text-xs text-muted-foreground">OK</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-green-500">{summary.ok}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">OK</p>
             </CardContent>
           </Card>
-          <Card className="border-primary/30">
-            <CardContent className="p-4 text-center">
-              <Rocket className="w-5 h-5 text-primary mx-auto mb-1" />
-              <p className="text-2xl font-bold text-primary">{totalNewPrompts}</p>
-              <p className="text-xs text-muted-foreground">Novos Prompts</p>
+          <Card className="border-primary/30 col-span-2 sm:col-span-1">
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Rocket className="w-4 h-4 sm:w-5 sm:h-5 text-primary mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-primary">{totalNewPrompts}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Novos Prompts</p>
             </CardContent>
           </Card>
         </div>
