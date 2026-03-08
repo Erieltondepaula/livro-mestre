@@ -839,7 +839,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     style={{ backgroundColor: ref.color }}>
                     {ref.order}
                   </span>
-                  <span className="text-sm font-bold" style={{ color: ref.color }}>{ref.ref}</span>
+                  <span className="text-sm font-bold text-foreground">{ref.ref}</span>
                   <span className="text-[9px] text-muted-foreground">({ref.category})</span>
                   {url && (
                     <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
