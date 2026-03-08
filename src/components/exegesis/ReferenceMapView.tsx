@@ -791,7 +791,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
               <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
-                  <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
+                  <span className="text-xs font-bold text-foreground">{hoveredRef.ref.ref}</span>
                   <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
                 </div>
                 {isLoadingVerse && !hoveredVerseText ? (
