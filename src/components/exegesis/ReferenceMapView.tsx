@@ -439,13 +439,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
               transform: 'translate(-50%, -100%)',
             }}
           >
-            <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2 max-w-[260px]">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: hoveredRef.ref.color }} />
+            <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5 max-w-[340px]">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
                 <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
                 <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
               </div>
-              <p className="text-xs text-popover-foreground leading-relaxed italic">
+              <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[200px] overflow-y-auto">
                 "{hoveredRef.ref.snippet}"
               </p>
             </div>
