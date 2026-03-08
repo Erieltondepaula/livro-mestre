@@ -128,6 +128,45 @@ export type Database = {
         }
         Relationships: []
       }
+      diagnostic_prompt_history: {
+        Row: {
+          applied_at: string | null
+          created_at: string
+          id: string
+          module: string
+          prompt_key: string
+          prompt_text: string | null
+          prompt_title: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string
+          id?: string
+          module: string
+          prompt_key: string
+          prompt_text?: string | null
+          prompt_title: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string
+          id?: string
+          module?: string
+          prompt_key?: string
+          prompt_text?: string | null
+          prompt_title?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       evaluations: {
         Row: {
           book_id: string
