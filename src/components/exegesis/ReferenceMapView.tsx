@@ -132,7 +132,7 @@ const categoryColors: Record<string, string> = {
 };
 
 // Generate high-contrast distinct color for each node
-function getRainbowColor(index: number, total: number): string {
+function getRainbowColor(index: number, _total: number): string {
   const hue = Math.round((index * 137.508) % 360); // golden-angle distribution (less repetition)
   return `hsl(${hue}, 96%, 50%)`;
 }
