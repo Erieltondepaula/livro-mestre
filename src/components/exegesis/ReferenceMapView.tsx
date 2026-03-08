@@ -749,13 +749,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         {/* Hover/Tap tooltip — positioned above node on desktop, fixed bottom on mobile */}
         {hoveredRef && (
           <>
-            {/* Desktop tooltip */}
+            {/* Desktop tooltip — appears below the node */}
             <div
               className="absolute z-50 pointer-events-none animate-fade-in hidden sm:block"
               style={{
                 left: `${hoveredRef.x}px`,
-                top: `${hoveredRef.y - 50}px`,
-                transform: 'translate(-50%, -100%)',
+                top: `${hoveredRef.y + 25}px`,
+                transform: 'translate(-50%, 0)',
               }}
             >
               <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5 max-w-[360px] min-w-[200px]">
