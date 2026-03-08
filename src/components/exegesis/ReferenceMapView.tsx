@@ -523,7 +523,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(isMobileScreen ? 500 : 700, baseHeight * 1.4) : baseHeight;
 
   return (
-    <div ref={fullscreenRef} className={`${isFullscreen ? 'bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-screen overflow-hidden' : 'space-y-4'}`}>
+    <div ref={fullscreenRef} className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-full overflow-hidden' : 'space-y-4'}`}>
       <div className={`flex items-center justify-between flex-wrap gap-2 ${isFullscreen ? 'mb-3' : ''}`}>
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           🗺️ Mapa de Referências Cruzadas
