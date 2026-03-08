@@ -391,7 +391,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
             <ReferenceMapView
               centralTheme={lastResult?.passage || getPassageText()}
               content={displayContent}
-              keywords={extractedKeywords}
+              keywords={lastResult?.keywords || extractedKeywords}
             />
           )}
         </div>
