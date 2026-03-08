@@ -213,6 +213,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const [hoveredVerseText, setHoveredVerseText] = useState<string>('');
   const [isLoadingVerse, setIsLoadingVerse] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [sidebarVerses, setSidebarVerses] = useState<Record<string, string>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenRef = useRef<HTMLDivElement>(null);
 
