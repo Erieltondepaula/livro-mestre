@@ -250,19 +250,28 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenRef = useRef<HTMLDivElement>(null);
 
-  // Fullscreen toggle
+  // Fullscreen toggle — use native API when available, CSS fallback for iOS
   const toggleFullscreen = useCallback(() => {
     if (!fullscreenRef.current) return;
-    if (!document.fullscreenElement) {
-      fullscreenRef.current.requestFullscreen().catch(() => {});
-    } else {
+    if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
+    } else if (fullscreenRef.current.requestFullscreen) {
+      fullscreenRef.current.requestFullscreen().catch(() => {
+        // Fallback: CSS-based fullscreen for iOS
+        setIsFullscreen(prev => !prev);
+      });
+    } else {
+      // No native fullscreen API (iOS Safari) — toggle CSS fullscreen
+      setIsFullscreen(prev => !prev);
     }
   }, []);
 
   // Listen for fullscreen changes
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      // Only sync from native fullscreen — CSS fallback manages its own state
+      if (!document.fullscreenElement) setIsFullscreen(false);
+    };
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
@@ -511,12 +520,13 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     themeLines.push(centralTheme.length > 12 ? centralTheme.slice(0, 12) + '…' : centralTheme);
   }
 
-  // Dynamic container height — expandable
-  const baseHeight = Math.max(500, Math.min(1000, vbH * 0.8));
-  const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
+  // Dynamic container height — expandable, smaller on mobile
+  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 640;
+  const baseHeight = isMobileScreen ? Math.max(350, Math.min(600, vbH * 0.6)) : Math.max(500, Math.min(1000, vbH * 0.8));
+  const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(isMobileScreen ? 500 : 700, baseHeight * 1.4) : baseHeight;
 
   return (
-    <div ref={fullscreenRef} className={`${isFullscreen ? 'bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-screen overflow-hidden' : 'space-y-4'}`}>
+    <div ref={fullscreenRef} className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-full overflow-hidden' : 'space-y-4'}`}>
       <div className={`flex items-center justify-between flex-wrap gap-2 ${isFullscreen ? 'mb-3' : ''}`}>
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           🗺️ Mapa de Referências Cruzadas
@@ -532,6 +542,11 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           {!isFullscreen && (
             <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2" onClick={() => setIsExpanded(!isExpanded)}>
               {isExpanded ? '⊟ Reduzir' : '⊞ Expandir'}
+            </Button>
+          )}
+          {isFullscreen && (
+            <Button variant="ghost" size="icon" className="h-7 w-7 sm:hidden" onClick={() => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); setIsFullscreen(false); }}>
+              <X className="w-4 h-4" />
             </Button>
           )}
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleFullscreen} title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}>
@@ -569,7 +584,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
       )}
 
       {/* Fullscreen layout: map + sidebar */}
-      <div className={isFullscreen ? 'flex flex-1 gap-4 overflow-hidden' : ''}>
+      <div className={isFullscreen ? 'flex flex-col sm:flex-row flex-1 gap-4 overflow-hidden' : ''}>
       {/* Interactive SVG Map - full width, auto-height, no clipping */}
       <div
         ref={containerRef}
@@ -857,7 +872,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
       {/* Fullscreen sidebar with verse texts */}
       {isFullscreen && (
-        <div className="w-[380px] flex-shrink-0 overflow-y-auto border border-border rounded-lg bg-card p-4 space-y-3">
+        <div className="w-full sm:w-[380px] flex-shrink-0 overflow-y-auto border border-border rounded-lg bg-card p-4 space-y-3 max-h-[40vh] sm:max-h-none">
           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">📋 Referências em Ordem</h4>
           {references.map((ref) => {
             const verseText = sidebarVerses[ref.ref];
