@@ -1419,11 +1419,26 @@ Síntese integradora de como TODA A BÍBLIA trata o tema:
 - A unidade das Escrituras demonstrada através deste tema
 ` : ''}
 
+### 🔗 CADEIA NARRATIVA PROGRESSIVA
+IMPORTANTE: As referências DEVEM seguir uma SEQUÊNCIA LÓGICA E NARRATIVA, como uma corrente onde cada elo leva ao próximo.
+Organize as referências em ORDEM DE LEITURA PROGRESSIVA:
+1. Comece pela referência mais FUNDACIONAL (origem do conceito na Bíblia)
+2. Siga a PROGRESSÃO REVELACIONAL: como o conceito se desenvolve de Gênesis a Apocalipse
+3. Cada referência deve CONECTAR-SE narrativamente à próxima — explique o PORQUÊ da sequência
+4. Exemplo: Se o tema é "glória de Deus":
+   - Êxodo 33:18 (Moisés pede para ver a glória) → Êxodo 34:6-7 (Deus revela Seu caráter) → 1 Reis 8:11 (a glória enche o templo) → Isaías 6:3 (serafins proclamam) → João 1:14 (a glória se fez carne) → 2 Coríntios 3:18 (somos transformados de glória em glória) → Apocalipse 21:23 (a glória ilumina a Nova Jerusalém)
+5. A narrativa deve mostrar como DEUS PROGRESSIVAMENTE revela essa verdade ao longo da história bíblica
+
+Para CADA referência na cadeia, inclua:
+- **Por que esta vem ANTES da próxima:** (conexão lógica/teológica/cronológica)
+- **O que ela ACRESCENTA** à compreensão do tema
+
 ### 📊 MAPA DE CONEXÕES
 - Total de referências por categoria
 - Livros bíblicos mais conectados
 - Temas centrais que emergem
 - Como as referências confirmam a unidade das Escrituras
+- FLUXO NARRATIVO: descreva em 2-3 frases a "história" que as referências contam juntas
 
 ### 🏆 TOP 5 — REFERÊNCIAS MAIS IMPORTANTES
 As 5 referências cruzadas mais significativas e por que são essenciais.
