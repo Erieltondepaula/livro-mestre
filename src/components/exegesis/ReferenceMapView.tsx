@@ -188,6 +188,33 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const [hoveredRef, setHoveredRef] = useState<{ ref: typeof references[0]; x: number; y: number } | null>(null);
   const [hoveredVerseText, setHoveredVerseText] = useState<string>('');
   const [isLoadingVerse, setIsLoadingVerse] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Build highlight words from keywords + centralTheme words
+  const highlightWords = useMemo(() => {
+    const words = new Set<string>();
+    // Add keywords
+    keywords.forEach(k => {
+      if (k.length >= 3) words.add(k.toLowerCase());
+    });
+    // Add words from theme (min 3 chars, skip common words)
+    const skipWords = new Set(['que', 'para', 'com', 'por', 'uma', 'dos', 'das', 'nos', 'nas', 'seu', 'sua', 'são', 'não', 'tem', 'ele', 'ela']);
+    centralTheme.split(/\s+/).forEach(w => {
+      const clean = w.toLowerCase().replace(/[^a-záàãâéêíóôõúç]/gi, '');
+      if (clean.length >= 3 && !skipWords.has(clean)) words.add(clean);
+    });
+    return Array.from(words);
+  }, [keywords, centralTheme]);
+
+  // Highlight keywords in verse text
+  const renderHighlightedText = useCallback((text: string) => {
+    if (!highlightWords.length || !text) return `"${text}"`;
+    // Build regex pattern
+    const pattern = highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    const regex = new RegExp(`(${pattern})`, 'gi');
+    const parts = text.split(regex);
+    return parts;
+  }, [highlightWords]);
 
   // Fetch verse text on hover
   useEffect(() => {
@@ -355,8 +382,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     themeLines.push(centralTheme.length > 12 ? centralTheme.slice(0, 12) + '…' : centralTheme);
   }
 
-  // Responsive container height — smaller on mobile
-  const containerHeight = Math.max(400, Math.min(800, vbH * 0.6));
+  // Dynamic container height — expandable
+  const baseHeight = Math.max(500, Math.min(1000, vbH * 0.8));
+  const containerHeight = isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
 
   return (
     <div className="card-library p-4 sm:p-6 space-y-4">
@@ -372,6 +400,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           <span className="text-[10px] text-muted-foreground w-10 text-center">{Math.round(zoom * 100)}%</span>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn}><ZoomIn className="w-3.5 h-3.5" /></Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset}><Maximize2 className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2" onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? '⊟ Reduzir' : '⊞ Expandir'}
+          </Button>
         </div>
       </div>
 
@@ -634,7 +665,15 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   </div>
                 ) : hoveredVerseText ? (
                   <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[250px] overflow-y-auto">
-                    "{hoveredVerseText}"
+                    "{(() => {
+                      const parts = renderHighlightedText(hoveredVerseText);
+                      if (typeof parts === 'string') return parts;
+                      return parts.map((part, i) => 
+                        highlightWords.some(w => part.toLowerCase() === w.toLowerCase())
+                          ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
+                          : part
+                      );
+                    })()}"
                   </p>
                 ) : (
                   <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
@@ -656,7 +695,15 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   </div>
                 ) : hoveredVerseText ? (
                   <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[120px] overflow-y-auto">
-                    "{hoveredVerseText}"
+                    "{(() => {
+                      const parts = renderHighlightedText(hoveredVerseText);
+                      if (typeof parts === 'string') return parts;
+                      return parts.map((part, i) => 
+                        highlightWords.some(w => part.toLowerCase() === w.toLowerCase())
+                          ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
+                          : part
+                      );
+                    })()}"
                   </p>
                 ) : (
                   <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
