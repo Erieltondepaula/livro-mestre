@@ -766,7 +766,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                       const parts = renderHighlightedText(hoveredVerseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => 
-                        highlightWords.some(w => part.toLowerCase() === w.toLowerCase())
+                        isHighlightedSegment(part)
                           ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
                           : part
                       );
