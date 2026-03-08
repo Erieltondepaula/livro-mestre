@@ -156,39 +156,40 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   if (references.length === 0) return null;
 
   const count = references.length;
-  // Layout: distribute nodes in a clean radial pattern with enough spacing
-  // Use a large viewBox so nothing clips. Center at (500, 500).
+  // Layout: evenly spaced radial pattern. Center at (500, 500).
   const CX = 500;
   const CY = 500;
-  const CENTER_R = 70; // Central circle radius
+  const CENTER_R = 70;
 
-  // Distribute in rings of up to 10 nodes
-  const NODES_PER_RING = 10;
-  const RING_BASE = 180; // First ring distance from center
-  const RING_SPACING = 140; // Between rings
+  // Adaptive ring sizing based on node count
+  // Fewer nodes per ring = more spacing between them
+  const NODES_PER_RING = Math.min(8, Math.max(5, Math.ceil(count / 3)));
+  const RING_BASE = 220; // First ring well clear of center
+  const RING_SPACING = 180; // Generous gap between rings
 
   const getNodePos = (i: number) => {
     const ringIndex = Math.floor(i / NODES_PER_RING);
     const posInRing = i % NODES_PER_RING;
-    const ringCount = Math.min(NODES_PER_RING, count - ringIndex * NODES_PER_RING);
+    const nodesInThisRing = Math.min(NODES_PER_RING, count - ringIndex * NODES_PER_RING);
     const radius = RING_BASE + ringIndex * RING_SPACING;
-    const angleOffset = ringIndex * 0.25;
-    const angle = (posInRing / ringCount) * 2 * Math.PI - Math.PI / 2 + angleOffset;
+    // Offset each ring slightly so nodes don't align radially
+    const angleOffset = ringIndex * (Math.PI / NODES_PER_RING);
+    const angle = (posInRing / nodesInThisRing) * 2 * Math.PI - Math.PI / 2 + angleOffset;
     return {
       x: CX + radius * Math.cos(angle),
       y: CY + radius * Math.sin(angle),
     };
   };
 
-  // Calculate viewBox to contain all nodes with padding
+  // ViewBox with generous padding so nothing clips
   const allPositions = references.map((_, i) => getNodePos(i));
   const xs = allPositions.map(p => p.x);
   const ys = allPositions.map(p => p.y);
-  const padding = 120;
-  const minX = Math.min(CX - CENTER_R - 50, ...xs) - padding;
-  const minY = Math.min(CY - CENTER_R - 50, ...ys) - padding;
-  const maxX = Math.max(CX + CENTER_R + 50, ...xs) + padding;
-  const maxY = Math.max(CY + CENTER_R + 50, ...ys) + padding;
+  const padding = 150;
+  const minX = Math.min(CX - CENTER_R, ...xs) - padding;
+  const minY = Math.min(CY - CENTER_R, ...ys) - padding;
+  const maxX = Math.max(CX + CENTER_R, ...xs) + padding;
+  const maxY = Math.max(CY + CENTER_R, ...ys) + padding;
   const vbW = maxX - minX;
   const vbH = maxY - minY;
 
