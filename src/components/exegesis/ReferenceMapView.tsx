@@ -275,16 +275,31 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     return Array.from(words);
   }, [keywords, centralTheme]);
 
+  const normalizedHighlightWords = useMemo(
+    () => highlightWords
+      .map(w => w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+      .filter(Boolean),
+    [highlightWords]
+  );
+
   // Highlight keywords in verse text
   const renderHighlightedText = useCallback((text: string) => {
     if (!highlightWords.length || !text) return `"${text}"`;
     // Build regex that matches the ENTIRE word containing any keyword
     const pattern = highlightWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    // Match whole words that contain any of the keywords
     const regex = new RegExp(`(\\S*(?:${pattern})\\S*)`, 'gi');
-    const parts = text.split(regex);
-    return parts;
+    return text.split(regex);
   }, [highlightWords]);
+
+  const isHighlightedSegment = useCallback((segment: string) => {
+    const normalized = segment
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+    return normalizedHighlightWords.some(word => normalized.includes(word));
+  }, [normalizedHighlightWords]);
 
   // Fetch verse text on hover
   useEffect(() => {
@@ -751,7 +766,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                       const parts = renderHighlightedText(hoveredVerseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => 
-                        highlightWords.some(w => part.toLowerCase() === w.toLowerCase())
+                        isHighlightedSegment(part)
                           ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
                           : part
                       );
@@ -781,7 +796,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                       const parts = renderHighlightedText(hoveredVerseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => 
-                        highlightWords.some(w => part.toLowerCase() === w.toLowerCase())
+                        isHighlightedSegment(part)
                           ? <strong key={i} className="font-extrabold text-primary not-italic">{part}</strong>
                           : part
                       );
@@ -830,7 +845,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                       const parts = renderHighlightedText(verseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => {
-                        const isMatch = highlightWords.some(w => part.toLowerCase().includes(w.toLowerCase()));
+                        const isMatch = isHighlightedSegment(part);
                         return isMatch
                           ? <strong key={i} className="font-extrabold not-italic" style={{ color: ref.color }}>{part}</strong>
                           : <span key={i}>{part}</span>;
