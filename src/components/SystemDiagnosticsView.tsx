@@ -677,24 +677,24 @@ export function SystemDiagnosticsView() {
                                       <div className="bg-muted/50 rounded-lg p-3 text-xs text-foreground font-mono leading-relaxed whitespace-pre-wrap">
                                         {ip.prompt}
                                       </div>
-                                      <div className="flex gap-2">
+                                      <div className="flex flex-wrap gap-2">
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="gap-1.5 text-xs"
+                                          className="gap-1.5 text-xs flex-1 min-w-[120px]"
                                           onClick={() => copyPrompt(ip.prompt)}
                                         >
                                           <Copy className="w-3 h-3" />
-                                          Copiar Prompt
+                                          Copiar
                                         </Button>
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="gap-1.5 text-xs text-green-600"
+                                          className="gap-1.5 text-xs text-green-600 flex-1 min-w-[120px]"
                                           onClick={() => markAsApplied(ip.key, ip.title, ip.prompt, mod.module)}
                                         >
                                           <Check className="w-3 h-3" />
-                                          Já Aplicado
+                                          Aplicado
                                         </Button>
                                         <Button
                                           size="sm"
@@ -703,7 +703,6 @@ export function SystemDiagnosticsView() {
                                           onClick={() => dismissPrompt(ip.key, ip.title, mod.module)}
                                         >
                                           <Trash2 className="w-3 h-3" />
-                                          Descartar
                                         </Button>
                                       </div>
                                     </div>
