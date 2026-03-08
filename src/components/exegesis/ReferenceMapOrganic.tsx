@@ -146,6 +146,7 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTouchDistance = useRef<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
