@@ -58,29 +58,12 @@ async function fetchVerseText(ref: string): Promise<string> {
   const bookSlug = BOOK_SLUGS_API[bookName];
   if (!bookSlug) return '';
 
-  const verseRef = `${bookSlug}+${match[2]}:${match[3]}`;
+  const chapterVerse = `${match[2]}:${match[3]}`;
+  const verseRef = `${bookSlug}+${chapterVerse}`;
   
-  // Try almeida first, then fallback to default (KJV-like but still gets text)
-  const translations = ['almeida', 'chevalier'];
-  for (const translation of translations) {
-    try {
-      const url = translation ? `https://bible-api.com/${verseRef}?translation=${translation}` : `https://bible-api.com/${verseRef}`;
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const data = await res.json();
-      const text = data.text?.trim() || '';
-      if (text) {
-        verseCache.set(ref, text);
-        return text;
-      }
-    } catch {
-      continue;
-    }
-  }
-  
-  // Final fallback: try without any translation parameter
+  // Try almeida translation (Portuguese only)
   try {
-    const res = await fetch(`https://bible-api.com/${verseRef}`);
+    const res = await fetch(`https://bible-api.com/${verseRef}?translation=almeida`);
     if (res.ok) {
       const data = await res.json();
       const text = data.text?.trim() || '';
@@ -91,6 +74,58 @@ async function fetchVerseText(ref: string): Promise<string> {
     }
   } catch {
     // ignore
+  }
+
+  // Fallback: try A Bíblia Digital API (Portuguese - NVI) for books missing in almeida
+  // Map slugs to abbreviations used by abibliadigital
+  const ABIBLIA_ABBREVS: Record<string, string> = {
+    'genesis': 'gn', 'exodus': 'ex', 'leviticus': 'lv', 'numbers': 'nm', 'deuteronomy': 'dt',
+    'joshua': 'js', 'judges': 'jz', 'ruth': 'rt', '1samuel': '1sm', '2samuel': '2sm',
+    '1kings': '1rs', '2kings': '2rs', '1chronicles': '1cr', '2chronicles': '2cr',
+    'ezra': 'ed', 'nehemiah': 'ne', 'esther': 'et', 'job': 'jó',
+    'psalms': 'sl', 'proverbs': 'pv', 'ecclesiastes': 'ec', 'songofsolomon': 'ct',
+    'isaiah': 'is', 'jeremiah': 'jr', 'lamentations': 'lm', 'ezekiel': 'ez', 'daniel': 'dn',
+    'hosea': 'os', 'joel': 'jl', 'amos': 'am', 'obadiah': 'ob', 'jonah': 'jn',
+    'micah': 'mq', 'nahum': 'na', 'habakkuk': 'hc', 'zephaniah': 'sf', 'haggai': 'ag',
+    'zechariah': 'zc', 'malachi': 'ml',
+    'matthew': 'mt', 'mark': 'mc', 'luke': 'lc', 'john': 'jo', 'acts': 'at',
+    'romans': 'rm', '1corinthians': '1co', '2corinthians': '2co',
+    'galatians': 'gl', 'ephesians': 'ef', 'philippians': 'fp', 'colossians': 'cl',
+    '1thessalonians': '1ts', '2thessalonians': '2ts', '1timothy': '1tm', '2timothy': '2tm',
+    'titus': 'tt', 'philemon': 'fm', 'hebrews': 'hb', 'james': 'tg',
+    '1peter': '1pe', '2peter': '2pe', '1john': '1jo', '2john': '2jo', '3john': '3jo',
+    'jude': 'jd', 'revelation': 'ap',
+  };
+  
+  const abbrev = ABIBLIA_ABBREVS[bookSlug];
+  if (abbrev) {
+    // Parse chapter and verse range
+    const cvMatch = chapterVerse.match(/^(\d+):(\d+)(?:-(\d+))?$/);
+    if (cvMatch) {
+      const chapter = cvMatch[1];
+      const verseStart = parseInt(cvMatch[2]);
+      const verseEnd = cvMatch[3] ? parseInt(cvMatch[3]) : verseStart;
+      
+      try {
+        // Fetch all verses in range
+        const verseParts: string[] = [];
+        for (let v = verseStart; v <= verseEnd; v++) {
+          const apiUrl = `https://www.abibliadigital.com.br/api/verses/acf/${abbrev}/${chapter}/${v}`;
+          const res = await fetch(apiUrl);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.text) verseParts.push(data.text.trim());
+          }
+        }
+        if (verseParts.length > 0) {
+          const fullText = verseParts.join(' ');
+          verseCache.set(ref, fullText);
+          return fullText;
+        }
+      } catch {
+        // ignore
+      }
+    }
   }
   
   return '';
