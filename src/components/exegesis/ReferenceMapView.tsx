@@ -115,19 +115,19 @@ function getBibleUrl(ref: string): string | null {
 }
 
 const categoryColors: Record<string, string> = {
-  'TEMÁTICAS': 'hsl(345, 50%, 30%)',
-  'VOCABULARES': 'hsl(210, 50%, 45%)',
-  'LINGUÍSTICAS': 'hsl(38, 70%, 50%)',
-  'CONTEXTUAIS': 'hsl(145, 45%, 35%)',
-  'TIPOLÓGICAS': 'hsl(270, 40%, 45%)',
-  'PROFÉTICAS': 'hsl(30, 60%, 45%)',
-  'DOUTRINÁRIAS': 'hsl(0, 50%, 40%)',
-  'NARRATIVAS': 'hsl(180, 40%, 40%)',
-  'COMPARATIVAS': 'hsl(200, 50%, 40%)',
-  'APOSTÓLICAS': 'hsl(320, 40%, 40%)',
-  'ESCATOLÓGICAS': 'hsl(50, 60%, 40%)',
-  'PANORAMA': 'hsl(160, 40%, 35%)',
-  'TOP': 'hsl(345, 50%, 30%)',
+  'TEMÁTICAS': 'hsl(345, 70%, 50%)',
+  'VOCABULARES': 'hsl(210, 70%, 55%)',
+  'LINGUÍSTICAS': 'hsl(38, 85%, 55%)',
+  'CONTEXTUAIS': 'hsl(145, 65%, 45%)',
+  'TIPOLÓGICAS': 'hsl(270, 60%, 55%)',
+  'PROFÉTICAS': 'hsl(25, 80%, 55%)',
+  'DOUTRINÁRIAS': 'hsl(0, 65%, 50%)',
+  'NARRATIVAS': 'hsl(180, 60%, 45%)',
+  'COMPARATIVAS': 'hsl(200, 70%, 50%)',
+  'APOSTÓLICAS': 'hsl(320, 60%, 55%)',
+  'ESCATOLÓGICAS': 'hsl(50, 80%, 48%)',
+  'PANORAMA': 'hsl(160, 60%, 45%)',
+  'TOP': 'hsl(345, 70%, 50%)',
 };
 
 function extractReferences(content: string): { ref: string; category: string; color: string; order: number; snippet: string }[] {
@@ -463,7 +463,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             transition: isPanning ? 'none' : 'transform 0.2s ease-out',
           }}
         >
-          {/* Subtle radial lines from center to each node */}
+          {/* Colorful radial lines from center to each node */}
           {references.map((ref, i) => {
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
@@ -472,10 +472,10 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 key={`line-${i}`}
                 x1={CX} y1={CY}
                 x2={pos.x} y2={pos.y}
-                stroke={isSelected ? ref.color : 'hsl(var(--border))'}
-                strokeWidth={isSelected ? 1.5 : 0.7}
-                strokeDasharray={isSelected ? 'none' : '4,4'}
-                opacity={isSelected ? 0.8 : 0.3}
+                stroke={ref.color}
+                strokeWidth={isSelected ? 2 : 1}
+                strokeDasharray={isSelected ? 'none' : '6,4'}
+                opacity={isSelected ? 0.7 : 0.25}
               />
             );
           })}
@@ -499,16 +499,22 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             );
           })}
 
-          {/* Central shape — circle or rounded rect based on text length */}
+          {/* Central shape — vibrant gradient fill */}
+          <defs>
+            <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.05" />
+            </radialGradient>
+          </defs>
           {isLongTheme ? (
             <>
-              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="hsl(var(--primary))" opacity="0.08" />
-              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="url(#centerGlow)" />
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" opacity="0.7" />
             </>
           ) : (
             <>
-              <circle cx={CX} cy={CY} r={70} fill="hsl(var(--primary))" opacity="0.08" />
-              <circle cx={CX} cy={CY} r={70} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+              <circle cx={CX} cy={CY} r={70} fill="url(#centerGlow)" />
+              <circle cx={CX} cy={CY} r={70} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" opacity="0.7" />
             </>
           )}
 
@@ -586,26 +592,25 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                 className="transition-transform"
               >
                 {/* Glow on selected */}
+                {/* Glow on selected */}
                 {isSelected && (
                   <rect
-                    x={pos.x - boxW / 2 - 3} y={pos.y - boxH / 2 - 3}
-                    width={boxW + 6} height={boxH + 6}
-                    rx="10"
-                    fill="none"
-                    stroke={ref.color}
-                    strokeWidth="2"
-                    opacity="0.4"
+                    x={pos.x - boxW / 2 - 4} y={pos.y - boxH / 2 - 4}
+                    width={boxW + 8} height={boxH + 8}
+                    rx="12"
+                    fill={ref.color}
+                    opacity="0.12"
                   />
                 )}
 
-                {/* Card background */}
+                {/* Card background with color tint */}
                 <rect
                   x={pos.x - boxW / 2} y={pos.y - boxH / 2}
                   width={boxW} height={boxH}
                   rx="8"
                   fill="hsl(var(--card))"
                   stroke={ref.color}
-                  strokeWidth={isSelected ? 2 : 1}
+                  strokeWidth={isSelected ? 2.5 : 1.5}
                   opacity={1}
                 />
 
