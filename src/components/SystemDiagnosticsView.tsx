@@ -532,40 +532,40 @@ export function SystemDiagnosticsView() {
 
       {/* Summary Cards */}
       {diagnostics.length > 0 && !isRunning && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <Card className="border-destructive/30">
-            <CardContent className="p-4 text-center">
-              <AlertTriangle className="w-5 h-5 text-destructive mx-auto mb-1" />
-              <p className="text-2xl font-bold text-destructive">{summary.critical}</p>
-              <p className="text-xs text-muted-foreground">Críticos</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-destructive mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-destructive">{summary.critical}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Críticos</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-500/30">
-            <CardContent className="p-4 text-center">
-              <AlertTriangle className="w-5 h-5 text-yellow-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-yellow-500">{summary.warning}</p>
-              <p className="text-xs text-muted-foreground">Alertas</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-yellow-500">{summary.warning}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Alertas</p>
             </CardContent>
           </Card>
           <Card className="border-blue-500/30">
-            <CardContent className="p-4 text-center">
-              <Lightbulb className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-blue-500">{summary.info}</p>
-              <p className="text-xs text-muted-foreground">Sugestões</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-blue-500">{summary.info}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Sugestões</p>
             </CardContent>
           </Card>
           <Card className="border-green-500/30">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="w-5 h-5 text-green-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-green-500">{summary.ok}</p>
-              <p className="text-xs text-muted-foreground">OK</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-green-500">{summary.ok}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">OK</p>
             </CardContent>
           </Card>
-          <Card className="border-primary/30">
-            <CardContent className="p-4 text-center">
-              <Rocket className="w-5 h-5 text-primary mx-auto mb-1" />
-              <p className="text-2xl font-bold text-primary">{totalNewPrompts}</p>
-              <p className="text-xs text-muted-foreground">Novos Prompts</p>
+          <Card className="border-primary/30 col-span-2 sm:col-span-1">
+            <CardContent className="p-3 sm:p-4 text-center">
+              <Rocket className="w-4 h-4 sm:w-5 sm:h-5 text-primary mx-auto mb-1" />
+              <p className="text-xl sm:text-2xl font-bold text-primary">{totalNewPrompts}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Novos Prompts</p>
             </CardContent>
           </Card>
         </div>
@@ -593,22 +593,22 @@ export function SystemDiagnosticsView() {
               <Card key={mod.module} className="overflow-hidden">
                 <Collapsible open={isExpanded} onOpenChange={() => toggleModule(mod.module)}>
                   <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                          <Icon className="w-5 h-5 text-primary" />
-                          <CardTitle className="text-base">{mod.label}</CardTitle>
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3 sm:py-4 px-3 sm:px-6">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          {isExpanded ? <ChevronDown className="w-4 h-4 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+                          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+                          <CardTitle className="text-sm sm:text-base truncate">{mod.label}</CardTitle>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
                           <SeverityIcon className={`w-4 h-4 ${SEVERITY_CONFIG[worstSeverity].color}`} />
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs hidden sm:inline-flex">
                             {mod.checks.length} verificações
                           </Badge>
                           {newPromptCount > 0 && (
-                            <Badge className="text-xs gap-1 bg-primary">
+                            <Badge className="text-[10px] sm:text-xs gap-1 bg-primary">
                               <Zap className="w-3 h-3" />
-                              {newPromptCount} novos
+                              {newPromptCount}
                             </Badge>
                           )}
                         </div>
@@ -677,24 +677,24 @@ export function SystemDiagnosticsView() {
                                       <div className="bg-muted/50 rounded-lg p-3 text-xs text-foreground font-mono leading-relaxed whitespace-pre-wrap">
                                         {ip.prompt}
                                       </div>
-                                      <div className="flex gap-2">
+                                      <div className="flex flex-wrap gap-2">
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="gap-1.5 text-xs"
+                                          className="gap-1.5 text-xs flex-1 min-w-[120px]"
                                           onClick={() => copyPrompt(ip.prompt)}
                                         >
                                           <Copy className="w-3 h-3" />
-                                          Copiar Prompt
+                                          Copiar
                                         </Button>
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="gap-1.5 text-xs text-green-600"
+                                          className="gap-1.5 text-xs text-green-600 flex-1 min-w-[120px]"
                                           onClick={() => markAsApplied(ip.key, ip.title, ip.prompt, mod.module)}
                                         >
                                           <Check className="w-3 h-3" />
-                                          Já Aplicado
+                                          Aplicado
                                         </Button>
                                         <Button
                                           size="sm"
@@ -703,7 +703,6 @@ export function SystemDiagnosticsView() {
                                           onClick={() => dismissPrompt(ip.key, ip.title, mod.module)}
                                         >
                                           <Trash2 className="w-3 h-3" />
-                                          Descartar
                                         </Button>
                                       </div>
                                     </div>
