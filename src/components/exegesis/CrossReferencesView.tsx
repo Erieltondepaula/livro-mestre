@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink, Map } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink, Map, Leaf } from 'lucide-react';
 import { ReferenceMapView } from './ReferenceMapView';
+import { ReferenceMapOrganic } from './ReferenceMapOrganic';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
