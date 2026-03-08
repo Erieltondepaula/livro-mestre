@@ -161,7 +161,8 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) fullContent += c; } catch {}
       }
 
-      const result = { passage, content: fullContent };
+      const currentKeywords = extractedKeywords.length > 0 ? extractedKeywords : [];
+      const result = { passage, content: fullContent, keywords: currentKeywords };
       setLastResult(result);
       setCurrentStream('');
       try { localStorage.setItem('crossref_last_result', JSON.stringify(result)); } catch {}
