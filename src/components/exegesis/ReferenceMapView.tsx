@@ -114,21 +114,28 @@ function getBibleUrl(ref: string): string | null {
   return `https://www.bibliaonline.com.br/acf/${slug}/${match[2]}`;
 }
 
+// Rainbow-inspired vibrant colors for categories
 const categoryColors: Record<string, string> = {
-  'TEMÁTICAS': 'hsl(345, 70%, 50%)',
-  'VOCABULARES': 'hsl(210, 70%, 55%)',
-  'LINGUÍSTICAS': 'hsl(38, 85%, 55%)',
-  'CONTEXTUAIS': 'hsl(145, 65%, 45%)',
-  'TIPOLÓGICAS': 'hsl(270, 60%, 55%)',
-  'PROFÉTICAS': 'hsl(25, 80%, 55%)',
-  'DOUTRINÁRIAS': 'hsl(0, 65%, 50%)',
-  'NARRATIVAS': 'hsl(180, 60%, 45%)',
-  'COMPARATIVAS': 'hsl(200, 70%, 50%)',
-  'APOSTÓLICAS': 'hsl(320, 60%, 55%)',
-  'ESCATOLÓGICAS': 'hsl(50, 80%, 48%)',
-  'PANORAMA': 'hsl(160, 60%, 45%)',
-  'TOP': 'hsl(345, 70%, 50%)',
+  'TEMÁTICAS': 'hsl(0, 85%, 55%)',        // Red
+  'VOCABULARES': 'hsl(30, 90%, 50%)',      // Orange
+  'LINGUÍSTICAS': 'hsl(50, 95%, 45%)',     // Yellow
+  'CONTEXTUAIS': 'hsl(120, 70%, 40%)',     // Green
+  'TIPOLÓGICAS': 'hsl(170, 75%, 40%)',     // Teal
+  'PROFÉTICAS': 'hsl(200, 85%, 50%)',      // Sky Blue
+  'DOUTRINÁRIAS': 'hsl(240, 70%, 55%)',    // Blue/Indigo
+  'NARRATIVAS': 'hsl(270, 70%, 55%)',      // Purple
+  'COMPARATIVAS': 'hsl(300, 65%, 50%)',    // Magenta
+  'APOSTÓLICAS': 'hsl(330, 80%, 50%)',     // Pink
+  'ESCATOLÓGICAS': 'hsl(60, 85%, 42%)',    // Lime/Olive
+  'PANORAMA': 'hsl(150, 70%, 42%)',        // Emerald
+  'TOP': 'hsl(350, 90%, 50%)',             // Crimson
 };
+
+// Generate rainbow color for individual nodes (fallback when category is GERAL)
+function getRainbowColor(index: number, total: number): string {
+  const hue = Math.round((index / total) * 360);
+  return `hsl(${hue}, 80%, 50%)`;
+}
 
 function extractReferences(content: string): { ref: string; category: string; color: string; order: number; snippet: string }[] {
   const refs: { ref: string; category: string; color: string; order: number; snippet: string }[] = [];
@@ -182,6 +189,14 @@ function extractReferences(content: string): { ref: string; category: string; co
     }
   }
 
+  // Assign rainbow colors to refs that have no specific category color
+  const total = refs.length;
+  refs.forEach((r, i) => {
+    if (r.category === 'GERAL') {
+      r.color = getRainbowColor(i, total);
+    }
+  });
+
   return refs;
 }
 
@@ -198,6 +213,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const [hoveredVerseText, setHoveredVerseText] = useState<string>('');
   const [isLoadingVerse, setIsLoadingVerse] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [sidebarVerses, setSidebarVerses] = useState<Record<string, string>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenRef = useRef<HTMLDivElement>(null);
 
@@ -230,7 +246,20 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     return () => document.removeEventListener('keydown', handler);
   }, [isFullscreen]);
 
-  // Build highlight words from keywords + centralTheme words
+  // Fetch all verses when entering fullscreen (for sidebar)
+  useEffect(() => {
+    if (!isFullscreen || references.length === 0) return;
+    const fetchAll = async () => {
+      const newVerses: Record<string, string> = {};
+      for (const ref of references) {
+        const text = await fetchVerseText(ref.ref);
+        if (text) newVerses[ref.ref] = text;
+      }
+      setSidebarVerses(newVerses);
+    };
+    fetchAll();
+  }, [isFullscreen, references]);
+
   const highlightWords = useMemo(() => {
     const words = new Set<string>();
     // Add keywords
@@ -425,11 +454,11 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   // Dynamic container height — expandable
   const baseHeight = Math.max(500, Math.min(1000, vbH * 0.8));
-  const containerHeight = isFullscreen ? '100vh' : isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
+  const containerHeight = isFullscreen ? undefined : isExpanded ? Math.max(700, baseHeight * 1.4) : baseHeight;
 
   return (
-    <div ref={fullscreenRef} className={`${isFullscreen ? 'bg-background' : 'card-library'} p-4 sm:p-6 space-y-4 ${isFullscreen ? 'flex flex-col h-screen' : ''}`}>
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div ref={fullscreenRef} className={`${isFullscreen ? 'bg-background' : 'card-library'} p-4 sm:p-6 ${isFullscreen ? 'flex flex-col h-screen overflow-hidden' : 'space-y-4'}`}>
+      <div className={`flex items-center justify-between flex-wrap gap-2 ${isFullscreen ? 'mb-3' : ''}`}>
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           🗺️ Mapa de Referências Cruzadas
           <span className="text-[10px] font-normal normal-case bg-primary/10 text-primary px-2 py-0.5 rounded-full">
@@ -480,10 +509,12 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         </div>
       )}
 
+      {/* Fullscreen layout: map + sidebar */}
+      <div className={isFullscreen ? 'flex flex-1 gap-4 overflow-hidden' : ''}>
       {/* Interactive SVG Map - full width, auto-height, no clipping */}
       <div
         ref={containerRef}
-        className={`relative w-full overflow-hidden rounded-lg border border-border bg-background/50 ${isFullscreen ? 'flex-1' : ''}`}
+        className={`relative overflow-hidden rounded-lg border border-border bg-background/50 ${isFullscreen ? 'flex-1' : 'w-full'}`}
         style={{
           height: isFullscreen ? undefined : `${containerHeight}px`,
           cursor: isPanning ? 'grabbing' : 'grab',
@@ -765,59 +796,121 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         )}
       </div>
 
-      {/* Category legend */}
-      <div className="flex flex-wrap gap-1.5">
-        {Array.from(new Set(references.map(r => r.category))).map(cat => {
-          const c = references.filter(r => r.category === cat).length;
-          const color = references.find(r => r.category === cat)?.color || 'hsl(var(--primary))';
-          return (
-            <span key={cat} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border"
-              style={{ borderColor: color, color, backgroundColor: `${color}10` }}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
-              {cat} ({c})
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Expandable reading list */}
-      <div className="space-y-1">
-        <button
-          onClick={() => setShowReadingList(!showReadingList)}
-          className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-        >
-          {showReadingList ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          📋 Ordem de Leitura Progressiva ({references.length})
-        </button>
-        {showReadingList && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 max-h-72 overflow-y-auto mt-2 animate-fade-in">
-            {references.map((ref) => {
-              const url = getBibleUrl(ref.ref);
-              const isSelected = selectedRef === ref.ref;
-              return (
-                <button
-                  key={ref.order}
-                  onClick={() => setSelectedRef(ref.ref)}
-                  className={`flex items-center gap-2 px-2.5 py-2 rounded-md border text-xs font-medium transition-all text-left ${isSelected ? 'ring-2 ring-primary bg-primary/5 border-primary/30' : 'hover:bg-muted/50 border-border'}`}
-                >
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold flex-shrink-0 text-white"
+      {/* Fullscreen sidebar with verse texts */}
+      {isFullscreen && (
+        <div className="w-[380px] flex-shrink-0 overflow-y-auto border border-border rounded-lg bg-card p-4 space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">📋 Referências em Ordem</h4>
+          {references.map((ref) => {
+            const verseText = sidebarVerses[ref.ref];
+            const isSelected = selectedRef === ref.ref;
+            const url = getBibleUrl(ref.ref);
+            return (
+              <div
+                key={ref.order}
+                className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary border-primary/30 bg-primary/5' : 'border-border hover:bg-muted/30'}`}
+                onClick={() => setSelectedRef(ref.ref)}
+              >
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white flex-shrink-0"
                     style={{ backgroundColor: ref.color }}>
                     {ref.order}
                   </span>
-                  <span className="font-bold truncate" style={{ color: ref.color }}>{ref.ref}</span>
-                  <span className="text-[9px] text-muted-foreground truncate hidden sm:inline">{ref.category}</span>
+                  <span className="text-sm font-bold" style={{ color: ref.color }}>{ref.ref}</span>
+                  <span className="text-[9px] text-muted-foreground">({ref.category})</span>
                   {url && (
                     <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
                       className="ml-auto flex-shrink-0 opacity-50 hover:opacity-100">
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                </div>
+                {verseText ? (
+                  <p className="text-xs text-foreground/80 leading-relaxed italic">
+                    "{(() => {
+                      const parts = renderHighlightedText(verseText);
+                      if (typeof parts === 'string') return parts;
+                      return parts.map((part, i) => {
+                        const isMatch = highlightWords.some(w => part.toLowerCase().includes(w.toLowerCase()));
+                        return isMatch
+                          ? <strong key={i} className="font-extrabold not-italic" style={{ color: ref.color }}>{part}</strong>
+                          : <span key={i}>{part}</span>;
+                      });
+                    })()}"
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Carregando...
+                  </p>
+                )}
+                {ref.snippet && (
+                  <p className="text-[10px] text-muted-foreground mt-1.5 leading-relaxed">
+                    💡 {ref.snippet.slice(0, 150)}{ref.snippet.length > 150 ? '...' : ''}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      </div>{/* end flex row wrapper */}
+
+      {!isFullscreen && (
+        <>
+        {/* Category legend */}
+        <div className="flex flex-wrap gap-1.5 mt-4">
+          {Array.from(new Set(references.map(r => r.category))).map(cat => {
+            const c = references.filter(r => r.category === cat).length;
+            const color = references.find(r => r.category === cat)?.color || 'hsl(var(--primary))';
+            return (
+              <span key={cat} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border"
+                style={{ borderColor: color, color, backgroundColor: `${color}10` }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                {cat} ({c})
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Expandable reading list */}
+        <div className="space-y-1 mt-4">
+          <button
+            onClick={() => setShowReadingList(!showReadingList)}
+            className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+          >
+            {showReadingList ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            📋 Ordem de Leitura Progressiva ({references.length})
+          </button>
+          {showReadingList && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 max-h-72 overflow-y-auto mt-2 animate-fade-in">
+              {references.map((ref) => {
+                const url = getBibleUrl(ref.ref);
+                const isSelected = selectedRef === ref.ref;
+                return (
+                  <button
+                    key={ref.order}
+                    onClick={() => setSelectedRef(ref.ref)}
+                    className={`flex items-center gap-2 px-2.5 py-2 rounded-md border text-xs font-medium transition-all text-left ${isSelected ? 'ring-2 ring-primary bg-primary/5 border-primary/30' : 'hover:bg-muted/50 border-border'}`}
+                  >
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold flex-shrink-0 text-white"
+                      style={{ backgroundColor: ref.color }}>
+                      {ref.order}
+                    </span>
+                    <span className="font-bold truncate" style={{ color: ref.color }}>{ref.ref}</span>
+                    <span className="text-[9px] text-muted-foreground truncate hidden sm:inline">{ref.category}</span>
+                    {url && (
+                      <a href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                        className="ml-auto flex-shrink-0 opacity-50 hover:opacity-100">
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        </>
+      )}
     </div>
   );
 }
