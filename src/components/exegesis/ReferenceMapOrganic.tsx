@@ -146,6 +146,7 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTouchDistance = useRef<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -424,16 +425,19 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
           {/* Curved arrow connections from center to each node */}
           {references.map((ref, i) => {
             const isSelected = selectedRef === ref.ref;
+            const isCatActive = !activeCategory || ref.category === activeCategory;
+            const dimmed = activeCategory && ref.category !== activeCategory;
             return (
               <path
                 key={`curve-${i}`}
                 d={getCurvedPath(i)}
                 fill="none"
                 stroke={ref.color}
-                strokeWidth={isSelected ? 2.5 : 1.5}
+                strokeWidth={isSelected ? 2.5 : isCatActive ? 1.8 : 1}
                 strokeDasharray={isSelected ? 'none' : undefined}
-                opacity={isSelected ? 0.9 : 0.45}
+                opacity={dimmed ? 0.1 : isSelected ? 0.9 : 0.45}
                 markerEnd="url(#arrowOrganic)"
+                style={{ transition: 'opacity 0.3s, stroke-width 0.3s' }}
               />
             );
           })}
@@ -454,10 +458,11 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
             );
           })}
 
-          {/* Reference nodes — concept label + bible ref as sub-text */}
+          {/* Reference nodes */}
           {references.map((ref, i) => {
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
+            const dimmed = activeCategory && ref.category !== activeCategory;
             const labelLen = ref.conceptLabel.length;
             const refLen = ref.ref.length;
             const boxW = isMobile ? Math.max(90, Math.max(labelLen, refLen) * 7 + 20) : Math.max(110, Math.max(labelLen, refLen) * 8.5 + 24);
@@ -466,29 +471,22 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
               <g
                 key={`node-${i}`}
                 onClick={(e) => { e.stopPropagation(); setSelectedRef(selectedRef === ref.ref ? null : ref.ref); }}
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', opacity: dimmed ? 0.12 : 1, transition: 'opacity 0.3s' }}
               >
-                {/* Selection glow */}
                 {isSelected && (
                   <ellipse cx={pos.x} cy={pos.y} rx={boxW / 2 + 8} ry={isMobile ? 26 : 30}
                     fill={ref.color} opacity="0.15" />
                 )}
-
-                {/* Concept label (bold, larger) */}
                 <text x={pos.x} y={pos.y - (isMobile ? 5 : 7)} textAnchor="middle"
                   fontSize={isMobile ? "11" : "14"} fontWeight="800"
                   fill={ref.color} fontFamily="Georgia, serif">
                   {ref.conceptLabel}
                 </text>
-
-                {/* Bible reference (smaller, below) */}
                 <text x={pos.x} y={pos.y + (isMobile ? 10 : 12)} textAnchor="middle"
                   fontSize={isMobile ? "8" : "10"} fontWeight="600"
                   fill="hsl(25, 40%, 50%)" opacity="0.85">
                   • {ref.ref}
                 </text>
-
-                {/* Invisible hit area for better touch */}
                 <rect x={pos.x - boxW / 2} y={pos.y - 20} width={boxW} height={40}
                   fill="transparent" />
               </g>
@@ -497,33 +495,69 @@ export function ReferenceMapOrganic({ centralTheme, content, keywords }: Referen
         </svg>
       </div>
 
-      {/* Category legend with meanings */}
+      {/* Interactive category legend */}
       <div className="mt-3 space-y-2">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">🎨 Legenda de Cores</p>
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">🎨 Legenda — toque para filtrar</p>
+          {activeCategory && (
+            <button onClick={() => setActiveCategory(null)} className="text-[10px] text-primary underline">
+              Mostrar todas
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {Array.from(new Set(references.map(r => r.category))).map(cat => {
             const c = references.filter(r => r.category === cat).length;
             const catInfo = categoryColorMap[cat] || { color: 'hsl(25, 55%, 42%)', meaning: 'Referência', icon: '📌' };
+            const isActive = activeCategory === cat;
+            const isDimmed = activeCategory && !isActive;
             return (
-              <span key={cat} className="group relative inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full border cursor-help"
-                style={{ borderColor: catInfo.color, color: catInfo.color, backgroundColor: `${catInfo.color}10` }}
-                title={catInfo.meaning}>
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: catInfo.color }} />
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(isActive ? null : cat)}
+                className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-1.5 rounded-lg border transition-all duration-200 ${isActive ? 'ring-2 ring-offset-1 shadow-md scale-105' : ''}`}
+                style={{
+                  borderColor: catInfo.color,
+                  color: isDimmed ? 'hsl(var(--muted-foreground))' : catInfo.color,
+                  backgroundColor: isActive ? `${catInfo.color}20` : 'transparent',
+                  opacity: isDimmed ? 0.4 : 1,
+                  outlineColor: isActive ? catInfo.color : undefined,
+                }}
+                title={catInfo.meaning}
+              >
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: catInfo.color }} />
                 <span>{catInfo.icon} {cat}</span>
-                <span className="text-muted-foreground">({c})</span>
-              </span>
+                <span className="opacity-60">({c})</span>
+              </button>
             );
           })}
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-          {Array.from(new Set(references.map(r => r.category))).map(cat => {
-            const catInfo = categoryColorMap[cat] || { color: 'hsl(25, 55%, 42%)', meaning: 'Referência', icon: '📌' };
-            return (
-              <span key={`desc-${cat}`} className="text-[9px] text-muted-foreground">
-                <span className="font-semibold" style={{ color: catInfo.color }}>{catInfo.icon} {cat}:</span> {catInfo.meaning}
+        {/* Meaning description — show active or all */}
+        <div className="bg-accent/10 rounded-lg px-3 py-2 border border-border/50">
+          {activeCategory ? (
+            <p className="text-[11px]">
+              <span className="font-bold" style={{ color: (categoryColorMap[activeCategory] || { color: '' }).color }}>
+                {(categoryColorMap[activeCategory] || { icon: '📌' }).icon} {activeCategory}:
+              </span>{' '}
+              <span className="text-muted-foreground">{(categoryColorMap[activeCategory] || { meaning: '' }).meaning}</span>
+              <span className="text-muted-foreground ml-1">
+                — {references.filter(r => r.category === activeCategory).length} referência(s)
               </span>
-            );
-          })}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5">
+              {Array.from(new Set(references.map(r => r.category))).map(cat => {
+                const catInfo = categoryColorMap[cat] || { color: 'hsl(25, 55%, 42%)', meaning: 'Referência', icon: '📌' };
+                return (
+                  <p key={`desc-${cat}`} className="text-[10px] text-muted-foreground leading-relaxed">
+                    <span className="font-bold" style={{ color: catInfo.color }}>{catInfo.icon}</span>{' '}
+                    <span className="font-semibold" style={{ color: catInfo.color }}>{cat}:</span>{' '}
+                    {catInfo.meaning}
+                  </p>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
