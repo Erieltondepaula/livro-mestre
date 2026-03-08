@@ -77,8 +77,8 @@ function extractReferences(content: string): { ref: string; category: string; co
         seen.add(fullRef);
         const color = categoryColors[currentCategory] || 'hsl(345, 50%, 30%)';
         // Extract snippet - text after the reference on the same line
-        const afterRef = line.slice(match.index + match[0].length).replace(/^[\s\-–—:]+/, '').replace(/[*_`]/g, '').trim();
-        const snippet = afterRef.slice(0, 60) || '';
+        const afterRef = line.slice(match.index + match[0].length).replace(/^[\s\-–—:]+/, '').replace(/[*_`\[\]]/g, '').trim();
+        const snippet = afterRef.slice(0, 120) || '';
         refs.push({ ref: fullRef, category: currentCategory || 'GERAL', color, order: orderCounter++, snippet });
       }
     }
