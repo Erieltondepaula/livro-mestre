@@ -2,24 +2,46 @@ import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { ExternalLink, ZoomIn, ZoomOut, Maximize2, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Mapping Portuguese book names to bible-api.com English slugs
+// Mapping Portuguese book names (full + abbreviated) to bible-api.com English slugs
 const BOOK_SLUGS_API: Record<string, string> = {
-  'Gênesis': 'genesis', 'Êxodo': 'exodus', 'Levítico': 'leviticus', 'Números': 'numbers', 'Deuteronômio': 'deuteronomy',
-  'Josué': 'joshua', 'Juízes': 'judges', 'Rute': 'ruth', '1 Samuel': '1samuel', '2 Samuel': '2samuel',
-  '1 Reis': '1kings', '2 Reis': '2kings', '1 Crônicas': '1chronicles', '2 Crônicas': '2chronicles',
-  'Esdras': 'ezra', 'Neemias': 'nehemiah', 'Ester': 'esther', 'Jó': 'job',
-  'Salmos': 'psalms', 'Provérbios': 'proverbs', 'Eclesiastes': 'ecclesiastes', 'Cânticos': 'songofsolomon',
-  'Isaías': 'isaiah', 'Jeremias': 'jeremiah', 'Lamentações': 'lamentations', 'Ezequiel': 'ezekiel', 'Daniel': 'daniel',
-  'Oséias': 'hosea', 'Joel': 'joel', 'Amós': 'amos', 'Obadias': 'obadiah', 'Jonas': 'jonah',
-  'Miquéias': 'micah', 'Naum': 'nahum', 'Habacuque': 'habakkuk', 'Sofonias': 'zephaniah', 'Ageu': 'haggai',
-  'Zacarias': 'zechariah', 'Malaquias': 'malachi',
-  'Mateus': 'matthew', 'Marcos': 'mark', 'Lucas': 'luke', 'João': 'john', 'Atos': 'acts',
-  'Romanos': 'romans', '1 Coríntios': '1corinthians', '2 Coríntios': '2corinthians', 'Gálatas': 'galatians',
-  'Efésios': 'ephesians', 'Filipenses': 'philippians', 'Colossenses': 'colossians',
-  '1 Tessalonicenses': '1thessalonians', '2 Tessalonicenses': '2thessalonians',
-  '1 Timóteo': '1timothy', '2 Timóteo': '2timothy', 'Tito': 'titus', 'Filemom': 'philemon',
-  'Hebreus': 'hebrews', 'Tiago': 'james', '1 Pedro': '1peter', '2 Pedro': '2peter',
-  '1 João': '1john', '2 João': '2john', '3 João': '3john', 'Judas': 'jude', 'Apocalipse': 'revelation',
+  'Gênesis': 'genesis', 'Gn': 'genesis', 'Êxodo': 'exodus', 'Ex': 'exodus',
+  'Levítico': 'leviticus', 'Lv': 'leviticus', 'Números': 'numbers', 'Nm': 'numbers',
+  'Deuteronômio': 'deuteronomy', 'Dt': 'deuteronomy',
+  'Josué': 'joshua', 'Js': 'joshua', 'Juízes': 'judges', 'Jz': 'judges',
+  'Rute': 'ruth', 'Rt': 'ruth',
+  '1 Samuel': '1samuel', '1 Sm': '1samuel', '1Samuel': '1samuel',
+  '2 Samuel': '2samuel', '2 Sm': '2samuel', '2Samuel': '2samuel',
+  '1 Reis': '1kings', '1 Rs': '1kings', '1Rs': '1kings',
+  '2 Reis': '2kings', '2 Rs': '2kings', '2Rs': '2kings',
+  '1 Crônicas': '1chronicles', '1 Cr': '1chronicles', '2 Crônicas': '2chronicles', '2 Cr': '2chronicles',
+  'Esdras': 'ezra', 'Ed': 'ezra', 'Neemias': 'nehemiah', 'Ne': 'nehemiah',
+  'Ester': 'esther', 'Et': 'esther', 'Jó': 'job',
+  'Salmos': 'psalms', 'Sl': 'psalms', 'Provérbios': 'proverbs', 'Pv': 'proverbs',
+  'Eclesiastes': 'ecclesiastes', 'Ec': 'ecclesiastes', 'Cânticos': 'songofsolomon', 'Ct': 'songofsolomon',
+  'Isaías': 'isaiah', 'Is': 'isaiah', 'Jeremias': 'jeremiah', 'Jr': 'jeremiah',
+  'Lamentações': 'lamentations', 'Lm': 'lamentations', 'Ezequiel': 'ezekiel', 'Ez': 'ezekiel',
+  'Daniel': 'daniel', 'Dn': 'daniel',
+  'Oséias': 'hosea', 'Os': 'hosea', 'Joel': 'joel', 'Jl': 'joel',
+  'Amós': 'amos', 'Am': 'amos', 'Obadias': 'obadiah', 'Ob': 'obadiah',
+  'Jonas': 'jonah', 'Jn': 'jonah', 'Miquéias': 'micah', 'Mq': 'micah',
+  'Naum': 'nahum', 'Na': 'nahum', 'Habacuque': 'habakkuk', 'Hc': 'habakkuk',
+  'Sofonias': 'zephaniah', 'Sf': 'zephaniah', 'Ageu': 'haggai', 'Ag': 'haggai',
+  'Zacarias': 'zechariah', 'Zc': 'zechariah', 'Malaquias': 'malachi', 'Ml': 'malachi',
+  'Mateus': 'matthew', 'Mt': 'matthew', 'Marcos': 'mark', 'Mc': 'mark',
+  'Lucas': 'luke', 'Lc': 'luke', 'João': 'john', 'Jo': 'john', 'Atos': 'acts', 'At': 'acts',
+  'Romanos': 'romans', 'Rm': 'romans',
+  '1 Coríntios': '1corinthians', '1 Co': '1corinthians', '2 Coríntios': '2corinthians', '2 Co': '2corinthians',
+  'Gálatas': 'galatians', 'Gl': 'galatians', 'Efésios': 'ephesians', 'Ef': 'ephesians',
+  'Filipenses': 'philippians', 'Fp': 'philippians', 'Colossenses': 'colossians', 'Cl': 'colossians',
+  '1 Tessalonicenses': '1thessalonians', '1 Ts': '1thessalonians',
+  '2 Tessalonicenses': '2thessalonians', '2 Ts': '2thessalonians',
+  '1 Timóteo': '1timothy', '1 Tm': '1timothy', '2 Timóteo': '2timothy', '2 Tm': '2timothy',
+  'Tito': 'titus', 'Tt': 'titus', 'Filemom': 'philemon', 'Fm': 'philemon',
+  'Hebreus': 'hebrews', 'Hb': 'hebrews', 'Tiago': 'james', 'Tg': 'james',
+  '1 Pedro': '1peter', '1 Pe': '1peter', '2 Pedro': '2peter', '2 Pe': '2peter',
+  '1 João': '1john', '1 Jo': '1john', '2 João': '2john', '2 Jo': '2john',
+  '3 João': '3john', '3 Jo': '3john', 'Judas': 'jude', 'Jd': 'jude',
+  'Apocalipse': 'revelation', 'Ap': 'revelation',
 };
 
 // Cache for fetched verses
@@ -28,15 +50,21 @@ const verseCache = new Map<string, string>();
 async function fetchVerseText(ref: string): Promise<string> {
   if (verseCache.has(ref)) return verseCache.get(ref)!;
 
-  const match = ref.match(/^((?:\d\s)?[A-ZÀ-Ú][a-zà-ú]+(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/);
+  // Match full names, abbreviated names (2-3 chars), and numbered books
+  const match = ref.match(/^((?:\d\s?)?[A-ZÀ-Ú][a-zà-ú]*(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/);
   if (!match) return '';
 
-  const bookSlug = BOOK_SLUGS_API[match[1]];
+  const bookName = match[1].trim();
+  const bookSlug = BOOK_SLUGS_API[bookName];
   if (!bookSlug) return '';
 
   const verseRef = `${bookSlug}+${match[2]}:${match[3]}`;
   try {
-    const res = await fetch(`https://bible-api.com/${verseRef}?translation=almeida`);
+    // Try almeida first, fallback to default translation
+    let res = await fetch(`https://bible-api.com/${verseRef}?translation=almeida`);
+    if (!res.ok) {
+      res = await fetch(`https://bible-api.com/${verseRef}`);
+    }
     if (!res.ok) return '';
     const data = await res.json();
     const text = data.text?.trim() || '';
@@ -54,28 +82,37 @@ interface ReferenceMapProps {
 }
 
 const BIBLE_ONLINE_SLUGS: Record<string, string> = {
-  'Gênesis': 'gn', 'Êxodo': 'ex', 'Levítico': 'lv', 'Números': 'nm', 'Deuteronômio': 'dt',
-  'Josué': 'js', 'Juízes': 'jz', 'Rute': 'rt', '1 Samuel': '1sm', '2 Samuel': '2sm',
-  '1 Reis': '1rs', '2 Reis': '2rs', '1 Crônicas': '1cr', '2 Crônicas': '2cr',
-  'Esdras': 'ed', 'Neemias': 'ne', 'Ester': 'et', 'Jó': 'jó',
-  'Salmos': 'sl', 'Provérbios': 'pv', 'Eclesiastes': 'ec', 'Cânticos': 'ct',
-  'Isaías': 'is', 'Jeremias': 'jr', 'Lamentações': 'lm', 'Ezequiel': 'ez', 'Daniel': 'dn',
-  'Oséias': 'os', 'Joel': 'jl', 'Amós': 'am', 'Obadias': 'ob', 'Jonas': 'jn',
-  'Miquéias': 'mq', 'Naum': 'na', 'Habacuque': 'hc', 'Sofonias': 'sf', 'Ageu': 'ag',
-  'Zacarias': 'zc', 'Malaquias': 'ml',
-  'Mateus': 'mt', 'Marcos': 'mc', 'Lucas': 'lc', 'João': 'jo', 'Atos': 'atos',
-  'Romanos': 'rm', '1 Coríntios': '1co', '2 Coríntios': '2co', 'Gálatas': 'gl',
-  'Efésios': 'ef', 'Filipenses': 'fp', 'Colossenses': 'cl',
-  '1 Tessalonicenses': '1ts', '2 Tessalonicenses': '2ts',
-  '1 Timóteo': '1tm', '2 Timóteo': '2tm', 'Tito': 'tt', 'Filemom': 'fm',
-  'Hebreus': 'hb', 'Tiago': 'tg', '1 Pedro': '1pe', '2 Pedro': '2pe',
-  '1 João': '1jo', '2 João': '2jo', '3 João': '3jo', 'Judas': 'jd', 'Apocalipse': 'ap',
+  'Gênesis': 'gn', 'Gn': 'gn', 'Êxodo': 'ex', 'Ex': 'ex', 'Levítico': 'lv', 'Lv': 'lv',
+  'Números': 'nm', 'Nm': 'nm', 'Deuteronômio': 'dt', 'Dt': 'dt',
+  'Josué': 'js', 'Js': 'js', 'Juízes': 'jz', 'Jz': 'jz', 'Rute': 'rt', 'Rt': 'rt',
+  '1 Samuel': '1sm', '1 Sm': '1sm', '2 Samuel': '2sm', '2 Sm': '2sm',
+  '1 Reis': '1rs', '1 Rs': '1rs', '2 Reis': '2rs', '2 Rs': '2rs',
+  '1 Crônicas': '1cr', '1 Cr': '1cr', '2 Crônicas': '2cr', '2 Cr': '2cr',
+  'Esdras': 'ed', 'Ed': 'ed', 'Neemias': 'ne', 'Ne': 'ne', 'Ester': 'et', 'Et': 'et', 'Jó': 'jó',
+  'Salmos': 'sl', 'Sl': 'sl', 'Provérbios': 'pv', 'Pv': 'pv', 'Eclesiastes': 'ec', 'Ec': 'ec',
+  'Cânticos': 'ct', 'Ct': 'ct', 'Isaías': 'is', 'Is': 'is', 'Jeremias': 'jr', 'Jr': 'jr',
+  'Lamentações': 'lm', 'Lm': 'lm', 'Ezequiel': 'ez', 'Ez': 'ez', 'Daniel': 'dn', 'Dn': 'dn',
+  'Oséias': 'os', 'Os': 'os', 'Joel': 'jl', 'Jl': 'jl', 'Amós': 'am', 'Am': 'am',
+  'Obadias': 'ob', 'Ob': 'ob', 'Jonas': 'jn', 'Jn': 'jn', 'Miquéias': 'mq', 'Mq': 'mq',
+  'Naum': 'na', 'Na': 'na', 'Habacuque': 'hc', 'Hc': 'hc', 'Sofonias': 'sf', 'Sf': 'sf',
+  'Ageu': 'ag', 'Ag': 'ag', 'Zacarias': 'zc', 'Zc': 'zc', 'Malaquias': 'ml', 'Ml': 'ml',
+  'Mateus': 'mt', 'Mt': 'mt', 'Marcos': 'mc', 'Mc': 'mc', 'Lucas': 'lc', 'Lc': 'lc',
+  'João': 'jo', 'Jo': 'jo', 'Atos': 'atos', 'At': 'atos',
+  'Romanos': 'rm', 'Rm': 'rm', '1 Coríntios': '1co', '1 Co': '1co', '2 Coríntios': '2co', '2 Co': '2co',
+  'Gálatas': 'gl', 'Gl': 'gl', 'Efésios': 'ef', 'Ef': 'ef', 'Filipenses': 'fp', 'Fp': 'fp',
+  'Colossenses': 'cl', 'Cl': 'cl', '1 Tessalonicenses': '1ts', '1 Ts': '1ts',
+  '2 Tessalonicenses': '2ts', '2 Ts': '2ts', '1 Timóteo': '1tm', '1 Tm': '1tm',
+  '2 Timóteo': '2tm', '2 Tm': '2tm', 'Tito': 'tt', 'Tt': 'tt', 'Filemom': 'fm', 'Fm': 'fm',
+  'Hebreus': 'hb', 'Hb': 'hb', 'Tiago': 'tg', 'Tg': 'tg', '1 Pedro': '1pe', '1 Pe': '1pe',
+  '2 Pedro': '2pe', '2 Pe': '2pe', '1 João': '1jo', '1 Jo': '1jo', '2 João': '2jo', '2 Jo': '2jo',
+  '3 João': '3jo', '3 Jo': '3jo', 'Judas': 'jd', 'Jd': 'jd', 'Apocalipse': 'ap', 'Ap': 'ap',
 };
 
 function getBibleUrl(ref: string): string | null {
-  const match = ref.match(/^((?:\d\s)?[A-ZÀ-Ú][a-zà-ú]+(?:\s[a-zà-ú]+)?)\s+(\d+)/);
+  const match = ref.match(/^((?:\d\s?)?[A-ZÀ-Ú][a-zà-ú]*(?:\s[a-zà-ú]+)?)\s+(\d+)/);
   if (!match) return null;
-  const slug = BIBLE_ONLINE_SLUGS[match[1]];
+  const bookName = match[1].trim();
+  const slug = BIBLE_ONLINE_SLUGS[bookName];
   if (!slug) return null;
   return `https://www.bibliaonline.com.br/acf/${slug}/${match[2]}`;
 }
@@ -114,7 +151,7 @@ function extractReferences(content: string): { ref: string; category: string; co
       if (headerText.includes('TOP')) currentCategory = 'TOP';
     }
 
-    const refPattern = /(?:👉\s*\[?)?((?:\d\s)?[A-ZÀ-Ú][a-zà-ú]+(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/g;
+    const refPattern = /(?:👉\s*\[?)?((?:\d\s?)?[A-ZÀ-Ú][a-zà-ú]*(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/g;
     let match;
     while ((match = refPattern.exec(line)) !== null) {
       const fullRef = `${match[1]} ${match[2]}:${match[3]}`;
@@ -281,8 +318,12 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
 
   const selectedData = selectedRef ? references.find(r => r.ref === selectedRef) : null;
   const selectedUrl = selectedRef ? getBibleUrl(selectedRef) : null;
-  const nextRef = selectedData && selectedData.order < references.length
-    ? references.find(r => r.order === selectedData.order + 1) : null;
+  // Always provide a next reference — wrap from last to first
+  const nextRef = selectedData
+    ? selectedData.order < references.length
+      ? references.find(r => r.order === selectedData.order + 1)
+      : references[0] // wrap around
+    : null;
 
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.3, 4));
   const handleZoomOut = () => setZoom(z => Math.max(z - 0.3, 0.3));
