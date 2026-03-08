@@ -239,20 +239,24 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   // Layout: evenly spaced radial pattern. Center at (500, 500).
   const CX = 500;
   const CY = 500;
-  const CENTER_R = 70;
+
+  // Adaptive central shape based on text length
+  const isLongTheme = centralTheme.length > 15;
+  const centralW = isLongTheme ? Math.min(320, Math.max(160, centralTheme.length * 10 + 40)) : 140;
+  const centralH = isLongTheme ? 70 : 140;
+  const CENTER_R = isLongTheme ? 0 : 70; // 0 means rect mode
+  const centralRx = isLongTheme ? 35 : 0;
 
   // Adaptive ring sizing based on node count
-  // Fewer nodes per ring = more spacing between them
   const NODES_PER_RING = Math.min(8, Math.max(5, Math.ceil(count / 3)));
-  const RING_BASE = 220; // First ring well clear of center
-  const RING_SPACING = 180; // Generous gap between rings
+  const RING_BASE = isLongTheme ? Math.max(220, centralW / 2 + 150) : 220;
+  const RING_SPACING = 180;
 
   const getNodePos = (i: number) => {
     const ringIndex = Math.floor(i / NODES_PER_RING);
     const posInRing = i % NODES_PER_RING;
     const nodesInThisRing = Math.min(NODES_PER_RING, count - ringIndex * NODES_PER_RING);
     const radius = RING_BASE + ringIndex * RING_SPACING;
-    // Offset each ring slightly so nodes don't align radially
     const angleOffset = ringIndex * (Math.PI / NODES_PER_RING);
     const angle = (posInRing / nodesInThisRing) * 2 * Math.PI - Math.PI / 2 + angleOffset;
     return {
@@ -266,10 +270,12 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const xs = allPositions.map(p => p.x);
   const ys = allPositions.map(p => p.y);
   const padding = 150;
-  const minX = Math.min(CX - CENTER_R, ...xs) - padding;
-  const minY = Math.min(CY - CENTER_R, ...ys) - padding;
-  const maxX = Math.max(CX + CENTER_R, ...xs) + padding;
-  const maxY = Math.max(CY + CENTER_R, ...ys) + padding;
+  const halfW = isLongTheme ? centralW / 2 : CENTER_R;
+  const halfH = isLongTheme ? centralH / 2 : CENTER_R;
+  const minX = Math.min(CX - halfW, ...xs) - padding;
+  const minY = Math.min(CY - halfH, ...ys) - padding;
+  const maxX = Math.max(CX + halfW, ...xs) + padding;
+  const maxY = Math.max(CY + halfH, ...ys) + padding;
   const vbW = maxX - minX;
   const vbH = maxY - minY;
 
@@ -290,11 +296,29 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
     if (nextRef) setSelectedRef(nextRef.ref);
   };
 
-  // Bold keywords in central theme
-  const themeLabel = centralTheme.length > 40 ? centralTheme.slice(0, 40) + '…' : centralTheme;
+  // Full theme label — no truncation, let the shape adapt
+  const themeLabel = centralTheme;
+  // Split long text into multiple lines for SVG
+  const themeLines: string[] = [];
+  if (isLongTheme) {
+    const words = centralTheme.split(' ');
+    let line = '';
+    const maxCharsPerLine = Math.floor(centralW / 10);
+    for (const word of words) {
+      if ((line + ' ' + word).trim().length > maxCharsPerLine && line) {
+        themeLines.push(line.trim());
+        line = word;
+      } else {
+        line = line ? line + ' ' + word : word;
+      }
+    }
+    if (line) themeLines.push(line.trim());
+  } else {
+    themeLines.push(centralTheme.length > 12 ? centralTheme.slice(0, 12) + '…' : centralTheme);
+  }
 
-  // Make container tall enough to show the map clearly
-  const containerHeight = Math.max(550, Math.min(800, vbH * 0.6));
+  // Responsive container height — smaller on mobile
+  const containerHeight = Math.max(400, Math.min(800, vbH * 0.6));
 
   return (
     <div className="card-library p-4 sm:p-6 space-y-4">
@@ -360,6 +384,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         onTouchEnd={handleTouchEnd}
       >
         <svg
+          onClick={() => { setHoveredRef(null); }}
           viewBox={`${minX} ${minY} ${vbW} ${vbH}`}
           className="w-full h-full select-none"
           preserveAspectRatio="xMidYMid meet"
@@ -405,15 +430,31 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             );
           })}
 
-          {/* Central circle */}
-          <circle cx={CX} cy={CY} r={CENTER_R} fill="hsl(var(--primary))" opacity="0.08" />
-          <circle cx={CX} cy={CY} r={CENTER_R} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+          {/* Central shape — circle or rounded rect based on text length */}
+          {isLongTheme ? (
+            <>
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="hsl(var(--primary))" opacity="0.08" />
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+            </>
+          ) : (
+            <>
+              <circle cx={CX} cy={CY} r={70} fill="hsl(var(--primary))" opacity="0.08" />
+              <circle cx={CX} cy={CY} r={70} fill="none" stroke="hsl(var(--primary))" strokeWidth="2" opacity="0.6" />
+            </>
+          )}
 
-          {/* Central theme text */}
-          <text x={CX} y={CY - 4} textAnchor="middle" fontSize="18" fontWeight="800" fill="hsl(var(--primary))" className="font-display">
-            {themeLabel}
-          </text>
-          <text x={CX} y={CY + 18} textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" opacity="0.7">
+          {/* Central theme text — multiline for long text */}
+          {themeLines.map((line, li) => {
+            const totalLines = themeLines.length;
+            const lineHeight = 18;
+            const startY = CY - ((totalLines - 1) * lineHeight) / 2 - 6;
+            return (
+              <text key={`tl-${li}`} x={CX} y={startY + li * lineHeight} textAnchor="middle" fontSize={isLongTheme ? "15" : "18"} fontWeight="800" fill="hsl(var(--primary))" className="font-display">
+                {line}
+              </text>
+            );
+          })}
+          <text x={CX} y={CY + (isLongTheme ? centralH / 2 - 8 : 18)} textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" opacity="0.7">
             {references.length} referências cruzadas
           </text>
 
@@ -428,20 +469,42 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             return (
               <g
                 key={`node-${i}`}
-                onClick={(e) => { e.stopPropagation(); handleNodeClick(ref); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNodeClick(ref);
+                  // Also show tooltip on tap (mobile)
+                  const svgEl = containerRef.current?.querySelector('svg');
+                  if (svgEl && containerRef.current) {
+                    const svgRect = svgEl.getBoundingClientRect();
+                    const viewBox = svgEl.viewBox.baseVal;
+                    const scaleX = svgRect.width / viewBox.width;
+                    const scaleY = svgRect.height / viewBox.height;
+                    const scale = Math.min(scaleX, scaleY);
+                    const offsetX = (svgRect.width - viewBox.width * scale) / 2;
+                    const offsetY = (svgRect.height - viewBox.height * scale) / 2;
+                    const screenX = (pos.x - viewBox.x) * scale + offsetX + svgRect.left;
+                    const screenY = (pos.y - viewBox.y) * scale + offsetY + svgRect.top;
+                    const containerRect = containerRef.current.getBoundingClientRect();
+                    setHoveredRef({
+                      ref,
+                      x: (screenX - containerRect.left) * (1 / zoom) + pan.x * (1 / zoom - 1),
+                      y: (screenY - containerRect.top) * (1 / zoom) + pan.y * (1 / zoom - 1),
+                    });
+                  }
+                }}
                 onMouseEnter={(e) => {
                   const svgEl = containerRef.current?.querySelector('svg');
-                  if (svgEl) {
-                    const rect = svgEl.getBoundingClientRect();
+                  if (svgEl && containerRef.current) {
+                    const svgRect = svgEl.getBoundingClientRect();
                     const viewBox = svgEl.viewBox.baseVal;
-                    const scaleX = rect.width / viewBox.width;
-                    const scaleY = rect.height / viewBox.height;
+                    const scaleX = svgRect.width / viewBox.width;
+                    const scaleY = svgRect.height / viewBox.height;
                     const scale = Math.min(scaleX, scaleY);
-                    const offsetX = (rect.width - viewBox.width * scale) / 2;
-                    const offsetY = (rect.height - viewBox.height * scale) / 2;
-                    const screenX = (pos.x - viewBox.x) * scale + offsetX + rect.left;
-                    const screenY = (pos.y - viewBox.y) * scale + offsetY + rect.top;
-                    const containerRect = containerRef.current!.getBoundingClientRect();
+                    const offsetX = (svgRect.width - viewBox.width * scale) / 2;
+                    const offsetY = (svgRect.height - viewBox.height * scale) / 2;
+                    const screenX = (pos.x - viewBox.x) * scale + offsetX + svgRect.left;
+                    const screenY = (pos.y - viewBox.y) * scale + offsetY + svgRect.top;
+                    const containerRect = containerRef.current.getBoundingClientRect();
                     setHoveredRef({
                       ref,
                       x: (screenX - containerRect.left) * (1 / zoom) + pan.x * (1 / zoom - 1),
@@ -508,36 +571,61 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           })}
         </svg>
 
-        {/* Hover tooltip */}
+        {/* Hover/Tap tooltip — positioned above node on desktop, fixed bottom on mobile */}
         {hoveredRef && (
-          <div
-            className="absolute z-50 pointer-events-none animate-fade-in"
-            style={{
-              left: `${hoveredRef.x}px`,
-              top: `${hoveredRef.y - 50}px`,
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5 max-w-[360px] min-w-[200px]">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
-                <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
-                <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
-              </div>
-              {isLoadingVerse && !hoveredVerseText ? (
-                <div className="flex items-center gap-1.5 py-1">
-                  <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-                  <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
+          <>
+            {/* Desktop tooltip */}
+            <div
+              className="absolute z-50 pointer-events-none animate-fade-in hidden sm:block"
+              style={{
+                left: `${hoveredRef.x}px`,
+                top: `${hoveredRef.y - 50}px`,
+                transform: 'translate(-50%, -100%)',
+              }}
+            >
+              <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5 max-w-[360px] min-w-[200px]">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
+                  <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
+                  <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
                 </div>
-              ) : hoveredVerseText ? (
-                <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[250px] overflow-y-auto">
-                  "{hoveredVerseText}"
-                </p>
-              ) : (
-                <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
-              )}
+                {isLoadingVerse && !hoveredVerseText ? (
+                  <div className="flex items-center gap-1.5 py-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
+                  </div>
+                ) : hoveredVerseText ? (
+                  <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[250px] overflow-y-auto">
+                    "{hoveredVerseText}"
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
+                )}
+              </div>
             </div>
-          </div>
+            {/* Mobile tooltip — fixed at bottom of map container */}
+            <div className="absolute bottom-2 left-2 right-2 z-50 sm:hidden animate-fade-in">
+              <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2.5">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: hoveredRef.ref.color }} />
+                  <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
+                  <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
+                </div>
+                {isLoadingVerse && !hoveredVerseText ? (
+                  <div className="flex items-center gap-1.5 py-1">
+                    <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                    <span className="text-[11px] text-muted-foreground">Carregando versículo...</span>
+                  </div>
+                ) : hoveredVerseText ? (
+                  <p className="text-xs text-popover-foreground leading-relaxed italic max-h-[120px] overflow-y-auto">
+                    "{hoveredVerseText}"
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic">Texto não disponível</p>
+                )}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
