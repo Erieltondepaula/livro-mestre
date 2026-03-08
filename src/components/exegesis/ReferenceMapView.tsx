@@ -93,10 +93,30 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const svgContainerRef = useRef<HTMLDivElement>(null);
 
-  if (references.length === 0) return null;
-
-  const visibleRefs = references.slice(0, revealedCount);
+  const visibleRefs = useMemo(() => references.slice(0, revealedCount), [references, revealedCount]);
   const hasMore = revealedCount < references.length;
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsPanning(true);
+    panStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
+  }, [pan]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning) return;
+    setPan({
+      x: panStart.current.panX + (e.clientX - panStart.current.x),
+      y: panStart.current.panY + (e.clientY - panStart.current.y),
+    });
+  }, [isPanning]);
+
+  const handleMouseUp = useCallback(() => setIsPanning(false), []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom(z => Math.max(0.5, Math.min(3, z - e.deltaY * 0.002)));
+  }, []);
+
+  if (references.length === 0) return null;
 
   // Progressive ring layout - inner refs first, expanding outward
   const getPos = (i: number, count: number) => {
