@@ -849,14 +849,14 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   )}
                 </div>
                 {verseText ? (
-                  <p className="text-xs text-foreground/80 leading-relaxed italic">
+                  <p className="text-sm text-foreground leading-7">
                     "{(() => {
                       const parts = renderHighlightedText(verseText);
                       if (typeof parts === 'string') return parts;
                       return parts.map((part, i) => {
                         const isMatch = isHighlightedSegment(part);
                         return isMatch
-                          ? <strong key={i} className="font-extrabold not-italic" style={{ color: ref.color }}>{part}</strong>
+                          ? <strong key={i} className="font-black bg-primary/30 text-foreground px-0.5 rounded-sm">{part}</strong>
                           : <span key={i}>{part}</span>;
                       });
                     })()}"
