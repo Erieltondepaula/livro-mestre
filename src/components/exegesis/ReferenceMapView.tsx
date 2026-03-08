@@ -681,27 +681,27 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           {isLongTheme ? (
             <>
               <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="url(#centerGlow)" />
-              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" opacity="0.7" />
+              <rect x={CX - centralW / 2} y={CY - centralH / 2} width={centralW} height={centralH} rx={centralRx} fill="none" stroke="hsl(var(--primary))" strokeWidth={isMobileScreen ? "2" : "2.5"} opacity="0.7" />
             </>
           ) : (
             <>
-              <circle cx={CX} cy={CY} r={70} fill="url(#centerGlow)" />
-              <circle cx={CX} cy={CY} r={70} fill="none" stroke="hsl(var(--primary))" strokeWidth="2.5" opacity="0.7" />
+              <circle cx={CX} cy={CY} r={CENTER_R} fill="url(#centerGlow)" />
+              <circle cx={CX} cy={CY} r={CENTER_R} fill="none" stroke="hsl(var(--primary))" strokeWidth={isMobileScreen ? "2" : "2.5"} opacity="0.7" />
             </>
           )}
 
           {/* Central theme text — multiline for long text */}
           {themeLines.map((line, li) => {
             const totalLines = themeLines.length;
-            const lineHeight = 18;
+            const lineHeight = isMobileScreen ? 14 : 18;
             const startY = CY - ((totalLines - 1) * lineHeight) / 2 - 6;
             return (
-              <text key={`tl-${li}`} x={CX} y={startY + li * lineHeight} textAnchor="middle" fontSize={isLongTheme ? "15" : "18"} fontWeight="800" fill="hsl(var(--primary))" className="font-display">
+              <text key={`tl-${li}`} x={CX} y={startY + li * lineHeight} textAnchor="middle" fontSize={isMobileScreen ? (isLongTheme ? "11" : "13") : (isLongTheme ? "15" : "18")} fontWeight="800" fill="hsl(var(--primary))" className="font-display">
                 {line}
               </text>
             );
           })}
-          <text x={CX} y={CY + (isLongTheme ? centralH / 2 - 8 : 18)} textAnchor="middle" fontSize="11" fill="hsl(var(--muted-foreground))" opacity="0.7">
+          <text x={CX} y={CY + (isLongTheme ? centralH / 2 - 8 : (isMobileScreen ? 12 : 18))} textAnchor="middle" fontSize={isMobileScreen ? "8" : "11"} fill="hsl(var(--muted-foreground))" opacity="0.7">
             {references.length} referências cruzadas
           </text>
 
