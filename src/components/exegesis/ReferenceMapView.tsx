@@ -512,7 +512,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white" style={{ backgroundColor: selectedData.color }}>
               {selectedData.order}
             </span>
-            <span className="text-sm font-bold" style={{ color: selectedData.color }}>📖 {selectedData.ref}</span>
+            <span className="text-sm font-bold text-foreground">📖 {selectedData.ref}</span>
             {selectedData.snippet && (
               <span className="text-xs text-muted-foreground italic hidden sm:inline">— {selectedData.snippet}</span>
             )}
