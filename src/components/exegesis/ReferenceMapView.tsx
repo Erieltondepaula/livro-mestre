@@ -384,6 +384,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         onTouchEnd={handleTouchEnd}
       >
         <svg
+          onClick={() => { setHoveredRef(null); }}
           viewBox={`${minX} ${minY} ${vbW} ${vbH}`}
           className="w-full h-full select-none"
           preserveAspectRatio="xMidYMid meet"
