@@ -401,7 +401,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
       {/* Visual Reference Map */}
       {displayContent && !isLoading && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <button
               onClick={() => setShowMap(!showMap)}
               className={`flex items-center gap-2 text-sm font-medium transition-colors ${showMap ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
@@ -409,9 +409,32 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
               <Map className="w-4 h-4" />
               {showMap ? 'Ocultar Mapa Visual' : 'Mostrar Mapa Visual'}
             </button>
+            {showMap && (
+              <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+                <button
+                  onClick={() => setMapStyle('geometric')}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${mapStyle === 'geometric' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Map className="w-3 h-3" /> Geométrico
+                </button>
+                <button
+                  onClick={() => setMapStyle('organic')}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${mapStyle === 'organic' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Leaf className="w-3 h-3" /> Orgânico
+                </button>
+              </div>
+            )}
           </div>
-          {showMap && (
+          {showMap && mapStyle === 'geometric' && (
             <ReferenceMapView
+              centralTheme={lastResult?.passage || getPassageText()}
+              content={displayContent}
+              keywords={lastResult?.keywords || extractedKeywords}
+            />
+          )}
+          {showMap && mapStyle === 'organic' && (
+            <ReferenceMapOrganic
               centralTheme={lastResult?.passage || getPassageText()}
               content={displayContent}
               keywords={lastResult?.keywords || extractedKeywords}
