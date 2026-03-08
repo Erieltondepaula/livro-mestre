@@ -105,6 +105,19 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: 
                   <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
                     <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(a.content) }} />
                     
+                    {/* Render cross-references map for cross_references analyses */}
+                    {a.analysis_type === 'cross_references' && (() => {
+                      const stopWords = new Set(['como', 'que', 'de', 'do', 'da', 'dos', 'das', 'em', 'no', 'na', 'nos', 'nas', 'um', 'uma', 'o', 'a', 'os', 'as', 'e', 'ou', 'para', 'por', 'com', 'se', 'ao', 'aos', 'à', 'às', 'é', 'são', 'foi', 'ser', 'ter', 'está', 'entre', 'qual', 'quais', 'isso', 'esse', 'esta', 'este']);
+                      const kw = a.passage.split(/[\s,?!.;:]+/).filter((w: string) => w.length > 2 && !stopWords.has(w.toLowerCase()));
+                      return (
+                        <ReferenceMapView
+                          centralTheme={a.passage}
+                          content={a.content}
+                          keywords={kw}
+                        />
+                      );
+                    })()}
+
                     {/* Render AI-generated map for geographic_historical analyses */}
                     {a.analysis_type === 'geographic_historical' && (() => {
                       const mapUrl = extractMapImageUrl(a.content);
