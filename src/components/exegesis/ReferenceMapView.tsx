@@ -131,10 +131,10 @@ const categoryColors: Record<string, string> = {
   'TOP': 'hsl(350, 100%, 52%)',
 };
 
-// Generate rainbow color for individual nodes (fallback when category is GERAL)
+// Generate high-contrast distinct color for each node
 function getRainbowColor(index: number, total: number): string {
-  const hue = Math.round((index / Math.max(total, 1)) * 360);
-  return `hsl(${hue}, 96%, 52%)`;
+  const hue = Math.round((index * 137.508) % 360); // golden-angle distribution (less repetition)
+  return `hsl(${hue}, 96%, 50%)`;
 }
 
 function extractReferences(content: string): { ref: string; category: string; color: string; order: number; snippet: string }[] {
