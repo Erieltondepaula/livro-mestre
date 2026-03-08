@@ -226,6 +226,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   }, [queryType, themeQuery, bibleBook, chapterStart]);
 
   const [showMap, setShowMap] = useState(true);
+  const [mapStyle, setMapStyle] = useState<'geometric' | 'organic'>('geometric');
 
   const renderMarkdown = (text: string) => {
     let html = text
