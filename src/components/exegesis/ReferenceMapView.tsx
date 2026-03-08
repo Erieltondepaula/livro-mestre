@@ -96,6 +96,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [showReadingList, setShowReadingList] = useState(false);
+  const [hoveredRef, setHoveredRef] = useState<{ ref: typeof references[0]; x: number; y: number } | null>(null);
 
   // Touch support
   const lastTouchDistance = useRef<number | null>(null);
