@@ -114,27 +114,27 @@ function getBibleUrl(ref: string): string | null {
   return `https://www.bibliaonline.com.br/acf/${slug}/${match[2]}`;
 }
 
-// Rainbow-inspired vibrant colors for categories
+// Rainbow-inspired vibrant colors for categories (high contrast)
 const categoryColors: Record<string, string> = {
-  'TEMÁTICAS': 'hsl(0, 85%, 55%)',        // Red
-  'VOCABULARES': 'hsl(30, 90%, 50%)',      // Orange
-  'LINGUÍSTICAS': 'hsl(50, 95%, 45%)',     // Yellow
-  'CONTEXTUAIS': 'hsl(120, 70%, 40%)',     // Green
-  'TIPOLÓGICAS': 'hsl(170, 75%, 40%)',     // Teal
-  'PROFÉTICAS': 'hsl(200, 85%, 50%)',      // Sky Blue
-  'DOUTRINÁRIAS': 'hsl(240, 70%, 55%)',    // Blue/Indigo
-  'NARRATIVAS': 'hsl(270, 70%, 55%)',      // Purple
-  'COMPARATIVAS': 'hsl(300, 65%, 50%)',    // Magenta
-  'APOSTÓLICAS': 'hsl(330, 80%, 50%)',     // Pink
-  'ESCATOLÓGICAS': 'hsl(60, 85%, 42%)',    // Lime/Olive
-  'PANORAMA': 'hsl(150, 70%, 42%)',        // Emerald
-  'TOP': 'hsl(350, 90%, 50%)',             // Crimson
+  'TEMÁTICAS': 'hsl(0, 98%, 52%)',
+  'VOCABULARES': 'hsl(28, 100%, 50%)',
+  'LINGUÍSTICAS': 'hsl(48, 100%, 52%)',
+  'CONTEXTUAIS': 'hsl(120, 90%, 45%)',
+  'TIPOLÓGICAS': 'hsl(165, 95%, 45%)',
+  'PROFÉTICAS': 'hsl(200, 100%, 50%)',
+  'DOUTRINÁRIAS': 'hsl(230, 95%, 55%)',
+  'NARRATIVAS': 'hsl(255, 95%, 60%)',
+  'COMPARATIVAS': 'hsl(285, 95%, 58%)',
+  'APOSTÓLICAS': 'hsl(320, 100%, 55%)',
+  'ESCATOLÓGICAS': 'hsl(72, 95%, 46%)',
+  'PANORAMA': 'hsl(145, 92%, 44%)',
+  'TOP': 'hsl(350, 100%, 52%)',
 };
 
 // Generate rainbow color for individual nodes (fallback when category is GERAL)
 function getRainbowColor(index: number, total: number): string {
-  const hue = Math.round((index / total) * 360);
-  return `hsl(${hue}, 80%, 50%)`;
+  const hue = Math.round((index / Math.max(total, 1)) * 360);
+  return `hsl(${hue}, 96%, 52%)`;
 }
 
 function extractReferences(content: string): { ref: string; category: string; color: string; order: number; snippet: string }[] {
