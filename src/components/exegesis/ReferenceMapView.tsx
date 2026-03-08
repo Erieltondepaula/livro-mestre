@@ -700,7 +700,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                     width={boxW + 12} height={boxH + 12}
                     rx="13"
                     fill={ref.color}
-                    opacity="0.22"
+                    opacity="0.26"
                   />
                 )}
 
@@ -709,10 +709,9 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   x={pos.x - boxW / 2} y={pos.y - boxH / 2}
                   width={boxW} height={boxH}
                   rx="8"
-                  fill={isSelected ? ref.color : 'hsl(var(--card))'}
-                  fillOpacity={isSelected ? 0.16 : 1}
+                  fill="hsl(var(--background))"
                   stroke={ref.color}
-                  strokeWidth={isSelected ? 3 : 2}
+                  strokeWidth={isSelected ? 3.2 : 2.2}
                   opacity={1}
                 />
 
