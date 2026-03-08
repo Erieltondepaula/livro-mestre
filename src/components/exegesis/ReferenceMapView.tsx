@@ -148,7 +148,7 @@ function extractReferences(content: string): { ref: string; category: string; co
       if (headerText.includes('TOP')) currentCategory = 'TOP';
     }
 
-    const refPattern = /(?:👉\s*\[?)?((?:\d\s?)?[A-ZÀ-Ú][a-zà-ú]*(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/g;
+    const refPattern = /(?:👉\s*(?:\*{0,2})\s*\[?)?((?:\d\s?)?[A-ZÀ-Ú][a-zà-ú]*(?:\s[a-zà-ú]+)?)\s+(\d+):(\d+(?:[,-]\d+)?)/g;
     let match;
     while ((match = refPattern.exec(line)) !== null) {
       const fullRef = `${match[1]} ${match[2]}:${match[3]}`;
