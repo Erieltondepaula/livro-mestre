@@ -1,8 +1,9 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink, Map } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink, Map, Leaf } from 'lucide-react';
 import { ReferenceMapView } from './ReferenceMapView';
+import { ReferenceMapOrganic } from './ReferenceMapOrganic';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -225,6 +226,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   }, [queryType, themeQuery, bibleBook, chapterStart]);
 
   const [showMap, setShowMap] = useState(true);
+  const [mapStyle, setMapStyle] = useState<'geometric' | 'organic'>('geometric');
 
   const renderMarkdown = (text: string) => {
     let html = text
@@ -400,7 +402,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
       {/* Visual Reference Map */}
       {displayContent && !isLoading && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <button
               onClick={() => setShowMap(!showMap)}
               className={`flex items-center gap-2 text-sm font-medium transition-colors ${showMap ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
@@ -408,9 +410,32 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
               <Map className="w-4 h-4" />
               {showMap ? 'Ocultar Mapa Visual' : 'Mostrar Mapa Visual'}
             </button>
+            {showMap && (
+              <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+                <button
+                  onClick={() => setMapStyle('geometric')}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${mapStyle === 'geometric' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Map className="w-3 h-3" /> Geométrico
+                </button>
+                <button
+                  onClick={() => setMapStyle('organic')}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md transition-colors ${mapStyle === 'organic' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Leaf className="w-3 h-3" /> Orgânico
+                </button>
+              </div>
+            )}
           </div>
-          {showMap && (
+          {showMap && mapStyle === 'geometric' && (
             <ReferenceMapView
+              centralTheme={lastResult?.passage || getPassageText()}
+              content={displayContent}
+              keywords={lastResult?.keywords || extractedKeywords}
+            />
+          )}
+          {showMap && mapStyle === 'organic' && (
+            <ReferenceMapOrganic
               centralTheme={lastResult?.passage || getPassageText()}
               content={displayContent}
               keywords={lastResult?.keywords || extractedKeywords}

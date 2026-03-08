@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp, Map } from 'lucide-react';
+import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp, Map, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import type { ExegesisAnalysis } from '@/hooks/useExegesis';
 import { MapImageViewer, extractMapImageUrl } from './MapImageViewer';
 import { ReferenceMapView } from './ReferenceMapView';
+import { ReferenceMapOrganic } from './ReferenceMapOrganic';
 
 interface Props {
   analyses: ExegesisAnalysis[];
@@ -27,6 +28,7 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesValue, setNotesValue] = useState('');
+  const [historyMapStyle, setHistoryMapStyle] = useState<'geometric' | 'organic'>('geometric');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -109,12 +111,21 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: 
                     {a.analysis_type === 'cross_references' && (() => {
                       const stopWords = new Set(['como', 'que', 'de', 'do', 'da', 'dos', 'das', 'em', 'no', 'na', 'nos', 'nas', 'um', 'uma', 'o', 'a', 'os', 'as', 'e', 'ou', 'para', 'por', 'com', 'se', 'ao', 'aos', 'à', 'às', 'é', 'são', 'foi', 'ser', 'ter', 'está', 'entre', 'qual', 'quais', 'isso', 'esse', 'esta', 'este']);
                       const kw = a.passage.split(/[\s,?!.;:]+/).filter((w: string) => w.length > 2 && !stopWords.has(w.toLowerCase()));
+                      const MapComponent = historyMapStyle === 'organic' ? ReferenceMapOrganic : ReferenceMapView;
                       return (
-                        <ReferenceMapView
-                          centralTheme={a.passage}
-                          content={a.content}
-                          keywords={kw}
-                        />
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5 w-fit">
+                            <button onClick={() => setHistoryMapStyle('geometric')}
+                              className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${historyMapStyle === 'geometric' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>
+                              <Map className="w-3 h-3" /> Geométrico
+                            </button>
+                            <button onClick={() => setHistoryMapStyle('organic')}
+                              className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${historyMapStyle === 'organic' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>
+                              <Leaf className="w-3 h-3" /> Orgânico
+                            </button>
+                          </div>
+                          <MapComponent centralTheme={a.passage} content={a.content} keywords={kw} />
+                        </div>
                       );
                     })()}
 
