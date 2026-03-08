@@ -213,9 +213,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   // Bold keywords in central theme
   const themeLabel = centralTheme.length > 40 ? centralTheme.slice(0, 40) + '…' : centralTheme;
 
-  // Aspect ratio based on actual content
-  const aspectRatio = vbW / vbH;
-  const containerHeight = Math.max(500, Math.min(700, 500 / aspectRatio * 1.2));
+  // Make container tall enough to show the map clearly
+  const containerHeight = Math.max(550, Math.min(800, vbH * 0.6));
 
   return (
     <div className="card-library p-4 sm:p-6 space-y-4">
