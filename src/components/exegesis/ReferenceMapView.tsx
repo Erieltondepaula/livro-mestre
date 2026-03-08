@@ -77,8 +77,8 @@ function extractReferences(content: string): { ref: string; category: string; co
         seen.add(fullRef);
         const color = categoryColors[currentCategory] || 'hsl(345, 50%, 30%)';
         // Extract snippet - text after the reference on the same line
-        const afterRef = line.slice(match.index + match[0].length).replace(/^[\s\-–—:]+/, '').replace(/[*_`]/g, '').trim();
-        const snippet = afterRef.slice(0, 60) || '';
+        const afterRef = line.slice(match.index + match[0].length).replace(/^[\s\-–—:]+/, '').replace(/[*_`\[\]]/g, '').trim();
+        const snippet = afterRef.slice(0, 120) || '';
         refs.push({ ref: fullRef, category: currentCategory || 'GERAL', color, order: orderCounter++, snippet });
       }
     }
@@ -96,6 +96,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [showReadingList, setShowReadingList] = useState(false);
+  const [hoveredRef, setHoveredRef] = useState<{ ref: typeof references[0]; x: number; y: number } | null>(null);
 
   // Touch support
   const lastTouchDistance = useRef<number | null>(null);
@@ -349,6 +350,27 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
               <g
                 key={`node-${i}`}
                 onClick={(e) => { e.stopPropagation(); handleNodeClick(ref); }}
+                onMouseEnter={(e) => {
+                  const svgEl = containerRef.current?.querySelector('svg');
+                  if (svgEl) {
+                    const rect = svgEl.getBoundingClientRect();
+                    const viewBox = svgEl.viewBox.baseVal;
+                    const scaleX = rect.width / viewBox.width;
+                    const scaleY = rect.height / viewBox.height;
+                    const scale = Math.min(scaleX, scaleY);
+                    const offsetX = (rect.width - viewBox.width * scale) / 2;
+                    const offsetY = (rect.height - viewBox.height * scale) / 2;
+                    const screenX = (pos.x - viewBox.x) * scale + offsetX + rect.left;
+                    const screenY = (pos.y - viewBox.y) * scale + offsetY + rect.top;
+                    const containerRect = containerRef.current!.getBoundingClientRect();
+                    setHoveredRef({
+                      ref,
+                      x: (screenX - containerRect.left) * (1 / zoom) + pan.x * (1 / zoom - 1),
+                      y: (screenY - containerRect.top) * (1 / zoom) + pan.y * (1 / zoom - 1),
+                    });
+                  }
+                }}
+                onMouseLeave={() => setHoveredRef(null)}
                 style={{ cursor: 'pointer' }}
                 className="transition-transform"
               >
@@ -406,6 +428,29 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             );
           })}
         </svg>
+
+        {/* Hover tooltip */}
+        {hoveredRef && hoveredRef.ref.snippet && (
+          <div
+            className="absolute z-50 pointer-events-none animate-fade-in"
+            style={{
+              left: `${hoveredRef.x}px`,
+              top: `${hoveredRef.y - 50}px`,
+              transform: 'translate(-50%, -100%)',
+            }}
+          >
+            <div className="bg-popover border border-border rounded-lg shadow-lg px-3 py-2 max-w-[260px]">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: hoveredRef.ref.color }} />
+                <span className="text-xs font-bold" style={{ color: hoveredRef.ref.color }}>{hoveredRef.ref.ref}</span>
+                <span className="text-[10px] text-muted-foreground">({hoveredRef.ref.category})</span>
+              </div>
+              <p className="text-xs text-popover-foreground leading-relaxed italic">
+                "{hoveredRef.ref.snippet}"
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Category legend */}
