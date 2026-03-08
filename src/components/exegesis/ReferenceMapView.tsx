@@ -509,10 +509,12 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
         </div>
       )}
 
+      {/* Fullscreen layout: map + sidebar */}
+      <div className={isFullscreen ? 'flex flex-1 gap-4 overflow-hidden' : ''}>
       {/* Interactive SVG Map - full width, auto-height, no clipping */}
       <div
         ref={containerRef}
-        className={`relative w-full overflow-hidden rounded-lg border border-border bg-background/50 ${isFullscreen ? 'flex-1' : ''}`}
+        className={`relative overflow-hidden rounded-lg border border-border bg-background/50 ${isFullscreen ? 'flex-1' : 'w-full'}`}
         style={{
           height: isFullscreen ? undefined : `${containerHeight}px`,
           cursor: isPanning ? 'grabbing' : 'grab',
