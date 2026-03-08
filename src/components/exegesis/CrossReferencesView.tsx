@@ -161,8 +161,10 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) fullContent += c; } catch {}
       }
 
-      setLastResult({ passage, content: fullContent });
+      const result = { passage, content: fullContent };
+      setLastResult(result);
       setCurrentStream('');
+      try { localStorage.setItem('crossref_last_result', JSON.stringify(result)); } catch {}
 
       const savedAnalysis = await onSave({ passage, analysis_type: 'cross_references', question: selectedRefType, content: fullContent });
       if (savedAnalysis) { setSaved(true); toast({ title: "Referências salvas!", description: "Acesse no Histórico." }); }
