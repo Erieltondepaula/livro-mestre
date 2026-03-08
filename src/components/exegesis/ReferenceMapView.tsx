@@ -468,20 +468,42 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             return (
               <g
                 key={`node-${i}`}
-                onClick={(e) => { e.stopPropagation(); handleNodeClick(ref); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNodeClick(ref);
+                  // Also show tooltip on tap (mobile)
+                  const svgEl = containerRef.current?.querySelector('svg');
+                  if (svgEl && containerRef.current) {
+                    const svgRect = svgEl.getBoundingClientRect();
+                    const viewBox = svgEl.viewBox.baseVal;
+                    const scaleX = svgRect.width / viewBox.width;
+                    const scaleY = svgRect.height / viewBox.height;
+                    const scale = Math.min(scaleX, scaleY);
+                    const offsetX = (svgRect.width - viewBox.width * scale) / 2;
+                    const offsetY = (svgRect.height - viewBox.height * scale) / 2;
+                    const screenX = (pos.x - viewBox.x) * scale + offsetX + svgRect.left;
+                    const screenY = (pos.y - viewBox.y) * scale + offsetY + svgRect.top;
+                    const containerRect = containerRef.current.getBoundingClientRect();
+                    setHoveredRef({
+                      ref,
+                      x: (screenX - containerRect.left) * (1 / zoom) + pan.x * (1 / zoom - 1),
+                      y: (screenY - containerRect.top) * (1 / zoom) + pan.y * (1 / zoom - 1),
+                    });
+                  }
+                }}
                 onMouseEnter={(e) => {
                   const svgEl = containerRef.current?.querySelector('svg');
-                  if (svgEl) {
-                    const rect = svgEl.getBoundingClientRect();
+                  if (svgEl && containerRef.current) {
+                    const svgRect = svgEl.getBoundingClientRect();
                     const viewBox = svgEl.viewBox.baseVal;
-                    const scaleX = rect.width / viewBox.width;
-                    const scaleY = rect.height / viewBox.height;
+                    const scaleX = svgRect.width / viewBox.width;
+                    const scaleY = svgRect.height / viewBox.height;
                     const scale = Math.min(scaleX, scaleY);
-                    const offsetX = (rect.width - viewBox.width * scale) / 2;
-                    const offsetY = (rect.height - viewBox.height * scale) / 2;
-                    const screenX = (pos.x - viewBox.x) * scale + offsetX + rect.left;
-                    const screenY = (pos.y - viewBox.y) * scale + offsetY + rect.top;
-                    const containerRect = containerRef.current!.getBoundingClientRect();
+                    const offsetX = (svgRect.width - viewBox.width * scale) / 2;
+                    const offsetY = (svgRect.height - viewBox.height * scale) / 2;
+                    const screenX = (pos.x - viewBox.x) * scale + offsetX + svgRect.left;
+                    const screenY = (pos.y - viewBox.y) * scale + offsetY + svgRect.top;
+                    const containerRect = containerRef.current.getBoundingClientRect();
                     setHoveredRef({
                       ref,
                       x: (screenX - containerRect.left) * (1 / zoom) + pan.x * (1 / zoom - 1),
