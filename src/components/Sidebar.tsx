@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/hooks/use-toast';
 
-type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico' | 'flashcards';
+import type { View } from '@/types/views';
 
 interface SidebarProps {
   currentView: View;
