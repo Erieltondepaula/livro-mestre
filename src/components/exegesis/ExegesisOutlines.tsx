@@ -319,6 +319,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [suggestions, setSuggestions] = useState<Record<string, any>>({});
   const [preacherMode, setPreacherMode] = useState<{ content: string; passage: string } | null>(null);
   const [titleGenOpen, setTitleGenOpen] = useState(false);
+  const [outlineMode, setOutlineMode] = useState<'ai' | 'manual'>('ai'); // Modo duplo: IA vs manual
+  const [manualContent, setManualContent] = useState(''); // Conteúdo manual
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
