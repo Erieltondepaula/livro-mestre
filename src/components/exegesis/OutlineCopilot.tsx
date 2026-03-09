@@ -11,11 +11,12 @@ import { toast } from '@/hooks/use-toast';
 
 // ===== Types =====
 interface GrammarIssue {
-  type: 'punctuation' | 'capitalization' | 'spelling' | 'word_choice';
+  type: 'punctuation' | 'capitalization' | 'spelling' | 'word_choice' | 'concordance' | 'regency' | 'crase' | 'colocacao_pronominal' | 'pleonasm' | 'redundancy' | 'coesao';
   position: number;
   text: string;
   suggestion: string;
   severity: 'low' | 'medium' | 'high';
+  explanation?: string;
 }
 
 interface CoherenceCheck {
