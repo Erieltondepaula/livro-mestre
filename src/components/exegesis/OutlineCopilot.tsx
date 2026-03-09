@@ -223,7 +223,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
   const [isResearching, setIsResearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'guide' | 'analysis' | 'research'>('guide');
-  const [expandedSections, setExpandedSections] = useState<string[]>(['guide', 'alert', 'grammar', 'coherence', 'similar']);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['guide', 'alert', 'grammar', 'coherence', 'similar', 'basetext']);
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const researchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
