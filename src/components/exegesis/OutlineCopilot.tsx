@@ -530,12 +530,37 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                       {detectedPos.guidance && (
                         <p className="text-emerald-700/80 mt-1">{detectedPos.guidance}</p>
                       )}
-                      {detectedPos.sectionTip && (
+                {detectedPos.sectionTip && (
                         <p className="text-emerald-600/70 mt-2 italic text-[10px]">💡 {detectedPos.sectionTip}</p>
                       )}
                     </div>
                   </div>
                 </div>
+
+                {/* Content Suggestions */}
+                {detectedPos.contentSuggestions && detectedPos.contentSuggestions.length > 0 && (
+                  <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                    <p className="text-xs font-semibold text-indigo-700 mb-2">✍️ Sugestões de conteúdo para esta seção:</p>
+                    <div className="space-y-1.5">
+                      {detectedPos.contentSuggestions.map((sug, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-xs group">
+                          <span className="text-indigo-500 flex-shrink-0 mt-0.5">•</span>
+                          <p className="text-indigo-700/80 flex-1">{sug}</p>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[9px] text-green-600 hover:bg-green-500/10"
+                              onClick={() => handleAcceptContent(`\n\n${sug}`)}>
+                              <Check className="w-2.5 h-2.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[9px] text-muted-foreground hover:bg-muted/50"
+                              onClick={() => handleCopyToClipboard(sug)}>
+                              <Copy className="w-2.5 h-2.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Next Step */}
                 {detectedPos.nextExpectedSection && (
