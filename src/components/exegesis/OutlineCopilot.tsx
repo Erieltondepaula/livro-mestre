@@ -691,11 +691,16 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                         <p className="text-foreground/80 mt-0.5">"{sermon.title}"</p>
                         <p className="text-muted-foreground mt-1"><strong>Abordagem:</strong> {sermon.approach}</p>
                         <p className="text-emerald-700 mt-1 text-[10px]">💡 <strong>Como diferenciar:</strong> {sermon.difference}</p>
-                        {sermon.url && (
-                          <a href={sermon.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
-                            <ExternalLink className="w-2.5 h-2.5" /> Ver pregação
-                          </a>
-                        )}
+                        {(() => {
+                          const searchUrl = sermon.url && (sermon.url.startsWith('https://www.google.com') || sermon.url.startsWith('https://www.youtube.com') || sermon.url.startsWith('https://pt.wikipedia.org'))
+                            ? sermon.url
+                            : `https://www.youtube.com/results?search_query=${encodeURIComponent(`${sermon.preacher} ${sermon.title} pregação`)}`;
+                          return (
+                            <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
+                              <ExternalLink className="w-2.5 h-2.5" /> Buscar pregação
+                            </a>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
