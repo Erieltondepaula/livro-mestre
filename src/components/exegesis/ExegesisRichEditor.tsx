@@ -181,7 +181,29 @@ export function ExegesisRichEditor({
   const setFontSize = useCallback((size: string) => {
     if (!editor) return;
     editor.chain().focus().setMark('textStyle', { fontSize: size }).run();
+    setCurrentFontSize(parseInt(size));
   }, [editor]);
+
+  const increaseFontSize = useCallback(() => {
+    const currentIndex = FONT_SIZES.findIndex(s => s.value === `${currentFontSize}px`);
+    if (currentIndex < FONT_SIZES.length - 1) {
+      setFontSize(FONT_SIZES[currentIndex + 1].value);
+    }
+  }, [currentFontSize, setFontSize]);
+
+  const decreaseFontSize = useCallback(() => {
+    const currentIndex = FONT_SIZES.findIndex(s => s.value === `${currentFontSize}px`);
+    if (currentIndex > 0) {
+      setFontSize(FONT_SIZES[currentIndex - 1].value);
+    }
+  }, [currentFontSize, setFontSize]);
+
+  const handleCustomFontAdd = useCallback((fontFamily: string) => {
+    if (!customFonts.includes(fontFamily)) {
+      setCustomFonts(prev => [...prev, fontFamily]);
+    }
+    editor?.chain().focus().setFontFamily(fontFamily).run();
+  }, [editor, customFonts]);
 
   if (!editor) return null;
 
