@@ -130,14 +130,14 @@ const FontSize = TextStyle.extend({
   },
 });
 
-export function ExegesisRichEditor({
+export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRichEditorProps>(({
   content,
   onChange,
   placeholder = 'Comece a editar...',
   editable = true,
   className = '',
   minHeight = '300px',
-}: ExegesisRichEditorProps) {
+}, ref) => {
   const [customColor, setCustomColor] = useState('#000000');
   const [customHighlight, setCustomHighlight] = useState('#FEF08A');
   const [showLegend, setShowLegend] = useState(false);
@@ -169,6 +169,23 @@ export function ExegesisRichEditor({
       },
     },
   });
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    insertContent: (text: string) => {
+      if (editor) {
+        editor.chain().focus().insertContent(text).run();
+      }
+    },
+    replaceText: (original: string, replacement: string) => {
+      if (editor) {
+        const currentContent = editor.getHTML();
+        const newContent = currentContent.replace(original, replacement);
+        editor.commands.setContent(newContent);
+        onChange(newContent);
+      }
+    },
+  }), [editor, onChange]);
 
   useEffect(() => {
     if (editor) editor.setEditable(editable);
