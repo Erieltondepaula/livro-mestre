@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2, Monitor, Presentation, Search, Tag, Filter, CopyPlus } from 'lucide-react';
+import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2, Monitor, Presentation, Search, Tag, Filter, CopyPlus, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -13,6 +13,7 @@ import { OutlineVersionHistory } from './OutlineVersionHistory';
 import { PreacherMode } from './PreacherMode';
 import { MaterialsChecklist } from './MaterialsChecklist';
 import { PromptEditorDialog } from './PromptEditorDialog';
+import { OutlineCopilot } from './OutlineCopilot';
 import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
