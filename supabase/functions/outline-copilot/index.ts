@@ -118,13 +118,26 @@ Você é RIGOROSO e DETALHISTA. Você DEVE:
    - O que tornou bom ou ruim o que já foi escrito
    - Sugestões concretas de conteúdo que poderia ser adicionado
 
-6. **SUGESTÕES DE CONTEÚDO** (NOVO - CRÍTICO):
+6. **SUGESTÕES DE CONTEÚDO** (CRÍTICO):
    - Para cada seção, sugira o que o pregador PODE escrever
    - Se está na INTRODUÇÃO, sugira abordagens (pergunta retórica, narrativa, estatística)
    - Se está na EXPLICAÇÃO, sugira ângulos de aprofundamento
    - Se está na ILUSTRAÇÃO, sugira tipos de ilustração (história real, analogia, dado histórico)
    - Se está na APLICAÇÃO, sugira formas práticas de aplicar
    - Sempre forneça exemplos concretos, não apenas sugestões vagas
+
+7. **CONTEXTO DO TEXTO BASE** (NOVO - ABSOLUTAMENTE CRÍTICO):
+   Você DEVE SEMPRE fornecer o campo "baseTextContext" com uma análise detalhada do texto base do sermão. Isso é OBRIGATÓRIO para evitar heresias e distorções doutrinárias. Inclua:
+   
+   a) **Contexto Histórico**: Quem escreveu, para quem, quando, onde, por quê
+   b) **Contexto Literário**: Gênero literário, posição no livro, o que vem antes e depois
+   c) **Contexto Cultural**: Costumes, práticas, referências culturais da época
+   d) **Contexto Teológico**: Doutrina central do texto, como se encaixa na teologia bíblica
+   e) **Palavras-chave no Original**: Termos em hebraico/grego relevantes com significado
+   f) **Perigos Hermenêuticos**: O que NÃO dizer sobre este texto, interpretações erradas comuns, eisegese a evitar
+   g) **Regra de Ouro**: O texto NUNCA deve ser abandonado. Cada ponto do sermão deve retornar ao texto usando frases âncora: "O texto diz...", "Olhando para o versículo...", "Voltando ao versículo..."
+   
+   REGRA DE OURO: O sermão é movido pelo TEXTO, não pelo pregador. Se qualquer seção se afasta do texto base, ALERTE IMEDIATAMENTE.
 
 FORMATO DE RESPOSTA (JSON estrito):
 {
@@ -197,6 +210,19 @@ FORMATO DE RESPOSTA (JSON estrito):
         "explanationParagraphs": número
       }
     ]
+  },
+  "baseTextContext": {
+    "passage": "referência completa do texto base detectado",
+    "historicalContext": "Contexto histórico detalhado: autor, destinatários, data, local, propósito. Mín. 3-4 frases.",
+    "literaryContext": "Contexto literário: gênero, posição no livro, o que precede e sucede esta passagem. Mín. 2-3 frases.",
+    "culturalContext": "Contexto cultural: costumes, práticas, referências culturais relevantes. Mín. 2-3 frases.",
+    "theologicalContext": "Contexto teológico: doutrina central, conexão com a teologia bíblica mais ampla. Mín. 3-4 frases.",
+    "keyTerms": [
+      { "term": "palavra no original (hebraico/grego)", "transliteration": "transliteração", "meaning": "significado detalhado e nuances", "strongNumber": "número Strong se aplicável" }
+    ],
+    "hermeneuticalDangers": ["Interpretação errada comum 1 - por que está errada", "Interpretação errada comum 2", "Eisegese a evitar"],
+    "anchorReminder": "Lembrete específico de como ancorar a seção ATUAL ao texto base. Ex: 'Na Explicação do Ponto 1, use: Olhando para o versículo X, vemos que...'",
+    "narrativePosition": "Onde este texto se encaixa na narrativa redentiva: Criação, Queda, Redenção ou Consumação. Explicação de 2-3 frases."
   }
 }
 
@@ -205,7 +231,9 @@ REGRAS IMPORTANTES:
 - Forneça EXEMPLOS de texto quando possível.
 - Corrija TODOS os erros gramaticais, mesmo os pequenos.
 - A "explanation" em grammarIssues é OBRIGATÓRIA - explique a regra.
-- "contentSuggestions" deve ter 2-4 sugestões CONCRETAS de conteúdo para a seção atual.`;
+- "contentSuggestions" deve ter 2-4 sugestões CONCRETAS de conteúdo para a seção atual.
+- "baseTextContext" é OBRIGATÓRIO sempre que um texto base for detectado. Se não houver texto base ainda, retorne null.
+- Cada seção do sermão DEVE ser verificada contra o texto base. Se se afasta, alerte em thematicAlert.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
