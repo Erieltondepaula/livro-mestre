@@ -335,6 +335,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   }>({});
   const [showCopilot, setShowCopilot] = useState(true); // Mostrar/esconder copiloto
   const abortRef = useRef<AbortController | null>(null);
+  const editorRef = useRef<ExegesisRichEditorRef | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
 
