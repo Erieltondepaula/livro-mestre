@@ -9,7 +9,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Typography from '@tiptap/extension-typography';
 import FontFamily from '@tiptap/extension-font-family';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -27,6 +27,11 @@ import {
   Undo, Redo, Pilcrow, Palette, Type, ChevronDown, Eye, EyeOff,
   Plus, Minus, RotateCcw
 } from 'lucide-react';
+
+export interface ExegesisRichEditorRef {
+  insertContent: (text: string) => void;
+  replaceText: (original: string, replacement: string) => void;
+}
 
 interface ExegesisRichEditorProps {
   content: string;
