@@ -835,26 +835,28 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
       </div>
 
       {/* Footer */}
-      <div className="flex-shrink-0 p-2 border-t bg-muted/20 flex gap-1">
+      <div className="flex-shrink-0 p-2 border-t bg-muted/20 flex gap-1.5">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="flex-1 text-xs gap-1"
+          className="flex-1 text-[10px] sm:text-xs gap-1 h-8"
           onClick={analyzeContent}
           disabled={isLoading}
         >
           {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-          Reanalisar
+          <span className="hidden sm:inline">Reanalisar</span>
+          <span className="sm:hidden">Analisar</span>
         </Button>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="flex-1 text-xs gap-1"
+          className="flex-1 text-[10px] sm:text-xs gap-1 h-8"
           onClick={() => { lastResearchContentRef.current = ''; doResearch(); }}
           disabled={isResearching}
         >
           {isResearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
-          Repesquisar
+          <span className="hidden sm:inline">Repesquisar</span>
+          <span className="sm:hidden">Pesquisar</span>
         </Button>
       </div>
     </div>
