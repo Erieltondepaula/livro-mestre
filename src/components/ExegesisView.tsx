@@ -33,24 +33,34 @@ export function ExegesisView() {
         </p>
       </div>
 
-      <Tabs defaultValue="analyze" className="w-full">
+      <Tabs defaultValue={hasModuleAccess('exegese.analisar') ? 'analyze' : 'history'} className="w-full">
         <TabsList className="w-full flex overflow-x-auto no-scrollbar">
-          <TabsTrigger value="analyze" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <BookOpen className="w-4 h-4 hidden sm:block" /> Analisar
-          </TabsTrigger>
-          <TabsTrigger value="cross_refs" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <Link2 className="w-4 h-4 hidden sm:block" /> <span className="truncate">Ref. Cruzadas</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <History className="w-4 h-4 hidden sm:block" /> Histórico
-          </TabsTrigger>
-          <TabsTrigger value="outlines" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <FileText className="w-4 h-4 hidden sm:block" /> Esboços
-          </TabsTrigger>
-          <TabsTrigger value="materials" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <Library className="w-4 h-4 hidden sm:block" /> Materiais
-            {materials.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded-full ml-0.5">{materials.length}</span>}
-          </TabsTrigger>
+          {hasModuleAccess('exegese.analisar') && (
+            <TabsTrigger value="analyze" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <BookOpen className="w-4 h-4 hidden sm:block" /> Analisar
+            </TabsTrigger>
+          )}
+          {hasModuleAccess('exegese.ref_cruzadas') && (
+            <TabsTrigger value="cross_refs" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <Link2 className="w-4 h-4 hidden sm:block" /> <span className="truncate">Ref. Cruzadas</span>
+            </TabsTrigger>
+          )}
+          {hasModuleAccess('exegese.historico') && (
+            <TabsTrigger value="history" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <History className="w-4 h-4 hidden sm:block" /> Histórico
+            </TabsTrigger>
+          )}
+          {hasModuleAccess('exegese.esbocos') && (
+            <TabsTrigger value="outlines" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <FileText className="w-4 h-4 hidden sm:block" /> Esboços
+            </TabsTrigger>
+          )}
+          {hasModuleAccess('exegese.materiais') && (
+            <TabsTrigger value="materials" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <Library className="w-4 h-4 hidden sm:block" /> Materiais
+              {materials.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded-full ml-0.5">{materials.length}</span>}
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="analyze">
