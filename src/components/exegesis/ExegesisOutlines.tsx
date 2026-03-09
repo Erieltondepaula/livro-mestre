@@ -651,16 +651,67 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         {/* Manual Mode Editor */}
         {outlineMode === 'manual' ? (
           <div className="space-y-3">
-            <p className="text-xs font-medium text-muted-foreground">Editor de Texto Livre</p>
-            <div className="min-h-[400px]">
-              <ExegesisRichEditor
-                content={manualContent}
-                onChange={setManualContent}
-                placeholder="Comece a escrever seu esboço... Use as ferramentas de formatação para criar um conteúdo rico e bem estruturado."
-                minHeight="350px"
-              />
+            {/* Element Selector */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs font-medium text-muted-foreground">Editando:</p>
+              {[
+                { id: 'titulo', label: 'Título' },
+                { id: 'tema', label: 'Tema' },
+                { id: 'texto_base', label: 'Texto Base' },
+                { id: 'introducao', label: 'Introdução' },
+                { id: 'ponto', label: 'Ponto' },
+                { id: 'desenvolvimento', label: 'Desenvolvimento' },
+                { id: 'ilustracao', label: 'Ilustração' },
+                { id: 'frase_efeito', label: 'Frase de Efeito' },
+                { id: 'aplicacao', label: 'Aplicação' },
+                { id: 'conclusao', label: 'Conclusão' },
+                { id: 'apelo', label: 'Apelo' },
+              ].map(el => (
+                <button
+                  key={el.id}
+                  onClick={() => setCurrentElement(el.id)}
+                  className={`text-[10px] px-2 py-1 rounded-full border transition-all ${
+                    currentElement === el.id 
+                      ? 'bg-primary/10 text-primary border-primary/30 font-semibold' 
+                      : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'
+                  }`}
+                >
+                  {el.label}
+                </button>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Editor + Copilot Layout */}
+            <div className={`flex gap-3 ${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? '' : ''}`}>
+              {/* Editor */}
+              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'flex-[2]' : 'flex-1'} min-h-[400px]`}>
+                <ExegesisRichEditor
+                  content={manualContent}
+                  onChange={setManualContent}
+                  placeholder="Comece a escrever seu esboço... O Copiloto IA vai analisar em tempo real."
+                  minHeight="350px"
+                />
+              </div>
+
+              {/* Copilot Panel */}
+              {hasModuleAccess('exegese.esbocos.texto_livre.copiloto') && showCopilot && (
+                <div className="flex-1 min-w-[260px] max-w-[340px] border rounded-lg bg-card overflow-hidden">
+                  <OutlineCopilot
+                    content={manualContent}
+                    currentElement={currentElement}
+                    previousElements={previousElements}
+                    onApplySuggestion={(original, replacement) => {
+                      setManualContent(prev => prev.replace(original, replacement));
+                    }}
+                    onInsertReference={(ref) => {
+                      setManualContent(prev => prev + `\n\n📖 ${ref}`);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
               <Button 
                 onClick={() => {
                   if (manualContent.trim() && getPassageText()) {
@@ -676,6 +727,17 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
               <Button variant="outline" onClick={() => setManualContent('')} disabled={!manualContent.trim()}>
                 Limpar
               </Button>
+              {hasModuleAccess('exegese.esbocos.texto_livre.copiloto') && (
+                <Button 
+                  variant={showCopilot ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5 ml-auto"
+                  onClick={() => setShowCopilot(!showCopilot)}
+                >
+                  <Brain className="w-4 h-4" />
+                  {showCopilot ? 'Ocultar Copiloto' : 'Mostrar Copiloto'}
+                </Button>
+              )}
             </div>
           </div>
         ) : (
