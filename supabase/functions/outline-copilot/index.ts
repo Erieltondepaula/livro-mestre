@@ -210,6 +210,19 @@ FORMATO DE RESPOSTA (JSON estrito):
         "explanationParagraphs": número
       }
     ]
+  },
+  "baseTextContext": {
+    "passage": "referência completa do texto base detectado",
+    "historicalContext": "Contexto histórico detalhado: autor, destinatários, data, local, propósito. Mín. 3-4 frases.",
+    "literaryContext": "Contexto literário: gênero, posição no livro, o que precede e sucede esta passagem. Mín. 2-3 frases.",
+    "culturalContext": "Contexto cultural: costumes, práticas, referências culturais relevantes. Mín. 2-3 frases.",
+    "theologicalContext": "Contexto teológico: doutrina central, conexão com a teologia bíblica mais ampla. Mín. 3-4 frases.",
+    "keyTerms": [
+      { "term": "palavra no original (hebraico/grego)", "transliteration": "transliteração", "meaning": "significado detalhado e nuances", "strongNumber": "número Strong se aplicável" }
+    ],
+    "hermeneuticalDangers": ["Interpretação errada comum 1 - por que está errada", "Interpretação errada comum 2", "Eisegese a evitar"],
+    "anchorReminder": "Lembrete específico de como ancorar a seção ATUAL ao texto base. Ex: 'Na Explicação do Ponto 1, use: Olhando para o versículo X, vemos que...'",
+    "narrativePosition": "Onde este texto se encaixa na narrativa redentiva: Criação, Queda, Redenção ou Consumação. Explicação de 2-3 frases."
   }
 }
 
@@ -218,7 +231,9 @@ REGRAS IMPORTANTES:
 - Forneça EXEMPLOS de texto quando possível.
 - Corrija TODOS os erros gramaticais, mesmo os pequenos.
 - A "explanation" em grammarIssues é OBRIGATÓRIA - explique a regra.
-- "contentSuggestions" deve ter 2-4 sugestões CONCRETAS de conteúdo para a seção atual.`;
+- "contentSuggestions" deve ter 2-4 sugestões CONCRETAS de conteúdo para a seção atual.
+- "baseTextContext" é OBRIGATÓRIO sempre que um texto base for detectado. Se não houver texto base ainda, retorne null.
+- Cada seção do sermão DEVE ser verificada contra o texto base. Se se afasta, alerte em thematicAlert.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
