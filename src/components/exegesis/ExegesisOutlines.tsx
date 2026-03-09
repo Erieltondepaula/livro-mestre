@@ -322,8 +322,18 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [suggestions, setSuggestions] = useState<Record<string, any>>({});
   const [preacherMode, setPreacherMode] = useState<{ content: string; passage: string } | null>(null);
   const [titleGenOpen, setTitleGenOpen] = useState(false);
-  const [outlineMode, setOutlineMode] = useState<'ai' | 'manual'>(hasModuleAccess('exegese.esbocos.ia') ? 'ai' : 'manual'); // Modo duplo: IA vs manual
-  const [manualContent, setManualContent] = useState(''); // Conteúdo manual
+  const [outlineMode, setOutlineMode] = useState<'ai' | 'manual'>(hasModuleAccess('exegese.esbocos.ia') ? 'ai' : 'manual');
+  const [manualContent, setManualContent] = useState('');
+  const [currentElement, setCurrentElement] = useState('introducao'); // Elemento sendo editado no modo manual
+  const [previousElements, setPreviousElements] = useState<{
+    title?: string;
+    theme?: string;
+    baseText?: string;
+    introduction?: string;
+    points?: Array<{ title?: string; development?: string; illustration?: string; phrase?: string; application?: string }>;
+    conclusion?: string;
+  }>({});
+  const [showCopilot, setShowCopilot] = useState(true); // Mostrar/esconder copiloto
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
