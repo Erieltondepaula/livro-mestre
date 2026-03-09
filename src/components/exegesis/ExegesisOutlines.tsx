@@ -460,6 +460,31 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     }
   };
 
+  const handleSaveManual = async () => {
+    if (!manualContent.trim() || !getPassageText()) return;
+    
+    try {
+      const result = await onSave({
+        passage: getPassageText(),
+        outline_type: selectedType,
+        content: manualContent
+      });
+      
+      if (result) {
+        setManualContent('');
+        toast({ title: "Esboço manual salvo com sucesso!" });
+        onFetch();
+      }
+    } catch (error) {
+      toast({ 
+        title: "Erro ao salvar", 
+        description: "Não foi possível salvar o esboço manual",
+        variant: "destructive" 
+      });
+    }
+  };
+  };
+
   const handleRequestSuggestions = async (outline: ExegesisOutline) => {
     if (!onSuggestImprovements) return;
     setSuggestionsLoading(outline.id);
