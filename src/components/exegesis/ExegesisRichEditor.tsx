@@ -136,6 +136,8 @@ export function ExegesisRichEditor({
   const [customColor, setCustomColor] = useState('#000000');
   const [customHighlight, setCustomHighlight] = useState('#FEF08A');
   const [showLegend, setShowLegend] = useState(false);
+  const [customFonts, setCustomFonts] = useState<string[]>([]);
+  const [currentFontSize, setCurrentFontSize] = useState(16);
 
   const editor = useEditor({
     extensions: [
