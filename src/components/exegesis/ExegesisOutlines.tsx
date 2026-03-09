@@ -697,7 +697,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
               {/* Copilot Panel */}
               {hasModuleAccess('exegese.esbocos.texto_livre.copiloto') && showCopilot && (
-                <div className="lg:flex-1 lg:min-w-[280px] lg:max-w-[380px] border rounded-lg bg-card overflow-hidden max-h-[500px] lg:max-h-none">
+                <div className="lg:flex-1 lg:min-w-[280px] lg:max-w-[380px] border rounded-lg bg-card h-[400px] lg:h-[500px] overflow-auto">
                   <OutlineCopilot
                     content={manualContent}
                     currentElement={currentElement}

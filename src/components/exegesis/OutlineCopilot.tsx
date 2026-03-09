@@ -345,7 +345,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col min-h-0">
       {/* Header */}
       <div className="flex-shrink-0 p-2 sm:p-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
         <div className="flex items-center justify-between gap-2">
@@ -405,8 +405,8 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 overscroll-contain">
+      {/* Content - Scrollable */}
+      <div className="flex-1 overflow-auto p-2 space-y-2 min-h-0">
         {error && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
