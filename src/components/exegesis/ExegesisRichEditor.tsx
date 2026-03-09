@@ -57,13 +57,36 @@ const SEMANTIC_HIGHLIGHT_COLORS = [
 
 const HIGHLIGHT_COLORS = SEMANTIC_HIGHLIGHT_COLORS.filter(c => !c.isTextColor);
 
-const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px'];
+const FONT_SIZES = [
+  { value: '8px', label: '8px' },
+  { value: '9px', label: '9px' },
+  { value: '10px', label: '10px' },
+  { value: '11px', label: '11px' },
+  { value: '12px', label: '12px' },
+  { value: '14px', label: '14px' },
+  { value: '16px', label: '16px' },
+  { value: '18px', label: '18px' },
+  { value: '20px', label: '20px' },
+  { value: '24px', label: '24px' },
+  { value: '28px', label: '28px' },
+  { value: '32px', label: '32px' },
+  { value: '36px', label: '36px' },
+  { value: '48px', label: '48px' },
+  { value: '60px', label: '60px' },
+  { value: '72px', label: '72px' },
+];
 
 const FONT_FAMILIES = [
-  { value: 'Source Sans 3, sans-serif', label: 'Sans Serif' },
-  { value: 'Georgia, serif', label: 'Serif' },
-  { value: 'Playfair Display, serif', label: 'Display' },
-  { value: 'Courier New, monospace', label: 'Mono' },
+  { value: 'Source Sans 3, sans-serif', label: 'Sans Serif (Padrão)' },
+  { value: 'Georgia, serif', label: 'Serif (Clássico)' },
+  { value: 'Playfair Display, serif', label: 'Display (Elegante)' },
+  { value: 'Courier New, monospace', label: 'Mono (Código)' },
+  { value: 'Arial, sans-serif', label: 'Arial' },
+  { value: 'Times New Roman, serif', label: 'Times New Roman' },
+  { value: 'Helvetica, sans-serif', label: 'Helvetica' },
+  { value: 'Palatino, serif', label: 'Palatino' },
+  { value: 'Garamond, serif', label: 'Garamond' },
+  { value: 'Comic Sans MS, cursive', label: 'Comic Sans' }
 ];
 
 function ToolBtn({ children, tooltip, pressed, onClick, disabled }: { children: React.ReactNode; tooltip: string; pressed?: boolean; onClick?: () => void; disabled?: boolean }) {
