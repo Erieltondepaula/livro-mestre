@@ -447,17 +447,40 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                 expanded={expandedSections.includes('grammar')}
                 onToggle={() => toggleSection('grammar')}
               >
-                {analysis.grammarIssues.map((issue, idx) => (
-                  <div key={idx} className={`p-2 rounded border-l-2 text-xs ${getSeverityColor(issue.severity)}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-muted-foreground/80 flex-1">
-                        "{issue.text}" → <span className="text-foreground font-medium">{issue.suggestion}</span>
-                      </p>
-                      {onApplySuggestion && (
-                        <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => handleApply(issue.text, issue.suggestion)}>
-                          Aplicar
-                        </Button>
-                      )}
+                {analysis.grammarIssues
+                  .filter(issue => !dismissedItems.has(`grammar-${issue.text}`))
+                  .map((issue, idx) => (
+                  <div key={idx} className={`p-2.5 rounded-lg border text-xs ${getSeverityColor(issue.severity)}`}>
+                    <p className="text-muted-foreground/80 mb-2">
+                      <span className="line-through">{issue.text}</span> → <span className="text-foreground font-medium">{issue.suggestion}</span>
+                    </p>
+                    <div className="flex items-center gap-1 pt-2 border-t border-border/50">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
+                        onClick={() => handleApply(issue.text, issue.suggestion)}
+                      >
+                        <Check className="w-3 h-3" />
+                        Aplicar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(issue.suggestion)}
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copiar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`grammar-${issue.text}`)}
+                      >
+                        <XCircle className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -473,13 +496,28 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                 onToggle={() => toggleSection('coherence')}
               >
                 {analysis.coherenceChecks.map((check, idx) => (
-                  <div key={idx} className={`p-2 rounded text-xs ${check.isCoherent ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                  <div key={idx} className={`p-2.5 rounded-lg text-xs ${check.isCoherent ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
                     <div className="flex items-start gap-2">
                       {check.isCoherent ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0 mt-0.5" /> : <AlertTriangle className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />}
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium">{check.element} ↔ {check.relatesTo}</p>
                         {check.reason && <p className="text-muted-foreground mt-1">{check.reason}</p>}
-                        {!check.isCoherent && check.suggestion && <p className="text-blue-600 mt-1 italic">💡 {check.suggestion}</p>}
+                        {!check.isCoherent && check.suggestion && (
+                          <div className="mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                            <p className="text-blue-700 italic">💡 {check.suggestion}</p>
+                            <div className="flex items-center gap-1 mt-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-5 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                                onClick={() => handleCopyToClipboard(check.suggestion || '')}
+                              >
+                                <Copy className="w-2.5 h-2.5" />
+                                Copiar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -492,23 +530,44 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
               <CollapsibleSection
                 icon={<BookOpen className="w-3.5 h-3.5 text-purple-600" />}
                 title="Textos Bíblicos"
-                badge={analysis.biblicalSuggestions.length}
+                badge={analysis.biblicalSuggestions.filter(s => !dismissedItems.has(`bible-analysis-${s.reference}`)).length}
                 badgeColor="bg-purple-500/20 text-purple-700"
                 expanded={expandedSections.includes('biblical')}
                 onToggle={() => toggleSection('biblical')}
               >
-                {analysis.biblicalSuggestions.map((sug, idx) => (
-                  <div key={idx} className="p-2 rounded bg-purple-500/5 border border-purple-500/20 text-xs">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-purple-700">{sug.reference}</p>
-                        <p className="text-muted-foreground mt-1">{sug.reason}</p>
-                      </div>
-                      {onInsertReference && (
-                        <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => handleInsertRef(sug.reference)}>
-                          Inserir
-                        </Button>
-                      )}
+                {analysis.biblicalSuggestions
+                  .filter(sug => !dismissedItems.has(`bible-analysis-${sug.reference}`))
+                  .map((sug, idx) => (
+                  <div key={idx} className="p-2.5 rounded-lg bg-purple-500/5 border border-purple-500/20 text-xs">
+                    <p className="font-semibold text-purple-700">{sug.reference}</p>
+                    <p className="text-muted-foreground mt-1">{sug.reason}</p>
+                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
+                        onClick={() => handleInsertRef(sug.reference)}
+                      >
+                        <Check className="w-3 h-3" />
+                        Inserir
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(`${sug.reference}: ${sug.reason}`)}
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copiar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`bible-analysis-${sug.reference}`)}
+                      >
+                        <XCircle className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
