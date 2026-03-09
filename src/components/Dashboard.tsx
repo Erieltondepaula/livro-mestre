@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 import { GamificationWidget } from '@/components/GamificationWidget';
-
+import { useAuth } from '@/contexts/AuthContext';
 interface DashboardProps {
   stats: DashboardStats;
   recentStatuses: BookStatus[];
@@ -18,6 +18,7 @@ interface DashboardProps {
 type StatusFilter = 'all' | 'Lendo' | 'Concluido' | 'Não iniciado';
 
 export function Dashboard({ stats, recentStatuses, books, readings, onNavigateToBooks }: DashboardProps) {
+  const { hasModuleAccess } = useAuth();
   // Filtro padrão: "Lendo"
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Lendo');
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,8 +73,10 @@ export function Dashboard({ stats, recentStatuses, books, readings, onNavigateTo
         </div>
       </div>
 
-      {/* Progress Card */}
-      <div className="card-library-elevated p-4 md:p-6 lg:p-8">
+      {hasModuleAccess('dashboard.metricas') && (
+        <>
+          {/* Progress Card */}
+          <div className="card-library-elevated p-4 md:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
           <div>
             <h3 className="font-display text-xl md:text-2xl font-semibold text-foreground">Progresso Total</h3>
@@ -185,9 +188,13 @@ export function Dashboard({ stats, recentStatuses, books, readings, onNavigateTo
           </div>
         </div>
       </div>
+    </>
+  )}
 
-      {/* Gamification Widget */}
-      <GamificationWidget readings={readings} />
+  {/* Gamification Widget */}
+  {hasModuleAccess('dashboard.gamificacao') && (
+    <GamificationWidget readings={readings} />
+  )}
 
       {/* Recent Status with Filters */}
       <div className="card-library p-4 md:p-6">

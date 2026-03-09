@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BooksListViewProps {
   books: Book[];
@@ -35,6 +36,7 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
   const [mobileInfoBook, setMobileInfoBook] = useState<Book | null>(null);
   const [timelineBook, setTimelineBook] = useState<Book | null>(null);
   const isMobile = useIsMobile();
+  const { hasModuleAccess } = useAuth();
   // Inicia DESAGRUPADO por padrão
   const [groupByCategory, setGroupByCategory] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'reading' | 'completed'>(initialFilter);
@@ -180,28 +182,32 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
 
               {/* Overlay com ações no hover */}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingBook(book);
-                  }}
-                  className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-                  title="Editar livro"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Tem certeza que deseja remover "${book.livro}"?`)) {
-                      onDeleteBook(book.id);
-                    }
-                  }}
-                  className="p-2 rounded-full bg-destructive/80 hover:bg-destructive text-white transition-colors"
-                  title="Remover livro"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {hasModuleAccess('livros.editar') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingBook(book);
+                    }}
+                    className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                    title="Editar livro"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                {hasModuleAccess('livros.excluir') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Tem certeza que deseja remover "${book.livro}"?`)) {
+                        onDeleteBook(book.id);
+                      }
+                    }}
+                    className="p-2 rounded-full bg-destructive/80 hover:bg-destructive text-white transition-colors"
+                    title="Remover livro"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -353,11 +359,13 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
             )}
 
             {/* Actions */}
-            <div className="flex gap-2 pt-2 border-t">
-              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs h-7" onClick={(e) => { e.stopPropagation(); setTimelineBook(book); }}>
-                <History className="w-3 h-3" /> Timeline
-              </Button>
-            </div>
+            {hasModuleAccess('livros.timeline') && (
+              <div className="flex gap-2 pt-2 border-t">
+                <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs h-7" onClick={(e) => { e.stopPropagation(); setTimelineBook(book); }}>
+                  <History className="w-3 h-3" /> Timeline
+                </Button>
+              </div>
+            )}
 
             {/* Dica */}
             <p className="text-[10px] text-muted-foreground italic">

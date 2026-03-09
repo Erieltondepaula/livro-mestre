@@ -1,6 +1,7 @@
 import { BookOpen, History, FileText, Library, Link2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useExegesis } from '@/hooks/useExegesis';
+import { useAuth } from '@/contexts/AuthContext';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
 import { ExegesisHistory } from '@/components/exegesis/ExegesisHistory';
 import { ExegesisOutlines } from '@/components/exegesis/ExegesisOutlines';
@@ -9,6 +10,7 @@ import { CrossReferencesView } from '@/components/exegesis/CrossReferencesView';
 import { useEffect } from 'react';
 
 export function ExegesisView() {
+  const { hasModuleAccess } = useAuth();
   const {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
@@ -31,69 +33,89 @@ export function ExegesisView() {
         </p>
       </div>
 
-      <Tabs defaultValue="analyze" className="w-full">
+      <Tabs defaultValue={hasModuleAccess('exegese.analisar') ? 'analyze' : 'history'} className="w-full">
         <TabsList className="w-full flex overflow-x-auto no-scrollbar">
-          <TabsTrigger value="analyze" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <BookOpen className="w-4 h-4 hidden sm:block" /> Analisar
-          </TabsTrigger>
-          <TabsTrigger value="cross_refs" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <Link2 className="w-4 h-4 hidden sm:block" /> <span className="truncate">Ref. Cruzadas</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <History className="w-4 h-4 hidden sm:block" /> Histórico
-          </TabsTrigger>
-          <TabsTrigger value="outlines" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <FileText className="w-4 h-4 hidden sm:block" /> Esboços
-          </TabsTrigger>
-          <TabsTrigger value="materials" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <Library className="w-4 h-4 hidden sm:block" /> Materiais
-            {materials.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded-full ml-0.5">{materials.length}</span>}
-          </TabsTrigger>
+          {hasModuleAccess('exegese.analisar') && (
+            <TabsTrigger value="analyze" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <BookOpen className="w-4 h-4 hidden sm:block" /> Analisar
+            </TabsTrigger>
+          )}
+          {hasModuleAccess('exegese.ref_cruzadas') && (
+            <TabsTrigger value="cross_refs" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <Link2 className="w-4 h-4 hidden sm:block" /> <span className="truncate">Ref. Cruzadas</span>
+            </TabsTrigger>
+          )}
+          {hasModuleAccess('exegese.historico') && (
+            <TabsTrigger value="history" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <History className="w-4 h-4 hidden sm:block" /> Histórico
+            </TabsTrigger>
+          )}
+          {hasModuleAccess('exegese.esbocos') && (
+            <TabsTrigger value="outlines" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <FileText className="w-4 h-4 hidden sm:block" /> Esboços
+            </TabsTrigger>
+          )}
+          {hasModuleAccess('exegese.materiais') && (
+            <TabsTrigger value="materials" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+              <Library className="w-4 h-4 hidden sm:block" /> Materiais
+              {materials.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded-full ml-0.5">{materials.length}</span>}
+            </TabsTrigger>
+          )}
         </TabsList>
 
-        <TabsContent value="analyze">
-          <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
-        </TabsContent>
+        {hasModuleAccess('exegese.analisar') && (
+          <TabsContent value="analyze">
+            <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
+          </TabsContent>
+        )}
 
-        <TabsContent value="cross_refs">
-          <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
-        </TabsContent>
+        {hasModuleAccess('exegese.ref_cruzadas') && (
+          <TabsContent value="cross_refs">
+            <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
+          </TabsContent>
+        )}
 
-        <TabsContent value="history">
-          <ExegesisHistory analyses={analyses} onFetch={fetchAnalyses} onUpdateNotes={updateAnalysisNotes} onDelete={deleteAnalysis} />
-        </TabsContent>
+        {hasModuleAccess('exegese.historico') && (
+          <TabsContent value="history">
+            <ExegesisHistory analyses={analyses} onFetch={fetchAnalyses} onUpdateNotes={updateAnalysisNotes} onDelete={deleteAnalysis} />
+          </TabsContent>
+        )}
 
-        <TabsContent value="outlines">
-          <ExegesisOutlines
-            outlines={outlines}
-            onFetch={fetchOutlines}
-            onSave={saveOutline}
-            onUpdateNotes={updateOutlineNotes}
-            onUpdateContent={updateOutlineContent}
-            onDelete={deleteOutline}
-            getMaterialsContext={getMaterialsContext}
-            getRelevantAnalysesContext={getRelevantAnalysesContext}
-            fetchOutlineVersions={fetchOutlineVersions}
-            materialsCount={materials.length}
-            materials={materials}
-            onSuggestImprovements={suggestImprovements}
-          />
-        </TabsContent>
+        {hasModuleAccess('exegese.esbocos') && (
+          <TabsContent value="outlines">
+            <ExegesisOutlines
+              outlines={outlines}
+              onFetch={fetchOutlines}
+              onSave={saveOutline}
+              onUpdateNotes={updateOutlineNotes}
+              onUpdateContent={updateOutlineContent}
+              onDelete={deleteOutline}
+              getMaterialsContext={getMaterialsContext}
+              getRelevantAnalysesContext={getRelevantAnalysesContext}
+              fetchOutlineVersions={fetchOutlineVersions}
+              materialsCount={materials.length}
+              materials={materials}
+              onSuggestImprovements={suggestImprovements}
+            />
+          </TabsContent>
+        )}
 
-        <TabsContent value="materials">
-          <ExegesisMaterials
-            materials={materials}
-            loading={loading}
-            onFetch={fetchMaterials}
-            onUpload={uploadMaterial}
-            onAddLink={addLink}
-            onUpdateMetadata={updateMaterialMetadata}
-            onDelete={deleteMaterial}
-            onClassify={classifyContent}
-            onExtractMetadata={extractMetadata}
-            onClassifyAll={classifyAllMaterials}
-          />
-        </TabsContent>
+        {hasModuleAccess('exegese.materiais') && (
+          <TabsContent value="materials">
+            <ExegesisMaterials
+              materials={materials}
+              loading={loading}
+              onFetch={fetchMaterials}
+              onUpload={uploadMaterial}
+              onAddLink={addLink}
+              onUpdateMetadata={updateMaterialMetadata}
+              onDelete={deleteMaterial}
+              onClassify={classifyContent}
+              onExtractMetadata={extractMetadata}
+              onClassifyAll={classifyAllMaterials}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
