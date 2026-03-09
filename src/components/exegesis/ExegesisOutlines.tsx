@@ -683,10 +683,11 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
             </div>
 
             {/* Editor + Copilot Layout */}
-            <div className={`flex gap-3 ${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? '' : ''}`}>
+            <div className={`flex flex-col lg:flex-row gap-3`}>
               {/* Editor */}
-              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'flex-[2]' : 'flex-1'} min-h-[400px]`}>
+              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'lg:flex-[2]' : 'flex-1'} min-h-[400px]`}>
                 <ExegesisRichEditor
+                  ref={editorRef}
                   content={manualContent}
                   onChange={setManualContent}
                   placeholder="Comece a escrever seu esboço... O Copiloto IA vai analisar em tempo real."
@@ -696,19 +697,33 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
               {/* Copilot Panel */}
               {hasModuleAccess('exegese.esbocos.texto_livre.copiloto') && showCopilot && (
-                <div className="flex-1 min-w-[260px] max-w-[340px] border rounded-lg bg-card overflow-hidden">
+                <div className="lg:flex-1 lg:min-w-[280px] lg:max-w-[380px] border rounded-lg bg-card overflow-hidden max-h-[500px] lg:max-h-none">
                   <OutlineCopilot
                     content={manualContent}
                     currentElement={currentElement}
                     previousElements={previousElements}
                     onApplySuggestion={(original, replacement) => {
-                      setManualContent(prev => prev.replace(original, replacement));
+                      if (editorRef.current) {
+                        editorRef.current.replaceText(original, replacement);
+                      } else {
+                        setManualContent(prev => prev.replace(original, replacement));
+                      }
                     }}
                     onInsertReference={(ref) => {
-                      setManualContent(prev => prev + `\n\n📖 ${ref}`);
+                      if (editorRef.current) {
+                        editorRef.current.insertContent(`<p>📖 ${ref}</p>`);
+                      } else {
+                        setManualContent(prev => prev + `\n\n📖 ${ref}`);
+                      }
                     }}
                     onInsertContent={(text) => {
-                      setManualContent(prev => prev + text);
+                      if (editorRef.current) {
+                        // Convert plain text to HTML for proper insertion
+                        const htmlText = text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+                        editorRef.current.insertContent(`<p>${htmlText}</p>`);
+                      } else {
+                        setManualContent(prev => prev + text);
+                      }
                     }}
                   />
                 </div>
