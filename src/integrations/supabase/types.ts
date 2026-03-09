@@ -128,6 +128,110 @@ export type Database = {
         }
         Relationships: []
       }
+      copilot_outlines: {
+        Row: {
+          aplicacao: string | null
+          conclusao: string | null
+          content_full: string | null
+          created_at: string
+          estrutura: Json | null
+          id: string
+          introducao: string | null
+          outline_id: string | null
+          tema: string | null
+          texto_base: string | null
+          titulo: string | null
+          user_id: string
+        }
+        Insert: {
+          aplicacao?: string | null
+          conclusao?: string | null
+          content_full?: string | null
+          created_at?: string
+          estrutura?: Json | null
+          id?: string
+          introducao?: string | null
+          outline_id?: string | null
+          tema?: string | null
+          texto_base?: string | null
+          titulo?: string | null
+          user_id: string
+        }
+        Update: {
+          aplicacao?: string | null
+          conclusao?: string | null
+          content_full?: string | null
+          created_at?: string
+          estrutura?: Json | null
+          id?: string
+          introducao?: string | null
+          outline_id?: string | null
+          tema?: string | null
+          texto_base?: string | null
+          titulo?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_outlines_outline_id_fkey"
+            columns: ["outline_id"]
+            isOneToOne: false
+            referencedRelation: "exegesis_outlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_user_patterns: {
+        Row: {
+          copilot_level: number
+          created_at: string
+          estilo_escrita: string | null
+          expressoes_frequentes: Json | null
+          id: string
+          padrao_aplicacao: string | null
+          padrao_introducao: string | null
+          padrao_progressao: string | null
+          padrao_titulo: string | null
+          padrao_transicao: string | null
+          palavras_frequentes: Json | null
+          total_outlines_analyzed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          copilot_level?: number
+          created_at?: string
+          estilo_escrita?: string | null
+          expressoes_frequentes?: Json | null
+          id?: string
+          padrao_aplicacao?: string | null
+          padrao_introducao?: string | null
+          padrao_progressao?: string | null
+          padrao_titulo?: string | null
+          padrao_transicao?: string | null
+          palavras_frequentes?: Json | null
+          total_outlines_analyzed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          copilot_level?: number
+          created_at?: string
+          estilo_escrita?: string | null
+          expressoes_frequentes?: Json | null
+          id?: string
+          padrao_aplicacao?: string | null
+          padrao_introducao?: string | null
+          padrao_progressao?: string | null
+          padrao_titulo?: string | null
+          padrao_transicao?: string | null
+          palavras_frequentes?: Json | null
+          total_outlines_analyzed?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       diagnostic_prompt_history: {
         Row: {
           applied_at: string | null

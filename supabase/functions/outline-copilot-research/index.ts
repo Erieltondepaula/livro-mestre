@@ -46,22 +46,24 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Fetch user's internal materials
+    // ========== BUSCA INTERNA: Materiais do Usuário ==========
     let materialsContext = "";
+    let materialCount = 0;
     try {
       const { data: materials } = await supabase
         .from("exegesis_materials")
-        .select("title, description, theme, keywords, bible_references, material_category, author")
+        .select("title, description, theme, keywords, bible_references, material_category, author, content_origin")
         .limit(50);
 
       if (materials && materials.length > 0) {
-        materialsContext = materials.map((m: any) => {
-          const parts = [`- "${m.title}" (${m.material_category})`];
-          if (m.author) parts.push(`  Autor: ${m.author}`);
-          if (m.theme) parts.push(`  Tema: ${m.theme}`);
-          if (m.description) parts.push(`  Desc: ${m.description.substring(0, 150)}`);
-          if (m.keywords?.length) parts.push(`  Palavras-chave: ${(m.keywords as string[]).join(", ")}`);
-          if (m.bible_references?.length) parts.push(`  Refs: ${(m.bible_references as string[]).join(", ")}`);
+        materialCount = materials.length;
+        materialsContext = materials.map((m: any, idx: number) => {
+          const parts = [`${idx + 1}. "${m.title}" [${m.material_category}${m.content_origin ? ` / ${m.content_origin}` : ''}]`];
+          if (m.author) parts.push(`   Autor: ${m.author}`);
+          if (m.theme) parts.push(`   Tema: ${m.theme}`);
+          if (m.description) parts.push(`   Descrição: ${m.description.substring(0, 200)}`);
+          if (m.keywords?.length) parts.push(`   Palavras-chave: ${(m.keywords as string[]).join(", ")}`);
+          if (m.bible_references?.length) parts.push(`   Referências bíblicas: ${(m.bible_references as string[]).join(", ")}`);
           return parts.join("\n");
         }).join("\n\n");
       }
@@ -69,23 +71,83 @@ serve(async (req) => {
       console.error("Error fetching materials:", e);
     }
 
-    // Also fetch user's previous outlines
+    // ========== BUSCA INTERNA: Esboços anteriores ==========
     let previousOutlinesContext = "";
+    let outlineCount = 0;
     try {
       const { data: outlines } = await supabase
         .from("exegesis_outlines")
-        .select("passage, outline_type, content, tags")
+        .select("passage, outline_type, content, tags, notes")
         .limit(20)
         .order("created_at", { ascending: false });
 
       if (outlines && outlines.length > 0) {
-        previousOutlinesContext = outlines.map((o: any) => {
-          const plainContent = o.content?.replace(/<[^>]+>/g, '').substring(0, 200) || '';
-          return `- Passagem: ${o.passage} | Tipo: ${o.outline_type} | Preview: ${plainContent}`;
-        }).join("\n");
+        outlineCount = outlines.length;
+        previousOutlinesContext = outlines.map((o: any, idx: number) => {
+          const plainContent = o.content?.replace(/<[^>]+>/g, '').substring(0, 300) || '';
+          return `${idx + 1}. Passagem: ${o.passage} | Tipo: ${o.outline_type}${o.tags?.length ? ` | Tags: ${o.tags.join(', ')}` : ''}\n   Preview: ${plainContent}`;
+        }).join("\n\n");
       }
     } catch (e) {
       console.error("Error fetching outlines:", e);
+    }
+
+    // ========== BUSCA INTERNA: Análises exegéticas anteriores ==========
+    let exegesisContext = "";
+    try {
+      const { data: analyses } = await supabase
+        .from("exegesis_analyses")
+        .select("passage, analysis_type, content, notes")
+        .limit(10)
+        .order("created_at", { ascending: false });
+
+      if (analyses && analyses.length > 0) {
+        exegesisContext = analyses.map((a: any, idx: number) => {
+          const plainContent = a.content?.replace(/<[^>]+>/g, '').substring(0, 200) || '';
+          return `${idx + 1}. ${a.passage} [${a.analysis_type}]: ${plainContent}`;
+        }).join("\n");
+      }
+    } catch (e) {
+      console.error("Error fetching analyses:", e);
+    }
+
+    // ========== BUSCA INTERNA: Citações salvas ==========
+    let quotesContext = "";
+    try {
+      const { data: quotes } = await supabase
+        .from("quotes")
+        .select("quote, bible_book, bible_chapter, bible_verse, tags")
+        .limit(20)
+        .order("created_at", { ascending: false });
+
+      if (quotes && quotes.length > 0) {
+        quotesContext = quotes.map((q: any, idx: number) => {
+          const ref = q.bible_book ? `${q.bible_book} ${q.bible_chapter || ''}:${q.bible_verse || ''}` : '';
+          return `${idx + 1}. "${q.quote.substring(0, 150)}"${ref ? ` — ${ref}` : ''}${q.tags?.length ? ` [${q.tags.join(', ')}]` : ''}`;
+        }).join("\n");
+      }
+    } catch (e) {
+      console.error("Error fetching quotes:", e);
+    }
+
+    // ========== BUSCA INTERNA: Padrões do usuário ==========
+    let userStyleContext = "";
+    try {
+      const { data: patterns } = await supabase
+        .from("copilot_user_patterns")
+        .select("*")
+        .single();
+
+      if (patterns) {
+        const parts: string[] = [];
+        parts.push(`Nível do Copiloto: ${patterns.copilot_level} | Esboços analisados: ${patterns.total_outlines_analyzed}`);
+        if (patterns.estilo_escrita) parts.push(`Estilo: ${patterns.estilo_escrita}`);
+        if (patterns.padrao_introducao) parts.push(`Padrão de introdução: ${patterns.padrao_introducao}`);
+        if (patterns.padrao_aplicacao) parts.push(`Padrão de aplicação: ${patterns.padrao_aplicacao}`);
+        userStyleContext = parts.join('\n');
+      }
+    } catch (e) {
+      console.error("Error fetching user patterns:", e);
     }
 
     let contextParts: string[] = [];
@@ -96,64 +158,62 @@ serve(async (req) => {
       if (previousElements.introduction) contextParts.push(`INTRODUÇÃO: ${previousElements.introduction}`);
     }
 
-    const systemPrompt = `Você é um pesquisador teológico PhD que auxilia pregadores na elaboração de sermões em TEMPO REAL. Você CONHECE a estrutura de sermão do pregador e deve fornecer pesquisas ESPECÍFICAS e ACIONÁVEIS.
+    const systemPrompt = `Você é um pesquisador teológico PhD que auxilia pregadores na elaboração de sermões em TEMPO REAL. Você é PROATIVO e busca ATIVAMENTE informações internas e externas.
 
 ${SERMON_STRUCTURE}
 
-## REGRAS FUNDAMENTAIS:
+## BUSCA INTERNA (OBRIGATÓRIA):
+Você DEVE analisar CADA material interno do usuário (materiais cadastrados, esboços anteriores, análises exegéticas, citações salvas) e indicar COMO cada um é relevante para o sermão atual. Não ignore nenhum material — analise TODOS e descarte apenas os verdadeiramente irrelevantes.
 
-1. **NUNCA invente URLs**. Se você não tem certeza de uma URL real, NÃO inclua o campo "url". Em vez disso, forneça um link de pesquisa no Google no formato: https://www.google.com/search?q=TERMO+DE+BUSCA
-2. **Seja ESPECÍFICO**: Em vez de "pesquise sobre o tema", diga EXATAMENTE o que pesquisar e por quê
-3. **Use fontes REAIS**: Cite pregadores REAIS, livros REAIS, comentários bíblicos REAIS
-4. **Referências bíblicas COMPLETAS**: Sempre inclua o TEXTO do versículo (ACF), não apenas a referência
-5. **Materiais internos**: Analise CADA material do usuário e indique COMO usá-lo nesta seção específica
-6. **Pregações similares**: Para CADA pregação similar, forneça um link de pesquisa Google funcional
+## BUSCA EXTERNA (OBRIGATÓRIA):
+Você DEVE buscar ATIVAMENTE em fontes externas para enriquecer o sermão:
 
-## FONTES DE PESQUISA QUE VOCÊ DEVE CONSIDERAR:
+### Fontes que DEVEM ser consultadas:
+1. **Google Acadêmico**: Artigos teológicos, dissertações, teses sobre o texto/tema
+2. **YouTube**: Pregações filmadas de pastores conhecidos sobre o mesmo texto/tema
+3. **Wikipedia**: Contexto histórico, geográfico, cultural, arqueológico
+4. **Comentários Bíblicos**: Matthew Henry, John MacArthur, Warren Wiersbe, F.B. Meyer, Charles Spurgeon, Adam Clarke, John Gill
+5. **Pregadores Brasileiros**: Hernandes Dias Lopes, Augustus Nicodemus, Caio Fábio, Ariovaldo Ramos, Paul Washer (traduzido)
+6. **Pregadores Internacionais**: John Piper, Tim Keller, Charles Spurgeon, Paul Washer, Martyn Lloyd-Jones, R.C. Sproul
+7. **Livros Teológicos**: Referências acadêmicas e devocionais
+8. **Dicionários Bíblicos**: Strong, Vine, DITNT, TDNT
 
-- **Google**: Pesquisas teológicas, artigos acadêmicos
-- **YouTube**: Pregações filmadas de pastores conhecidos
-- **Wikipedia**: Contexto histórico, geográfico, cultural
-- **Comentários Bíblicos**: Matthew Henry, John MacArthur, Warren Wiersbe, F.B. Meyer, Charles Spurgeon
-- **Pregadores brasileiros**: Hernandes Dias Lopes, Augustus Nicodemus, Caio Fábio, Ariovaldo Ramos
-- **Pregadores internacionais**: John Piper, Tim Keller, Charles Spurgeon, Paul Washer, Martyn Lloyd-Jones
-- **Livros teológicos**: Referências acadêmicas e devocionais
+### Regras para URLs:
+- Para vídeos: https://www.youtube.com/results?search_query=TERMOS+SEPARADOS+POR+PLUS
+- Para pesquisas: https://www.google.com/search?q=TERMOS+SEPARADOS+POR+PLUS
+- Para Wikipedia: https://pt.wikipedia.org/wiki/TERMO
+- Para Bíblia online: https://www.bibliaonline.com.br/acf/LIVRO/CAPITULO
+- NUNCA invente URLs diretas de vídeo (youtube.com/watch?v=XXX)
 
-Retorne sugestões em 5 categorias:
-
-1. **FONTES INTERNAS** - Materiais cadastrados do usuário relevantes para a seção ATUAL
-2. **REFERÊNCIAS BÍBLICAS** - Versículos ACF COM o texto completo do versículo
-3. **FONTES EXTERNAS** - Artigos, vídeos, livros, blogs com links de pesquisa Google funcionais
-4. **DADOS E ILUSTRAÇÕES** - Estatísticas, dados históricos, ilustrações PRONTAS para uso
-5. **PREGAÇÕES SIMILARES** - Pregações REAIS de pregadores REAIS sobre o mesmo tema/texto
-
-FORMATO JSON:
+## FORMATO DE RESPOSTA (JSON):
 {
-  "contextualNote": "Uma nota proativa DETALHADA. Ex: 'O seu título [X] sobre [Y] foi abordado pelo Pr. Hernandes Dias Lopes na série Z. Ele focou em [aspecto]. Para a seção atual (Explicação do Ponto 1), recomendo consultar o comentário de Matthew Henry sobre [passagem] e o material [título] da sua biblioteca. Abaixo estão recursos específicos.'",
-  "currentSectionHelp": "Ajuda ESPECÍFICA E DETALHADA para a seção atual. Ex: 'Na Explicação, você precisa aprofundar [conceito específico]. Sugestões: (1) Explique o contexto histórico de [cidade/época], (2) Analise a palavra [X] no grego/hebraico, (3) Compare com [passagem paralela], (4) Cite [autor] que desenvolveu esta ideia, (5) Aplique a [contexto contemporâneo].'",
+  "contextualNote": "Nota proativa DETALHADA e PERSONALIZADA baseada no conteúdo. Deve mencionar: (1) materiais internos relevantes encontrados, (2) pregações similares conhecidas, (3) recomendações específicas para a seção atual. Mín. 4-5 frases.",
+  "currentSectionHelp": "Ajuda PASSO A PASSO para a seção atual. Mín. 3-4 frases com instruções concretas.",
   "internalSources": [
-    { "materialTitle": "título exato do material", "relevance": "explicação detalhada de por que é relevante para ESTA seção", "suggestedUse": "instrução ESPECÍFICA de como usar. Ex: 'Use a citação da página X para fundamentar o argumento sobre Y na Explicação do Ponto 2'" }
+    { "materialTitle": "título exato", "relevance": "por que é relevante PARA ESTA SEÇÃO", "suggestedUse": "instrução ESPECÍFICA de como usar neste momento do sermão" }
   ],
   "biblicalReferences": [
-    { "reference": "Livro Cap:Vers (ACF)", "text": "TEXTO COMPLETO do versículo na ACF", "connection": "como este versículo se conecta com ESTA seção específica do sermão", "type": "paralela|contraste|profecia|tipologia|doutrina" }
+    { "reference": "Livro Cap:Vers (ACF)", "text": "TEXTO COMPLETO do versículo na ACF", "connection": "como se conecta com ESTA seção", "type": "paralela|contraste|profecia|tipologia|doutrina" }
   ],
   "externalSources": [
-    { "title": "título específico", "type": "artigo|video|livro|blog|documentario|pesquisa|comentario|pregacao", "description": "descrição detalhada do conteúdo e por que é útil", "url": "https://www.google.com/search?q=TERMOS+DE+BUSCA+RELEVANTES OU https://www.youtube.com/results?search_query=TERMOS", "relevance": "como usar este recurso NESTA seção", "preacherName": "nome se for pregação" }
+    { "title": "título específico", "type": "artigo|video|livro|blog|documentario|pesquisa|comentario|pregacao", "description": "descrição detalhada", "url": "URL de busca Google/YouTube/Wikipedia", "relevance": "como usar nesta seção", "preacherName": "nome se for pregação" }
   ],
   "dataAndIllustrations": [
-    { "title": "título da ilustração", "content": "CONTEÚDO COMPLETO da ilustração, pronto para uso no sermão (mín. 3-4 frases)", "source": "fonte verificável", "suggestedPlacement": "exatamente onde usar (ex: Ilustração do Ponto 2, após a explicação sobre perdão)" }
+    { "title": "título da ilustração", "content": "CONTEÚDO COMPLETO PRONTO PARA USO no sermão (mín. 4-5 frases, uma história ou dado completo)", "source": "fonte verificável", "suggestedPlacement": "exatamente onde usar" }
   ],
   "similarSermons": [
-    { "preacher": "nome REAL do pregador", "title": "título REAL da pregação", "approach": "descrição detalhada da abordagem (3-4 frases)", "difference": "sugestão ESPECÍFICA de como diferenciar (2-3 frases)", "url": "https://www.youtube.com/results?search_query=NOME+PREGADOR+TITULO+PREGACAO OU https://www.google.com/search?q=TERMOS" }
+    { "preacher": "nome REAL", "title": "título REAL ou provável", "approach": "descrição detalhada da abordagem (3-4 frases)", "difference": "sugestão ESPECÍFICA de como diferenciar (2-3 frases)", "url": "https://www.youtube.com/results?search_query=NOME+PREGADOR+TITULO" }
   ]
 }
 
-REGRAS CRÍTICAS PARA URLs:
-- Para vídeos do YouTube: use https://www.youtube.com/results?search_query=TERMOS+SEPARADOS+POR+PLUS
-- Para pesquisas gerais: use https://www.google.com/search?q=TERMOS+SEPARADOS+POR+PLUS
-- Para Wikipedia: use https://pt.wikipedia.org/wiki/TERMO
-- NUNCA invente um URL direto de vídeo (ex: youtube.com/watch?v=XXXX)
-- NUNCA invente URLs de sites que você não tem certeza que existem`;
+REGRAS CRÍTICAS:
+1. NUNCA retorne listas vazias sem justificativa — se não há materiais internos, diga na contextualNote
+2. Sempre traga pelo menos 3-5 referências bíblicas COM TEXTO COMPLETO (ACF)
+3. Sempre traga pelo menos 2-3 fontes externas com links de busca FUNCIONAIS
+4. Sempre traga pelo menos 1-2 ilustrações COMPLETAS prontas para uso
+5. Sempre traga pelo menos 2-3 pregações similares com links de busca no YouTube
+6. As ilustrações devem ser COMPLETAS — histórias com começo, meio e fim, não descrições vagas
+7. currentSectionHelp deve ser PASSO A PASSO: "Primeiro escreva X, depois Y, finalize com Z"`;
 
     const userMessage = `CONTEXTO DO SERMÃO:
 ${contextParts.length > 0 ? contextParts.join("\n") : "Início do sermão."}
@@ -164,20 +224,36 @@ ${detectedPosition ? `\nSEÇÃO ATUAL DETECTADA: ${detectedPosition.currentSecti
 CONTEÚDO COMPLETO SENDO ESCRITO:
 ${content}
 
-MATERIAIS CADASTRADOS DO USUÁRIO (ANALISE CADA UM):
-${materialsContext || "Nenhum material cadastrado. Recomende que o usuário cadastre materiais em Exegese → Materiais."}
+========== DADOS INTERNOS DO USUÁRIO ==========
 
-ESBOÇOS ANTERIORES DO USUÁRIO:
+📚 MATERIAIS CADASTRADOS (${materialCount} materiais — analise CADA UM):
+${materialsContext || "Nenhum material cadastrado. Recomende que o usuário cadastre materiais em Exegese → Materiais para pesquisas mais ricas."}
+
+📝 ESBOÇOS ANTERIORES (${outlineCount} esboços):
 ${previousOutlinesContext || "Nenhum esboço anterior."}
 
+🔍 ANÁLISES EXEGÉTICAS ANTERIORES:
+${exegesisContext || "Nenhuma análise anterior."}
+
+💬 CITAÇÕES SALVAS:
+${quotesContext || "Nenhuma citação salva."}
+
+🎨 PERFIL DE ESTILO DO USUÁRIO:
+${userStyleContext || "Perfil ainda não construído (primeiro esboço)."}
+
+========== FIM DOS DADOS INTERNOS ==========
+
 INSTRUÇÕES PROATIVAS OBRIGATÓRIAS:
-1. Analise CADA material interno e indique SE e COMO é relevante para a seção ATUAL
-2. Forneça versículos bíblicos ACF COM O TEXTO COMPLETO (não só a referência)
-3. Pesquise se o título ou tema já foi pregado por pregadores conhecidos - forneça links de busca no YouTube/Google
-4. Traga recursos externos com links de BUSCA funcionais (Google/YouTube), NUNCA URLs inventadas
-5. Forneça ilustrações PRONTAS PARA USO (com conteúdo completo, não apenas descrições)
-6. A nota contextual deve ser DETALHADA e PERSONALIZADA baseada no conteúdo escrito
-7. currentSectionHelp deve dar instruções PASSO A PASSO do que escrever
+1. Analise CADA material interno — para cada um, diga SE e COMO é relevante PARA A SEÇÃO ATUAL
+2. Forneça versículos bíblicos ACF COM O TEXTO COMPLETO do versículo (não só a referência)
+3. Pesquise se o título/tema já foi pregado por pregadores conhecidos — traga nomes REAIS e links de busca
+4. Traga recursos externos com links de BUSCA funcionais (Google/YouTube/Wikipedia)
+5. Forneça ilustrações COMPLETAS prontas para uso (histórias com começo-meio-fim, dados com fonte)
+6. A nota contextual deve ser DETALHADA e PERSONALIZADA — cite materiais internos pelo nome
+7. currentSectionHelp deve dar instruções PASSO A PASSO do que escrever a seguir
+8. Se o usuário tem citações salvas relevantes ao tema, sugira onde usá-las
+9. Se há análises exegéticas anteriores sobre passagens relacionadas, mencione-as
+10. NUNCA retorne resultados vazios — sempre traga pelo menos o mínimo de cada categoria
 
 Responda APENAS com o JSON.`;
 
@@ -194,7 +270,7 @@ Responda APENAS com o JSON.`;
           { role: "user", content: userMessage },
         ],
         temperature: 0.4,
-        max_tokens: 6000,
+        max_tokens: 8000,
       }),
     });
 
@@ -233,7 +309,7 @@ Responda APENAS com o JSON.`;
     } catch (parseError) {
       console.error("Parse error:", parseError, "Content:", aiContent);
       research = {
-        contextualNote: "",
+        contextualNote: "Não foi possível processar a pesquisa neste momento. Continue escrevendo e tente novamente.",
         currentSectionHelp: "",
         internalSources: [],
         biblicalReferences: [],

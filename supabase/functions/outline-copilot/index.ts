@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -42,7 +43,26 @@ APELO
 ORAÇÃO FINAL
 `;
 
-const SYSTEM_PROMPT = `Você é um DOUTOR (PhD) em Língua Portuguesa, Literatura e Homilética. Você atua como revisor profissional e consultor de sermões em TEMPO REAL.
+const AGENT_IDENTITY = `## IDENTIDADE DO AGENTE
+
+Você é **Copiloto**, um agente de inteligência artificial especializado na produção e evolução de esboços de estudos bíblicos e sermões.
+
+Sua principal função é auxiliar o usuário na criação de esboços cada vez melhores, aprendendo continuamente com cada novo esboço produzido.
+
+Você possui um mecanismo de auto-evolução baseado em aprendizado incremental armazenado em banco de dados.
+
+## SISTEMA DE EVOLUÇÃO (4 Níveis):
+- **Nível 1 — Assistente**: Ajuda a estruturar esboços
+- **Nível 2 — Analista**: Reconhece padrões do usuário
+- **Nível 3 — Aprendiz**: Ajusta produção ao estilo do usuário
+- **Nível 4 — Coprodutor**: Produz esboços quase idênticos ao estilo do usuário
+
+## OBJETIVO FINAL:
+Tornar-se um coprodutor intelectual do usuário, capaz de prever sua estrutura de ensino, replicar seu estilo, acelerar a produção e melhorar continuamente.`;
+
+const SYSTEM_PROMPT = `${AGENT_IDENTITY}
+
+Você é um DOUTOR (PhD) em Língua Portuguesa, Literatura e Homilética. Você atua como revisor profissional e consultor de sermões em TEMPO REAL.
 
 ${SERMON_STRUCTURE}
 
@@ -126,7 +146,7 @@ Você é RIGOROSO e DETALHISTA. Você DEVE:
    - Se está na APLICAÇÃO, sugira formas práticas de aplicar
    - Sempre forneça exemplos concretos, não apenas sugestões vagas
 
-7. **CONTEXTO DO TEXTO BASE** (NOVO - ABSOLUTAMENTE CRÍTICO):
+7. **CONTEXTO DO TEXTO BASE** (ABSOLUTAMENTE CRÍTICO - GUARDA ANTI-HERESIA):
    Você DEVE SEMPRE fornecer o campo "baseTextContext" com uma análise detalhada do texto base do sermão. Isso é OBRIGATÓRIO para evitar heresias e distorções doutrinárias. Inclua:
    
    a) **Contexto Histórico**: Quem escreveu, para quem, quando, onde, por quê
@@ -139,6 +159,17 @@ Você é RIGOROSO e DETALHISTA. Você DEVE:
    
    REGRA DE OURO: O sermão é movido pelo TEXTO, não pelo pregador. Se qualquer seção se afasta do texto base, ALERTE IMEDIATAMENTE.
 
+8. **APRENDIZADO DO ESTILO DO USUÁRIO** (NOVO):
+   Ao analisar o esboço, identifique e retorne:
+   - Padrões de introdução usados pelo usuário
+   - Padrão de títulos (estilo, formato)
+   - Padrão de transições entre seções
+   - Padrão de aplicações práticas
+   - Palavras mais frequentes
+   - Expressões recorrentes
+   - Estilo geral de escrita
+   Retorne isso no campo "detectedPatterns".
+
 FORMATO DE RESPOSTA (JSON estrito):
 {
   "overallScore": 0-100,
@@ -148,9 +179,9 @@ FORMATO DE RESPOSTA (JSON estrito):
     "completedSections": ["titulo", "tema", ...],
     "nextExpectedSection": "nome da próxima seção",
     "progressPercent": 0-100,
-    "guidance": "Mensagem DETALHADA e ESPECÍFICA sobre o que fazer agora. Não seja vago. Ex: 'Você está na Explicação do Ponto 1. Desenvolva a ideia de [tema específico] em pelo menos 5 parágrafos. Considere abordar: (1) o contexto histórico de [passagem], (2) o significado da palavra [X] no original, (3) a aplicação teológica de [Y]. Você pode usar o comentário de Matthew Henry sobre este texto.'",
-    "sectionTip": "Dica PRÁTICA e ESPECÍFICA. Ex: 'Para a Ilustração, considere usar a história de [personagem bíblico] que viveu situação similar, ou um dado estatístico sobre [tema].'",
-    "contentSuggestions": ["Sugestão 1 concreta", "Sugestão 2 concreta", "Sugestão 3 concreta"]
+    "guidance": "Mensagem DETALHADA e ESPECÍFICA sobre o que fazer agora. Não seja vago.",
+    "sectionTip": "Dica PRÁTICA e ESPECÍFICA.",
+    "contentSuggestions": ["Sugestão 1 concreta com texto exemplo", "Sugestão 2 concreta com texto exemplo", "Sugestão 3 concreta"]
   },
   "grammarIssues": [
     {
@@ -159,7 +190,7 @@ FORMATO DE RESPOSTA (JSON estrito):
       "text": "texto problemático",
       "suggestion": "correção",
       "severity": "low|medium|high",
-      "explanation": "Explicação gramatical detalhada da regra violada, como um professor de português faria"
+      "explanation": "Explicação gramatical detalhada da regra violada"
     }
   ],
   "coherenceChecks": [
@@ -182,7 +213,7 @@ FORMATO DE RESPOSTA (JSON estrito):
     {
       "original": "palavra",
       "alternatives": ["sinônimo1", "sinônimo2", "sinônimo3"],
-      "reason": "motivo detalhado (repetição, inadequação de registro, etc.)"
+      "reason": "motivo detalhado"
     }
   ],
   "thematicAlert": {
@@ -220,9 +251,19 @@ FORMATO DE RESPOSTA (JSON estrito):
     "keyTerms": [
       { "term": "palavra no original (hebraico/grego)", "transliteration": "transliteração", "meaning": "significado detalhado e nuances", "strongNumber": "número Strong se aplicável" }
     ],
-    "hermeneuticalDangers": ["Interpretação errada comum 1 - por que está errada", "Interpretação errada comum 2", "Eisegese a evitar"],
-    "anchorReminder": "Lembrete específico de como ancorar a seção ATUAL ao texto base. Ex: 'Na Explicação do Ponto 1, use: Olhando para o versículo X, vemos que...'",
-    "narrativePosition": "Onde este texto se encaixa na narrativa redentiva: Criação, Queda, Redenção ou Consumação. Explicação de 2-3 frases."
+    "hermeneuticalDangers": ["Interpretação errada comum 1 - por que está errada", "Eisegese a evitar"],
+    "anchorReminder": "Lembrete específico de como ancorar a seção ATUAL ao texto base.",
+    "narrativePosition": "Onde este texto se encaixa na narrativa redentiva: Criação, Queda, Redenção ou Consumação."
+  },
+  "detectedPatterns": {
+    "padrao_introducao": "descrição do padrão de introdução detectado ou null",
+    "padrao_titulo": "descrição do padrão de títulos ou null",
+    "padrao_transicao": "padrão de transições ou null",
+    "padrao_aplicacao": "padrão de aplicações ou null",
+    "padrao_progressao": "padrão de progressão lógica ou null",
+    "palavras_frequentes": ["palavra1", "palavra2"],
+    "expressoes_frequentes": ["expressão1"],
+    "estilo_escrita": "descrição do estilo geral ou null"
   }
 }
 
@@ -233,6 +274,7 @@ REGRAS IMPORTANTES:
 - A "explanation" em grammarIssues é OBRIGATÓRIA - explique a regra.
 - "contentSuggestions" deve ter 2-4 sugestões CONCRETAS de conteúdo para a seção atual.
 - "baseTextContext" é OBRIGATÓRIO sempre que um texto base for detectado. Se não houver texto base ainda, retorne null.
+- "detectedPatterns" é OBRIGATÓRIO - analise o estilo do usuário com base no conteúdo.
 - Cada seção do sermão DEVE ser verificada contra o texto base. Se se afasta, alerte em thematicAlert.`;
 
 serve(async (req) => {
@@ -258,6 +300,59 @@ serve(async (req) => {
       );
     }
 
+    // Fetch user patterns from DB
+    const authHeader = req.headers.get("authorization") || "";
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    let userPatternsContext = "";
+    let copilotLevel = 1;
+    try {
+      const { data: patterns } = await supabase
+        .from("copilot_user_patterns")
+        .select("*")
+        .single();
+
+      if (patterns) {
+        copilotLevel = patterns.copilot_level || 1;
+        const parts: string[] = [];
+        parts.push(`Nível do Copiloto: ${copilotLevel} (${copilotLevel === 1 ? 'Assistente' : copilotLevel === 2 ? 'Analista' : copilotLevel === 3 ? 'Aprendiz' : 'Coprodutor'})`);
+        parts.push(`Total de esboços analisados: ${patterns.total_outlines_analyzed}`);
+        if (patterns.padrao_introducao) parts.push(`Padrão de introdução: ${patterns.padrao_introducao}`);
+        if (patterns.padrao_titulo) parts.push(`Padrão de títulos: ${patterns.padrao_titulo}`);
+        if (patterns.padrao_transicao) parts.push(`Padrão de transições: ${patterns.padrao_transicao}`);
+        if (patterns.padrao_aplicacao) parts.push(`Padrão de aplicações: ${patterns.padrao_aplicacao}`);
+        if (patterns.padrao_progressao) parts.push(`Padrão de progressão: ${patterns.padrao_progressao}`);
+        if (patterns.estilo_escrita) parts.push(`Estilo de escrita: ${patterns.estilo_escrita}`);
+        if (patterns.palavras_frequentes?.length) parts.push(`Palavras frequentes: ${(patterns.palavras_frequentes as string[]).join(', ')}`);
+        if (patterns.expressoes_frequentes?.length) parts.push(`Expressões frequentes: ${(patterns.expressoes_frequentes as string[]).join(', ')}`);
+        userPatternsContext = parts.join('\n');
+      }
+    } catch (e) {
+      console.error("Error fetching patterns:", e);
+    }
+
+    // Fetch previous outlines for learning
+    let previousOutlinesContext = "";
+    try {
+      const { data: outlines } = await supabase
+        .from("copilot_outlines")
+        .select("tema, titulo, texto_base, estrutura")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (outlines && outlines.length > 0) {
+        previousOutlinesContext = outlines.map((o: any) => 
+          `- Tema: ${o.tema || 'N/A'} | Título: ${o.titulo || 'N/A'} | Texto: ${o.texto_base || 'N/A'}`
+        ).join('\n');
+      }
+    } catch (e) {
+      console.error("Error fetching copilot outlines:", e);
+    }
+
     let contextParts: string[] = [];
     if (previousElements) {
       if (previousElements.title) contextParts.push(`TÍTULO: ${previousElements.title}`);
@@ -281,19 +376,24 @@ ${contextParts.length > 0 ? contextParts.join('\n') : 'Nenhum elemento anterior 
 
 ELEMENTO SELECIONADO PELO USUÁRIO: ${currentElement || 'não especificado'}
 
+${userPatternsContext ? `\nPERFIL DE ESTILO DO USUÁRIO (aprendido de esboços anteriores):\n${userPatternsContext}\n\nUSE ESTES PADRÕES para personalizar suas sugestões ao estilo do usuário.\n` : ''}
+
+${previousOutlinesContext ? `\nESBOÇOS ANTERIORES DO USUÁRIO:\n${previousOutlinesContext}\n\nCompare o esboço atual com os anteriores. Detecte melhorias e novos padrões.\n` : ''}
+
 CONTEÚDO COMPLETO DO ESBOÇO (texto livre):
 ${content}
 
 INSTRUÇÕES OBRIGATÓRIAS:
 1. DETECTE automaticamente em que parte da estrutura do sermão o pregador está agora
 2. Analise coerência entre as seções já escritas - seja ESPECÍFICO sobre o que está bom e ruim
-3. CORRIJA TODA A GRAMÁTICA como um PhD - não deixe NENHUM erro passar (concordância, regência, crase, pontuação, ortografia, colocação pronominal)
+3. CORRIJA TODA A GRAMÁTICA como um PhD - não deixe NENHUM erro passar
 4. Para cada erro gramatical, EXPLIQUE a regra violada
 5. Sugira versículos bíblicos (ACF) ESPECÍFICOS para a seção atual
-6. Forneça GUIA ESTRUTURAL DETALHADO: diga ao pregador EXATAMENTE o que fazer agora e qual o próximo passo
-7. Forneça 2-4 SUGESTÕES DE CONTEÚDO concretas no campo contentSuggestions
-8. Se a Explicação de um Ponto tem menos de 5 parágrafos, alerte E sugira o que escrever nos parágrafos faltantes
-9. Se uma seção está fraca, sugira EXATAMENTE como melhorá-la com exemplo de texto
+6. Forneça GUIA ESTRUTURAL DETALHADO com EXEMPLOS DE TEXTO concretos
+7. Forneça 2-4 SUGESTÕES DE CONTEÚDO concretas no campo contentSuggestions - inclua texto exemplo
+8. Se a Explicação tem menos de 5 parágrafos, alerte E sugira conteúdo específico
+9. DETECTE PADRÕES do estilo do usuário no campo detectedPatterns
+10. Forneça CONTEXTO COMPLETO DO TEXTO BASE (baseTextContext) - OBRIGATÓRIO para evitar heresias
 
 NÃO SEJA VAGO. Cada feedback deve ser acionável e específico.
 
@@ -312,7 +412,7 @@ Responda APENAS com o JSON no formato especificado.`;
           { role: "user", content: userMessage },
         ],
         temperature: 0.3,
-        max_tokens: 5000,
+        max_tokens: 6000,
       }),
     });
 
@@ -372,6 +472,51 @@ Responda APENAS com o JSON no formato especificado.`;
           hasAppeal: false, hasFinalPrayer: false, pointsDetail: [],
         },
       };
+    }
+
+    // Save detected patterns to DB asynchronously
+    if (analysis.detectedPatterns) {
+      try {
+        const dp = analysis.detectedPatterns;
+        const { data: existing } = await supabase
+          .from("copilot_user_patterns")
+          .select("id, total_outlines_analyzed, copilot_level")
+          .single();
+
+        const totalAnalyzed = (existing?.total_outlines_analyzed || 0) + 1;
+        let newLevel = 1;
+        if (totalAnalyzed >= 20) newLevel = 4;
+        else if (totalAnalyzed >= 10) newLevel = 3;
+        else if (totalAnalyzed >= 5) newLevel = 2;
+
+        const patternData = {
+          padrao_introducao: dp.padrao_introducao || null,
+          padrao_titulo: dp.padrao_titulo || null,
+          padrao_transicao: dp.padrao_transicao || null,
+          padrao_aplicacao: dp.padrao_aplicacao || null,
+          padrao_progressao: dp.padrao_progressao || null,
+          palavras_frequentes: dp.palavras_frequentes || [],
+          expressoes_frequentes: dp.expressoes_frequentes || [],
+          estilo_escrita: dp.estilo_escrita || null,
+          total_outlines_analyzed: totalAnalyzed,
+          copilot_level: newLevel,
+        };
+
+        if (existing) {
+          await supabase.from("copilot_user_patterns").update(patternData).eq("id", existing.id);
+        } else {
+          // Get user_id from auth
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from("copilot_user_patterns").insert({ ...patternData, user_id: user.id });
+          }
+        }
+
+        // Add copilot level to response
+        analysis.copilotLevel = newLevel;
+      } catch (e) {
+        console.error("Error saving patterns:", e);
+      }
     }
 
     return new Response(JSON.stringify(analysis), {
