@@ -1,6 +1,7 @@
 import { BookOpen, History, FileText, Library, Link2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useExegesis } from '@/hooks/useExegesis';
+import { useAuth } from '@/contexts/AuthContext';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
 import { ExegesisHistory } from '@/components/exegesis/ExegesisHistory';
 import { ExegesisOutlines } from '@/components/exegesis/ExegesisOutlines';
@@ -9,6 +10,7 @@ import { CrossReferencesView } from '@/components/exegesis/CrossReferencesView';
 import { useEffect } from 'react';
 
 export function ExegesisView() {
+  const { hasModuleAccess } = useAuth();
   const {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
