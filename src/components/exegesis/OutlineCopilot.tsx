@@ -749,9 +749,14 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                   .filter(issue => !dismissedItems.has(`grammar-${issue.text}`))
                   .map((issue, idx) => (
                   <div key={idx} className={`p-2.5 rounded-lg border text-xs ${getSeverityColor(issue.severity)}`}>
-                    <p className="text-muted-foreground/80 mb-2">
+                    <p className="text-muted-foreground/80 mb-1">
                       <span className="line-through">{issue.text}</span> → <span className="text-foreground font-medium">{issue.suggestion}</span>
                     </p>
+                    {issue.explanation && (
+                      <p className="text-[10px] text-blue-600/80 bg-blue-500/5 rounded px-2 py-1 mb-2 italic">
+                        📖 {issue.explanation}
+                      </p>
+                    )}
                     <div className="flex items-center gap-1 pt-2 border-t border-border/50">
                       <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
                         onClick={() => handleApply(issue.text, issue.suggestion)}>
