@@ -1,0 +1,593 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  Brain, AlertTriangle, CheckCircle2, Lightbulb, BookOpen, 
+  Sparkles, Type, AlertCircle, ChevronDown, ChevronUp, 
+  RefreshCw, Target, FileText, Loader2, X 
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
+
+interface GrammarIssue {
+  type: 'punctuation' | 'capitalization' | 'spelling' | 'word_choice';
+  position: number;
+  text: string;
+  suggestion: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
+interface CoherenceCheck {
+  element: string;
+  relatesTo: string;
+  isCoherent: boolean;
+  reason?: string;
+  suggestion?: string;
+}
+
+interface BiblicalSuggestion {
+  reference: string;
+  reason: string;
+  context: string;
+}
+
+interface WordSuggestion {
+  original: string;
+  alternatives: string[];
+  reason: string;
+}
+
+interface ThematicAlert {
+  isOffTopic: boolean;
+  message: string;
+  currentElement: string;
+  expectedConnection: string;
+}
+
+interface StructureAnalysis {
+  hasTitle: boolean;
+  hasTheme: boolean;
+  hasBaseText: boolean;
+  hasIntroduction: boolean;
+  pointsCount: number;
+  hasConclusion: boolean;
+  hasAppeal: boolean;
+}
+
+interface CopilotAnalysis {
+  overallScore: number;
+  grammarIssues: GrammarIssue[];
+  coherenceChecks: CoherenceCheck[];
+  biblicalSuggestions: BiblicalSuggestion[];
+  wordSuggestions: WordSuggestion[];
+  thematicAlert?: ThematicAlert;
+  structureAnalysis: StructureAnalysis;
+}
+
+interface PreviousElements {
+  title?: string;
+  theme?: string;
+  baseText?: string;
+  introduction?: string;
+  points?: Array<{
+    title?: string;
+    development?: string;
+    illustration?: string;
+    phrase?: string;
+    application?: string;
+  }>;
+  conclusion?: string;
+}
+
+interface Props {
+  content: string;
+  currentElement: string;
+  previousElements?: PreviousElements;
+  onApplySuggestion?: (original: string, replacement: string) => void;
+  onInsertReference?: (reference: string) => void;
+}
+
+const ELEMENT_LABELS: Record<string, string> = {
+  titulo: 'Título',
+  tema: 'Tema',
+  texto_base: 'Texto Base',
+  introducao: 'Introdução',
+  ponto: 'Ponto',
+  desenvolvimento: 'Desenvolvimento',
+  ilustracao: 'Ilustração',
+  frase_efeito: 'Frase de Efeito',
+  aplicacao: 'Aplicação',
+  conclusao: 'Conclusão',
+  apelo: 'Apelo',
+  outro: 'Outro',
+};
+
+export function OutlineCopilot({ content, currentElement, previousElements, onApplySuggestion, onInsertReference }: Props) {
+  const [analysis, setAnalysis] = useState<CopilotAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['alert', 'grammar', 'coherence']);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastContentRef = useRef<string>('');
+
+  const analyzeContent = useCallback(async () => {
+    if (!content || content.replace(/<[^>]+>/g, '').trim().length < 10) {
+      setAnalysis(null);
+      return;
+    }
+
+    // Don't re-analyze if content hasn't changed significantly
+    const plainContent = content.replace(/<[^>]+>/g, '').trim();
+    if (plainContent === lastContentRef.current) return;
+    lastContentRef.current = plainContent;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/outline-copilot`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            content: plainContent,
+            currentElement,
+            previousElements,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Erro ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAnalysis(data);
+    } catch (err) {
+      console.error('Copilot error:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao analisar');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [content, currentElement, previousElements]);
+
+  // Debounced analysis on content change
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      analyzeContent();
+    }, 1500); // Wait 1.5s after user stops typing
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [content, analyzeContent]);
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev =>
+      prev.includes(section)
+        ? prev.filter(s => s !== section)
+        : [...prev, section]
+    );
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-amber-600';
+    return 'text-red-600';
+  };
+
+  const getScoreBg = (score: number) => {
+    if (score >= 80) return 'bg-green-500';
+    if (score >= 60) return 'bg-amber-500';
+    return 'bg-red-500';
+  };
+
+  const getSeverityColor = (severity: string) => {
+    if (severity === 'high') return 'border-red-500 bg-red-500/10';
+    if (severity === 'medium') return 'border-amber-500 bg-amber-500/10';
+    return 'border-blue-500 bg-blue-500/10';
+  };
+
+  const handleApply = (original: string, replacement: string) => {
+    if (onApplySuggestion) {
+      onApplySuggestion(original, replacement);
+      toast({ title: 'Sugestão aplicada!' });
+    }
+  };
+
+  const handleInsertRef = (ref: string) => {
+    if (onInsertReference) {
+      onInsertReference(ref);
+      toast({ title: 'Referência inserida!' });
+    }
+  };
+
+  if (!content || content.replace(/<[^>]+>/g, '').trim().length < 10) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-center p-4">
+        <Brain className="w-12 h-12 text-muted-foreground/30 mb-3" />
+        <p className="text-sm text-muted-foreground">
+          Comece a digitar seu esboço para ativar o Copiloto IA
+        </p>
+        <p className="text-xs text-muted-foreground/70 mt-1">
+          O assistente analisará coerência, gramática e sugerirá textos bíblicos
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex-shrink-0 p-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Brain className="w-4 h-4 text-primary" />
+            <span className="text-sm font-semibold">Copiloto IA</span>
+          </div>
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+          ) : analysis ? (
+            <div className="flex items-center gap-2">
+              <div className={`text-sm font-bold ${getScoreColor(analysis.overallScore)}`}>
+                {analysis.overallScore}%
+              </div>
+              <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${getScoreBg(analysis.overallScore)}`}
+                  style={{ width: `${analysis.overallScore}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          Editando: {ELEMENT_LABELS[currentElement] || currentElement}
+        </p>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+        {error && (
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {error}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto h-6 w-6 p-0"
+              onClick={analyzeContent}
+            >
+              <RefreshCw className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
+
+        {analysis && (
+          <>
+            {/* Thematic Alert - Always visible if present */}
+            {analysis.thematicAlert?.isOffTopic && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-red-700">⚠️ Desvio Temático Detectado!</p>
+                    <p className="text-xs text-red-600 mt-1">{analysis.thematicAlert.message}</p>
+                    <p className="text-[10px] text-red-500/80 mt-2">
+                      <strong>Elemento:</strong> {analysis.thematicAlert.currentElement}<br />
+                      <strong>Conexão esperada:</strong> {analysis.thematicAlert.expectedConnection}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Grammar Issues */}
+            {analysis.grammarIssues.length > 0 && (
+              <div className="rounded-lg border overflow-hidden">
+                <button
+                  onClick={() => toggleSection('grammar')}
+                  className="w-full p-2 bg-muted/30 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Type className="w-3.5 h-3.5 text-amber-600" />
+                    <span className="text-xs font-medium">Gramática e Estilo</span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-700 px-1.5 rounded">
+                      {analysis.grammarIssues.length}
+                    </span>
+                  </div>
+                  {expandedSections.includes('grammar') ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                {expandedSections.includes('grammar') && (
+                  <div className="p-2 space-y-2">
+                    {analysis.grammarIssues.map((issue, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded border-l-2 text-xs ${getSeverityColor(issue.severity)}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="text-muted-foreground/80">
+                              "{issue.text}" →{' '}
+                              <span className="text-foreground font-medium">{issue.suggestion}</span>
+                            </p>
+                          </div>
+                          {onApplySuggestion && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 px-1.5 text-[10px]"
+                              onClick={() => handleApply(issue.text, issue.suggestion)}
+                            >
+                              Aplicar
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Coherence Checks */}
+            {analysis.coherenceChecks.length > 0 && (
+              <div className="rounded-lg border overflow-hidden">
+                <button
+                  onClick={() => toggleSection('coherence')}
+                  className="w-full p-2 bg-muted/30 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Target className="w-3.5 h-3.5 text-blue-600" />
+                    <span className="text-xs font-medium">Coerência</span>
+                  </div>
+                  {expandedSections.includes('coherence') ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                {expandedSections.includes('coherence') && (
+                  <div className="p-2 space-y-2">
+                    {analysis.coherenceChecks.map((check, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded text-xs ${
+                          check.isCoherent
+                            ? 'bg-green-500/10 border border-green-500/20'
+                            : 'bg-red-500/10 border border-red-500/20'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          {check.isCoherent ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+                          ) : (
+                            <AlertTriangle className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
+                          )}
+                          <div>
+                            <p className="font-medium">
+                              {check.element} ↔ {check.relatesTo}
+                            </p>
+                            {check.reason && (
+                              <p className="text-muted-foreground mt-1">{check.reason}</p>
+                            )}
+                            {!check.isCoherent && check.suggestion && (
+                              <p className="text-blue-600 mt-1 italic">💡 {check.suggestion}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Biblical Suggestions */}
+            {analysis.biblicalSuggestions.length > 0 && (
+              <div className="rounded-lg border overflow-hidden">
+                <button
+                  onClick={() => toggleSection('biblical')}
+                  className="w-full p-2 bg-muted/30 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+                    <span className="text-xs font-medium">Textos Bíblicos Sugeridos</span>
+                    <span className="text-[10px] bg-purple-500/20 text-purple-700 px-1.5 rounded">
+                      {analysis.biblicalSuggestions.length}
+                    </span>
+                  </div>
+                  {expandedSections.includes('biblical') ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                {expandedSections.includes('biblical') && (
+                  <div className="p-2 space-y-2">
+                    {analysis.biblicalSuggestions.map((sug, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2 rounded bg-purple-500/5 border border-purple-500/20 text-xs"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="font-semibold text-purple-700">{sug.reference}</p>
+                            <p className="text-muted-foreground mt-1">{sug.reason}</p>
+                          </div>
+                          {onInsertReference && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 px-1.5 text-[10px]"
+                              onClick={() => handleInsertRef(sug.reference)}
+                            >
+                              Inserir
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Word Suggestions */}
+            {analysis.wordSuggestions.length > 0 && (
+              <div className="rounded-lg border overflow-hidden">
+                <button
+                  onClick={() => toggleSection('words')}
+                  className="w-full p-2 bg-muted/30 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                    <span className="text-xs font-medium">Melhores Palavras</span>
+                    <span className="text-[10px] bg-teal-500/20 text-teal-700 px-1.5 rounded">
+                      {analysis.wordSuggestions.length}
+                    </span>
+                  </div>
+                  {expandedSections.includes('words') ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+                {expandedSections.includes('words') && (
+                  <div className="p-2 space-y-2">
+                    {analysis.wordSuggestions.map((sug, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2 rounded bg-teal-500/5 border border-teal-500/20 text-xs"
+                      >
+                        <p className="text-muted-foreground mb-1">
+                          <span className="line-through">{sug.original}</span> →
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {sug.alternatives.map((alt, i) => (
+                            <button
+                              key={i}
+                              onClick={() => handleApply(sug.original, alt)}
+                              className="px-2 py-0.5 bg-teal-500/20 text-teal-700 rounded hover:bg-teal-500/30 transition-colors"
+                            >
+                              {alt}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">{sug.reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Structure Analysis */}
+            <div className="rounded-lg border overflow-hidden">
+              <button
+                onClick={() => toggleSection('structure')}
+                className="w-full p-2 bg-muted/30 flex items-center justify-between hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 text-gray-600" />
+                  <span className="text-xs font-medium">Estrutura do Sermão</span>
+                </div>
+                {expandedSections.includes('structure') ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+              {expandedSections.includes('structure') && (
+                <div className="p-2">
+                  <div className="grid grid-cols-2 gap-1 text-[10px]">
+                    {[
+                      { label: 'Título', value: analysis.structureAnalysis.hasTitle },
+                      { label: 'Tema', value: analysis.structureAnalysis.hasTheme },
+                      { label: 'Texto Base', value: analysis.structureAnalysis.hasBaseText },
+                      { label: 'Introdução', value: analysis.structureAnalysis.hasIntroduction },
+                      { label: 'Conclusão', value: analysis.structureAnalysis.hasConclusion },
+                      { label: 'Apelo', value: analysis.structureAnalysis.hasAppeal },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className={`flex items-center gap-1 p-1 rounded ${
+                          item.value ? 'text-green-700' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {item.value ? (
+                          <CheckCircle2 className="w-3 h-3" />
+                        ) : (
+                          <div className="w-3 h-3 rounded-full border border-current" />
+                        )}
+                        {item.label}
+                      </div>
+                    ))}
+                  </div>
+                  {analysis.structureAnalysis.pointsCount > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      📌 {analysis.structureAnalysis.pointsCount} ponto(s) identificado(s)
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* All Good Message */}
+            {analysis.grammarIssues.length === 0 &&
+              analysis.coherenceChecks.every((c) => c.isCoherent) &&
+              !analysis.thematicAlert?.isOffTopic && (
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <p className="text-xs text-green-700">
+                    Excelente! O conteúdo está coerente e bem escrito.
+                  </p>
+                </div>
+              )}
+          </>
+        )}
+
+        {isLoading && !analysis && (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+              <p className="text-xs text-muted-foreground">Analisando...</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex-shrink-0 p-2 border-t bg-muted/20">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full text-xs gap-2"
+          onClick={analyzeContent}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <RefreshCw className="w-3 h-3" />
+          )}
+          Reanalisar Agora
+        </Button>
+      </div>
+    </div>
+  );
+}
