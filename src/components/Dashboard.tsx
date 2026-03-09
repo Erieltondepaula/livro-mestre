@@ -184,16 +184,17 @@ export function Dashboard({ stats, recentStatuses, books, readings, onNavigateTo
             <div>
               <p className="text-xs sm:text-sm text-muted-foreground">Total de Páginas</p>
               <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{stats.totalPaginas.toLocaleString()}</p>
-              </div>
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
+    </>
+  )}
 
-      {/* Gamification Widget */}
-      {hasModuleAccess('dashboard.gamificacao') && (
-        <GamificationWidget readings={readings} />
-      )}
+  {/* Gamification Widget */}
+  {hasModuleAccess('dashboard.gamificacao') && (
+    <GamificationWidget readings={readings} />
+  )}
 
       {/* Recent Status with Filters */}
       <div className="card-library p-4 md:p-6">

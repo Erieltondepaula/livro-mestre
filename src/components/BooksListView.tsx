@@ -182,28 +182,32 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
 
               {/* Overlay com ações no hover */}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingBook(book);
-                  }}
-                  className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-                  title="Editar livro"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Tem certeza que deseja remover "${book.livro}"?`)) {
-                      onDeleteBook(book.id);
-                    }
-                  }}
-                  className="p-2 rounded-full bg-destructive/80 hover:bg-destructive text-white transition-colors"
-                  title="Remover livro"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {hasModuleAccess('livros.editar') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingBook(book);
+                    }}
+                    className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                    title="Editar livro"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                {hasModuleAccess('livros.excluir') && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Tem certeza que deseja remover "${book.livro}"?`)) {
+                        onDeleteBook(book.id);
+                      }
+                    }}
+                    className="p-2 rounded-full bg-destructive/80 hover:bg-destructive text-white transition-colors"
+                    title="Remover livro"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
 
