@@ -11,11 +11,12 @@ import { toast } from '@/hooks/use-toast';
 
 // ===== Types =====
 interface GrammarIssue {
-  type: 'punctuation' | 'capitalization' | 'spelling' | 'word_choice';
+  type: 'punctuation' | 'capitalization' | 'spelling' | 'word_choice' | 'concordance' | 'regency' | 'crase' | 'colocacao_pronominal' | 'pleonasm' | 'redundancy' | 'coesao';
   position: number;
   text: string;
   suggestion: string;
   severity: 'low' | 'medium' | 'high';
+  explanation?: string;
 }
 
 interface CoherenceCheck {
@@ -53,6 +54,7 @@ interface DetectedPosition {
   progressPercent: number;
   guidance: string;
   sectionTip: string;
+  contentSuggestions?: string[];
 }
 
 interface PointDetail {
@@ -528,12 +530,37 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                       {detectedPos.guidance && (
                         <p className="text-emerald-700/80 mt-1">{detectedPos.guidance}</p>
                       )}
-                      {detectedPos.sectionTip && (
+                {detectedPos.sectionTip && (
                         <p className="text-emerald-600/70 mt-2 italic text-[10px]">💡 {detectedPos.sectionTip}</p>
                       )}
                     </div>
                   </div>
                 </div>
+
+                {/* Content Suggestions */}
+                {detectedPos.contentSuggestions && detectedPos.contentSuggestions.length > 0 && (
+                  <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                    <p className="text-xs font-semibold text-indigo-700 mb-2">✍️ Sugestões de conteúdo para esta seção:</p>
+                    <div className="space-y-1.5">
+                      {detectedPos.contentSuggestions.map((sug, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-xs group">
+                          <span className="text-indigo-500 flex-shrink-0 mt-0.5">•</span>
+                          <p className="text-indigo-700/80 flex-1">{sug}</p>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[9px] text-green-600 hover:bg-green-500/10"
+                              onClick={() => handleAcceptContent(`\n\n${sug}`)}>
+                              <Check className="w-2.5 h-2.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[9px] text-muted-foreground hover:bg-muted/50"
+                              onClick={() => handleCopyToClipboard(sug)}>
+                              <Copy className="w-2.5 h-2.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Next Step */}
                 {detectedPos.nextExpectedSection && (
@@ -664,11 +691,16 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                         <p className="text-foreground/80 mt-0.5">"{sermon.title}"</p>
                         <p className="text-muted-foreground mt-1"><strong>Abordagem:</strong> {sermon.approach}</p>
                         <p className="text-emerald-700 mt-1 text-[10px]">💡 <strong>Como diferenciar:</strong> {sermon.difference}</p>
-                        {sermon.url && (
-                          <a href={sermon.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
-                            <ExternalLink className="w-2.5 h-2.5" /> Ver pregação
-                          </a>
-                        )}
+                        {(() => {
+                          const searchUrl = sermon.url && (sermon.url.startsWith('https://www.google.com') || sermon.url.startsWith('https://www.youtube.com') || sermon.url.startsWith('https://pt.wikipedia.org'))
+                            ? sermon.url
+                            : `https://www.youtube.com/results?search_query=${encodeURIComponent(`${sermon.preacher} ${sermon.title} pregação`)}`;
+                          return (
+                            <a href={searchUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
+                              <ExternalLink className="w-2.5 h-2.5" /> Buscar pregação
+                            </a>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
@@ -722,9 +754,14 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                   .filter(issue => !dismissedItems.has(`grammar-${issue.text}`))
                   .map((issue, idx) => (
                   <div key={idx} className={`p-2.5 rounded-lg border text-xs ${getSeverityColor(issue.severity)}`}>
-                    <p className="text-muted-foreground/80 mb-2">
+                    <p className="text-muted-foreground/80 mb-1">
                       <span className="line-through">{issue.text}</span> → <span className="text-foreground font-medium">{issue.suggestion}</span>
                     </p>
+                    {issue.explanation && (
+                      <p className="text-[10px] text-blue-600/80 bg-blue-500/5 rounded px-2 py-1 mb-2 italic">
+                        📖 {issue.explanation}
+                      </p>
+                    )}
                     <div className="flex items-center gap-1 pt-2 border-t border-border/50">
                       <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
                         onClick={() => handleApply(issue.text, issue.suggestion)}>
@@ -1087,8 +1124,12 @@ function ResearchCard({ itemKey, icon, title, badge, description, detail, url, a
           <p className="text-muted-foreground mt-1 line-clamp-3">{description}</p>
           {detail && <p className="text-[10px] text-muted-foreground/70 mt-1 italic">{detail}</p>}
           {url && (
-            <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
-              <ExternalLink className="w-2.5 h-2.5" /> Abrir
+            <a href={
+              url.startsWith('https://www.google.com') || url.startsWith('https://www.youtube.com') || url.startsWith('https://pt.wikipedia.org') || url.startsWith('https://en.wikipedia.org')
+                ? url 
+                : `https://www.google.com/search?q=${encodeURIComponent(title)}`
+            } target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
+              <ExternalLink className="w-2.5 h-2.5" /> {url.includes('youtube.com') ? 'Buscar no YouTube' : url.includes('wikipedia.org') ? 'Ver na Wikipedia' : 'Pesquisar'}
             </a>
           )}
         </div>

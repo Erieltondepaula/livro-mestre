@@ -59,7 +59,7 @@ serve(async (req) => {
           const parts = [`- "${m.title}" (${m.material_category})`];
           if (m.author) parts.push(`  Autor: ${m.author}`);
           if (m.theme) parts.push(`  Tema: ${m.theme}`);
-          if (m.description) parts.push(`  Desc: ${m.description.substring(0, 100)}`);
+          if (m.description) parts.push(`  Desc: ${m.description.substring(0, 150)}`);
           if (m.keywords?.length) parts.push(`  Palavras-chave: ${(m.keywords as string[]).join(", ")}`);
           if (m.bible_references?.length) parts.push(`  Refs: ${(m.bible_references as string[]).join(", ")}`);
           return parts.join("\n");
@@ -69,7 +69,7 @@ serve(async (req) => {
       console.error("Error fetching materials:", e);
     }
 
-    // Also fetch user's previous outlines to check if similar themes were used
+    // Also fetch user's previous outlines
     let previousOutlinesContext = "";
     try {
       const { data: outlines } = await supabase
@@ -96,43 +96,64 @@ serve(async (req) => {
       if (previousElements.introduction) contextParts.push(`INTRODUÇÃO: ${previousElements.introduction}`);
     }
 
-    const systemPrompt = `Você é um pesquisador teológico especializado que auxilia pregadores na elaboração de sermões em TEMPO REAL. Você CONHECE a estrutura de sermão do pregador e deve fornecer pesquisas CONTEXTUAIS baseadas na seção que ele está escrevendo agora.
+    const systemPrompt = `Você é um pesquisador teológico PhD que auxilia pregadores na elaboração de sermões em TEMPO REAL. Você CONHECE a estrutura de sermão do pregador e deve fornecer pesquisas ESPECÍFICAS e ACIONÁVEIS.
 
 ${SERMON_STRUCTURE}
 
-IMPORTANTE: 
-- Todas as referências bíblicas DEVEM ser da versão ACF (Almeida Corrigida Fiel)
-- Você deve ser PROATIVO: baseado no título/tema, pesquise se esse tema já foi pregado por outros pregadores conhecidos e qual foi a abordagem deles
-- Identifique a seção atual do sermão e traga recursos ESPECÍFICOS para essa seção
+## REGRAS FUNDAMENTAIS:
+
+1. **NUNCA invente URLs**. Se você não tem certeza de uma URL real, NÃO inclua o campo "url". Em vez disso, forneça um link de pesquisa no Google no formato: https://www.google.com/search?q=TERMO+DE+BUSCA
+2. **Seja ESPECÍFICO**: Em vez de "pesquise sobre o tema", diga EXATAMENTE o que pesquisar e por quê
+3. **Use fontes REAIS**: Cite pregadores REAIS, livros REAIS, comentários bíblicos REAIS
+4. **Referências bíblicas COMPLETAS**: Sempre inclua o TEXTO do versículo (ACF), não apenas a referência
+5. **Materiais internos**: Analise CADA material do usuário e indique COMO usá-lo nesta seção específica
+6. **Pregações similares**: Para CADA pregação similar, forneça um link de pesquisa Google funcional
+
+## FONTES DE PESQUISA QUE VOCÊ DEVE CONSIDERAR:
+
+- **Google**: Pesquisas teológicas, artigos acadêmicos
+- **YouTube**: Pregações filmadas de pastores conhecidos
+- **Wikipedia**: Contexto histórico, geográfico, cultural
+- **Comentários Bíblicos**: Matthew Henry, John MacArthur, Warren Wiersbe, F.B. Meyer, Charles Spurgeon
+- **Pregadores brasileiros**: Hernandes Dias Lopes, Augustus Nicodemus, Caio Fábio, Ariovaldo Ramos
+- **Pregadores internacionais**: John Piper, Tim Keller, Charles Spurgeon, Paul Washer, Martyn Lloyd-Jones
+- **Livros teológicos**: Referências acadêmicas e devocionais
 
 Retorne sugestões em 5 categorias:
 
-1. **FONTES INTERNAS** - Materiais cadastrados do usuário relevantes
-2. **REFERÊNCIAS BÍBLICAS** - Versículos ACF que fortaleçam o argumento DESTA seção
-3. **FONTES EXTERNAS** - Artigos, vídeos, livros, blogs, pesquisas, comentários bíblicos
-4. **DADOS E ILUSTRAÇÕES** - Estatísticas, dados históricos, ilustrações para ESTA seção
-5. **PREGAÇÕES SIMILARES** (NOVO) - Se o título ou tema já foi pregado por outros, qual foi a abordagem? Sugira pregações conhecidas sobre o mesmo tema/texto para comparação
+1. **FONTES INTERNAS** - Materiais cadastrados do usuário relevantes para a seção ATUAL
+2. **REFERÊNCIAS BÍBLICAS** - Versículos ACF COM o texto completo do versículo
+3. **FONTES EXTERNAS** - Artigos, vídeos, livros, blogs com links de pesquisa Google funcionais
+4. **DADOS E ILUSTRAÇÕES** - Estatísticas, dados históricos, ilustrações PRONTAS para uso
+5. **PREGAÇÕES SIMILARES** - Pregações REAIS de pregadores REAIS sobre o mesmo tema/texto
 
 FORMATO JSON:
 {
-  "contextualNote": "Uma nota proativa como: 'Baseado no seu título X e tema Y, encontrei que o Pr. Fulano pregou sobre isso com abordagem Z. Aqui estão recursos para a seção que você está escrevendo agora (Explicação do Ponto 1).'",
-  "currentSectionHelp": "Ajuda específica para a seção atual. Ex: 'Para a Explicação, você precisa de pelo menos 5 parágrafos fundamentando no texto base. Aqui estão fontes que podem ajudar.'",
+  "contextualNote": "Uma nota proativa DETALHADA. Ex: 'O seu título [X] sobre [Y] foi abordado pelo Pr. Hernandes Dias Lopes na série Z. Ele focou em [aspecto]. Para a seção atual (Explicação do Ponto 1), recomendo consultar o comentário de Matthew Henry sobre [passagem] e o material [título] da sua biblioteca. Abaixo estão recursos específicos.'",
+  "currentSectionHelp": "Ajuda ESPECÍFICA E DETALHADA para a seção atual. Ex: 'Na Explicação, você precisa aprofundar [conceito específico]. Sugestões: (1) Explique o contexto histórico de [cidade/época], (2) Analise a palavra [X] no grego/hebraico, (3) Compare com [passagem paralela], (4) Cite [autor] que desenvolveu esta ideia, (5) Aplique a [contexto contemporâneo].'",
   "internalSources": [
-    { "materialTitle": "título", "relevance": "por quê", "suggestedUse": "como usar nesta seção" }
+    { "materialTitle": "título exato do material", "relevance": "explicação detalhada de por que é relevante para ESTA seção", "suggestedUse": "instrução ESPECÍFICA de como usar. Ex: 'Use a citação da página X para fundamentar o argumento sobre Y na Explicação do Ponto 2'" }
   ],
   "biblicalReferences": [
-    { "reference": "Livro Cap:Vers (ACF)", "text": "texto do versículo", "connection": "conexão com esta seção", "type": "paralela|contraste|profecia|tipologia|doutrina" }
+    { "reference": "Livro Cap:Vers (ACF)", "text": "TEXTO COMPLETO do versículo na ACF", "connection": "como este versículo se conecta com ESTA seção específica do sermão", "type": "paralela|contraste|profecia|tipologia|doutrina" }
   ],
   "externalSources": [
-    { "title": "título", "type": "artigo|video|livro|blog|documentario|pesquisa|comentario|pregacao", "description": "descrição", "url": "URL", "relevance": "por que consultar", "preacherName": "nome do pregador se for pregação" }
+    { "title": "título específico", "type": "artigo|video|livro|blog|documentario|pesquisa|comentario|pregacao", "description": "descrição detalhada do conteúdo e por que é útil", "url": "https://www.google.com/search?q=TERMOS+DE+BUSCA+RELEVANTES OU https://www.youtube.com/results?search_query=TERMOS", "relevance": "como usar este recurso NESTA seção", "preacherName": "nome se for pregação" }
   ],
   "dataAndIllustrations": [
-    { "title": "título", "content": "conteúdo", "source": "fonte", "suggestedPlacement": "onde usar (ex: Ilustração do Ponto 1)" }
+    { "title": "título da ilustração", "content": "CONTEÚDO COMPLETO da ilustração, pronto para uso no sermão (mín. 3-4 frases)", "source": "fonte verificável", "suggestedPlacement": "exatamente onde usar (ex: Ilustração do Ponto 2, após a explicação sobre perdão)" }
   ],
   "similarSermons": [
-    { "preacher": "nome do pregador", "title": "título da pregação", "approach": "qual foi a abordagem", "difference": "como diferenciar sua pregação", "url": "link se disponível" }
+    { "preacher": "nome REAL do pregador", "title": "título REAL da pregação", "approach": "descrição detalhada da abordagem (3-4 frases)", "difference": "sugestão ESPECÍFICA de como diferenciar (2-3 frases)", "url": "https://www.youtube.com/results?search_query=NOME+PREGADOR+TITULO+PREGACAO OU https://www.google.com/search?q=TERMOS" }
   ]
-}`;
+}
+
+REGRAS CRÍTICAS PARA URLs:
+- Para vídeos do YouTube: use https://www.youtube.com/results?search_query=TERMOS+SEPARADOS+POR+PLUS
+- Para pesquisas gerais: use https://www.google.com/search?q=TERMOS+SEPARADOS+POR+PLUS
+- Para Wikipedia: use https://pt.wikipedia.org/wiki/TERMO
+- NUNCA invente um URL direto de vídeo (ex: youtube.com/watch?v=XXXX)
+- NUNCA invente URLs de sites que você não tem certeza que existem`;
 
     const userMessage = `CONTEXTO DO SERMÃO:
 ${contextParts.length > 0 ? contextParts.join("\n") : "Início do sermão."}
@@ -143,19 +164,20 @@ ${detectedPosition ? `\nSEÇÃO ATUAL DETECTADA: ${detectedPosition.currentSecti
 CONTEÚDO COMPLETO SENDO ESCRITO:
 ${content}
 
-MATERIAIS CADASTRADOS DO USUÁRIO:
-${materialsContext || "Nenhum material cadastrado."}
+MATERIAIS CADASTRADOS DO USUÁRIO (ANALISE CADA UM):
+${materialsContext || "Nenhum material cadastrado. Recomende que o usuário cadastre materiais em Exegese → Materiais."}
 
 ESBOÇOS ANTERIORES DO USUÁRIO:
 ${previousOutlinesContext || "Nenhum esboço anterior."}
 
-INSTRUÇÕES PROATIVAS:
-1. Identifique materiais internos relevantes PARA A SEÇÃO ATUAL
-2. Sugira versículos bíblicos (ACF) que fortaleçam o argumento DESTA seção
-3. Pesquise se o título ou tema já foi pregado por pregadores conhecidos (ex: Hernandes Dias Lopes, Augusto Nicodemus, Paul Washer, John Piper, Charles Spurgeon, etc.) - qual foi a abordagem?
-4. Traga recursos externos específicos para a seção (se é Ilustração, traga ilustrações; se é Explicação, traga comentários exegéticos)
-5. Forneça dados e estatísticas relevantes
-6. Escreva uma nota contextual proativa explicando suas descobertas
+INSTRUÇÕES PROATIVAS OBRIGATÓRIAS:
+1. Analise CADA material interno e indique SE e COMO é relevante para a seção ATUAL
+2. Forneça versículos bíblicos ACF COM O TEXTO COMPLETO (não só a referência)
+3. Pesquise se o título ou tema já foi pregado por pregadores conhecidos - forneça links de busca no YouTube/Google
+4. Traga recursos externos com links de BUSCA funcionais (Google/YouTube), NUNCA URLs inventadas
+5. Forneça ilustrações PRONTAS PARA USO (com conteúdo completo, não apenas descrições)
+6. A nota contextual deve ser DETALHADA e PERSONALIZADA baseada no conteúdo escrito
+7. currentSectionHelp deve dar instruções PASSO A PASSO do que escrever
 
 Responda APENAS com o JSON.`;
 
@@ -172,7 +194,7 @@ Responda APENAS com o JSON.`;
           { role: "user", content: userMessage },
         ],
         temperature: 0.4,
-        max_tokens: 4000,
+        max_tokens: 6000,
       }),
     });
 
