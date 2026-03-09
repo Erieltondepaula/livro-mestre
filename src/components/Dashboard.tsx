@@ -18,6 +18,7 @@ interface DashboardProps {
 type StatusFilter = 'all' | 'Lendo' | 'Concluido' | 'Não iniciado';
 
 export function Dashboard({ stats, recentStatuses, books, readings, onNavigateToBooks }: DashboardProps) {
+  const { hasModuleAccess } = useAuth();
   // Filtro padrão: "Lendo"
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Lendo');
   const [searchQuery, setSearchQuery] = useState('');
