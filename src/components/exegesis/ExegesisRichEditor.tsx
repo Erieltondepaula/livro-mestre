@@ -230,40 +230,89 @@ export function ExegesisRichEditor({
                   <ChevronDown className="h-2.5 w-2.5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-40 p-1" align="start">
+              <PopoverContent className="w-48 p-1 max-h-64 overflow-y-auto" align="start">
                 {FONT_FAMILIES.map(f => (
                   <button key={f.value} className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted transition-colors" style={{ fontFamily: f.value }}
                     onClick={() => editor.chain().focus().setFontFamily(f.value).run()}>
                     {f.label}
                   </button>
                 ))}
+                {/* Custom fonts */}
+                {customFonts.length > 0 && (
+                  <>
+                    <Separator className="my-1" />
+                    <p className="text-[10px] font-medium text-muted-foreground px-2 py-1 uppercase">Personalizadas</p>
+                    {customFonts.map((f, i) => (
+                      <button key={i} className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted transition-colors" style={{ fontFamily: f }}
+                        onClick={() => editor.chain().focus().setFontFamily(f).run()}>
+                        {f.split(',')[0].replace(/'/g, '')}
+                      </button>
+                    ))}
+                  </>
+                )}
+                <Separator className="my-1" />
                 <button className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted text-muted-foreground"
                   onClick={() => editor.chain().focus().unsetFontFamily().run()}>
-                  Padrão
+                  <RotateCcw className="h-3 w-3 inline mr-1" /> Padrão
                 </button>
               </PopoverContent>
             </Popover>
 
-            {/* Font Size */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs">
-                  Aa <ChevronDown className="h-2.5 w-2.5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-24 p-1" align="start">
-                {FONT_SIZES.map(s => (
-                  <button key={s} className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted"
-                    onClick={() => setFontSize(s)}>
-                    {s}
-                  </button>
-                ))}
-                <button className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted text-muted-foreground"
-                  onClick={() => editor.chain().focus().unsetMark('textStyle').run()}>
-                  Padrão
-                </button>
-              </PopoverContent>
-            </Popover>
+            {/* Font Upload */}
+            <FontUpload onFontAdded={handleCustomFontAdd} />
+
+            {/* Font Size Controls */}
+            <div className="flex items-center gap-0.5">
+              <ToolBtn tooltip="Diminuir fonte" onClick={decreaseFontSize}>
+                <Minus className="h-3 w-3" />
+              </ToolBtn>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs min-w-[50px] justify-center">
+                    {currentFontSize}px
+                    <ChevronDown className="h-2.5 w-2.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-32 p-2" align="start">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase">Tamanho da Fonte</p>
+                    <div className="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto">
+                      {FONT_SIZES.map(s => (
+                        <button 
+                          key={s.value} 
+                          className={`px-1.5 py-1 text-xs rounded hover:bg-muted transition-colors ${currentFontSize === parseInt(s.value) ? 'bg-primary/20 font-semibold' : ''}`}
+                          onClick={() => setFontSize(s.value)}
+                        >
+                          {s.label.replace('px', '')}
+                        </button>
+                      ))}
+                    </div>
+                    <Separator />
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Personalizado:</span>
+                      <Input 
+                        type="number" 
+                        min="8" 
+                        max="200" 
+                        value={currentFontSize}
+                        onChange={(e) => setFontSize(`${e.target.value}px`)}
+                        className="h-7 w-16 text-xs"
+                      />
+                    </div>
+                    <button className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted text-muted-foreground"
+                      onClick={() => {
+                        editor.chain().focus().unsetMark('textStyle').run();
+                        setCurrentFontSize(16);
+                      }}>
+                      <RotateCcw className="h-3 w-3 inline mr-1" /> Resetar
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <ToolBtn tooltip="Aumentar fonte" onClick={increaseFontSize}>
+                <Plus className="h-3 w-3" />
+              </ToolBtn>
+            </div>
 
             <Separator orientation="vertical" className="h-6 mx-1" />
 
