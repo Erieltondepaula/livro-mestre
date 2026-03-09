@@ -255,6 +255,7 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onUpdateContent, onDelete, getMaterialsContext, getRelevantAnalysesContext, fetchOutlineVersions, materialsCount = 0, materials = [], onSuggestImprovements }: Props) {
+  const { hasModuleAccess } = useAuth();
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
   const [verseStart, setVerseStart] = useState('');
