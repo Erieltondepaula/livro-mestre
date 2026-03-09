@@ -347,21 +347,21 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 p-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Brain className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">Copiloto IA</span>
+      <div className="flex-shrink-0 p-2 sm:p-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Brain className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-semibold truncate">Copiloto IA</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {isLoading && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
             {isResearching && <Search className="w-3 h-3 animate-pulse text-blue-500" />}
             {analysis && (
               <div className="flex items-center gap-1">
-                <span className={`text-xs font-bold ${getScoreColor(analysis.overallScore)}`}>
+                <span className={`text-[10px] sm:text-xs font-bold ${getScoreColor(analysis.overallScore)}`}>
                   {analysis.overallScore}%
                 </span>
-                <div className="w-10 h-1 bg-muted rounded-full overflow-hidden">
+                <div className="w-8 sm:w-10 h-1 bg-muted rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all ${getScoreBg(analysis.overallScore)}`}
                     style={{ width: `${analysis.overallScore}%` }}
@@ -371,7 +371,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
             )}
           </div>
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1">
+        <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 truncate">
           Editando: {ELEMENT_LABELS[currentElement] || currentElement}
         </p>
 
@@ -379,7 +379,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
         <div className="flex gap-1 mt-2">
           <button
             onClick={() => setActiveTab('analysis')}
-            className={`flex-1 text-[10px] py-1 px-2 rounded transition-colors ${
+            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-2 rounded-md transition-colors ${
               activeTab === 'analysis'
                 ? 'bg-primary/10 text-primary font-semibold'
                 : 'text-muted-foreground hover:bg-muted/50'
@@ -389,7 +389,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
           </button>
           <button
             onClick={() => setActiveTab('research')}
-            className={`flex-1 text-[10px] py-1 px-2 rounded transition-colors relative ${
+            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-2 rounded-md transition-colors relative ${
               activeTab === 'research'
                 ? 'bg-blue-500/10 text-blue-600 font-semibold'
                 : 'text-muted-foreground hover:bg-muted/50'
@@ -397,7 +397,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
           >
             🔍 Pesquisa
             {researchCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[8px] rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-blue-500 text-white text-[8px] rounded-full flex items-center justify-center px-1">
                 {researchCount}
               </span>
             )}
@@ -406,7 +406,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 overscroll-contain">
         {error && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -447,17 +447,40 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                 expanded={expandedSections.includes('grammar')}
                 onToggle={() => toggleSection('grammar')}
               >
-                {analysis.grammarIssues.map((issue, idx) => (
-                  <div key={idx} className={`p-2 rounded border-l-2 text-xs ${getSeverityColor(issue.severity)}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-muted-foreground/80 flex-1">
-                        "{issue.text}" → <span className="text-foreground font-medium">{issue.suggestion}</span>
-                      </p>
-                      {onApplySuggestion && (
-                        <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => handleApply(issue.text, issue.suggestion)}>
-                          Aplicar
-                        </Button>
-                      )}
+                {analysis.grammarIssues
+                  .filter(issue => !dismissedItems.has(`grammar-${issue.text}`))
+                  .map((issue, idx) => (
+                  <div key={idx} className={`p-2.5 rounded-lg border text-xs ${getSeverityColor(issue.severity)}`}>
+                    <p className="text-muted-foreground/80 mb-2">
+                      <span className="line-through">{issue.text}</span> → <span className="text-foreground font-medium">{issue.suggestion}</span>
+                    </p>
+                    <div className="flex items-center gap-1 pt-2 border-t border-border/50">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
+                        onClick={() => handleApply(issue.text, issue.suggestion)}
+                      >
+                        <Check className="w-3 h-3" />
+                        Aplicar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(issue.suggestion)}
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copiar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`grammar-${issue.text}`)}
+                      >
+                        <XCircle className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -473,13 +496,28 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                 onToggle={() => toggleSection('coherence')}
               >
                 {analysis.coherenceChecks.map((check, idx) => (
-                  <div key={idx} className={`p-2 rounded text-xs ${check.isCoherent ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                  <div key={idx} className={`p-2.5 rounded-lg text-xs ${check.isCoherent ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
                     <div className="flex items-start gap-2">
                       {check.isCoherent ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0 mt-0.5" /> : <AlertTriangle className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />}
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium">{check.element} ↔ {check.relatesTo}</p>
                         {check.reason && <p className="text-muted-foreground mt-1">{check.reason}</p>}
-                        {!check.isCoherent && check.suggestion && <p className="text-blue-600 mt-1 italic">💡 {check.suggestion}</p>}
+                        {!check.isCoherent && check.suggestion && (
+                          <div className="mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                            <p className="text-blue-700 italic">💡 {check.suggestion}</p>
+                            <div className="flex items-center gap-1 mt-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-5 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                                onClick={() => handleCopyToClipboard(check.suggestion || '')}
+                              >
+                                <Copy className="w-2.5 h-2.5" />
+                                Copiar
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -492,23 +530,44 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
               <CollapsibleSection
                 icon={<BookOpen className="w-3.5 h-3.5 text-purple-600" />}
                 title="Textos Bíblicos"
-                badge={analysis.biblicalSuggestions.length}
+                badge={analysis.biblicalSuggestions.filter(s => !dismissedItems.has(`bible-analysis-${s.reference}`)).length}
                 badgeColor="bg-purple-500/20 text-purple-700"
                 expanded={expandedSections.includes('biblical')}
                 onToggle={() => toggleSection('biblical')}
               >
-                {analysis.biblicalSuggestions.map((sug, idx) => (
-                  <div key={idx} className="p-2 rounded bg-purple-500/5 border border-purple-500/20 text-xs">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-purple-700">{sug.reference}</p>
-                        <p className="text-muted-foreground mt-1">{sug.reason}</p>
-                      </div>
-                      {onInsertReference && (
-                        <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={() => handleInsertRef(sug.reference)}>
-                          Inserir
-                        </Button>
-                      )}
+                {analysis.biblicalSuggestions
+                  .filter(sug => !dismissedItems.has(`bible-analysis-${sug.reference}`))
+                  .map((sug, idx) => (
+                  <div key={idx} className="p-2.5 rounded-lg bg-purple-500/5 border border-purple-500/20 text-xs">
+                    <p className="font-semibold text-purple-700">{sug.reference}</p>
+                    <p className="text-muted-foreground mt-1">{sug.reason}</p>
+                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
+                        onClick={() => handleInsertRef(sug.reference)}
+                      >
+                        <Check className="w-3 h-3" />
+                        Inserir
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(`${sug.reference}: ${sug.reason}`)}
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copiar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`bible-analysis-${sug.reference}`)}
+                      >
+                        <XCircle className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -520,22 +579,50 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
               <CollapsibleSection
                 icon={<Sparkles className="w-3.5 h-3.5 text-teal-600" />}
                 title="Melhores Palavras"
-                badge={analysis.wordSuggestions.length}
+                badge={analysis.wordSuggestions.filter(s => !dismissedItems.has(`word-${s.original}`)).length}
                 badgeColor="bg-teal-500/20 text-teal-700"
                 expanded={expandedSections.includes('words')}
                 onToggle={() => toggleSection('words')}
               >
-                {analysis.wordSuggestions.map((sug, idx) => (
-                  <div key={idx} className="p-2 rounded bg-teal-500/5 border border-teal-500/20 text-xs">
-                    <p className="text-muted-foreground mb-1"><span className="line-through">{sug.original}</span> →</p>
-                    <div className="flex flex-wrap gap-1">
+                {analysis.wordSuggestions
+                  .filter(sug => !dismissedItems.has(`word-${sug.original}`))
+                  .map((sug, idx) => (
+                  <div key={idx} className="p-2.5 rounded-lg bg-teal-500/5 border border-teal-500/20 text-xs">
+                    <p className="text-muted-foreground mb-2">
+                      <span className="line-through">{sug.original}</span> → escolha uma alternativa:
+                    </p>
+                    <div className="flex flex-wrap gap-1 mb-2">
                       {sug.alternatives.map((alt, i) => (
-                        <button key={i} onClick={() => handleApply(sug.original, alt)} className="px-2 py-0.5 bg-teal-500/20 text-teal-700 rounded hover:bg-teal-500/30 transition-colors">
+                        <button 
+                          key={i} 
+                          onClick={() => handleApply(sug.original, alt)} 
+                          className="px-2.5 py-1 bg-teal-500/20 text-teal-700 rounded-md hover:bg-teal-500/30 transition-colors font-medium"
+                        >
                           {alt}
                         </button>
                       ))}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">{sug.reason}</p>
+                    <p className="text-[10px] text-muted-foreground">{sug.reason}</p>
+                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(sug.alternatives.join(', '))}
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copiar
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`word-${sug.original}`)}
+                      >
+                        <XCircle className="w-3 h-3" />
+                        Dispensar
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </CollapsibleSection>
@@ -748,26 +835,28 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
       </div>
 
       {/* Footer */}
-      <div className="flex-shrink-0 p-2 border-t bg-muted/20 flex gap-1">
+      <div className="flex-shrink-0 p-2 border-t bg-muted/20 flex gap-1.5">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="flex-1 text-xs gap-1"
+          className="flex-1 text-[10px] sm:text-xs gap-1 h-8"
           onClick={analyzeContent}
           disabled={isLoading}
         >
           {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-          Reanalisar
+          <span className="hidden sm:inline">Reanalisar</span>
+          <span className="sm:hidden">Analisar</span>
         </Button>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="flex-1 text-xs gap-1"
+          className="flex-1 text-[10px] sm:text-xs gap-1 h-8"
           onClick={() => { lastResearchContentRef.current = ''; doResearch(); }}
           disabled={isResearching}
         >
           {isResearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
-          Repesquisar
+          <span className="hidden sm:inline">Repesquisar</span>
+          <span className="sm:hidden">Pesquisar</span>
         </Button>
       </div>
     </div>

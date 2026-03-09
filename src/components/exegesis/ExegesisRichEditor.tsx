@@ -9,7 +9,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Typography from '@tiptap/extension-typography';
 import FontFamily from '@tiptap/extension-font-family';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
@@ -27,6 +27,11 @@ import {
   Undo, Redo, Pilcrow, Palette, Type, ChevronDown, Eye, EyeOff,
   Plus, Minus, RotateCcw
 } from 'lucide-react';
+
+export interface ExegesisRichEditorRef {
+  insertContent: (text: string) => void;
+  replaceText: (original: string, replacement: string) => void;
+}
 
 interface ExegesisRichEditorProps {
   content: string;
@@ -125,14 +130,14 @@ const FontSize = TextStyle.extend({
   },
 });
 
-export function ExegesisRichEditor({
+export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRichEditorProps>(({
   content,
   onChange,
   placeholder = 'Comece a editar...',
   editable = true,
   className = '',
   minHeight = '300px',
-}: ExegesisRichEditorProps) {
+}, ref) => {
   const [customColor, setCustomColor] = useState('#000000');
   const [customHighlight, setCustomHighlight] = useState('#FEF08A');
   const [showLegend, setShowLegend] = useState(false);
@@ -164,6 +169,23 @@ export function ExegesisRichEditor({
       },
     },
   });
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    insertContent: (text: string) => {
+      if (editor) {
+        editor.chain().focus().insertContent(text).run();
+      }
+    },
+    replaceText: (original: string, replacement: string) => {
+      if (editor) {
+        const currentContent = editor.getHTML();
+        const newContent = currentContent.replace(original, replacement);
+        editor.commands.setContent(newContent);
+        onChange(newContent);
+      }
+    },
+  }), [editor, onChange]);
 
   useEffect(() => {
     if (editor) editor.setEditable(editable);
@@ -474,4 +496,6 @@ export function ExegesisRichEditor({
       </div>
     </TooltipProvider>
   );
-}
+});
+
+ExegesisRichEditor.displayName = 'ExegesisRichEditor';
