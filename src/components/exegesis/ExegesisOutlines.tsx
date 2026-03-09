@@ -607,29 +607,35 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         </div>
 
         {/* Mode Toggle */}
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-muted-foreground">Modo de Criação</p>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setOutlineMode('ai')}
-              className={`flex-1 p-3 rounded-lg border text-left transition-all ${outlineMode === 'ai' ? 'bg-primary/10 border-primary/30' : 'bg-card border-border hover:bg-muted/50'}`}>
-              <span className="text-sm font-medium flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                Gerado por IA
-              </span>
-              <p className="text-xs text-muted-foreground mt-1">Esboço criado automaticamente com base na passagem</p>
-            </button>
-            <button 
-              onClick={() => setOutlineMode('manual')}
-              className={`flex-1 p-3 rounded-lg border text-left transition-all ${outlineMode === 'manual' ? 'bg-primary/10 border-primary/30' : 'bg-card border-border hover:bg-muted/50'}`}>
-              <span className="text-sm font-medium flex items-center gap-2">
-                <Edit3 className="w-4 h-4" />
-                Texto Livre
-              </span>
-              <p className="text-xs text-muted-foreground mt-1">Escrita livre com formatação avançada</p>
-            </button>
+        {(hasModuleAccess('exegese.esbocos.ia') || hasModuleAccess('exegese.esbocos.texto_livre')) && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">Modo de Criação</p>
+            <div className="flex gap-2">
+              {hasModuleAccess('exegese.esbocos.ia') && (
+                <button 
+                  onClick={() => setOutlineMode('ai')}
+                  className={`flex-1 p-3 rounded-lg border text-left transition-all ${outlineMode === 'ai' ? 'bg-primary/10 border-primary/30' : 'bg-card border-border hover:bg-muted/50'}`}>
+                  <span className="text-sm font-medium flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Gerado por IA
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-1">Esboço criado automaticamente com base na passagem</p>
+                </button>
+              )}
+              {hasModuleAccess('exegese.esbocos.texto_livre') && (
+                <button 
+                  onClick={() => setOutlineMode('manual')}
+                  className={`flex-1 p-3 rounded-lg border text-left transition-all ${outlineMode === 'manual' ? 'bg-primary/10 border-primary/30' : 'bg-card border-border hover:bg-muted/50'}`}>
+                  <span className="text-sm font-medium flex items-center gap-2">
+                    <Edit3 className="w-4 h-4" />
+                    Texto Livre
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-1">Escrita livre com formatação avançada</p>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Manual Mode Editor */}
         {outlineMode === 'manual' ? (
