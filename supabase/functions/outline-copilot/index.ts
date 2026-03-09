@@ -5,128 +5,130 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface SermonElement {
-  type: 'titulo' | 'tema' | 'texto_base' | 'introducao' | 'ponto' | 'desenvolvimento' | 'ilustracao' | 'frase_efeito' | 'aplicacao' | 'conclusao' | 'apelo' | 'outro';
-  content: string;
-  position: number;
-}
+const SERMON_STRUCTURE = `
+ESTRUTURA OBRIGATÓRIA DE SERMÃO (o pregador usa essa estrutura no texto livre):
 
-interface CoherenceCheck {
-  element: string;
-  relatesTo: string;
-  isCoherent: boolean;
-  reason?: string;
-  suggestion?: string;
-}
-
-interface CopilotAnalysis {
-  overallScore: number;
-  grammarIssues: {
-    type: 'punctuation' | 'capitalization' | 'spelling' | 'word_choice';
-    position: number;
-    text: string;
-    suggestion: string;
-    severity: 'low' | 'medium' | 'high';
-  }[];
-  coherenceChecks: CoherenceCheck[];
-  biblicalSuggestions: {
-    reference: string;
-    reason: string;
-    context: string;
-  }[];
-  wordSuggestions: {
-    original: string;
-    alternatives: string[];
-    reason: string;
-  }[];
-  thematicAlert?: {
-    isOffTopic: boolean;
-    message: string;
-    currentElement: string;
-    expectedConnection: string;
-  };
-  structureAnalysis: {
-    hasTitle: boolean;
-    hasTheme: boolean;
-    hasBaseText: boolean;
-    hasIntroduction: boolean;
-    pointsCount: number;
-    hasConclusion: boolean;
-    hasAppeal: boolean;
-  };
-}
+TÍTULO
+TEMA
+TEXTO BASE
+INTRODUÇÃO
+TRANSIÇÃO
+PONTO 1
+  Explicação (mín. 5 parágrafos)
+  Ilustração
+  Verdade
+  Aplicação
+TRANSIÇÃO
+PONTO 2
+  Explicação
+  Ilustração
+  Verdade
+  Aplicação
+TRANSIÇÃO
+PONTO 3
+  Explicação
+  Ilustração
+  Verdade
+  Aplicação
+TRANSIÇÃO
+PONTO 4
+  Explicação
+  Ilustração
+  Verdade
+  Aplicação
+TRANSIÇÃO
+CONCLUSÃO
+APELO
+ORAÇÃO FINAL
+`;
 
 const SYSTEM_PROMPT = `Você é um assistente especializado em homilética e redação de sermões. Sua função é analisar esboços de sermões em tempo real e fornecer feedback detalhado.
+
+${SERMON_STRUCTURE}
+
+O texto é LIVRE - o pregador pode escrever muito em cada seção. Você precisa DETECTAR automaticamente em que parte da estrutura o pregador está com base no conteúdo escrito, mesmo que ele não use os rótulos exatos.
+
+REGRAS DE DETECÇÃO:
+- Se o texto começa com título/tema → está no início
+- Se há marcadores como "TEXTO BASE", "INTRODUÇÃO", "PONTO 1", etc. → detecte a seção
+- Se não há marcadores, analise o conteúdo para inferir a seção (explicação teológica = Explicação, história/analogia = Ilustração, etc.)
+- Identifique o último elemento completo e o elemento sendo escrito agora
 
 REGRAS DE ANÁLISE:
 
 1. **COERÊNCIA EM CADEIA** (CRÍTICO):
    - O TEMA deve estar alinhado com o TEXTO BASE
    - A INTRODUÇÃO deve apresentar e conectar-se ao TEMA
-   - Cada PONTO deve desenvolver um aspecto do TEMA e conectar-se à INTRODUÇÃO
-   - O DESENVOLVIMENTO de cada ponto deve aprofundar especificamente aquele PONTO
-   - A ILUSTRAÇÃO deve exemplificar o DESENVOLVIMENTO do ponto atual
-   - A FRASE DE EFEITO deve sintetizar o DESENVOLVIMENTO
-   - A APLICAÇÃO deve ser prática e derivar do que foi ensinado
-   - A CONCLUSÃO deve retomar o TEMA e os PONTOS principais
-   - O APELO deve ser consequência natural de tudo que foi dito
+   - Cada PONTO deve desenvolver um aspecto do TEMA
+   - A EXPLICAÇÃO deve aprofundar o PONTO (mín. 5 parágrafos)
+   - A ILUSTRAÇÃO deve exemplificar a EXPLICAÇÃO
+   - A VERDADE deve sintetizar o ensinamento
+   - A APLICAÇÃO deve ser prática
+   - As TRANSIÇÕES devem conectar os elementos
+   - A CONCLUSÃO deve retomar TEMA e PONTOS
+   - O APELO deve ser consequência natural
+   - A ORAÇÃO FINAL deve encerrar
 
-2. **GRAMÁTICA E ESTILO**:
-   - Verificar pontuação (vírgulas, pontos, dois-pontos)
-   - Verificar maiúsculas no início de frases
-   - Identificar palavras repetitivas e sugerir sinônimos
-   - Verificar concordância verbal e nominal
+2. **GRAMÁTICA E ESTILO**
+3. **SUGESTÕES BÍBLICAS** (ACF - Almeida Corrigida Fiel)
+4. **ALERTA DE DESVIO TEMÁTICO**
 
-3. **SUGESTÕES BÍBLICAS**:
-   - Baseado no conteúdo escrito, sugerir versículos da ACF (Almeida Corrigida Fiel)
-   - Priorizar textos que reforcem o argumento atual
-   - Considerar o contexto teológico
-
-4. **ALERTA DE DESVIO TEMÁTICO**:
-   - Se o conteúdo atual não se conecta logicamente ao que veio antes, ALERTAR IMEDIATAMENTE
-   - Explicar qual era a conexão esperada
-   - Sugerir como retornar ao tema
+5. **GUIA ESTRUTURAL** (NOVO - CRÍTICO):
+   Você DEVE informar:
+   - Em que parte da estrutura o pregador está agora
+   - O que falta escrever para completar a seção atual
+   - Qual é o próximo passo na estrutura
+   - Dicas específicas para o elemento atual (ex: "Na Explicação, desenvolva pelo menos 5 parágrafos com ancoragem ao texto base")
 
 FORMATO DE RESPOSTA (JSON estrito):
 {
   "overallScore": 0-100,
+  "detectedPosition": {
+    "currentSection": "titulo|tema|texto_base|introducao|transicao|ponto_N|explicacao_N|ilustracao_N|verdade_N|aplicacao_N|conclusao|apelo|oracao_final",
+    "currentPointNumber": null ou 1-4,
+    "completedSections": ["titulo", "tema", ...],
+    "nextExpectedSection": "nome da próxima seção",
+    "progressPercent": 0-100,
+    "guidance": "Mensagem orientadora sobre o que fazer agora, ex: 'Você está na Explicação do Ponto 1. Desenvolva pelo menos 5 parágrafos fundamentando no texto base. Após isso, escreva a Ilustração.'",
+    "sectionTip": "Dica específica para a seção atual"
+  },
   "grammarIssues": [
     {
       "type": "punctuation|capitalization|spelling|word_choice",
-      "position": número_aproximado_de_caracteres,
+      "position": número,
       "text": "texto problemático",
-      "suggestion": "correção sugerida",
+      "suggestion": "correção",
       "severity": "low|medium|high"
     }
   ],
   "coherenceChecks": [
     {
-      "element": "nome do elemento atual",
-      "relatesTo": "nome do elemento anterior",
+      "element": "nome do elemento",
+      "relatesTo": "elemento anterior",
       "isCoherent": true/false,
       "reason": "explicação",
-      "suggestion": "como melhorar se não coerente"
+      "suggestion": "como melhorar"
     }
   ],
   "biblicalSuggestions": [
     {
-      "reference": "Livro Capítulo:Versículo (ACF)",
-      "reason": "por que esse versículo é relevante",
-      "context": "o trecho do esboço que motivou a sugestão"
+      "reference": "Livro Cap:Vers (ACF)",
+      "reason": "relevância",
+      "context": "trecho do esboço"
     }
   ],
   "wordSuggestions": [
     {
-      "original": "palavra atual",
+      "original": "palavra",
       "alternatives": ["sinônimo1", "sinônimo2"],
-      "reason": "por que considerar a troca"
+      "reason": "motivo"
     }
   ],
   "thematicAlert": {
     "isOffTopic": true/false,
-    "message": "Mensagem de alerta se fugiu do tema",
-    "currentElement": "elemento que fugiu",
-    "expectedConnection": "qual era a conexão esperada"
+    "message": "alerta",
+    "currentElement": "elemento",
+    "expectedConnection": "conexão esperada"
   },
   "structureAnalysis": {
     "hasTitle": true/false,
@@ -135,7 +137,18 @@ FORMATO DE RESPOSTA (JSON estrito):
     "hasIntroduction": true/false,
     "pointsCount": número,
     "hasConclusion": true/false,
-    "hasAppeal": true/false
+    "hasAppeal": true/false,
+    "hasFinalPrayer": true/false,
+    "pointsDetail": [
+      {
+        "number": 1,
+        "hasExplanation": true/false,
+        "hasIllustration": true/false,
+        "hasTruth": true/false,
+        "hasApplication": true/false,
+        "explanationParagraphs": número
+      }
+    ]
   }
 }`;
 
@@ -162,7 +175,6 @@ serve(async (req) => {
       );
     }
 
-    // Build context from previous elements
     let contextParts: string[] = [];
     if (previousElements) {
       if (previousElements.title) contextParts.push(`TÍTULO: ${previousElements.title}`);
@@ -172,9 +184,9 @@ serve(async (req) => {
       if (previousElements.points && previousElements.points.length > 0) {
         previousElements.points.forEach((p: any, i: number) => {
           contextParts.push(`PONTO ${i + 1}: ${p.title || ''}`);
-          if (p.development) contextParts.push(`  DESENVOLVIMENTO: ${p.development}`);
+          if (p.development) contextParts.push(`  EXPLICAÇÃO: ${p.development}`);
           if (p.illustration) contextParts.push(`  ILUSTRAÇÃO: ${p.illustration}`);
-          if (p.phrase) contextParts.push(`  FRASE DE EFEITO: ${p.phrase}`);
+          if (p.phrase) contextParts.push(`  VERDADE: ${p.phrase}`);
           if (p.application) contextParts.push(`  APLICAÇÃO: ${p.application}`);
         });
       }
@@ -184,17 +196,18 @@ serve(async (req) => {
     const userMessage = `CONTEXTO DO SERMÃO ATÉ AGORA:
 ${contextParts.length > 0 ? contextParts.join('\n') : 'Nenhum elemento anterior ainda.'}
 
-ELEMENTO ATUAL SENDO EDITADO: ${currentElement || 'não especificado'}
+ELEMENTO SELECIONADO PELO USUÁRIO: ${currentElement || 'não especificado'}
 
-CONTEÚDO PARA ANÁLISE:
+CONTEÚDO COMPLETO DO ESBOÇO (texto livre):
 ${content}
 
-Analise este conteúdo seguindo todas as regras. Verifique especialmente:
-1. Se este elemento mantém coerência com os anteriores
-2. Problemas gramaticais e de pontuação
-3. Sugestões de versículos bíblicos relevantes (ACF)
-4. Palavras que poderiam ser melhoradas
-5. Se está fugindo do tema central
+INSTRUÇÕES:
+1. DETECTE automaticamente em que parte da estrutura do sermão o pregador está agora
+2. Analise coerência entre as seções já escritas
+3. Verifique gramática e estilo
+4. Sugira versículos bíblicos (ACF)
+5. Forneça GUIA ESTRUTURAL: diga ao pregador o que fazer agora e qual o próximo passo
+6. Se a Explicação de um Ponto tem menos de 5 parágrafos, alerte
 
 Responda APENAS com o JSON no formato especificado.`;
 
@@ -211,7 +224,7 @@ Responda APENAS com o JSON no formato especificado.`;
           { role: "user", content: userMessage },
         ],
         temperature: 0.3,
-        max_tokens: 2000,
+        max_tokens: 3000,
       }),
     });
 
@@ -239,10 +252,8 @@ Responda APENAS com o JSON no formato especificado.`;
     const data = await response.json();
     const aiContent = data.choices?.[0]?.message?.content || "";
 
-    // Try to parse JSON from response
-    let analysis: CopilotAnalysis;
+    let analysis;
     try {
-      // Extract JSON from response (in case there's extra text)
       const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         analysis = JSON.parse(jsonMatch[0]);
@@ -251,21 +262,25 @@ Responda APENAS com o JSON no formato especificado.`;
       }
     } catch (parseError) {
       console.error("Parse error:", parseError, "Content:", aiContent);
-      // Return a default structure if parsing fails
       analysis = {
         overallScore: 70,
+        detectedPosition: {
+          currentSection: "introducao",
+          currentPointNumber: null,
+          completedSections: [],
+          nextExpectedSection: "texto_base",
+          progressPercent: 0,
+          guidance: "Continue escrevendo seu esboço.",
+          sectionTip: "",
+        },
         grammarIssues: [],
         coherenceChecks: [],
         biblicalSuggestions: [],
         wordSuggestions: [],
         structureAnalysis: {
-          hasTitle: false,
-          hasTheme: false,
-          hasBaseText: false,
-          hasIntroduction: false,
-          pointsCount: 0,
-          hasConclusion: false,
-          hasAppeal: false,
+          hasTitle: false, hasTheme: false, hasBaseText: false,
+          hasIntroduction: false, pointsCount: 0, hasConclusion: false,
+          hasAppeal: false, hasFinalPrayer: false, pointsDetail: [],
         },
       };
     }
