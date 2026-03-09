@@ -53,6 +53,7 @@ interface DetectedPosition {
   progressPercent: number;
   guidance: string;
   sectionTip: string;
+  contentSuggestions?: string[];
 }
 
 interface PointDetail {
