@@ -496,4 +496,6 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
       </div>
     </TooltipProvider>
   );
-}
+});
+
+ExegesisRichEditor.displayName = 'ExegesisRichEditor';
