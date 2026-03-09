@@ -15,6 +15,9 @@ import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { FontUpload } from './FontUpload';
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   Heading1, Heading2, Heading3,
@@ -22,6 +25,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Highlighter, Link as LinkIcon,
   Undo, Redo, Pilcrow, Palette, Type, ChevronDown, Eye, EyeOff,
+  Plus, Minus, RotateCcw
 } from 'lucide-react';
 
 interface ExegesisRichEditorProps {
