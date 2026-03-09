@@ -347,21 +347,21 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 p-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Brain className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">Copiloto IA</span>
+      <div className="flex-shrink-0 p-2 sm:p-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Brain className="w-4 h-4 text-primary flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-semibold truncate">Copiloto IA</span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {isLoading && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
             {isResearching && <Search className="w-3 h-3 animate-pulse text-blue-500" />}
             {analysis && (
               <div className="flex items-center gap-1">
-                <span className={`text-xs font-bold ${getScoreColor(analysis.overallScore)}`}>
+                <span className={`text-[10px] sm:text-xs font-bold ${getScoreColor(analysis.overallScore)}`}>
                   {analysis.overallScore}%
                 </span>
-                <div className="w-10 h-1 bg-muted rounded-full overflow-hidden">
+                <div className="w-8 sm:w-10 h-1 bg-muted rounded-full overflow-hidden">
                   <div
                     className={`h-full transition-all ${getScoreBg(analysis.overallScore)}`}
                     style={{ width: `${analysis.overallScore}%` }}
@@ -371,7 +371,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
             )}
           </div>
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1">
+        <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 truncate">
           Editando: {ELEMENT_LABELS[currentElement] || currentElement}
         </p>
 
@@ -379,7 +379,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
         <div className="flex gap-1 mt-2">
           <button
             onClick={() => setActiveTab('analysis')}
-            className={`flex-1 text-[10px] py-1 px-2 rounded transition-colors ${
+            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-2 rounded-md transition-colors ${
               activeTab === 'analysis'
                 ? 'bg-primary/10 text-primary font-semibold'
                 : 'text-muted-foreground hover:bg-muted/50'
@@ -389,7 +389,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
           </button>
           <button
             onClick={() => setActiveTab('research')}
-            className={`flex-1 text-[10px] py-1 px-2 rounded transition-colors relative ${
+            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-2 rounded-md transition-colors relative ${
               activeTab === 'research'
                 ? 'bg-blue-500/10 text-blue-600 font-semibold'
                 : 'text-muted-foreground hover:bg-muted/50'
@@ -397,7 +397,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
           >
             🔍 Pesquisa
             {researchCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[8px] rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-blue-500 text-white text-[8px] rounded-full flex items-center justify-center px-1">
                 {researchCount}
               </span>
             )}
@@ -406,7 +406,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 overscroll-contain">
         {error && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
