@@ -1124,8 +1124,12 @@ function ResearchCard({ itemKey, icon, title, badge, description, detail, url, a
           <p className="text-muted-foreground mt-1 line-clamp-3">{description}</p>
           {detail && <p className="text-[10px] text-muted-foreground/70 mt-1 italic">{detail}</p>}
           {url && (
-            <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
-              <ExternalLink className="w-2.5 h-2.5" /> Abrir
+            <a href={
+              url.startsWith('https://www.google.com') || url.startsWith('https://www.youtube.com') || url.startsWith('https://pt.wikipedia.org') || url.startsWith('https://en.wikipedia.org')
+                ? url 
+                : `https://www.google.com/search?q=${encodeURIComponent(title)}`
+            } target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
+              <ExternalLink className="w-2.5 h-2.5" /> {url.includes('youtube.com') ? 'Buscar no YouTube' : url.includes('wikipedia.org') ? 'Ver na Wikipedia' : 'Pesquisar'}
             </a>
           )}
         </div>
