@@ -359,11 +359,13 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
             )}
 
             {/* Actions */}
-            <div className="flex gap-2 pt-2 border-t">
-              <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs h-7" onClick={(e) => { e.stopPropagation(); setTimelineBook(book); }}>
-                <History className="w-3 h-3" /> Timeline
-              </Button>
-            </div>
+            {hasModuleAccess('livros.timeline') && (
+              <div className="flex gap-2 pt-2 border-t">
+                <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs h-7" onClick={(e) => { e.stopPropagation(); setTimelineBook(book); }}>
+                  <History className="w-3 h-3" /> Timeline
+                </Button>
+              </div>
+            )}
 
             {/* Dica */}
             <p className="text-[10px] text-muted-foreground italic">
