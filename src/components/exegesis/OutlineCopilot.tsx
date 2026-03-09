@@ -4,12 +4,12 @@ import {
   Sparkles, Type, AlertCircle, ChevronDown, ChevronUp, 
   RefreshCw, Target, FileText, Loader2, X, Globe, Database,
   Video, BookMarked, BarChart3, Check, XCircle, Copy, GripVertical,
-  ExternalLink, Search
+  ExternalLink, Search, Compass, ArrowRight, Mic, MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 
-// ===== Analysis Types =====
+// ===== Types =====
 interface GrammarIssue {
   type: 'punctuation' | 'capitalization' | 'spelling' | 'word_choice';
   position: number;
@@ -45,6 +45,25 @@ interface ThematicAlert {
   expectedConnection: string;
 }
 
+interface DetectedPosition {
+  currentSection: string;
+  currentPointNumber?: number | null;
+  completedSections: string[];
+  nextExpectedSection: string;
+  progressPercent: number;
+  guidance: string;
+  sectionTip: string;
+}
+
+interface PointDetail {
+  number: number;
+  hasExplanation: boolean;
+  hasIllustration: boolean;
+  hasTruth: boolean;
+  hasApplication: boolean;
+  explanationParagraphs?: number;
+}
+
 interface StructureAnalysis {
   hasTitle: boolean;
   hasTheme: boolean;
@@ -53,10 +72,13 @@ interface StructureAnalysis {
   pointsCount: number;
   hasConclusion: boolean;
   hasAppeal: boolean;
+  hasFinalPrayer?: boolean;
+  pointsDetail?: PointDetail[];
 }
 
 interface CopilotAnalysis {
   overallScore: number;
+  detectedPosition?: DetectedPosition;
   grammarIssues: GrammarIssue[];
   coherenceChecks: CoherenceCheck[];
   biblicalSuggestions: BiblicalSuggestion[];
@@ -65,7 +87,7 @@ interface CopilotAnalysis {
   structureAnalysis: StructureAnalysis;
 }
 
-// ===== Research Types =====
+// Research Types
 interface InternalSource {
   materialTitle: string;
   relevance: string;
@@ -85,6 +107,7 @@ interface ExternalSource {
   description: string;
   url?: string;
   relevance: string;
+  preacherName?: string;
 }
 
 interface DataIllustration {
@@ -94,11 +117,22 @@ interface DataIllustration {
   suggestedPlacement: string;
 }
 
+interface SimilarSermon {
+  preacher: string;
+  title: string;
+  approach: string;
+  difference: string;
+  url?: string;
+}
+
 interface ResearchData {
+  contextualNote?: string;
+  currentSectionHelp?: string;
   internalSources: InternalSource[];
   biblicalReferences: BiblicalReference[];
   externalSources: ExternalSource[];
   dataAndIllustrations: DataIllustration[];
+  similarSermons?: SimilarSermon[];
 }
 
 interface PreviousElements {
@@ -125,19 +159,35 @@ interface Props {
   onInsertContent?: (content: string) => void;
 }
 
-const ELEMENT_LABELS: Record<string, string> = {
-  titulo: 'Título',
-  tema: 'Tema',
-  texto_base: 'Texto Base',
-  introducao: 'Introdução',
-  ponto: 'Ponto',
-  desenvolvimento: 'Desenvolvimento',
-  ilustracao: 'Ilustração',
-  frase_efeito: 'Frase de Efeito',
-  aplicacao: 'Aplicação',
-  conclusao: 'Conclusão',
-  apelo: 'Apelo',
-  outro: 'Outro',
+const SECTION_LABELS: Record<string, string> = {
+  titulo: '📌 Título',
+  tema: '🎯 Tema',
+  texto_base: '📖 Texto Base',
+  introducao: '🚪 Introdução',
+  transicao: '🔗 Transição',
+  ponto_1: '1️⃣ Ponto 1',
+  explicacao_1: '📝 Explicação (P1)',
+  ilustracao_1: '💡 Ilustração (P1)',
+  verdade_1: '✨ Verdade (P1)',
+  aplicacao_1: '🎯 Aplicação (P1)',
+  ponto_2: '2️⃣ Ponto 2',
+  explicacao_2: '📝 Explicação (P2)',
+  ilustracao_2: '💡 Ilustração (P2)',
+  verdade_2: '✨ Verdade (P2)',
+  aplicacao_2: '🎯 Aplicação (P2)',
+  ponto_3: '3️⃣ Ponto 3',
+  explicacao_3: '📝 Explicação (P3)',
+  ilustracao_3: '💡 Ilustração (P3)',
+  verdade_3: '✨ Verdade (P3)',
+  aplicacao_3: '🎯 Aplicação (P3)',
+  ponto_4: '4️⃣ Ponto 4',
+  explicacao_4: '📝 Explicação (P4)',
+  ilustracao_4: '💡 Ilustração (P4)',
+  verdade_4: '✨ Verdade (P4)',
+  aplicacao_4: '🎯 Aplicação (P4)',
+  conclusao: '🏁 Conclusão',
+  apelo: '🙏 Apelo',
+  oracao_final: '✝️ Oração Final',
 };
 
 const SOURCE_TYPE_ICONS: Record<string, typeof Globe> = {
@@ -148,6 +198,7 @@ const SOURCE_TYPE_ICONS: Record<string, typeof Globe> = {
   documentario: Video,
   pesquisa: BarChart3,
   comentario: BookOpen,
+  pregacao: Mic,
 };
 
 export function OutlineCopilot({ content, currentElement, previousElements, onApplySuggestion, onInsertReference, onInsertContent }: Props) {
@@ -156,8 +207,8 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
   const [isLoading, setIsLoading] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'analysis' | 'research'>('analysis');
-  const [expandedSections, setExpandedSections] = useState<string[]>(['alert', 'grammar', 'coherence']);
+  const [activeTab, setActiveTab] = useState<'guide' | 'analysis' | 'research'>('guide');
+  const [expandedSections, setExpandedSections] = useState<string[]>(['guide', 'alert', 'grammar', 'coherence', 'similar']);
   const [dismissedItems, setDismissedItems] = useState<Set<string>>(new Set());
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const researchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -209,7 +260,6 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
     }
   }, [content, currentElement, previousElements]);
 
-  // Research in parallel
   const doResearch = useCallback(async () => {
     const plainContent = content?.replace(/<[^>]+>/g, '').trim() || '';
     if (plainContent.length < 20) {
@@ -236,6 +286,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
             theme: previousElements?.theme,
             title: previousElements?.title,
             previousElements,
+            detectedPosition: analysis?.detectedPosition,
           }),
         }
       );
@@ -253,7 +304,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
     } finally {
       setIsResearching(false);
     }
-  }, [content, currentElement, previousElements]);
+  }, [content, currentElement, previousElements, analysis?.detectedPosition]);
 
   // Debounced analysis
   useEffect(() => {
@@ -262,7 +313,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [content, analyzeContent]);
 
-  // Debounced research (longer delay - runs in background)
+  // Debounced research
   useEffect(() => {
     if (researchDebounceRef.current) clearTimeout(researchDebounceRef.current);
     researchDebounceRef.current = setTimeout(() => doResearch(), 3000);
@@ -327,8 +378,11 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
     ? (research.internalSources?.length || 0) +
       (research.biblicalReferences?.length || 0) +
       (research.externalSources?.length || 0) +
-      (research.dataAndIllustrations?.length || 0)
+      (research.dataAndIllustrations?.length || 0) +
+      (research.similarSermons?.length || 0)
     : 0;
+
+  const detectedPos = analysis?.detectedPosition;
 
   if (!content || content.replace(/<[^>]+>/g, '').trim().length < 10) {
     return (
@@ -338,7 +392,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
           Comece a digitar seu esboço para ativar o Copiloto IA
         </p>
         <p className="text-xs text-muted-foreground/70 mt-1">
-          O assistente analisará coerência e pesquisará fontes em tempo real
+          O assistente vai detectar sua estrutura e guiar a elaboração em tempo real
         </p>
       </div>
     );
@@ -362,24 +416,42 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                   {analysis.overallScore}%
                 </span>
                 <div className="w-8 sm:w-10 h-1 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all ${getScoreBg(analysis.overallScore)}`}
-                    style={{ width: `${analysis.overallScore}%` }}
-                  />
+                  <div className={`h-full transition-all ${getScoreBg(analysis.overallScore)}`} style={{ width: `${analysis.overallScore}%` }} />
                 </div>
               </div>
             )}
           </div>
         </div>
-        <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-1 truncate">
-          Editando: {ELEMENT_LABELS[currentElement] || currentElement}
-        </p>
+
+        {/* Detected Position Badge */}
+        {detectedPos && (
+          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+            <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+              📍 {SECTION_LABELS[detectedPos.currentSection] || detectedPos.currentSection}
+            </span>
+            {detectedPos.progressPercent > 0 && (
+              <span className="text-[9px] text-muted-foreground">
+                {detectedPos.progressPercent}% completo
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 mt-2">
           <button
+            onClick={() => setActiveTab('guide')}
+            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-1.5 rounded-md transition-colors ${
+              activeTab === 'guide'
+                ? 'bg-emerald-500/10 text-emerald-600 font-semibold'
+                : 'text-muted-foreground hover:bg-muted/50'
+            }`}
+          >
+            🧭 Guia
+          </button>
+          <button
             onClick={() => setActiveTab('analysis')}
-            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-2 rounded-md transition-colors ${
+            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-1.5 rounded-md transition-colors ${
               activeTab === 'analysis'
                 ? 'bg-primary/10 text-primary font-semibold'
                 : 'text-muted-foreground hover:bg-muted/50'
@@ -389,7 +461,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
           </button>
           <button
             onClick={() => setActiveTab('research')}
-            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-2 rounded-md transition-colors relative ${
+            className={`flex-1 text-[10px] sm:text-xs py-1.5 px-1.5 rounded-md transition-colors relative ${
               activeTab === 'research'
                 ? 'bg-blue-500/10 text-blue-600 font-semibold'
                 : 'text-muted-foreground hover:bg-muted/50'
@@ -410,11 +482,210 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
         {error && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
+            <span className="flex-1">{error}</span>
             <Button variant="ghost" size="sm" className="ml-auto h-6 w-6 p-0" onClick={analyzeContent}>
               <RefreshCw className="w-3 h-3" />
             </Button>
           </div>
+        )}
+
+        {/* ============ GUIDE TAB ============ */}
+        {activeTab === 'guide' && (
+          <>
+            {isLoading && !analysis && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <Compass className="w-8 h-8 animate-spin text-emerald-500 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">Analisando estrutura...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Contextual Note from Research */}
+            {research?.contextualNote && (
+              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs">
+                <div className="flex items-start gap-2">
+                  <Lightbulb className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-blue-700 mb-1">💡 Copiloto encontrou:</p>
+                    <p className="text-blue-700/90">{research.contextualNote}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Guidance */}
+            {detectedPos && (
+              <>
+                {/* Current Position & Guidance */}
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs">
+                      <p className="font-semibold text-emerald-700">
+                        Você está em: {SECTION_LABELS[detectedPos.currentSection] || detectedPos.currentSection}
+                      </p>
+                      {detectedPos.guidance && (
+                        <p className="text-emerald-700/80 mt-1">{detectedPos.guidance}</p>
+                      )}
+                      {detectedPos.sectionTip && (
+                        <p className="text-emerald-600/70 mt-2 italic text-[10px]">💡 {detectedPos.sectionTip}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Next Step */}
+                {detectedPos.nextExpectedSection && (
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-xs">
+                    <ArrowRight className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <div>
+                      <span className="text-amber-700 font-medium">Próximo passo: </span>
+                      <span className="text-amber-700/80">
+                        {SECTION_LABELS[detectedPos.nextExpectedSection] || detectedPos.nextExpectedSection}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Progress Bar */}
+                <div className="p-2.5 rounded-lg border bg-muted/20">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-medium text-muted-foreground">Progresso do Sermão</span>
+                    <span className="text-[10px] font-bold text-foreground">{detectedPos.progressPercent}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+                      style={{ width: `${detectedPos.progressPercent}%` }}
+                    />
+                  </div>
+                  {detectedPos.completedSections?.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {detectedPos.completedSections.map((s, i) => (
+                        <span key={i} className="text-[8px] px-1 py-0.5 bg-green-500/20 text-green-700 rounded">
+                          ✓ {SECTION_LABELS[s]?.replace(/^[^\s]+ /, '') || s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Section Help from Research */}
+            {research?.currentSectionHelp && (
+              <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 text-xs">
+                <div className="flex items-start gap-2">
+                  <BookOpen className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-purple-700 mb-1">📚 Ajuda para esta seção:</p>
+                    <p className="text-purple-700/80">{research.currentSectionHelp}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Structure Checklist */}
+            {analysis?.structureAnalysis && (
+              <CollapsibleSection
+                icon={<FileText className="w-3.5 h-3.5 text-foreground/70" />}
+                title="Checklist da Estrutura"
+                expanded={expandedSections.includes('structure')}
+                onToggle={() => toggleSection('structure')}
+              >
+                <div className="space-y-1">
+                  {[
+                    { label: 'Título', value: analysis.structureAnalysis.hasTitle },
+                    { label: 'Tema', value: analysis.structureAnalysis.hasTheme },
+                    { label: 'Texto Base', value: analysis.structureAnalysis.hasBaseText },
+                    { label: 'Introdução', value: analysis.structureAnalysis.hasIntroduction },
+                  ].map((item) => (
+                    <div key={item.label} className={`flex items-center gap-1.5 text-[10px] p-1 rounded ${item.value ? 'text-green-700' : 'text-muted-foreground'}`}>
+                      {item.value ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border border-current" />}
+                      {item.label}
+                    </div>
+                  ))}
+                  
+                  {/* Points Detail */}
+                  {analysis.structureAnalysis.pointsDetail?.map((point) => (
+                    <div key={point.number} className="ml-1 border-l-2 border-muted pl-2 space-y-0.5">
+                      <p className="text-[10px] font-medium text-foreground/80">Ponto {point.number}</p>
+                      {[
+                        { label: `Explicação${point.explanationParagraphs ? ` (${point.explanationParagraphs} par.)` : ''}`, value: point.hasExplanation, warn: point.hasExplanation && (point.explanationParagraphs || 0) < 5 },
+                        { label: 'Ilustração', value: point.hasIllustration },
+                        { label: 'Verdade', value: point.hasTruth },
+                        { label: 'Aplicação', value: point.hasApplication },
+                      ].map((item) => (
+                        <div key={item.label} className={`flex items-center gap-1.5 text-[9px] ${item.value ? (item.warn ? 'text-amber-600' : 'text-green-700') : 'text-muted-foreground'}`}>
+                          {item.value ? (item.warn ? <AlertTriangle className="w-2.5 h-2.5" /> : <CheckCircle2 className="w-2.5 h-2.5" />) : <div className="w-2.5 h-2.5 rounded-full border border-current" />}
+                          {item.label}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+
+                  {[
+                    { label: 'Conclusão', value: analysis.structureAnalysis.hasConclusion },
+                    { label: 'Apelo', value: analysis.structureAnalysis.hasAppeal },
+                    { label: 'Oração Final', value: analysis.structureAnalysis.hasFinalPrayer },
+                  ].map((item) => (
+                    <div key={item.label} className={`flex items-center gap-1.5 text-[10px] p-1 rounded ${item.value ? 'text-green-700' : 'text-muted-foreground'}`}>
+                      {item.value ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border border-current" />}
+                      {item.label}
+                    </div>
+                  ))}
+                </div>
+
+                {analysis.structureAnalysis.pointsCount > 0 && !analysis.structureAnalysis.pointsDetail?.length && (
+                  <p className="text-[10px] text-muted-foreground mt-2">📌 {analysis.structureAnalysis.pointsCount} ponto(s) detectado(s)</p>
+                )}
+              </CollapsibleSection>
+            )}
+
+            {/* Similar Sermons */}
+            {research?.similarSermons && research.similarSermons.length > 0 && (
+              <CollapsibleSection
+                icon={<Mic className="w-3.5 h-3.5 text-rose-600" />}
+                title="Pregações Similares"
+                badge={research.similarSermons.filter(s => !dismissedItems.has(`similar-${s.preacher}`)).length}
+                badgeColor="bg-rose-500/20 text-rose-700"
+                expanded={expandedSections.includes('similar')}
+                onToggle={() => toggleSection('similar')}
+              >
+                {research.similarSermons
+                  .filter(s => !dismissedItems.has(`similar-${s.preacher}`))
+                  .map((sermon, idx) => (
+                  <div key={idx} className="p-2.5 rounded-lg border border-rose-500/20 bg-rose-500/5 text-xs">
+                    <div className="flex items-start gap-2">
+                      <Mic className="w-3.5 h-3.5 text-rose-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-rose-700">{sermon.preacher}</p>
+                        <p className="text-foreground/80 mt-0.5">"{sermon.title}"</p>
+                        <p className="text-muted-foreground mt-1"><strong>Abordagem:</strong> {sermon.approach}</p>
+                        <p className="text-emerald-700 mt-1 text-[10px]">💡 <strong>Como diferenciar:</strong> {sermon.difference}</p>
+                        {sermon.url && (
+                          <a href={sermon.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
+                            <ExternalLink className="w-2.5 h-2.5" /> Ver pregação
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(`${sermon.preacher}: "${sermon.title}" - ${sermon.approach}`)}>
+                        <Copy className="w-3 h-3" /> Copiar
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`similar-${sermon.preacher}`)}>
+                        <XCircle className="w-3 h-3" /> Dispensar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CollapsibleSection>
+            )}
+          </>
         )}
 
         {/* ============ ANALYSIS TAB ============ */}
@@ -437,12 +708,12 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
               </div>
             )}
 
-            {/* Grammar Issues */}
+            {/* Grammar */}
             {analysis.grammarIssues.length > 0 && (
               <CollapsibleSection
                 icon={<Type className="w-3.5 h-3.5 text-amber-600" />}
                 title="Gramática e Estilo"
-                badge={analysis.grammarIssues.length}
+                badge={analysis.grammarIssues.filter(i => !dismissedItems.has(`grammar-${i.text}`)).length}
                 badgeColor="bg-amber-500/20 text-amber-700"
                 expanded={expandedSections.includes('grammar')}
                 onToggle={() => toggleSection('grammar')}
@@ -455,30 +726,16 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                       <span className="line-through">{issue.text}</span> → <span className="text-foreground font-medium">{issue.suggestion}</span>
                     </p>
                     <div className="flex items-center gap-1 pt-2 border-t border-border/50">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
-                        onClick={() => handleApply(issue.text, issue.suggestion)}
-                      >
-                        <Check className="w-3 h-3" />
-                        Aplicar
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
+                        onClick={() => handleApply(issue.text, issue.suggestion)}>
+                        <Check className="w-3 h-3" /> Aplicar
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
-                        onClick={() => handleCopyToClipboard(issue.suggestion)}
-                      >
-                        <Copy className="w-3 h-3" />
-                        Copiar
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(issue.suggestion)}>
+                        <Copy className="w-3 h-3" /> Copiar
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
-                        onClick={() => handleDismiss(`grammar-${issue.text}`)}
-                      >
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`grammar-${issue.text}`)}>
                         <XCircle className="w-3 h-3" />
                       </Button>
                     </div>
@@ -487,7 +744,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
               </CollapsibleSection>
             )}
 
-            {/* Coherence Checks */}
+            {/* Coherence */}
             {analysis.coherenceChecks.length > 0 && (
               <CollapsibleSection
                 icon={<Target className="w-3.5 h-3.5 text-blue-600" />}
@@ -506,14 +763,9 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                           <div className="mt-2 p-2 bg-blue-500/10 rounded border border-blue-500/20">
                             <p className="text-blue-700 italic">💡 {check.suggestion}</p>
                             <div className="flex items-center gap-1 mt-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-5 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
-                                onClick={() => handleCopyToClipboard(check.suggestion || '')}
-                              >
-                                <Copy className="w-2.5 h-2.5" />
-                                Copiar
+                              <Button variant="ghost" size="sm" className="h-5 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                                onClick={() => handleCopyToClipboard(check.suggestion || '')}>
+                                <Copy className="w-2.5 h-2.5" /> Copiar
                               </Button>
                             </div>
                           </div>
@@ -542,30 +794,16 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                     <p className="font-semibold text-purple-700">{sug.reference}</p>
                     <p className="text-muted-foreground mt-1">{sug.reason}</p>
                     <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
-                        onClick={() => handleInsertRef(sug.reference)}
-                      >
-                        <Check className="w-3 h-3" />
-                        Inserir
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
+                        onClick={() => handleInsertRef(sug.reference)}>
+                        <Check className="w-3 h-3" /> Inserir
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
-                        onClick={() => handleCopyToClipboard(`${sug.reference}: ${sug.reason}`)}
-                      >
-                        <Copy className="w-3 h-3" />
-                        Copiar
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(`${sug.reference}: ${sug.reason}`)}>
+                        <Copy className="w-3 h-3" /> Copiar
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
-                        onClick={() => handleDismiss(`bible-analysis-${sug.reference}`)}
-                      >
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`bible-analysis-${sug.reference}`)}>
                         <XCircle className="w-3 h-3" />
                       </Button>
                     </div>
@@ -589,71 +827,31 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                   .map((sug, idx) => (
                   <div key={idx} className="p-2.5 rounded-lg bg-teal-500/5 border border-teal-500/20 text-xs">
                     <p className="text-muted-foreground mb-2">
-                      <span className="line-through">{sug.original}</span> → escolha uma alternativa:
+                      <span className="line-through">{sug.original}</span> → escolha:
                     </p>
                     <div className="flex flex-wrap gap-1 mb-2">
                       {sug.alternatives.map((alt, i) => (
-                        <button 
-                          key={i} 
-                          onClick={() => handleApply(sug.original, alt)} 
-                          className="px-2.5 py-1 bg-teal-500/20 text-teal-700 rounded-md hover:bg-teal-500/30 transition-colors font-medium"
-                        >
+                        <button key={i} onClick={() => handleApply(sug.original, alt)} 
+                          className="px-2.5 py-1 bg-teal-500/20 text-teal-700 rounded-md hover:bg-teal-500/30 transition-colors font-medium">
                           {alt}
                         </button>
                       ))}
                     </div>
                     <p className="text-[10px] text-muted-foreground">{sug.reason}</p>
                     <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
-                        onClick={() => handleCopyToClipboard(sug.alternatives.join(', '))}
-                      >
-                        <Copy className="w-3 h-3" />
-                        Copiar
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
+                        onClick={() => handleCopyToClipboard(sug.alternatives.join(', '))}>
+                        <Copy className="w-3 h-3" /> Copiar
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
-                        onClick={() => handleDismiss(`word-${sug.original}`)}
-                      >
-                        <XCircle className="w-3 h-3" />
-                        Dispensar
+                      <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
+                        onClick={() => handleDismiss(`word-${sug.original}`)}>
+                        <XCircle className="w-3 h-3" /> Dispensar
                       </Button>
                     </div>
                   </div>
                 ))}
               </CollapsibleSection>
             )}
-
-            {/* Structure */}
-            <CollapsibleSection
-              icon={<FileText className="w-3.5 h-3.5 text-gray-600" />}
-              title="Estrutura"
-              expanded={expandedSections.includes('structure')}
-              onToggle={() => toggleSection('structure')}
-            >
-              <div className="grid grid-cols-2 gap-1 text-[10px]">
-                {[
-                  { label: 'Título', value: analysis.structureAnalysis.hasTitle },
-                  { label: 'Tema', value: analysis.structureAnalysis.hasTheme },
-                  { label: 'Texto Base', value: analysis.structureAnalysis.hasBaseText },
-                  { label: 'Introdução', value: analysis.structureAnalysis.hasIntroduction },
-                  { label: 'Conclusão', value: analysis.structureAnalysis.hasConclusion },
-                  { label: 'Apelo', value: analysis.structureAnalysis.hasAppeal },
-                ].map((item) => (
-                  <div key={item.label} className={`flex items-center gap-1 p-1 rounded ${item.value ? 'text-green-700' : 'text-muted-foreground'}`}>
-                    {item.value ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border border-current" />}
-                    {item.label}
-                  </div>
-                ))}
-              </div>
-              {analysis.structureAnalysis.pointsCount > 0 && (
-                <p className="text-[10px] text-muted-foreground mt-2">📌 {analysis.structureAnalysis.pointsCount} ponto(s)</p>
-              )}
-            </CollapsibleSection>
 
             {/* All Good */}
             {analysis.grammarIssues.length === 0 && analysis.coherenceChecks.every(c => c.isCoherent) && !analysis.thematicAlert?.isOffTopic && (
@@ -681,8 +879,8 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
                   <Search className="w-8 h-8 animate-pulse text-blue-500 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">Pesquisando fontes e materiais...</p>
-                  <p className="text-[10px] text-muted-foreground/60 mt-1">Analisando sua base de conhecimento e buscando referências</p>
+                  <p className="text-xs text-muted-foreground">Pesquisando fontes...</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">Analisando base de conhecimento e buscando referências</p>
                 </div>
               </div>
             )}
@@ -702,18 +900,12 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                     {research.internalSources
                       .filter(s => !dismissedItems.has(`internal-${s.materialTitle}`))
                       .map((source, idx) => (
-                        <ResearchCard
-                          key={idx}
-                          itemKey={`internal-${source.materialTitle}`}
+                        <ResearchCard key={idx} itemKey={`internal-${source.materialTitle}`}
                           icon={<Database className="w-3.5 h-3.5 text-emerald-600" />}
-                          title={source.materialTitle}
-                          description={source.relevance}
-                          detail={source.suggestedUse}
-                          accentColor="emerald"
+                          title={source.materialTitle} description={source.relevance} detail={source.suggestedUse} accentColor="emerald"
                           onAccept={() => handleAcceptContent(`\n\n📚 [Fonte: ${source.materialTitle}]\n${source.suggestedUse}`)}
                           onDismiss={() => handleDismiss(`internal-${source.materialTitle}`)}
-                          onCopy={() => handleCopyToClipboard(`${source.materialTitle}: ${source.suggestedUse}`)}
-                        />
+                          onCopy={() => handleCopyToClipboard(`${source.materialTitle}: ${source.suggestedUse}`)} />
                       ))}
                   </CollapsibleSection>
                 )}
@@ -731,22 +923,15 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                     {research.biblicalReferences
                       .filter(r => !dismissedItems.has(`bible-${r.reference}`))
                       .map((ref, idx) => (
-                        <ResearchCard
-                          key={idx}
-                          itemKey={`bible-${ref.reference}`}
+                        <ResearchCard key={idx} itemKey={`bible-${ref.reference}`}
                           icon={<BookOpen className="w-3.5 h-3.5 text-purple-600" />}
-                          title={ref.reference}
-                          badge={ref.type}
-                          description={ref.connection}
-                          detail={ref.text}
-                          accentColor="purple"
+                          title={ref.reference} badge={ref.type} description={ref.connection} detail={ref.text} accentColor="purple"
                           onAccept={() => {
                             const text = ref.text ? `\n\n📖 "${ref.text}" — ${ref.reference} (ACF)` : `\n\n📖 ${ref.reference} (ACF)`;
                             handleAcceptContent(text);
                           }}
                           onDismiss={() => handleDismiss(`bible-${ref.reference}`)}
-                          onCopy={() => handleCopyToClipboard(ref.text ? `"${ref.text}" — ${ref.reference} (ACF)` : ref.reference)}
-                        />
+                          onCopy={() => handleCopyToClipboard(ref.text ? `"${ref.text}" — ${ref.reference} (ACF)` : ref.reference)} />
                       ))}
                   </CollapsibleSection>
                 )}
@@ -766,20 +951,14 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                       .map((source, idx) => {
                         const Icon = SOURCE_TYPE_ICONS[source.type] || Globe;
                         return (
-                          <ResearchCard
-                            key={idx}
-                            itemKey={`external-${source.title}`}
+                          <ResearchCard key={idx} itemKey={`external-${source.title}`}
                             icon={<Icon className="w-3.5 h-3.5 text-blue-600" />}
-                            title={source.title}
-                            badge={source.type}
-                            description={source.description}
-                            detail={source.relevance}
-                            url={source.url}
-                            accentColor="blue"
+                            title={source.title} badge={source.type}
+                            description={`${source.description}${source.preacherName ? ` — ${source.preacherName}` : ''}`}
+                            detail={source.relevance} url={source.url} accentColor="blue"
                             onAccept={() => handleAcceptContent(`\n\n🔗 [${source.title}](${source.url || '#'}) — ${source.description}`)}
                             onDismiss={() => handleDismiss(`external-${source.title}`)}
-                            onCopy={() => handleCopyToClipboard(`${source.title}: ${source.description}${source.url ? ` — ${source.url}` : ''}`)}
-                          />
+                            onCopy={() => handleCopyToClipboard(`${source.title}: ${source.description}${source.url ? ` — ${source.url}` : ''}`)} />
                         );
                       })}
                   </CollapsibleSection>
@@ -798,27 +977,22 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                     {research.dataAndIllustrations
                       .filter(d => !dismissedItems.has(`data-${d.title}`))
                       .map((item, idx) => (
-                        <ResearchCard
-                          key={idx}
-                          itemKey={`data-${item.title}`}
+                        <ResearchCard key={idx} itemKey={`data-${item.title}`}
                           icon={<BarChart3 className="w-3.5 h-3.5 text-orange-600" />}
-                          title={item.title}
-                          description={item.content}
-                          detail={`Fonte: ${item.source} · Sugestão: ${item.suggestedPlacement}`}
-                          accentColor="orange"
+                          title={item.title} description={item.content}
+                          detail={`Fonte: ${item.source} · Sugestão: ${item.suggestedPlacement}`} accentColor="orange"
                           onAccept={() => handleAcceptContent(`\n\n📊 ${item.title}\n${item.content}\n(Fonte: ${item.source})`)}
                           onDismiss={() => handleDismiss(`data-${item.title}`)}
-                          onCopy={() => handleCopyToClipboard(`${item.title}: ${item.content} (Fonte: ${item.source})`)}
-                        />
+                          onCopy={() => handleCopyToClipboard(`${item.title}: ${item.content} (Fonte: ${item.source})`)} />
                       ))}
                   </CollapsibleSection>
                 )}
 
-                {researchCount === 0 && (
+                {researchCount === 0 && !isResearching && (
                   <div className="p-4 text-center">
                     <Search className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">Nenhuma pesquisa encontrada ainda.</p>
-                    <p className="text-[10px] text-muted-foreground/60">Continue digitando para ativar a pesquisa.</p>
+                    <p className="text-xs text-muted-foreground">Nenhuma pesquisa encontrada.</p>
+                    <p className="text-[10px] text-muted-foreground/60">Continue escrevendo para ativar a pesquisa.</p>
                   </div>
                 )}
 
@@ -836,24 +1010,14 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
 
       {/* Footer */}
       <div className="flex-shrink-0 p-2 border-t bg-muted/20 flex gap-1.5">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1 text-[10px] sm:text-xs gap-1 h-8"
-          onClick={analyzeContent}
-          disabled={isLoading}
-        >
+        <Button variant="outline" size="sm" className="flex-1 text-[10px] sm:text-xs gap-1 h-8"
+          onClick={analyzeContent} disabled={isLoading}>
           {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
           <span className="hidden sm:inline">Reanalisar</span>
           <span className="sm:hidden">Analisar</span>
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1 text-[10px] sm:text-xs gap-1 h-8"
-          onClick={() => { lastResearchContentRef.current = ''; doResearch(); }}
-          disabled={isResearching}
-        >
+        <Button variant="outline" size="sm" className="flex-1 text-[10px] sm:text-xs gap-1 h-8"
+          onClick={() => { lastResearchContentRef.current = ''; doResearch(); }} disabled={isResearching}>
           {isResearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
           <span className="hidden sm:inline">Repesquisar</span>
           <span className="sm:hidden">Pesquisar</span>
@@ -918,48 +1082,26 @@ function ResearchCard({ itemKey, icon, title, badge, description, detail, url, a
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="font-semibold text-foreground truncate">{title}</p>
-            {badge && (
-              <span className="text-[9px] px-1 py-0.5 bg-muted rounded">{badge}</span>
-            )}
+            {badge && <span className="text-[9px] px-1 py-0.5 bg-muted rounded">{badge}</span>}
           </div>
-          <p className="text-muted-foreground mt-1 line-clamp-2">{description}</p>
+          <p className="text-muted-foreground mt-1 line-clamp-3">{description}</p>
           {detail && <p className="text-[10px] text-muted-foreground/70 mt-1 italic">{detail}</p>}
           {url && (
             <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-500 hover:underline flex items-center gap-0.5 mt-1">
-              <ExternalLink className="w-2.5 h-2.5" /> Abrir link
+              <ExternalLink className="w-2.5 h-2.5" /> Abrir
             </a>
           )}
         </div>
       </div>
-
-      {/* Action Buttons */}
       <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/50">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1"
-          onClick={onAccept}
-        >
-          <Check className="w-3 h-3" />
-          Aceitar
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-green-600 hover:bg-green-500/10 gap-1" onClick={onAccept}>
+          <Check className="w-3 h-3" /> Aceitar
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1"
-          onClick={onCopy}
-        >
-          <Copy className="w-3 h-3" />
-          Copiar
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-muted-foreground hover:bg-muted/50 gap-1" onClick={onCopy}>
+          <Copy className="w-3 h-3" /> Copiar
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto"
-          onClick={onDismiss}
-        >
-          <XCircle className="w-3 h-3" />
-          Dispensar
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-red-500 hover:bg-red-500/10 gap-1 ml-auto" onClick={onDismiss}>
+          <XCircle className="w-3 h-3" /> Dispensar
         </Button>
       </div>
     </div>
