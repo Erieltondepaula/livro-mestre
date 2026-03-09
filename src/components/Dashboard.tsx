@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 import { GamificationWidget } from '@/components/GamificationWidget';
-
+import { useAuth } from '@/contexts/AuthContext';
 interface DashboardProps {
   stats: DashboardStats;
   recentStatuses: BookStatus[];
