@@ -483,7 +483,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       });
     }
   };
-  };
 
   const handleRequestSuggestions = async (outline: ExegesisOutline) => {
     if (!onSuggestImprovements) return;
