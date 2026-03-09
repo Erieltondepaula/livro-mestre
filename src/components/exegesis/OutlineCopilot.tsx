@@ -78,6 +78,18 @@ interface StructureAnalysis {
   pointsDetail?: PointDetail[];
 }
 
+interface BaseTextContext {
+  passage?: string;
+  historicalContext?: string;
+  literaryContext?: string;
+  culturalContext?: string;
+  theologicalContext?: string;
+  keyTerms?: Array<{ term: string; transliteration?: string; meaning: string; strongNumber?: string }>;
+  hermeneuticalDangers?: string[];
+  anchorReminder?: string;
+  narrativePosition?: string;
+}
+
 interface CopilotAnalysis {
   overallScore: number;
   detectedPosition?: DetectedPosition;
@@ -87,6 +99,7 @@ interface CopilotAnalysis {
   wordSuggestions: WordSuggestion[];
   thematicAlert?: ThematicAlert;
   structureAnalysis: StructureAnalysis;
+  baseTextContext?: BaseTextContext | null;
 }
 
 // Research Types
