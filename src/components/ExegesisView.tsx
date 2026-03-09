@@ -63,49 +63,59 @@ export function ExegesisView() {
           )}
         </TabsList>
 
-        <TabsContent value="analyze">
-          <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
-        </TabsContent>
+        {hasModuleAccess('exegese.analisar') && (
+          <TabsContent value="analyze">
+            <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
+          </TabsContent>
+        )}
 
-        <TabsContent value="cross_refs">
-          <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
-        </TabsContent>
+        {hasModuleAccess('exegese.ref_cruzadas') && (
+          <TabsContent value="cross_refs">
+            <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
+          </TabsContent>
+        )}
 
-        <TabsContent value="history">
-          <ExegesisHistory analyses={analyses} onFetch={fetchAnalyses} onUpdateNotes={updateAnalysisNotes} onDelete={deleteAnalysis} />
-        </TabsContent>
+        {hasModuleAccess('exegese.historico') && (
+          <TabsContent value="history">
+            <ExegesisHistory analyses={analyses} onFetch={fetchAnalyses} onUpdateNotes={updateAnalysisNotes} onDelete={deleteAnalysis} />
+          </TabsContent>
+        )}
 
-        <TabsContent value="outlines">
-          <ExegesisOutlines
-            outlines={outlines}
-            onFetch={fetchOutlines}
-            onSave={saveOutline}
-            onUpdateNotes={updateOutlineNotes}
-            onUpdateContent={updateOutlineContent}
-            onDelete={deleteOutline}
-            getMaterialsContext={getMaterialsContext}
-            getRelevantAnalysesContext={getRelevantAnalysesContext}
-            fetchOutlineVersions={fetchOutlineVersions}
-            materialsCount={materials.length}
-            materials={materials}
-            onSuggestImprovements={suggestImprovements}
-          />
-        </TabsContent>
+        {hasModuleAccess('exegese.esbocos') && (
+          <TabsContent value="outlines">
+            <ExegesisOutlines
+              outlines={outlines}
+              onFetch={fetchOutlines}
+              onSave={saveOutline}
+              onUpdateNotes={updateOutlineNotes}
+              onUpdateContent={updateOutlineContent}
+              onDelete={deleteOutline}
+              getMaterialsContext={getMaterialsContext}
+              getRelevantAnalysesContext={getRelevantAnalysesContext}
+              fetchOutlineVersions={fetchOutlineVersions}
+              materialsCount={materials.length}
+              materials={materials}
+              onSuggestImprovements={suggestImprovements}
+            />
+          </TabsContent>
+        )}
 
-        <TabsContent value="materials">
-          <ExegesisMaterials
-            materials={materials}
-            loading={loading}
-            onFetch={fetchMaterials}
-            onUpload={uploadMaterial}
-            onAddLink={addLink}
-            onUpdateMetadata={updateMaterialMetadata}
-            onDelete={deleteMaterial}
-            onClassify={classifyContent}
-            onExtractMetadata={extractMetadata}
-            onClassifyAll={classifyAllMaterials}
-          />
-        </TabsContent>
+        {hasModuleAccess('exegese.materiais') && (
+          <TabsContent value="materials">
+            <ExegesisMaterials
+              materials={materials}
+              loading={loading}
+              onFetch={fetchMaterials}
+              onUpload={uploadMaterial}
+              onAddLink={addLink}
+              onUpdateMetadata={updateMaterialMetadata}
+              onDelete={deleteMaterial}
+              onClassify={classifyContent}
+              onExtractMetadata={extractMetadata}
+              onClassifyAll={classifyAllMaterials}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
