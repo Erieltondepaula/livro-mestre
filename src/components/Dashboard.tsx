@@ -73,8 +73,10 @@ export function Dashboard({ stats, recentStatuses, books, readings, onNavigateTo
         </div>
       </div>
 
-      {/* Progress Card */}
-      <div className="card-library-elevated p-4 md:p-6 lg:p-8">
+      {hasModuleAccess('dashboard.metricas') && (
+        <>
+          {/* Progress Card */}
+          <div className="card-library-elevated p-4 md:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 md:mb-6">
           <div>
             <h3 className="font-display text-xl md:text-2xl font-semibold text-foreground">Progresso Total</h3>
