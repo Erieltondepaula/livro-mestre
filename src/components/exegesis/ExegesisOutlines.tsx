@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
-import { ExegesisRichEditor } from './ExegesisRichEditor';
+import { ExegesisRichEditor, type ExegesisRichEditorRef } from './ExegesisRichEditor';
 import { SermonTitleGenerator } from './SermonTitleGenerator';
 import { OutlineStructureEditor, getDefaultStructure } from './OutlineStructureEditor';
 import { OutlineVersionHistory } from './OutlineVersionHistory';
