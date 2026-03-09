@@ -319,6 +319,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [suggestions, setSuggestions] = useState<Record<string, any>>({});
   const [preacherMode, setPreacherMode] = useState<{ content: string; passage: string } | null>(null);
   const [titleGenOpen, setTitleGenOpen] = useState(false);
+  const [outlineMode, setOutlineMode] = useState<'ai' | 'manual'>('ai'); // Modo duplo: IA vs manual
+  const [manualContent, setManualContent] = useState(''); // Conteúdo manual
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -458,6 +460,31 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     }
   };
 
+  const handleSaveManual = async () => {
+    if (!manualContent.trim() || !getPassageText()) return;
+    
+    try {
+      const result = await onSave({
+        passage: getPassageText(),
+        outline_type: selectedType,
+        content: manualContent
+      });
+      
+      if (result) {
+        setManualContent('');
+        toast({ title: "Esboço manual salvo com sucesso!" });
+        onFetch();
+      }
+    } catch (error) {
+      toast({ 
+        title: "Erro ao salvar", 
+        description: "Não foi possível salvar o esboço manual",
+        variant: "destructive" 
+      });
+    }
+  };
+  };
+
   const handleRequestSuggestions = async (outline: ExegesisOutline) => {
     if (!onSuggestImprovements) return;
     setSuggestionsLoading(outline.id);
@@ -578,15 +605,74 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           </div>
         </div>
 
-        {/* Structure Editor */}
-        <OutlineStructureEditor structure={structure} onChange={handleStructureChange} />
-
-        <div className="flex items-center gap-2">
-          <Button onClick={handleGenerate} disabled={isLoading || !getPassageText()} className="btn-library-primary">
-            {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</> : <><Send className="w-4 h-4 mr-2" /> Gerar Esboço</>}
-          </Button>
-          <PromptEditorDialog />
+        {/* Mode Toggle */}
+        <div className="space-y-3">
+          <p className="text-xs font-medium text-muted-foreground">Modo de Criação</p>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setOutlineMode('ai')}
+              className={`flex-1 p-3 rounded-lg border text-left transition-all ${outlineMode === 'ai' ? 'bg-primary/10 border-primary/30' : 'bg-card border-border hover:bg-muted/50'}`}>
+              <span className="text-sm font-medium flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Gerado por IA
+              </span>
+              <p className="text-xs text-muted-foreground mt-1">Esboço criado automaticamente com base na passagem</p>
+            </button>
+            <button 
+              onClick={() => setOutlineMode('manual')}
+              className={`flex-1 p-3 rounded-lg border text-left transition-all ${outlineMode === 'manual' ? 'bg-primary/10 border-primary/30' : 'bg-card border-border hover:bg-muted/50'}`}>
+              <span className="text-sm font-medium flex items-center gap-2">
+                <Edit3 className="w-4 h-4" />
+                Texto Livre
+              </span>
+              <p className="text-xs text-muted-foreground mt-1">Escrita livre com formatação avançada</p>
+            </button>
+          </div>
         </div>
+
+        {/* Manual Mode Editor */}
+        {outlineMode === 'manual' ? (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">Editor de Texto Livre</p>
+            <div className="min-h-[400px]">
+              <ExegesisRichEditor
+                content={manualContent}
+                onChange={setManualContent}
+                placeholder="Comece a escrever seu esboço... Use as ferramentas de formatação para criar um conteúdo rico e bem estruturado."
+                minHeight="350px"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => {
+                  if (manualContent.trim() && getPassageText()) {
+                    handleSaveManual();
+                  }
+                }} 
+                disabled={!manualContent.trim() || !getPassageText()} 
+                className="btn-library-primary"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Salvar Esboço Manual
+              </Button>
+              <Button variant="outline" onClick={() => setManualContent('')} disabled={!manualContent.trim()}>
+                Limpar
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Structure Editor - Only show in AI mode */}
+            <OutlineStructureEditor structure={structure} onChange={handleStructureChange} />
+
+            <div className="flex items-center gap-2">
+              <Button onClick={handleGenerate} disabled={isLoading || !getPassageText()} className="btn-library-primary">
+                {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</> : <><Send className="w-4 h-4 mr-2" /> Gerar Esboço</>}
+              </Button>
+              <PromptEditorDialog />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Streaming */}

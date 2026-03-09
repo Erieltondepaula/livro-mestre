@@ -15,6 +15,9 @@ import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
+import { FontUpload } from './FontUpload';
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   Heading1, Heading2, Heading3,
@@ -22,6 +25,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   Highlighter, Link as LinkIcon,
   Undo, Redo, Pilcrow, Palette, Type, ChevronDown, Eye, EyeOff,
+  Plus, Minus, RotateCcw
 } from 'lucide-react';
 
 interface ExegesisRichEditorProps {
@@ -53,13 +57,36 @@ const SEMANTIC_HIGHLIGHT_COLORS = [
 
 const HIGHLIGHT_COLORS = SEMANTIC_HIGHLIGHT_COLORS.filter(c => !c.isTextColor);
 
-const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px'];
+const FONT_SIZES = [
+  { value: '8px', label: '8px' },
+  { value: '9px', label: '9px' },
+  { value: '10px', label: '10px' },
+  { value: '11px', label: '11px' },
+  { value: '12px', label: '12px' },
+  { value: '14px', label: '14px' },
+  { value: '16px', label: '16px' },
+  { value: '18px', label: '18px' },
+  { value: '20px', label: '20px' },
+  { value: '24px', label: '24px' },
+  { value: '28px', label: '28px' },
+  { value: '32px', label: '32px' },
+  { value: '36px', label: '36px' },
+  { value: '48px', label: '48px' },
+  { value: '60px', label: '60px' },
+  { value: '72px', label: '72px' },
+];
 
 const FONT_FAMILIES = [
-  { value: 'Source Sans 3, sans-serif', label: 'Sans Serif' },
-  { value: 'Georgia, serif', label: 'Serif' },
-  { value: 'Playfair Display, serif', label: 'Display' },
-  { value: 'Courier New, monospace', label: 'Mono' },
+  { value: 'Source Sans 3, sans-serif', label: 'Sans Serif (Padrão)' },
+  { value: 'Georgia, serif', label: 'Serif (Clássico)' },
+  { value: 'Playfair Display, serif', label: 'Display (Elegante)' },
+  { value: 'Courier New, monospace', label: 'Mono (Código)' },
+  { value: 'Arial, sans-serif', label: 'Arial' },
+  { value: 'Times New Roman, serif', label: 'Times New Roman' },
+  { value: 'Helvetica, sans-serif', label: 'Helvetica' },
+  { value: 'Palatino, serif', label: 'Palatino' },
+  { value: 'Garamond, serif', label: 'Garamond' },
+  { value: 'Comic Sans MS, cursive', label: 'Comic Sans' }
 ];
 
 function ToolBtn({ children, tooltip, pressed, onClick, disabled }: { children: React.ReactNode; tooltip: string; pressed?: boolean; onClick?: () => void; disabled?: boolean }) {
@@ -109,6 +136,8 @@ export function ExegesisRichEditor({
   const [customColor, setCustomColor] = useState('#000000');
   const [customHighlight, setCustomHighlight] = useState('#FEF08A');
   const [showLegend, setShowLegend] = useState(false);
+  const [customFonts, setCustomFonts] = useState<string[]>([]);
+  const [currentFontSize, setCurrentFontSize] = useState(16);
 
   const editor = useEditor({
     extensions: [
@@ -152,7 +181,29 @@ export function ExegesisRichEditor({
   const setFontSize = useCallback((size: string) => {
     if (!editor) return;
     editor.chain().focus().setMark('textStyle', { fontSize: size }).run();
+    setCurrentFontSize(parseInt(size));
   }, [editor]);
+
+  const increaseFontSize = useCallback(() => {
+    const currentIndex = FONT_SIZES.findIndex(s => s.value === `${currentFontSize}px`);
+    if (currentIndex < FONT_SIZES.length - 1) {
+      setFontSize(FONT_SIZES[currentIndex + 1].value);
+    }
+  }, [currentFontSize, setFontSize]);
+
+  const decreaseFontSize = useCallback(() => {
+    const currentIndex = FONT_SIZES.findIndex(s => s.value === `${currentFontSize}px`);
+    if (currentIndex > 0) {
+      setFontSize(FONT_SIZES[currentIndex - 1].value);
+    }
+  }, [currentFontSize, setFontSize]);
+
+  const handleCustomFontAdd = useCallback((fontFamily: string) => {
+    if (!customFonts.includes(fontFamily)) {
+      setCustomFonts(prev => [...prev, fontFamily]);
+    }
+    editor?.chain().focus().setFontFamily(fontFamily).run();
+  }, [editor, customFonts]);
 
   if (!editor) return null;
 
@@ -179,40 +230,89 @@ export function ExegesisRichEditor({
                   <ChevronDown className="h-2.5 w-2.5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-40 p-1" align="start">
+              <PopoverContent className="w-48 p-1 max-h-64 overflow-y-auto" align="start">
                 {FONT_FAMILIES.map(f => (
                   <button key={f.value} className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted transition-colors" style={{ fontFamily: f.value }}
                     onClick={() => editor.chain().focus().setFontFamily(f.value).run()}>
                     {f.label}
                   </button>
                 ))}
+                {/* Custom fonts */}
+                {customFonts.length > 0 && (
+                  <>
+                    <Separator className="my-1" />
+                    <p className="text-[10px] font-medium text-muted-foreground px-2 py-1 uppercase">Personalizadas</p>
+                    {customFonts.map((f, i) => (
+                      <button key={i} className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted transition-colors" style={{ fontFamily: f }}
+                        onClick={() => editor.chain().focus().setFontFamily(f).run()}>
+                        {f.split(',')[0].replace(/'/g, '')}
+                      </button>
+                    ))}
+                  </>
+                )}
+                <Separator className="my-1" />
                 <button className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted text-muted-foreground"
                   onClick={() => editor.chain().focus().unsetFontFamily().run()}>
-                  Padrão
+                  <RotateCcw className="h-3 w-3 inline mr-1" /> Padrão
                 </button>
               </PopoverContent>
             </Popover>
 
-            {/* Font Size */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs">
-                  Aa <ChevronDown className="h-2.5 w-2.5" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-24 p-1" align="start">
-                {FONT_SIZES.map(s => (
-                  <button key={s} className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted"
-                    onClick={() => setFontSize(s)}>
-                    {s}
-                  </button>
-                ))}
-                <button className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted text-muted-foreground"
-                  onClick={() => editor.chain().focus().unsetMark('textStyle').run()}>
-                  Padrão
-                </button>
-              </PopoverContent>
-            </Popover>
+            {/* Font Upload */}
+            <FontUpload onFontAdded={handleCustomFontAdd} />
+
+            {/* Font Size Controls */}
+            <div className="flex items-center gap-0.5">
+              <ToolBtn tooltip="Diminuir fonte" onClick={decreaseFontSize}>
+                <Minus className="h-3 w-3" />
+              </ToolBtn>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs min-w-[50px] justify-center">
+                    {currentFontSize}px
+                    <ChevronDown className="h-2.5 w-2.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-32 p-2" align="start">
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase">Tamanho da Fonte</p>
+                    <div className="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto">
+                      {FONT_SIZES.map(s => (
+                        <button 
+                          key={s.value} 
+                          className={`px-1.5 py-1 text-xs rounded hover:bg-muted transition-colors ${currentFontSize === parseInt(s.value) ? 'bg-primary/20 font-semibold' : ''}`}
+                          onClick={() => setFontSize(s.value)}
+                        >
+                          {s.label.replace('px', '')}
+                        </button>
+                      ))}
+                    </div>
+                    <Separator />
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Personalizado:</span>
+                      <Input 
+                        type="number" 
+                        min="8" 
+                        max="200" 
+                        value={currentFontSize}
+                        onChange={(e) => setFontSize(`${e.target.value}px`)}
+                        className="h-7 w-16 text-xs"
+                      />
+                    </div>
+                    <button className="w-full text-left px-2 py-1 text-xs rounded hover:bg-muted text-muted-foreground"
+                      onClick={() => {
+                        editor.chain().focus().unsetMark('textStyle').run();
+                        setCurrentFontSize(16);
+                      }}>
+                      <RotateCcw className="h-3 w-3 inline mr-1" /> Resetar
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <ToolBtn tooltip="Aumentar fonte" onClick={increaseFontSize}>
+                <Plus className="h-3 w-3" />
+              </ToolBtn>
+            </div>
 
             <Separator orientation="vertical" className="h-6 mx-1" />
 
