@@ -36,6 +36,7 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
   const [mobileInfoBook, setMobileInfoBook] = useState<Book | null>(null);
   const [timelineBook, setTimelineBook] = useState<Book | null>(null);
   const isMobile = useIsMobile();
+  const { hasModuleAccess } = useAuth();
   // Inicia DESAGRUPADO por padrão
   const [groupByCategory, setGroupByCategory] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'reading' | 'completed'>(initialFilter);
