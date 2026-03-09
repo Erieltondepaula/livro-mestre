@@ -626,6 +626,96 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
               </div>
             )}
 
+            {/* Base Text Context - Anti-Heresy Guard */}
+            {analysis?.baseTextContext && (
+              <CollapsibleSection
+                icon={<BookMarked className="w-3.5 h-3.5 text-amber-700" />}
+                title="📖 Contexto do Texto Base"
+                expanded={expandedSections.includes('basetext')}
+                onToggle={() => toggleSection('basetext')}
+              >
+                {analysis.baseTextContext.passage && (
+                  <div className="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20 mb-2">
+                    <p className="text-xs font-bold text-amber-800">📜 {analysis.baseTextContext.passage}</p>
+                  </div>
+                )}
+
+                {analysis.baseTextContext.historicalContext && (
+                  <div className="mb-2">
+                    <p className="text-[10px] font-semibold text-foreground/80 mb-0.5">🏛️ Contexto Histórico:</p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{analysis.baseTextContext.historicalContext}</p>
+                  </div>
+                )}
+
+                {analysis.baseTextContext.literaryContext && (
+                  <div className="mb-2">
+                    <p className="text-[10px] font-semibold text-foreground/80 mb-0.5">📄 Contexto Literário:</p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{analysis.baseTextContext.literaryContext}</p>
+                  </div>
+                )}
+
+                {analysis.baseTextContext.culturalContext && (
+                  <div className="mb-2">
+                    <p className="text-[10px] font-semibold text-foreground/80 mb-0.5">🌍 Contexto Cultural:</p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{analysis.baseTextContext.culturalContext}</p>
+                  </div>
+                )}
+
+                {analysis.baseTextContext.theologicalContext && (
+                  <div className="mb-2">
+                    <p className="text-[10px] font-semibold text-foreground/80 mb-0.5">⛪ Contexto Teológico:</p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{analysis.baseTextContext.theologicalContext}</p>
+                  </div>
+                )}
+
+                {analysis.baseTextContext.keyTerms && analysis.baseTextContext.keyTerms.length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-[10px] font-semibold text-foreground/80 mb-1">🔤 Termos-chave no Original:</p>
+                    <div className="space-y-1">
+                      {analysis.baseTextContext.keyTerms.map((kt, idx) => (
+                        <div key={idx} className="p-1.5 rounded bg-blue-500/5 border border-blue-500/10">
+                          <p className="text-[10px]">
+                            <span className="font-bold text-blue-700">{kt.term}</span>
+                            {kt.transliteration && <span className="italic text-muted-foreground"> ({kt.transliteration})</span>}
+                            {kt.strongNumber && <span className="text-[9px] text-muted-foreground/60"> [{kt.strongNumber}]</span>}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{kt.meaning}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysis.baseTextContext.narrativePosition && (
+                  <div className="mb-2">
+                    <p className="text-[10px] font-semibold text-foreground/80 mb-0.5">📐 Narrativa Redentiva:</p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">{analysis.baseTextContext.narrativePosition}</p>
+                  </div>
+                )}
+
+                {analysis.baseTextContext.hermeneuticalDangers && analysis.baseTextContext.hermeneuticalDangers.length > 0 && (
+                  <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 mb-2">
+                    <p className="text-[10px] font-semibold text-red-700 mb-1">⚠️ PERIGOS HERMENÊUTICOS - Evite:</p>
+                    <div className="space-y-1">
+                      {analysis.baseTextContext.hermeneuticalDangers.map((danger, idx) => (
+                        <div key={idx} className="flex items-start gap-1.5 text-[10px] text-red-600/80">
+                          <XCircle className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                          <span>{danger}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysis.baseTextContext.anchorReminder && (
+                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <p className="text-[10px] font-semibold text-emerald-700 mb-0.5">⚓ Regra de Ouro - Ancoragem ao Texto:</p>
+                    <p className="text-[10px] text-emerald-700/80 italic">{analysis.baseTextContext.anchorReminder}</p>
+                  </div>
+                )}
+              </CollapsibleSection>
+            )}
+
             {/* Structure Checklist */}
             {analysis?.structureAnalysis && (
               <CollapsibleSection
