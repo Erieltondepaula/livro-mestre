@@ -706,6 +706,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                     onInsertReference={(ref) => {
                       setManualContent(prev => prev + `\n\n📖 ${ref}`);
                     }}
+                    onInsertContent={(text) => {
+                      setManualContent(prev => prev + text);
+                    }}
                   />
                 </div>
               )}
