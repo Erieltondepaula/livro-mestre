@@ -71,7 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPermissions(permissionsData?.map(p => p.module_key) || []);
   };
 
-  // Check if user has access to a module
+  // Check if user has access to a module or sub-function
+  // Supports: hasModuleAccess('exegese') for module-level
+  //           hasModuleAccess('exegese.analisar') for sub-function level
   const hasModuleAccess = useCallback((moduleKey: string): boolean => {
     // Help module is always accessible to all users
     if (moduleKey === 'ajuda') return true;
@@ -79,8 +81,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (profile?.is_master || isAdmin) {
       return true;
     }
-    // Regular users need explicit permission
-    return permissions.includes(moduleKey);
+    
+    // Check exact permission match
+    if (permissions.includes(moduleKey)) return true;
+    
+    // If checking a sub-function (e.g., 'exegese.analisar'), also check if full module access exists
+    if (moduleKey.includes('.')) {
+      const parentModule = moduleKey.split('.')[0];
+      if (permissions.includes(parentModule)) return true;
+    }
+    
+    // If checking a module (e.g., 'exegese'), also check if any sub-function exists
+    if (!moduleKey.includes('.')) {
+      const hasAnySub = permissions.some(p => p.startsWith(moduleKey + '.'));
+      if (hasAnySub) return true;
+    }
+    
+    return false;
   }, [profile?.is_master, isAdmin, permissions]);
 
   useEffect(() => {

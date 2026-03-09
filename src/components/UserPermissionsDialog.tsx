@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -10,8 +10,14 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked, Star, Quote, Book, StickyNote, ScrollText, BarChart3, Activity, HelpCircle, Brain } from 'lucide-react';
+import {
+  Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked,
+  Star, Quote, Book, StickyNote, ScrollText, BarChart3, Activity,
+  HelpCircle, Brain, ChevronDown, ChevronRight,
+} from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface UserProfile {
   id: string;
@@ -30,19 +36,65 @@ interface UserPermissionsDialogProps {
   isMasterEditing?: boolean;
 }
 
-// Lista completa de módulos
-const MODULES = [
-  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+interface SubFunction {
+  key: string;
+  label: string;
+}
+
+interface ModuleDefinition {
+  key: string;
+  label: string;
+  icon: any;
+  subFunctions?: SubFunction[];
+}
+
+// Lista completa de módulos com sub-funções
+const MODULES: ModuleDefinition[] = [
+  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, subFunctions: [
+    { key: 'dashboard.metricas', label: 'Métricas e Estatísticas' },
+    { key: 'dashboard.gamificacao', label: 'Gamificação (Metas e Conquistas)' },
+  ]},
   { key: 'cadastrar', label: 'Cadastrar Livro', icon: PlusCircle },
-  { key: 'livros', label: 'Livros Cadastrados', icon: Library },
-  { key: 'leitura', label: 'Registrar Leitura', icon: BookOpen },
+  { key: 'livros', label: 'Livros Cadastrados', icon: Library, subFunctions: [
+    { key: 'livros.editar', label: 'Editar Livros' },
+    { key: 'livros.excluir', label: 'Excluir Livros' },
+    { key: 'livros.timeline', label: 'Timeline de Leitura' },
+    { key: 'livros.metricas', label: 'Métricas do Livro' },
+  ]},
+  { key: 'leitura', label: 'Registrar Leitura', icon: BookOpen, subFunctions: [
+    { key: 'leitura.registrar', label: 'Registrar Nova Leitura' },
+    { key: 'leitura.historico', label: 'Histórico de Leituras' },
+    { key: 'leitura.editar', label: 'Editar/Excluir Leituras' },
+  ]},
   { key: 'status', label: 'Status dos Livros', icon: BookMarked },
-  { key: 'avaliacao', label: 'Avaliações', icon: Star },
-  { key: 'citacoes', label: 'Citações', icon: Quote },
-  { key: 'notas', label: 'Notas', icon: StickyNote },
+  { key: 'avaliacao', label: 'Avaliações', icon: Star, subFunctions: [
+    { key: 'avaliacao.criar', label: 'Criar Avaliação' },
+    { key: 'avaliacao.editar', label: 'Editar Avaliação' },
+  ]},
+  { key: 'citacoes', label: 'Citações', icon: Quote, subFunctions: [
+    { key: 'citacoes.adicionar', label: 'Adicionar Citações' },
+    { key: 'citacoes.listar', label: 'Listar Citações' },
+    { key: 'citacoes.tags', label: 'Gerenciar Tags' },
+  ]},
+  { key: 'notas', label: 'Notas', icon: StickyNote, subFunctions: [
+    { key: 'notas.criar', label: 'Criar/Editar Notas' },
+    { key: 'notas.pastas', label: 'Gerenciar Pastas' },
+    { key: 'notas.vinculos', label: 'Vínculos entre Notas' },
+    { key: 'notas.referencias', label: 'Referências Externas' },
+  ]},
   { key: 'biblia', label: 'Progresso Bíblia', icon: Book },
-  { key: 'exegese', label: 'Exegese Bíblica', icon: ScrollText },
-  { key: 'dicionario', label: 'Dicionário', icon: Book },
+  { key: 'exegese', label: 'Exegese Bíblica', icon: ScrollText, subFunctions: [
+    { key: 'exegese.analisar', label: 'Analisar Passagem' },
+    { key: 'exegese.historico', label: 'Histórico de Análises' },
+    { key: 'exegese.ref_cruzadas', label: 'Referências Cruzadas' },
+    { key: 'exegese.esbocos', label: 'Esboços' },
+    { key: 'exegese.materiais', label: 'Materiais' },
+    { key: 'exegese.titulos', label: 'Gerador de Títulos' },
+  ]},
+  { key: 'dicionario', label: 'Dicionário', icon: Book, subFunctions: [
+    { key: 'dicionario.buscar', label: 'Buscar Palavras' },
+    { key: 'dicionario.vocabulario', label: 'Vocabulário Salvo' },
+  ]},
   { key: 'flashcards', label: 'Flashcards', icon: Brain },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3 },
   { key: 'diagnostico', label: 'Diagnóstico', icon: Activity },
@@ -53,12 +105,14 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [expandedModules, setExpandedModules] = useState<string[]>([]);
   
   const isEditingMaster = user?.is_master ?? false;
 
   useEffect(() => {
     if (open && user) {
       loadPermissions();
+      setExpandedModules([]);
     }
   }, [open, user]);
 
@@ -87,10 +141,76 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
     }
   };
 
-  const handleToggle = (moduleKey: string) => {
-    setPermissions(prev => 
-      prev.includes(moduleKey) 
-        ? prev.filter(p => p !== moduleKey)
+  // Check if a module has full access (module key itself is in permissions)
+  const hasFullModuleAccess = (moduleKey: string) => permissions.includes(moduleKey);
+
+  // Check if a sub-function is enabled
+  const hasSubFunctionAccess = (subKey: string) => permissions.includes(subKey);
+
+  // Check if module has any access (full or partial)
+  const hasAnyAccess = (module: ModuleDefinition) => {
+    if (permissions.includes(module.key)) return true;
+    if (module.subFunctions) {
+      return module.subFunctions.some(sf => permissions.includes(sf.key));
+    }
+    return false;
+  };
+
+  // Toggle full module access
+  const handleToggleModule = (module: ModuleDefinition) => {
+    if (hasFullModuleAccess(module.key)) {
+      // Remove module and all its sub-functions
+      const keysToRemove = new Set([module.key, ...(module.subFunctions?.map(sf => sf.key) || [])]);
+      setPermissions(prev => prev.filter(p => !keysToRemove.has(p)));
+    } else {
+      // Add full module access, remove individual sub-functions (full access covers them)
+      const subKeys = new Set(module.subFunctions?.map(sf => sf.key) || []);
+      setPermissions(prev => [
+        ...prev.filter(p => p !== module.key && !subKeys.has(p)),
+        module.key,
+      ]);
+    }
+  };
+
+  // Toggle individual sub-function
+  const handleToggleSubFunction = (module: ModuleDefinition, subKey: string) => {
+    setPermissions(prev => {
+      let next = [...prev];
+      
+      // If module has full access, we need to switch to individual mode
+      if (next.includes(module.key) && module.subFunctions) {
+        // Remove full module key
+        next = next.filter(p => p !== module.key);
+        // Add all sub-functions except the one being toggled off
+        module.subFunctions.forEach(sf => {
+          if (sf.key !== subKey && !next.includes(sf.key)) {
+            next.push(sf.key);
+          }
+        });
+        return next;
+      }
+      
+      // Toggle individual sub-function
+      if (next.includes(subKey)) {
+        next = next.filter(p => p !== subKey);
+      } else {
+        next.push(subKey);
+      }
+      
+      // If all sub-functions are now enabled, upgrade to full module access
+      if (module.subFunctions && module.subFunctions.every(sf => next.includes(sf.key))) {
+        next = next.filter(p => !module.subFunctions!.some(sf => sf.key === p));
+        next.push(module.key);
+      }
+      
+      return next;
+    });
+  };
+
+  const toggleExpanded = (moduleKey: string) => {
+    setExpandedModules(prev =>
+      prev.includes(moduleKey)
+        ? prev.filter(k => k !== moduleKey)
         : [...prev, moduleKey]
     );
   };
@@ -101,6 +221,14 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
 
   const handleDeselectAll = () => {
     setPermissions([]);
+  };
+
+  // Count enabled sub-functions for a module
+  const getSubFunctionCount = (module: ModuleDefinition) => {
+    if (!module.subFunctions) return { enabled: 0, total: 0 };
+    if (hasFullModuleAccess(module.key)) return { enabled: module.subFunctions.length, total: module.subFunctions.length };
+    const enabled = module.subFunctions.filter(sf => permissions.includes(sf.key)).length;
+    return { enabled, total: module.subFunctions.length };
   };
 
   const handleSave = async () => {
@@ -157,7 +285,7 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
           <DialogDescription>
             {isEditingMaster 
               ? `${user?.display_name || user?.email} é o usuário mestre com acesso total ao sistema.`
-              : `Configure os módulos que ${user?.display_name || user?.email} poderá acessar.`
+              : `Configure os módulos e funções que ${user?.display_name || user?.email} poderá acessar.`
             }
           </DialogDescription>
         </DialogHeader>
@@ -179,7 +307,6 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {MODULES.map((module) => {
                 const Icon = module.icon;
-                
                 return (
                   <div
                     key={module.key}
@@ -204,46 +331,96 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleSelectAll}>
-                Selecionar todos
+                Habilitar todos
               </Button>
               <Button variant="outline" size="sm" onClick={handleDeselectAll}>
-                Desmarcar todos
+                Desabilitar todos
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <p className="text-xs text-muted-foreground">
+              Habilite módulos completos ou expanda para configurar funções individuais.
+            </p>
+
+            <div className="space-y-2">
               {MODULES.map((module) => {
                 const Icon = module.icon;
-                const isEnabled = permissions.includes(module.key);
-                
+                const isFullAccess = hasFullModuleAccess(module.key);
+                const hasAny = hasAnyAccess(module);
+                const hasSubs = module.subFunctions && module.subFunctions.length > 0;
+                const isExpanded = expandedModules.includes(module.key);
+                const counts = getSubFunctionCount(module);
+
                 return (
-                  <div
-                    key={module.key}
-                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                      isEnabled 
-                        ? 'bg-primary/5 border-primary/20' 
-                        : 'bg-muted/30 border-border'
-                    }`}
+                  <div key={module.key} className="rounded-lg border transition-colors overflow-hidden"
+                    style={{
+                      borderColor: hasAny ? 'hsl(var(--primary) / 0.3)' : undefined,
+                      backgroundColor: hasAny ? 'hsl(var(--primary) / 0.03)' : undefined,
+                    }}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon className={`w-4 h-4 ${isEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <Label 
-                        htmlFor={module.key} 
-                        className={`text-sm font-medium cursor-pointer ${
-                          isEnabled ? 'text-foreground' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {module.label}
-                      </Label>
+                    {/* Module header */}
+                    <div className="flex items-center justify-between p-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {hasSubs ? (
+                          <button
+                            onClick={() => toggleExpanded(module.key)}
+                            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                          </button>
+                        ) : (
+                          <div className="w-4" />
+                        )}
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${hasAny ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <div className="min-w-0">
+                          <Label
+                            className={`text-sm font-medium cursor-pointer block ${hasAny ? 'text-foreground' : 'text-muted-foreground'}`}
+                            onClick={() => hasSubs ? toggleExpanded(module.key) : handleToggleModule(module)}
+                          >
+                            {module.label}
+                          </Label>
+                          {hasSubs && !isFullAccess && counts.enabled > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              {counts.enabled}/{counts.total} funções
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Switch
+                        checked={isFullAccess}
+                        onCheckedChange={() => handleToggleModule(module)}
+                      />
                     </div>
-                    <Switch
-                      id={module.key}
-                      checked={isEnabled}
-                      onCheckedChange={() => handleToggle(module.key)}
-                    />
+
+                    {/* Sub-functions */}
+                    {hasSubs && isExpanded && (
+                      <div className="border-t border-border/50 bg-muted/20 px-3 py-2 space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground mb-2 px-8">
+                          Funções individuais:
+                        </p>
+                        {module.subFunctions!.map((sf) => {
+                          const isChecked = isFullAccess || hasSubFunctionAccess(sf.key);
+                          return (
+                            <label
+                              key={sf.key}
+                              className="flex items-center gap-3 px-8 py-1.5 rounded hover:bg-muted/40 cursor-pointer transition-colors"
+                            >
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() => handleToggleSubFunction(module, sf.key)}
+                                disabled={false}
+                              />
+                              <span className={`text-sm ${isChecked ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                {sf.label}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
