@@ -89,6 +89,7 @@ const MODULES: ModuleDefinition[] = [
     { key: 'exegese.ref_cruzadas', label: 'Referências Cruzadas' },
     { key: 'exegese.esbocos.ia', label: 'Esboços - Gerador por IA' },
     { key: 'exegese.esbocos.texto_livre', label: 'Esboços - Texto Livre' },
+    { key: 'exegese.esbocos.texto_livre.copiloto', label: 'Esboços - Copiloto IA (Texto Livre)' },
     { key: 'exegese.materiais', label: 'Materiais' },
     { key: 'exegese.titulos', label: 'Gerador de Títulos' },
   ]},
