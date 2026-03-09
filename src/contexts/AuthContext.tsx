@@ -85,16 +85,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check exact permission match
     if (permissions.includes(moduleKey)) return true;
     
-    // If checking a sub-function (e.g., 'exegese.analisar'), also check if full module access exists
-    if (moduleKey.includes('.')) {
-      const parentModule = moduleKey.split('.')[0];
-      if (permissions.includes(parentModule)) return true;
-    }
+    // Check if the root module is granted (e.g. 'exegese' grants 'exegese.esbocos.ia')
+    const rootModule = moduleKey.split('.')[0];
+    if (permissions.includes(rootModule)) return true;
     
-    // If checking a module (e.g., 'exegese'), also check if any sub-function exists
-    if (!moduleKey.includes('.')) {
-      const hasAnySub = permissions.some(p => p.startsWith(moduleKey + '.'));
-      if (hasAnySub) return true;
+    // Check if checking an intermediate module (e.g. 'exegese.esbocos') and a child is granted (e.g. 'exegese.esbocos.ia')
+    const hasAnySub = permissions.some(p => p.startsWith(moduleKey + '.'));
+    if (hasAnySub) return true;
+    
+    // Allow sub-functions if a mid-level parent is granted, though right now we only grant root or exact
+    // e.g. if 'exegese.esbocos' was granted, and we check 'exegese.esbocos.ia'
+    if (moduleKey.split('.').length > 2) {
+       const midLevel = moduleKey.split('.').slice(0, 2).join('.');
+       if (permissions.includes(midLevel)) return true;
     }
     
     return false;
