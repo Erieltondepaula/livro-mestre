@@ -51,11 +51,37 @@ Sua principal função é auxiliar o usuário na criação de esboços cada vez 
 
 Você possui um mecanismo de auto-evolução baseado em aprendizado incremental armazenado em banco de dados.
 
+## REGRA FUNDAMENTAL DE MEMÓRIA:
+⚠️ NUNCA utilize Local Storage. Toda informação é armazenada exclusivamente no Banco de Dados Persistente.
+
 ## SISTEMA DE EVOLUÇÃO (4 Níveis):
 - **Nível 1 — Assistente**: Ajuda a estruturar esboços
 - **Nível 2 — Analista**: Reconhece padrões do usuário
 - **Nível 3 — Aprendiz**: Ajusta produção ao estilo do usuário
 - **Nível 4 — Coprodutor**: Produz esboços quase idênticos ao estilo do usuário
+
+## MONITORAMENTO EM TEMPO REAL DO EDITOR:
+O Copiloto DEVE:
+- Monitorar continuamente: texto digitado, parágrafos, títulos, estrutura do esboço, elemento selecionado pelo usuário
+- Sempre que houver alteração: analisar o conteúdo, identificar estrutura, gerar sugestões úteis
+- O Copiloto deve conseguir ler o conteúdo completo do editor
+
+## ANÁLISE DE TEXTO SELECIONADO:
+Quando o usuário selecionar um trecho/seção (currentElement), o Copiloto deve automaticamente:
+- Ler o texto selecionado e o contexto completo
+- Identificar: tema, argumento, texto bíblico citado, coerência, possíveis melhorias
+- Mostrar sugestões automáticas contextuais
+
+## ANÁLISE PROATIVA:
+O Copiloto deve tomar iniciativa. Se detectar que falta uma seção, sugerir proativamente.
+Se detectar que um ponto não tem ilustração, sugerir uma.
+Se detectar que a aplicação é fraca, sugerir melhorias.
+
+## TOM DO COPILOTO:
+Falar de forma natural e direta:
+- "Analisei seu ponto 1. Uma ilustração aqui deixaria o sermão mais forte."
+- "Notei que seu desenvolvimento está muito técnico. Uma aplicação prática ajudaria."
+- "Esse argumento está muito bom. Talvez você possa reforçar com um exemplo bíblico."
 
 ## OBJETIVO FINAL:
 Tornar-se um coprodutor intelectual do usuário, capaz de prever sua estrutura de ensino, replicar seu estilo, acelerar a produção e melhorar continuamente.`;
@@ -107,6 +133,7 @@ Você é RIGOROSO e DETALHISTA. Você DEVE:
 - Se há marcadores como "TEXTO BASE", "INTRODUÇÃO", "PONTO 1", etc. → detecte a seção
 - Se não há marcadores, analise o conteúdo para inferir a seção
 - Identifique o último elemento completo e o elemento sendo escrito agora
+- **CRÍTICO**: Considere o campo "currentElement" que indica qual seção o usuário SELECIONOU na interface. Use isso como contexto principal para personalizar a análise.
 
 ## REGRAS DE ANÁLISE DO SERMÃO:
 
@@ -159,7 +186,7 @@ Você é RIGOROSO e DETALHISTA. Você DEVE:
    
    REGRA DE OURO: O sermão é movido pelo TEXTO, não pelo pregador. Se qualquer seção se afasta do texto base, ALERTE IMEDIATAMENTE.
 
-8. **APRENDIZADO DO ESTILO DO USUÁRIO** (NOVO):
+8. **APRENDIZADO DO ESTILO DO USUÁRIO**:
    Ao analisar o esboço, identifique e retorne:
    - Padrões de introdução usados pelo usuário
    - Padrão de títulos (estilo, formato)
@@ -170,6 +197,19 @@ Você é RIGOROSO e DETALHISTA. Você DEVE:
    - Estilo geral de escrita
    Retorne isso no campo "detectedPatterns".
 
+9. **ANÁLISE DA SEÇÃO SELECIONADA** (NOVO - CRÍTICO):
+   O campo "currentElement" indica qual seção o usuário está editando na interface.
+   Você DEVE:
+   - Dar sugestões ESPECÍFICAS para essa seção
+   - Analisar o conteúdo já escrito nessa seção
+   - Sugerir o que falta para essa seção ficar completa
+   - Comparar com esboços anteriores do usuário para essa mesma seção
+   - Oferecer sugestões proativas como:
+     * "Analisei o trecho selecionado. Sugestões: ..."
+     * "Essa explicação pode ser reforçada com o texto de ..."
+     * "Esse parágrafo poderia ser resumido"
+     * "A aplicação prática ainda não aparece aqui"
+
 FORMATO DE RESPOSTA (JSON estrito):
 {
   "overallScore": 0-100,
@@ -179,9 +219,10 @@ FORMATO DE RESPOSTA (JSON estrito):
     "completedSections": ["titulo", "tema", ...],
     "nextExpectedSection": "nome da próxima seção",
     "progressPercent": 0-100,
-    "guidance": "Mensagem DETALHADA e ESPECÍFICA sobre o que fazer agora. Não seja vago.",
-    "sectionTip": "Dica PRÁTICA e ESPECÍFICA.",
-    "contentSuggestions": ["Sugestão 1 concreta com texto exemplo", "Sugestão 2 concreta com texto exemplo", "Sugestão 3 concreta"]
+    "guidance": "Mensagem DETALHADA, PROATIVA e ESPECÍFICA sobre o que fazer agora. Use tom natural: 'Analisei seu esboço. Notei que...' Não seja vago.",
+    "sectionTip": "Dica PRÁTICA e ESPECÍFICA para a seção que o usuário está editando (currentElement).",
+    "contentSuggestions": ["Sugestão 1 concreta com texto exemplo", "Sugestão 2 concreta com texto exemplo", "Sugestão 3 concreta"],
+    "proactiveNotes": ["Nota proativa 1: ex. 'O ponto 1 ainda não possui ilustração'", "Nota proativa 2: ex. 'Uma aplicação prática poderia ser adicionada após o ponto 2'"]
   },
   "grammarIssues": [
     {
@@ -273,9 +314,11 @@ REGRAS IMPORTANTES:
 - Corrija TODOS os erros gramaticais, mesmo os pequenos.
 - A "explanation" em grammarIssues é OBRIGATÓRIA - explique a regra.
 - "contentSuggestions" deve ter 2-4 sugestões CONCRETAS de conteúdo para a seção atual.
+- "proactiveNotes" em detectedPosition deve ter 2-4 notas proativas sobre o que falta no esboço.
 - "baseTextContext" é OBRIGATÓRIO sempre que um texto base for detectado. Se não houver texto base ainda, retorne null.
 - "detectedPatterns" é OBRIGATÓRIO - analise o estilo do usuário com base no conteúdo.
-- Cada seção do sermão DEVE ser verificada contra o texto base. Se se afasta, alerte em thematicAlert.`;
+- Cada seção do sermão DEVE ser verificada contra o texto base. Se se afasta, alerte em thematicAlert.
+- Use o campo "currentElement" para focar sua análise na seção que o usuário está editando.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -353,6 +396,66 @@ serve(async (req) => {
       console.error("Error fetching copilot outlines:", e);
     }
 
+    // Fetch internal materials for context
+    let materialsContext = "";
+    try {
+      const { data: materials } = await supabase
+        .from("exegesis_materials")
+        .select("title, description, theme, keywords, bible_references, material_category, author")
+        .limit(30);
+
+      if (materials && materials.length > 0) {
+        materialsContext = materials.map((m: any, idx: number) => {
+          const parts = [`${idx + 1}. "${m.title}" [${m.material_category}]`];
+          if (m.author) parts.push(`   Autor: ${m.author}`);
+          if (m.theme) parts.push(`   Tema: ${m.theme}`);
+          if (m.keywords?.length) parts.push(`   Palavras-chave: ${(m.keywords as string[]).join(", ")}`);
+          if (m.bible_references?.length) parts.push(`   Referências: ${(m.bible_references as string[]).join(", ")}`);
+          return parts.join("\n");
+        }).join("\n");
+      }
+    } catch (e) {
+      console.error("Error fetching materials:", e);
+    }
+
+    // Fetch previous exegesis analyses
+    let exegesisContext = "";
+    try {
+      const { data: analyses } = await supabase
+        .from("exegesis_analyses")
+        .select("passage, analysis_type, content")
+        .limit(10)
+        .order("created_at", { ascending: false });
+
+      if (analyses && analyses.length > 0) {
+        exegesisContext = analyses.map((a: any, idx: number) => {
+          const plainContent = a.content?.replace(/<[^>]+>/g, '').substring(0, 200) || '';
+          return `${idx + 1}. ${a.passage} [${a.analysis_type}]: ${plainContent}`;
+        }).join("\n");
+      }
+    } catch (e) {
+      console.error("Error fetching analyses:", e);
+    }
+
+    // Fetch saved quotes
+    let quotesContext = "";
+    try {
+      const { data: quotes } = await supabase
+        .from("quotes")
+        .select("quote, bible_book, bible_chapter, bible_verse, tags")
+        .limit(15)
+        .order("created_at", { ascending: false });
+
+      if (quotes && quotes.length > 0) {
+        quotesContext = quotes.map((q: any, idx: number) => {
+          const ref = q.bible_book ? `${q.bible_book} ${q.bible_chapter || ''}:${q.bible_verse || ''}` : '';
+          return `${idx + 1}. "${q.quote.substring(0, 150)}"${ref ? ` — ${ref}` : ''}`;
+        }).join("\n");
+      }
+    } catch (e) {
+      console.error("Error fetching quotes:", e);
+    }
+
     let contextParts: string[] = [];
     if (previousElements) {
       if (previousElements.title) contextParts.push(`TÍTULO: ${previousElements.title}`);
@@ -374,11 +477,25 @@ serve(async (req) => {
     const userMessage = `CONTEXTO DO SERMÃO ATÉ AGORA:
 ${contextParts.length > 0 ? contextParts.join('\n') : 'Nenhum elemento anterior ainda.'}
 
-ELEMENTO SELECIONADO PELO USUÁRIO: ${currentElement || 'não especificado'}
+⭐ SEÇÃO QUE O USUÁRIO ESTÁ EDITANDO AGORA: ${currentElement || 'não especificado'}
+(Foque sua análise e sugestões NESTA SEÇÃO. O usuário selecionou esta seção na interface.)
 
 ${userPatternsContext ? `\nPERFIL DE ESTILO DO USUÁRIO (aprendido de esboços anteriores):\n${userPatternsContext}\n\nUSE ESTES PADRÕES para personalizar suas sugestões ao estilo do usuário.\n` : ''}
 
 ${previousOutlinesContext ? `\nESBOÇOS ANTERIORES DO USUÁRIO:\n${previousOutlinesContext}\n\nCompare o esboço atual com os anteriores. Detecte melhorias e novos padrões.\n` : ''}
+
+========== DADOS INTERNOS DO USUÁRIO ==========
+
+📚 MATERIAIS CADASTRADOS:
+${materialsContext || "Nenhum material cadastrado."}
+
+🔍 ANÁLISES EXEGÉTICAS ANTERIORES:
+${exegesisContext || "Nenhuma análise anterior."}
+
+💬 CITAÇÕES SALVAS:
+${quotesContext || "Nenhuma citação salva."}
+
+========== FIM DOS DADOS INTERNOS ==========
 
 CONTEÚDO COMPLETO DO ESBOÇO (texto livre):
 ${content}
@@ -394,8 +511,12 @@ INSTRUÇÕES OBRIGATÓRIAS:
 8. Se a Explicação tem menos de 5 parágrafos, alerte E sugira conteúdo específico
 9. DETECTE PADRÕES do estilo do usuário no campo detectedPatterns
 10. Forneça CONTEXTO COMPLETO DO TEXTO BASE (baseTextContext) - OBRIGATÓRIO para evitar heresias
+11. Forneça 2-4 NOTAS PROATIVAS no campo proactiveNotes - identifique o que falta e sugira
+12. Use os DADOS INTERNOS (materiais, análises, citações) para enriquecer suas sugestões — cite-os por nome quando relevantes
+13. FOQUE na seção que o usuário selecionou (currentElement): "${currentElement || 'não especificado'}"
 
 NÃO SEJA VAGO. Cada feedback deve ser acionável e específico.
+Use tom natural e proativo: "Analisei seu esboço. Notei que...", "Uma sugestão para melhorar...", "Olha, encontrei nos seus materiais..."
 
 Responda APENAS com o JSON no formato especificado.`;
 
@@ -412,7 +533,7 @@ Responda APENAS com o JSON no formato especificado.`;
           { role: "user", content: userMessage },
         ],
         temperature: 0.3,
-        max_tokens: 6000,
+        max_tokens: 8000,
       }),
     });
 
@@ -461,6 +582,7 @@ Responda APENAS com o JSON no formato especificado.`;
           guidance: "Continue escrevendo seu esboço.",
           sectionTip: "",
           contentSuggestions: [],
+          proactiveNotes: [],
         },
         grammarIssues: [],
         coherenceChecks: [],
@@ -505,14 +627,12 @@ Responda APENAS com o JSON no formato especificado.`;
         if (existing) {
           await supabase.from("copilot_user_patterns").update(patternData).eq("id", existing.id);
         } else {
-          // Get user_id from auth
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             await supabase.from("copilot_user_patterns").insert({ ...patternData, user_id: user.id });
           }
         }
 
-        // Add copilot level to response
         analysis.copilotLevel = newLevel;
       } catch (e) {
         console.error("Error saving patterns:", e);

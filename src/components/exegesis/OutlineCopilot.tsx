@@ -56,6 +56,7 @@ interface DetectedPosition {
   guidance: string;
   sectionTip: string;
   contentSuggestions?: string[];
+  proactiveNotes?: string[];
 }
 
 interface PointDetail {
@@ -598,6 +599,21 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
                       <span className="text-amber-700/80">
                         {SECTION_LABELS[detectedPos.nextExpectedSection] || detectedPos.nextExpectedSection}
                       </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Proactive Notes */}
+                {detectedPos.proactiveNotes && detectedPos.proactiveNotes.length > 0 && (
+                  <div className="p-3 lg:p-4 rounded-lg bg-rose-500/10 border border-rose-500/20">
+                    <p className="text-xs lg:text-sm font-semibold text-rose-700 mb-2">🔔 Notas Proativas do Copiloto:</p>
+                    <div className="space-y-2">
+                      {detectedPos.proactiveNotes.map((note, idx) => (
+                        <div key={idx} className="flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs lg:text-sm text-rose-700/80 leading-relaxed">{note}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
