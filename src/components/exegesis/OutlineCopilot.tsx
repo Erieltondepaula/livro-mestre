@@ -56,6 +56,7 @@ interface DetectedPosition {
   guidance: string;
   sectionTip: string;
   contentSuggestions?: string[];
+  proactiveNotes?: string[];
 }
 
 interface PointDetail {
