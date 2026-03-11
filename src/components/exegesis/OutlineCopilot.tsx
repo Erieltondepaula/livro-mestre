@@ -239,7 +239,7 @@ const SOURCE_TYPE_ICONS: Record<string, typeof Globe> = {
   pregacao: Mic,
 };
 
-export function OutlineCopilot({ content, currentElement, previousElements, onApplySuggestion, onInsertReference, onInsertContent }: Props) {
+export function OutlineCopilot({ content, currentElement, selectedText, previousElements, onApplySuggestion, onInsertReference, onInsertContent }: Props) {
   const [analysis, setAnalysis] = useState<CopilotAnalysis | null>(null);
   const [research, setResearch] = useState<ResearchData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
