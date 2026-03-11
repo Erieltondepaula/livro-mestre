@@ -278,6 +278,7 @@ export function OutlineCopilot({ content, currentElement, selectedText, previous
           body: JSON.stringify({
             content: plainContent,
             currentElement,
+            selectedText: selectedText || '',
             previousElements,
           }),
         }
