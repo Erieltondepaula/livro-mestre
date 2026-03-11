@@ -183,6 +183,7 @@ interface PreviousElements {
 interface Props {
   content: string;
   currentElement: string;
+  selectedText?: string;
   previousElements?: PreviousElements;
   onApplySuggestion?: (original: string, replacement: string) => void;
   onInsertReference?: (reference: string) => void;
