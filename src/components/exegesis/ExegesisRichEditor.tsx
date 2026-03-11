@@ -31,11 +31,13 @@ import {
 export interface ExegesisRichEditorRef {
   insertContent: (text: string) => void;
   replaceText: (original: string, replacement: string) => void;
+  getSelectedText: () => string;
 }
 
 interface ExegesisRichEditorProps {
   content: string;
   onChange: (html: string) => void;
+  onSelectionChange?: (selectedText: string) => void;
   placeholder?: string;
   editable?: boolean;
   className?: string;
@@ -52,15 +54,15 @@ const FONT_COLORS = [
 
 // Legenda oficial de cores para sermões/exegese
 const SEMANTIC_HIGHLIGHT_COLORS = [
-  { color: '#BFDBFE', label: 'Azul', meaning: 'Citações Bíblicas', emoji: '🔵' },
-  { color: '#1a1a1a', label: 'Preto', meaning: 'Explanação Principal', emoji: '⚫', isTextColor: true },
-  { color: '#FECACA', label: 'Vermelho', meaning: 'Ilustrações / Ênfase', emoji: '🔴' },
-  { color: '#BBF7D0', label: 'Verde', meaning: 'Aplicação Prática', emoji: '🟢' },
+  { color: '#BFDBFE', label: 'Azul', meaning: '🔵 Estrutura', emoji: '🔵' },
+  { color: '#BBF7D0', label: 'Verde', meaning: '🟢 Explicação bíblica', emoji: '🟢' },
+  { color: '#FED7AA', label: 'Laranja', meaning: '🟠 Ilustração', emoji: '🟠' },
+  { color: '#FECACA', label: 'Vermelho', meaning: '🔴 Verdade e Aplicação', emoji: '🔴' },
   { color: '#FEF08A', label: 'Amarelo', meaning: 'Notas Pessoais', emoji: '🟡' },
   { color: '#DDD6FE', label: 'Roxo', meaning: 'Centralidade de Cristo', emoji: '🟣' },
 ];
 
-const HIGHLIGHT_COLORS = SEMANTIC_HIGHLIGHT_COLORS.filter(c => !c.isTextColor);
+const HIGHLIGHT_COLORS = SEMANTIC_HIGHLIGHT_COLORS;
 
 const FONT_SIZES = [
   { value: '8px', label: '8px' },
@@ -133,6 +135,7 @@ const FontSize = TextStyle.extend({
 export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRichEditorProps>(({
   content,
   onChange,
+  onSelectionChange,
   placeholder = 'Comece a editar...',
   editable = true,
   className = '',
@@ -162,6 +165,15 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    onSelectionUpdate: ({ editor }) => {
+      if (onSelectionChange) {
+        const { from, to } = editor.state.selection;
+        if (from !== to) {
+          const selectedText = editor.state.doc.textBetween(from, to, ' ');
+          onSelectionChange(selectedText);
+        }
+      }
+    },
     editorProps: {
       attributes: {
         class: `exegesis-editor focus:outline-none p-4 ${className}`,
@@ -184,6 +196,12 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
         editor.commands.setContent(newContent);
         onChange(newContent);
       }
+    },
+    getSelectedText: () => {
+      if (!editor) return '';
+      const { from, to } = editor.state.selection;
+      if (from === to) return '';
+      return editor.state.doc.textBetween(from, to, ' ');
     },
   }), [editor, onChange]);
 
@@ -231,9 +249,9 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="border rounded-lg overflow-hidden bg-background">
+      <div className="border rounded-lg overflow-hidden bg-background flex flex-col h-full">
         {editable && (
-          <div className="border-b bg-muted/50 p-1 flex flex-wrap gap-px items-center">
+          <div className="border-b bg-muted/50 p-1 flex flex-wrap gap-px items-center sticky top-0 z-50">
             {/* Undo/Redo */}
             <ToolBtn tooltip="Desfazer" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
               <Undo className="h-3.5 w-3.5" />
@@ -387,12 +405,12 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
               </PopoverTrigger>
               <PopoverContent className="w-52 p-2" align="start">
                 <p className="text-[10px] font-medium text-muted-foreground mb-1.5 uppercase">Marcador de Texto</p>
-                <div className="grid grid-cols-4 gap-1 mb-2">
+                <div className="grid grid-cols-3 gap-1 mb-2">
                   {HIGHLIGHT_COLORS.map(h => (
                     <button key={h.color} className="flex flex-col items-center gap-0.5 p-1 rounded hover:bg-muted/50 transition-colors"
                       onClick={() => editor.chain().focus().toggleHighlight({ color: h.color }).run()}>
                       <span className="w-6 h-6 rounded border border-border" style={{ backgroundColor: h.color }} />
-                      <span className="text-[9px] text-muted-foreground">{h.label}</span>
+                      <span className="text-[9px] text-muted-foreground">{h.meaning}</span>
                     </button>
                   ))}
                 </div>
@@ -468,19 +486,15 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
 
         {/* Color Legend Panel */}
         {showLegend && (
-          <div className="border-b bg-muted/30 px-3 py-2">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">🎨 Legenda de Cores</p>
+          <div className="border-b bg-muted/30 px-3 py-2 flex-shrink-0">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">🎨 Legenda de Cores do Sermão</p>
             <div className="flex flex-wrap gap-2">
               {SEMANTIC_HIGHLIGHT_COLORS.map(c => (
                 <button
                   key={c.color}
                   className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs hover:bg-muted/60 transition-colors border border-border/50"
                   onClick={() => {
-                    if (c.isTextColor) {
-                      editor?.chain().focus().setColor(c.color).run();
-                    } else {
-                      editor?.chain().focus().toggleHighlight({ color: c.color }).run();
-                    }
+                    editor?.chain().focus().toggleHighlight({ color: c.color }).run();
                   }}
                 >
                   <span className="text-sm">{c.emoji}</span>
@@ -492,7 +506,10 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
           </div>
         )}
 
-        <EditorContent editor={editor} />
+        {/* Scrollable editor content */}
+        <div className="flex-1 overflow-y-auto">
+          <EditorContent editor={editor} />
+        </div>
       </div>
     </TooltipProvider>
   );

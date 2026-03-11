@@ -111,10 +111,6 @@ function exportAsPdf(content: string, passage: string) {
     h3{font-size:13pt;margin-top:12pt}strong{font-weight:bold}em{font-style:italic}
     mark{padding:2px 4px;border-radius:3px}
     blockquote{border-left:3px solid #666;padding-left:12px;color:#555;margin:8pt 0}
-    .citation-highlight{background-color:#FEF3C7 !important;border-left:3px solid #D97706;padding:2px 6px;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .citation-source{color:#92400E !important;font-weight:bold;font-size:0.9em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    span[style*="background-color:#FEF3C7"]{background-color:#FEF3C7 !important;border-left:3px solid #D97706;padding:2px 6px;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    span[style*="color:#92400E"]{color:#92400E !important;font-weight:bold;font-size:0.9em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     @media print{body{margin:1.5cm}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}}</style></head><body>${content}</body></html>`);
   printWindow.document.close();
   setTimeout(() => printWindow.print(), 500);
@@ -126,13 +122,8 @@ async function exportAsPptx(content: string, passage: string) {
   pptx.layout = 'LAYOUT_WIDE';
   pptx.author = 'Exegese Bíblica';
   pptx.title = passage;
-
   const plainText = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-  
-  // Parse structured content
   const lines = plainText.split('\n').filter(l => l.trim());
-  
-  // Extract title, theme, base text
   let sermonTitle = passage;
   let sermonTheme = '';
   let baseText = '';
@@ -140,16 +131,12 @@ async function exportAsPptx(content: string, passage: string) {
   const applications: string[] = [];
   let currentPoint: { title: string; body: string[]; references: string[] } | null = null;
   let inApplications = false;
-
   for (const line of lines) {
     const trimmed = line.trim();
-    if (/^(TÍTULO|Título)\s*[:：]/i.test(trimmed)) {
-      sermonTitle = trimmed.replace(/^(TÍTULO|Título)\s*[:：]\s*/i, '').trim();
-    } else if (/^(TEMA|Tema)\s*[:：]/i.test(trimmed)) {
-      sermonTheme = trimmed.replace(/^(TEMA|Tema)\s*[:：]\s*/i, '').trim();
-    } else if (/^(TEXTO BASE|Texto Base)\s*[:：]/i.test(trimmed)) {
-      baseText = trimmed.replace(/^(TEXTO BASE|Texto Base)\s*[:：]\s*/i, '').trim();
-    } else if (/^(PONTO|PONT)\s*\d+|^[IVX]+\.|^\d+[\.\)]\s*[A-ZÀ-Ú]/i.test(trimmed) || /^#+\s*\d+[\.\)]?\s/i.test(trimmed)) {
+    if (/^(TÍTULO|Título)\s*[:：]/i.test(trimmed)) { sermonTitle = trimmed.replace(/^(TÍTULO|Título)\s*[:：]\s*/i, '').trim(); }
+    else if (/^(TEMA|Tema)\s*[:：]/i.test(trimmed)) { sermonTheme = trimmed.replace(/^(TEMA|Tema)\s*[:：]\s*/i, '').trim(); }
+    else if (/^(TEXTO BASE|Texto Base)\s*[:：]/i.test(trimmed)) { baseText = trimmed.replace(/^(TEXTO BASE|Texto Base)\s*[:：]\s*/i, '').trim(); }
+    else if (/^(PONTO|PONT)\s*\d+|^[IVX]+\./i.test(trimmed) || /^#+\s*\d+[.)]?\s/i.test(trimmed)) {
       if (currentPoint) points.push(currentPoint);
       const title = trimmed.replace(/^#+\s*/, '').replace(/^\*+/, '').replace(/\*+$/, '').trim();
       currentPoint = { title, body: [], references: [] };
@@ -166,83 +153,44 @@ async function exportAsPptx(content: string, passage: string) {
     }
   }
   if (currentPoint) points.push(currentPoint);
-
-  // Colors
-  const PRIMARY = '1a1a2e';
-  const ACCENT = '8B5E3C';
-  const LIGHT_BG = 'FDF8F0';
-  const TEXT_DARK = '1a1a1a';
-  const TEXT_MED = '555555';
-
-  // === SLIDE 1: Title ===
+  const PRIMARY = '1a1a2e'; const ACCENT = '8B5E3C'; const LIGHT_BG = 'FDF8F0'; const TEXT_DARK = '1a1a1a'; const TEXT_MED = '555555';
   const titleSlide = pptx.addSlide();
   titleSlide.background = { color: PRIMARY };
   titleSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.15, fill: { color: ACCENT } });
   titleSlide.addText(sermonTitle, { x: 0.8, y: 1.2, w: 11.5, h: 2, fontSize: 40, bold: true, color: 'FFFFFF', align: 'center', fontFace: 'Calibri' });
-  if (sermonTheme) {
-    titleSlide.addText(sermonTheme, { x: 0.8, y: 3.3, w: 11.5, h: 0.8, fontSize: 20, color: 'CCCCCC', align: 'center', fontFace: 'Calibri', italic: true });
-  }
-  if (baseText) {
-    titleSlide.addText(`📖 ${baseText}`, { x: 0.8, y: 4.3, w: 11.5, h: 0.6, fontSize: 16, color: ACCENT, align: 'center', fontFace: 'Calibri' });
-  }
+  if (sermonTheme) titleSlide.addText(sermonTheme, { x: 0.8, y: 3.3, w: 11.5, h: 0.8, fontSize: 20, color: 'CCCCCC', align: 'center', fontFace: 'Calibri', italic: true });
+  if (baseText) titleSlide.addText(`📖 ${baseText}`, { x: 0.8, y: 4.3, w: 11.5, h: 0.6, fontSize: 16, color: ACCENT, align: 'center', fontFace: 'Calibri' });
   titleSlide.addShape(pptx.ShapeType.rect, { x: 4.5, y: 5.2, w: 4, h: 0.04, fill: { color: ACCENT } });
-
-  // === SLIDES PER POINT ===
   points.forEach((point, idx) => {
     const slide = pptx.addSlide();
     slide.background = { color: LIGHT_BG };
-    
-    // Header bar
     slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 1, fill: { color: PRIMARY } });
     slide.addText(`PONTO ${idx + 1}`, { x: 0.5, y: 0.05, w: 2, h: 0.35, fontSize: 11, color: ACCENT, fontFace: 'Calibri', bold: true });
     slide.addText(point.title.replace(/^(PONTO\s*\d+\s*[-:.]?\s*)/i, ''), { x: 0.5, y: 0.3, w: 12, h: 0.6, fontSize: 22, bold: true, color: 'FFFFFF', fontFace: 'Calibri' });
-
-    // Body content (limit to fit slide)
-    const bodyText = point.body.slice(0, 8).map(l => {
-      const clean = l.replace(/^[\-•*]\s*/, '').trim();
-      return { text: `• ${clean}\n`, options: { fontSize: 13, color: TEXT_DARK, fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.3 } as any };
-    });
-    
-    if (bodyText.length > 0) {
-      slide.addText(bodyText, { x: 0.5, y: 1.3, w: 8.5, h: 3.8, valign: 'top' });
-    }
-
-    // References sidebar
+    const bodyText = point.body.slice(0, 8).map(l => ({ text: `• ${l.replace(/^[\-•*]\s*/, '').trim()}\n`, options: { fontSize: 13, color: TEXT_DARK, fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.3 } as any }));
+    if (bodyText.length > 0) slide.addText(bodyText, { x: 0.5, y: 1.3, w: 8.5, h: 3.8, valign: 'top' });
     if (point.references.length > 0) {
       slide.addShape(pptx.ShapeType.rect, { x: 9.3, y: 1.3, w: 3.5, h: 3.8, fill: { color: 'F5E6D0' }, rectRadius: 0.1 });
       slide.addText('📖 Referências', { x: 9.5, y: 1.4, w: 3.1, h: 0.4, fontSize: 11, bold: true, color: ACCENT, fontFace: 'Calibri' });
-      const refTexts = point.references.slice(0, 5).map(r => ({
-        text: `${r.replace('👉 ', '').substring(0, 80)}\n`,
-        options: { fontSize: 9, color: TEXT_MED, fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.2 } as any,
-      }));
+      const refTexts = point.references.slice(0, 5).map(r => ({ text: `${r.replace('👉 ', '').substring(0, 80)}\n`, options: { fontSize: 9, color: TEXT_MED, fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.2 } as any }));
       slide.addText(refTexts, { x: 9.5, y: 1.85, w: 3.1, h: 3, valign: 'top' });
     }
-
-    // Footer
     slide.addShape(pptx.ShapeType.rect, { x: 0, y: 7.1, w: '100%', h: 0.4, fill: { color: PRIMARY } });
     slide.addText(passage, { x: 0.5, y: 7.1, w: 12, h: 0.4, fontSize: 10, color: '999999', fontFace: 'Calibri', align: 'right' });
   });
-
-  // === FINAL SLIDE: Applications ===
   if (applications.length > 0) {
     const appSlide = pptx.addSlide();
     appSlide.background = { color: PRIMARY };
     appSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: 0.15, fill: { color: ACCENT } });
     appSlide.addText('✅ APLICAÇÕES PRÁTICAS', { x: 0.5, y: 0.5, w: 12, h: 0.8, fontSize: 28, bold: true, color: 'FFFFFF', fontFace: 'Calibri', align: 'center' });
-    const appTexts = applications.slice(0, 8).map(a => ({
-      text: `• ${a.replace(/^[\-•*]\s*/, '').trim()}\n\n`,
-      options: { fontSize: 16, color: 'DDDDDD', fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.4 } as any,
-    }));
+    const appTexts = applications.slice(0, 8).map(a => ({ text: `• ${a.replace(/^[\-•*]\s*/, '').trim()}\n\n`, options: { fontSize: 16, color: 'DDDDDD', fontFace: 'Calibri', breakLine: true, lineSpacingMultiple: 1.4 } as any }));
     appSlide.addText(appTexts, { x: 1, y: 1.8, w: 11, h: 4.5, valign: 'top' });
     appSlide.addShape(pptx.ShapeType.rect, { x: 4.5, y: 6.8, w: 4, h: 0.04, fill: { color: ACCENT } });
   }
-
-  // === CLOSING SLIDE ===
   const closeSlide = pptx.addSlide();
   closeSlide.background = { color: PRIMARY };
   closeSlide.addText('"Prega a palavra, insta a tempo e fora de tempo"', { x: 1, y: 2, w: 11, h: 1.5, fontSize: 24, italic: true, color: 'CCCCCC', align: 'center', fontFace: 'Georgia' });
   closeSlide.addText('2 Timóteo 4:2 (ACF)', { x: 1, y: 3.5, w: 11, h: 0.6, fontSize: 14, color: ACCENT, align: 'center', fontFace: 'Calibri' });
-
   const blob = await pptx.write({ outputType: 'blob' }) as Blob;
   downloadBlob(blob, `esboço-${passage.replace(/\s+/g, '-')}.pptx`);
 }
@@ -324,7 +272,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const [titleGenOpen, setTitleGenOpen] = useState(false);
   const [outlineMode, setOutlineMode] = useState<'ai' | 'manual'>(hasModuleAccess('exegese.esbocos.ia') ? 'ai' : 'manual');
   const [manualContent, setManualContent] = useState('');
-  const [currentElement, setCurrentElement] = useState('introducao'); // Elemento sendo editado no modo manual
+  const [currentElement, setCurrentElement] = useState('introducao');
+  const [selectedText, setSelectedText] = useState('');
   const [previousElements, setPreviousElements] = useState<{
     title?: string;
     theme?: string;
@@ -333,11 +282,57 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     points?: Array<{ title?: string; development?: string; illustration?: string; phrase?: string; application?: string }>;
     conclusion?: string;
   }>({});
-  const [showCopilot, setShowCopilot] = useState(true); // Mostrar/esconder copiloto
+  const [showCopilot, setShowCopilot] = useState(true);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [lastSavedOutlineId, setLastSavedOutlineId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const editorRef = useRef<ExegesisRichEditorRef | null>(null);
+  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedContentRef = useRef<string>('');
 
   useEffect(() => { onFetch(); }, [onFetch]);
+
+  // ===== AUTO-SAVE =====
+  useEffect(() => {
+    if (!manualContent.trim() || outlineMode !== 'manual') return;
+    
+    // Don't auto-save if content hasn't changed
+    if (manualContent === lastSavedContentRef.current) return;
+    
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    
+    autoSaveRef.current = setTimeout(async () => {
+      const passage = getPassageText();
+      if (!passage || !manualContent.trim()) return;
+      
+      setAutoSaveStatus('saving');
+      try {
+        if (lastSavedOutlineId) {
+          // Update existing outline
+          await onUpdateContent(lastSavedOutlineId, manualContent);
+        } else {
+          // Create new outline
+          const result = await onSave({
+            passage,
+            outline_type: selectedType,
+            content: manualContent
+          });
+          if (result) {
+            setLastSavedOutlineId(result.id);
+          }
+        }
+        lastSavedContentRef.current = manualContent;
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      } catch {
+        setAutoSaveStatus('idle');
+      }
+    }, 5000);
+
+    return () => {
+      if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    };
+  }, [manualContent, outlineMode]);
 
   const bibleBookNames = getBibleBookNames();
   const chapters = bibleBook ? getChaptersArray(bibleBook) : [];
@@ -354,16 +349,13 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   // Filter outlines
   const filteredOutlines = useMemo(() => {
     return outlines.filter(o => {
-      // Search by passage or content
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchPassage = o.passage.toLowerCase().includes(q);
         const matchContent = o.content.replace(/<[^>]+>/g, '').toLowerCase().includes(q);
         if (!matchPassage && !matchContent) return false;
       }
-      // Filter by type
       if (filterType && o.outline_type !== filterType) return false;
-      // Filter by tags
       if (filterTags.length > 0) {
         const outlineTags = (o as any).tags || [];
         if (!filterTags.some(t => outlineTags.includes(t))) return false;
@@ -394,7 +386,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     const newPassage = `${outline.passage} (cópia)`;
     const saved = await onSave({ passage: newPassage, outline_type: outline.outline_type, content: outline.content });
     if (saved) {
-      // Copy tags if available
       const tags = (outline as any).tags || [];
       if (tags.length > 0) {
         await supabase.from('exegesis_outlines').update({ tags } as any).eq('id', saved.id);
@@ -475,20 +466,30 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   };
 
   const handleSaveManual = async () => {
-    if (!manualContent.trim() || !getPassageText()) return;
+    const passage = getPassageText();
+    if (!manualContent.trim() || !passage) {
+      toast({ title: "Preencha o conteúdo e a passagem", variant: "destructive" });
+      return;
+    }
     
     try {
-      const result = await onSave({
-        passage: getPassageText(),
-        outline_type: selectedType,
-        content: manualContent
-      });
-      
-      if (result) {
-        setManualContent('');
-        toast({ title: "Esboço manual salvo com sucesso!" });
-        onFetch();
+      if (lastSavedOutlineId) {
+        await onUpdateContent(lastSavedOutlineId, manualContent);
+        toast({ title: "Esboço atualizado com sucesso!" });
+      } else {
+        const result = await onSave({
+          passage,
+          outline_type: selectedType,
+          content: manualContent
+        });
+        
+        if (result) {
+          setLastSavedOutlineId(result.id);
+          toast({ title: "Esboço manual salvo com sucesso!" });
+          onFetch();
+        }
       }
+      lastSavedContentRef.current = manualContent;
     } catch (error) {
       toast({ 
         title: "Erro ao salvar", 
@@ -540,6 +541,24 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
   const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático', outline_descriptive: 'Descritivo', outline_normative: 'Normativo', outline_theological: 'Teológico' };
   const isHtml = (content: string) => content.includes('<h1') || content.includes('<h2') || content.includes('<p>') || content.includes('<strong>');
+
+  // Section elements with color coding
+  const SECTION_ELEMENTS = [
+    { id: 'titulo', label: 'Título', color: '🔵' },
+    { id: 'tema', label: 'Tema', color: '🔵' },
+    { id: 'texto_base', label: 'Texto Base', color: '🔵' },
+    { id: 'introducao', label: 'Introdução', color: '🔵' },
+    { id: 'transicao', label: 'Transição', color: '🔵' },
+    { id: 'ponto', label: 'Ponto', color: '🔵' },
+    { id: 'explicacao', label: 'Explicação', color: '🟢' },
+    { id: 'ilustracao', label: 'Ilustração', color: '🟠' },
+    { id: 'verdade', label: 'Verdade', color: '🔴' },
+    { id: 'aplicacao', label: 'Aplicação', color: '🔴' },
+    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴' },
+    { id: 'conclusao', label: 'Conclusão', color: '🔵' },
+    { id: 'apelo', label: 'Apelo', color: '🔴' },
+    { id: 'oracao_final', label: 'Oração Final', color: '🔵' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -652,55 +671,56 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         {/* Manual Mode Editor */}
         {outlineMode === 'manual' ? (
           <div className="space-y-3">
-            {/* Element Selector */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-xs font-medium text-muted-foreground">Editando:</p>
-              {[
-                { id: 'titulo', label: 'Título' },
-                { id: 'tema', label: 'Tema' },
-                { id: 'texto_base', label: 'Texto Base' },
-                { id: 'introducao', label: 'Introdução' },
-                { id: 'ponto', label: 'Ponto' },
-                { id: 'desenvolvimento', label: 'Desenvolvimento' },
-                { id: 'ilustracao', label: 'Ilustração' },
-                { id: 'frase_efeito', label: 'Frase de Efeito' },
-                { id: 'aplicacao', label: 'Aplicação' },
-                { id: 'conclusao', label: 'Conclusão' },
-                { id: 'apelo', label: 'Apelo' },
-              ].map(el => (
-                <button
-                  key={el.id}
-                  onClick={() => setCurrentElement(el.id)}
-                  className={`text-[10px] px-2 py-1 rounded-full border transition-all ${
-                    currentElement === el.id 
-                      ? 'bg-primary/10 text-primary border-primary/30 font-semibold' 
-                      : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'
-                  }`}
-                >
-                  {el.label}
-                </button>
-              ))}
+            {/* Section Selector with color legend */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap text-[9px] text-muted-foreground">
+                <span className="font-semibold">Legenda:</span>
+                <span>🔵 Estrutura</span>
+                <span>🟢 Explicação bíblica</span>
+                <span>🟠 Ilustração</span>
+                <span>🔴 Verdade e Aplicação</span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs font-medium text-muted-foreground">Editando:</p>
+                {SECTION_ELEMENTS.map(el => (
+                  <button
+                    key={el.id}
+                    onClick={() => setCurrentElement(el.id)}
+                    className={`text-[10px] px-2 py-1 rounded-full border transition-all ${
+                      currentElement === el.id 
+                        ? 'bg-primary/10 text-primary border-primary/30 font-semibold' 
+                        : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    {el.color} {el.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Editor + Copilot Layout */}
-            <div className={`flex flex-col lg:flex-row gap-3`}>
+            <div className="flex flex-col lg:flex-row gap-3">
               {/* Editor */}
-              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'lg:flex-[2]' : 'flex-1'} min-h-[400px]`}>
+              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'lg:flex-[2]' : 'flex-1'}`}
+                   style={{ height: 'calc(100vh - 320px)', minHeight: '450px' }}>
                 <ExegesisRichEditor
                   ref={editorRef}
                   content={manualContent}
                   onChange={setManualContent}
+                  onSelectionChange={(text) => setSelectedText(text)}
                   placeholder="Comece a escrever seu esboço... O Copiloto IA vai analisar em tempo real."
-                  minHeight="350px"
+                  minHeight="100%"
                 />
               </div>
 
-              {/* Copilot Panel */}
+              {/* Copilot Panel - fills remaining space */}
               {hasModuleAccess('exegese.esbocos.texto_livre.copiloto') && showCopilot && (
-                <div className="lg:flex-1 lg:min-w-[320px] lg:max-w-[480px] xl:max-w-[520px] 2xl:max-w-[600px] border rounded-lg bg-card h-[450px] lg:h-[calc(100vh-280px)] lg:min-h-[500px] lg:max-h-[800px] overflow-hidden flex flex-col">
+                <div className="lg:flex-1 lg:min-w-[380px] border rounded-lg bg-card overflow-hidden flex flex-col"
+                     style={{ height: 'calc(100vh - 320px)', minHeight: '450px' }}>
                   <OutlineCopilot
                     content={manualContent}
                     currentElement={currentElement}
+                    selectedText={selectedText}
                     previousElements={previousElements}
                     onApplySuggestion={(original, replacement) => {
                       if (editorRef.current) {
@@ -718,7 +738,6 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                     }}
                     onInsertContent={(text) => {
                       if (editorRef.current) {
-                        // Convert plain text to HTML for proper insertion
                         const htmlText = text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
                         editorRef.current.insertContent(`<p>${htmlText}</p>`);
                       } else {
@@ -732,18 +751,26 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
             <div className="flex items-center gap-2 flex-wrap">
               <Button 
-                onClick={() => {
-                  if (manualContent.trim() && getPassageText()) {
-                    handleSaveManual();
-                  }
-                }} 
-                disabled={!manualContent.trim() || !getPassageText()} 
+                onClick={handleSaveManual}
                 className="btn-library-primary"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Salvar Esboço Manual
               </Button>
-              <Button variant="outline" onClick={() => setManualContent('')} disabled={!manualContent.trim()}>
+              
+              {/* Auto-save indicator */}
+              {autoSaveStatus === 'saving' && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Salvando...
+                </span>
+              )}
+              {autoSaveStatus === 'saved' && (
+                <span className="text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Salvo automaticamente
+                </span>
+              )}
+              
+              <Button variant="outline" onClick={() => { setManualContent(''); setLastSavedOutlineId(null); lastSavedContentRef.current = ''; }} disabled={!manualContent.trim()}>
                 Limpar
               </Button>
               {hasModuleAccess('exegese.esbocos.texto_livre.copiloto') && (

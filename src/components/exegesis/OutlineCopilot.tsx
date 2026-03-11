@@ -183,6 +183,7 @@ interface PreviousElements {
 interface Props {
   content: string;
   currentElement: string;
+  selectedText?: string;
   previousElements?: PreviousElements;
   onApplySuggestion?: (original: string, replacement: string) => void;
   onInsertReference?: (reference: string) => void;
@@ -238,7 +239,7 @@ const SOURCE_TYPE_ICONS: Record<string, typeof Globe> = {
   pregacao: Mic,
 };
 
-export function OutlineCopilot({ content, currentElement, previousElements, onApplySuggestion, onInsertReference, onInsertContent }: Props) {
+export function OutlineCopilot({ content, currentElement, selectedText, previousElements, onApplySuggestion, onInsertReference, onInsertContent }: Props) {
   const [analysis, setAnalysis] = useState<CopilotAnalysis | null>(null);
   const [research, setResearch] = useState<ResearchData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -277,6 +278,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
           body: JSON.stringify({
             content: plainContent,
             currentElement,
+            selectedText: selectedText || '',
             previousElements,
           }),
         }
@@ -295,7 +297,7 @@ export function OutlineCopilot({ content, currentElement, previousElements, onAp
     } finally {
       setIsLoading(false);
     }
-  }, [content, currentElement, previousElements]);
+  }, [content, currentElement, selectedText, previousElements]);
 
   const doResearch = useCallback(async () => {
     const plainContent = content?.replace(/<[^>]+>/g, '').trim() || '';
