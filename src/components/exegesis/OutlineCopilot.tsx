@@ -297,7 +297,7 @@ export function OutlineCopilot({ content, currentElement, selectedText, previous
     } finally {
       setIsLoading(false);
     }
-  }, [content, currentElement, previousElements]);
+  }, [content, currentElement, selectedText, previousElements]);
 
   const doResearch = useCallback(async () => {
     const plainContent = content?.replace(/<[^>]+>/g, '').trim() || '';
