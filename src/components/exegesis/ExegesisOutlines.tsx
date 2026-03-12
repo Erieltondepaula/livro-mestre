@@ -102,16 +102,32 @@ function exportAsDocx(content: string, passage: string) {
   downloadBlob(new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' }), `esboço-${passage.replace(/\s+/g, '-')}.doc`);
 }
 
-function exportAsPdf(content: string, passage: string) {
+function exportAsPdf(content: string, passage: string, options?: { showHeader?: boolean; showFooter?: boolean; headerText?: string; footerText?: string }) {
+  const { showHeader = false, showFooter = false, headerText = '', footerText = '' } = options || {};
   const printWindow = window.open('', '_blank');
   if (!printWindow) { toast({ title: 'Erro', description: 'Permita pop-ups para exportar PDF', variant: 'destructive' }); return; }
+  
+  const headerHtml = showHeader ? `<div style="text-align:center;font-size:9pt;color:#888;border-bottom:1px solid #ddd;padding-bottom:6pt;margin-bottom:16pt;">${headerText || passage}</div>` : '';
+  const footerHtml = showFooter ? `<div style="text-align:center;font-size:9pt;color:#888;border-top:1px solid #ddd;padding-top:6pt;margin-top:16pt;">${footerText || 'Página'}</div>` : '';
+  
   printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Esboço - ${passage}</title>
-    <style>body{font-family:Georgia,serif;font-size:12pt;line-height:1.8;margin:2cm;color:#1a1a1a}
-    h1{font-size:20pt;text-align:center;margin-bottom:8pt}h2{font-size:15pt;margin-top:16pt;border-bottom:1px solid #ddd;padding-bottom:4pt}
-    h3{font-size:13pt;margin-top:12pt}strong{font-weight:bold}em{font-style:italic}
-    mark{padding:2px 4px;border-radius:3px}
-    blockquote{border-left:3px solid #666;padding-left:12px;color:#555;margin:8pt 0}
-    @media print{body{margin:1.5cm}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}}</style></head><body>${content}</body></html>`);
+    <style>
+      @page { margin: 2cm 2.5cm 2cm 2.5cm; }
+      body{font-family:Georgia,serif;font-size:12pt;line-height:1.8;margin:0;padding:0;color:#1a1a1a}
+      h1{font-size:20pt;text-align:center;margin-bottom:8pt}h2{font-size:15pt;margin-top:16pt;border-bottom:1px solid #ddd;padding-bottom:4pt}
+      h3{font-size:13pt;margin-top:12pt}strong{font-weight:bold}em{font-style:italic}
+      mark{padding:2px 4px;border-radius:3px}
+      blockquote{border-left:3px solid #666;padding-left:12px;color:#555;margin:8pt 0}
+      hr{border:none;border-top:1px solid #ccc;margin:16pt 0}
+      @media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+        ${showFooter ? '.pdf-footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:9pt;color:#888;padding:6pt;}' : ''}
+        ${showHeader ? '.pdf-header{position:fixed;top:0;left:0;right:0;text-align:center;font-size:9pt;color:#888;padding:6pt;border-bottom:1px solid #ddd;}' : ''}
+      }
+    </style></head><body>
+    ${headerHtml}
+    ${content}
+    ${footerHtml}
+    </body></html>`);
   printWindow.document.close();
   setTimeout(() => printWindow.print(), 500);
 }
@@ -605,103 +621,90 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático', outline_descriptive: 'Descritivo', outline_normative: 'Normativo', outline_theological: 'Teológico' };
   const isHtml = (content: string) => content.includes('<h1') || content.includes('<h2') || content.includes('<p>') || content.includes('<strong>');
 
-  // Section elements with color coding
+  // Section elements with color coding - clicking inserts into editor
   const SECTION_ELEMENTS = [
-    { id: 'titulo', label: 'Título', color: '🔵', group: 'header' },
-    { id: 'tema', label: 'Tema', color: '🔵', group: 'header' },
-    { id: 'texto_base', label: 'Texto Base', color: '🔵', group: 'header' },
-    { id: 'introducao', label: 'Introdução', color: '🔵', group: 'body' },
-    { id: 'transicao', label: 'Transição', color: '🔵', group: 'body' },
-    { id: 'ponto', label: 'Ponto', color: '🔵', group: 'point' },
-    { id: 'explicacao', label: 'Explicação', color: '🟢', group: 'point' },
-    { id: 'ilustracao', label: 'Ilustração', color: '🟠', group: 'point' },
-    { id: 'verdade', label: 'Verdade', color: '🔴', group: 'point' },
-    { id: 'aplicacao', label: 'Aplicação', color: '🔴', group: 'point' },
-    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴', group: 'point' },
-    { id: 'conclusao', label: 'Conclusão', color: '🔵', group: 'closing' },
-    { id: 'apelo', label: 'Apelo', color: '🔴', group: 'closing' },
-    { id: 'oracao_final', label: 'Oração Final', color: '🔵', group: 'closing' },
+    { id: 'titulo', label: 'Título', color: '🔵', group: 'header', insert: '<h1 style="text-align: center">🔵 TÍTULO: </h1>' },
+    { id: 'tema', label: 'Tema', color: '🔵', group: 'header', insert: '<p><strong>🔵 TEMA:</strong> </p>' },
+    { id: 'texto_base', label: 'Texto Base', color: '🔵', group: 'header', insert: '<p><strong>🔵 TEXTO BASE:</strong> </p>' },
+    { id: 'introducao', label: 'Introdução', color: '🔵', group: 'body', insert: '<h2>🔵 INTRODUÇÃO</h2><p></p>' },
+    { id: 'transicao', label: 'Transição', color: '🔵', group: 'body', insert: '<p><strong>🔵 TRANSIÇÃO</strong></p>' },
+    { id: 'ponto', label: 'Ponto', color: '🔵', group: 'point', insert: '<h2>🔵 PONTO</h2><p></p>' },
+    { id: 'explicacao', label: 'Explicação', color: '🟢', group: 'point', insert: '<h3>🟢 Explicação</h3><p></p>' },
+    { id: 'ilustracao', label: 'Ilustração', color: '🟠', group: 'point', insert: '<h3>🟠 Ilustração</h3><p></p>' },
+    { id: 'verdade', label: 'Verdade', color: '🔴', group: 'point', insert: '<h3>🔴 Verdade</h3><p></p>' },
+    { id: 'aplicacao', label: 'Aplicação', color: '🔴', group: 'point', insert: '<h3>🔴 Aplicação</h3><p></p>' },
+    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴', group: 'point', insert: '<blockquote><p>🔴 <em>Frase de impacto...</em></p></blockquote>' },
+    { id: 'citacao', label: 'Citação', color: '🟡', group: 'point', insert: '<blockquote><p>📖 <em>"Citação..."</em> — <strong>Fonte (Pregador, Livro, Vídeo, Artigo...)</strong></p></blockquote>' },
+    { id: 'desenvolvimento', label: 'Desenvolvimento', color: '🟢', group: 'point', insert: '<h3>🟢 Desenvolvimento</h3><p></p>' },
+    { id: 'conclusao', label: 'Conclusão', color: '🔵', group: 'closing', insert: '<h2>🔵 CONCLUSÃO</h2><p></p>' },
+    { id: 'apelo', label: 'Apelo', color: '🔴', group: 'closing', insert: '<h2>🔴 APELO</h2><p></p>' },
+    { id: 'oracao_final', label: 'Oração Final', color: '🔵', group: 'closing', insert: '<h2>🔵 ORAÇÃO FINAL</h2><p></p>' },
   ];
+
+  // Track point counter for auto-numbering
+  const pointCounterRef = useRef(0);
+
+  const handleInsertSection = (element: typeof SECTION_ELEMENTS[0]) => {
+    setCurrentElement(element.id);
+    let htmlToInsert = element.insert;
+    
+    // Auto-number points
+    if (element.id === 'ponto') {
+      pointCounterRef.current += 1;
+      htmlToInsert = `<hr><h2>🔵 ${pointCounterRef.current}º PONTO</h2><p></p>`;
+    }
+    
+    if (editorRef.current) {
+      editorRef.current.insertContent(htmlToInsert);
+    } else {
+      setManualContent(prev => prev + htmlToInsert);
+    }
+    toast({ title: `${element.color} ${element.label} inserido` });
+  };
 
   const SERMON_TEMPLATE = `<h1 style="text-align: center">🔵 TÍTULO</h1>
 <p><strong>🔵 TEMA:</strong> </p>
 <p><strong>🔵 TEXTO BASE:</strong> </p>
 <hr>
 <h2>🔵 INTRODUÇÃO</h2>
-<p><em>Contextualização, conexão com a vida real, apresentação do problema humano e da esperança bíblica. (até 5 minutos)</em></p>
 <p></p>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Da introdução para o 1º ponto)</em></p>
+<p><strong>🔵 TRANSIÇÃO</strong></p>
 <hr>
 <h2>🔵 1º PONTO</h2>
-<h3>🟢 Explicação</h3>
-<p><em>Exposição fiel do texto bíblico, contexto, sentido original, o que o texto diz.</em></p>
+<h3>🟢 Desenvolvimento</h3>
 <p></p>
-<h3>🟠 Ilustração</h3>
-<p><em>Exemplo bíblico, histórico ou do cotidiano que ilumina a explicação.</em></p>
-<p></p>
-<h3>🔴 Verdade</h3>
-<p><em>Princípio espiritual central revelado pelo texto.</em></p>
-<p></p>
-<h3>🔴 Aplicação</h3>
-<p><em>Como essa verdade confronta, consola e transforma a vida do ouvinte hoje.</em></p>
-<p></p>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 1º para o 2º ponto)</em></p>
+<h3>🔴 Frase de Impacto</h3>
+<blockquote><p><em></em></p></blockquote>
+<p><strong>🔵 TRANSIÇÃO</strong></p>
 <hr>
 <h2>🔵 2º PONTO</h2>
-<h3>🟢 Explicação</h3>
-<p><em>Desenvolvimento progressivo do texto, mantendo coerência com o tema.</em></p>
+<h3>🟢 Desenvolvimento</h3>
 <p></p>
-<h3>🟠 Ilustração</h3>
-<p><em>Imagem clara que ajude o povo a visualizar a verdade bíblica.</em></p>
-<p></p>
-<h3>🔴 Verdade</h3>
-<p><em>O que Deus está afirmando sobre Ele mesmo e sobre nós.</em></p>
-<p></p>
-<h3>🔴 Aplicação</h3>
-<p><em>Chamado prático à fé, obediência e dependência do Senhor.</em></p>
-<p></p>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 2º para o 3º ponto)</em></p>
+<p><strong>🔵 TRANSIÇÃO</strong></p>
 <hr>
 <h2>🔵 3º PONTO</h2>
-<h3>🟢 Explicação</h3>
-<p><em>Aprofundamento da mensagem, ligação com o todo das Escrituras.</em></p>
+<h3>🟢 Desenvolvimento</h3>
 <p></p>
-<h3>🟠 Ilustração</h3>
-<p><em>História que prepare o coração para o clímax do sermão.</em></p>
-<p></p>
-<h3>🔴 Verdade</h3>
-<p><em>Declaração clara da vontade de Deus revelada no texto.</em></p>
-<p></p>
-<h3>🔴 Aplicação</h3>
-<p><em>Exortação pastoral, com graça e verdade.</em></p>
-<p></p>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 3º para o 4º ponto)</em></p>
-<hr>
-<h2>🔵 4º PONTO — Foco em Cristo</h2>
-<h3>🟢 Explicação</h3>
-<p><em>Como o texto aponta para Cristo, Sua obra, Seu caráter e Sua missão.</em></p>
-<p></p>
-<h3>🟠 Ilustração</h3>
-<p><em>Cena dos Evangelhos, da cruz, da graça, do cuidado de Cristo.</em></p>
-<p></p>
-<h3>🔴 Verdade</h3>
-<p><em>Cristo é a resposta final, suficiente e eterna.</em></p>
-<p></p>
-<h3>🔴 Aplicação</h3>
-<p><em>Convite à fé, arrependimento, descanso e entrega total a Jesus.</em></p>
-<p></p>
-<blockquote><p>📖 "Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei." — Mateus 11:28, ACF</p></blockquote>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 4º ponto para a conclusão)</em></p>
 <hr>
 <h2>🔵 CONCLUSÃO</h2>
-<p><em>Síntese do sermão, retomando o tema e reforçando a esperança em Cristo.</em></p>
-<p></p>
-<h2>🔴 APELO</h2>
-<p><em>Chamado claro, bíblico e amoroso à decisão espiritual.</em></p>
-<p></p>
-<h2>🔵 ORAÇÃO FINAL</h2>
-<p><em>Entrega, gratidão e dependência total do Senhor.</em></p>
 <p></p>`;
+
+  // PDF export state
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [pdfOptions, setPdfOptions] = useState({ showHeader: false, showFooter: false, headerText: '', footerText: '' });
+  const [pdfExportData, setPdfExportData] = useState<{ content: string; passage: string } | null>(null);
+
+  const handlePdfExport = (content: string, passage: string) => {
+    setPdfExportData({ content, passage });
+    setPdfDialogOpen(true);
+  };
+
+  const confirmPdfExport = () => {
+    if (pdfExportData) {
+      exportAsPdf(pdfExportData.content, pdfExportData.passage, pdfOptions);
+    }
+    setPdfDialogOpen(false);
+  };
 
   const handleInsertTemplate = () => {
     if (manualContent.replace(/<[^>]+>/g, '').trim().length > 20) {
@@ -709,10 +712,11 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       if (!confirm) return;
     }
     setManualContent(SERMON_TEMPLATE);
+    pointCounterRef.current = 3; // Template starts with 3 points
     if (editorRef.current) {
       editorRef.current.insertContent(''); // force re-render
     }
-    toast({ title: '📋 Template inserido!', description: 'Estrutura completa do sermão adicionada ao editor.' });
+    toast({ title: '📋 Template inserido!', description: 'Estrutura flexível — adicione ou remova seções usando os botões acima.' });
   };
 
   return (
@@ -848,9 +852,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                 </div>
               </div>
 
-              {/* Grouped Section Selector */}
+              {/* Grouped Section Selector — click to INSERT */}
               <div className="flex items-center gap-1 flex-wrap">
-                <p className="text-xs font-medium text-muted-foreground mr-1">Seção:</p>
+                <p className="text-xs font-medium text-muted-foreground mr-1">Inserir Seção:</p>
                 {(() => {
                   const groups = [
                     { key: 'header', label: 'Cabeçalho', sep: '|' },
@@ -863,8 +867,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                       {SECTION_ELEMENTS.filter(el => el.group === group.key).map(el => (
                         <button
                           key={el.id}
-                          onClick={() => setCurrentElement(el.id)}
-                          className={`text-[10px] px-2 py-1 rounded-md border transition-all ${
+                          onClick={() => handleInsertSection(el)}
+                          title={`Clique para inserir "${el.label}" no editor`}
+                          className={`text-[10px] px-2 py-1 rounded-md border transition-all cursor-pointer ${
                             currentElement === el.id 
                               ? 'bg-primary/15 text-primary border-primary/40 font-bold shadow-sm' 
                               : 'bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:border-border'
@@ -1143,7 +1148,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                           <CopyPlus className="w-3.5 h-3.5" /> Duplicar
                         </Button>
                         <div className="flex-1" />
-                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPdf(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
+                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => handlePdfExport(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
                           <Download className="w-3 h-3" /> PDF
                         </Button>
                         <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsDocx(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
@@ -1325,6 +1330,67 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           passage={preacherMode.passage}
           onClose={() => setPreacherMode(null)}
         />
+      )}
+
+      {/* PDF Export Options Dialog */}
+      {pdfDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setPdfDialogOpen(false)}>
+          <div className="bg-card border rounded-xl shadow-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Download className="w-5 h-5 text-primary" /> Exportar PDF
+            </h3>
+            <p className="text-sm text-muted-foreground">Configure as opções de exportação antes de gerar o PDF.</p>
+            
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pdfOptions.showHeader}
+                  onChange={(e) => setPdfOptions(prev => ({ ...prev, showHeader: e.target.checked }))}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <span className="text-sm font-medium">Adicionar cabeçalho</span>
+              </label>
+              {pdfOptions.showHeader && (
+                <input
+                  type="text"
+                  value={pdfOptions.headerText}
+                  onChange={(e) => setPdfOptions(prev => ({ ...prev, headerText: e.target.value }))}
+                  placeholder="Texto do cabeçalho (ex: Nome da Igreja, Pregador)"
+                  className="input-library w-full text-sm"
+                />
+              )}
+              
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pdfOptions.showFooter}
+                  onChange={(e) => setPdfOptions(prev => ({ ...prev, showFooter: e.target.checked }))}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <span className="text-sm font-medium">Adicionar rodapé</span>
+              </label>
+              {pdfOptions.showFooter && (
+                <input
+                  type="text"
+                  value={pdfOptions.footerText}
+                  onChange={(e) => setPdfOptions(prev => ({ ...prev, footerText: e.target.value }))}
+                  placeholder="Texto do rodapé (ex: Data, Série)"
+                  className="input-library w-full text-sm"
+                />
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <Button onClick={confirmPdfExport} className="btn-library-primary flex-1">
+                <Download className="w-4 h-4 mr-2" /> Gerar PDF
+              </Button>
+              <Button variant="outline" onClick={() => setPdfDialogOpen(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
