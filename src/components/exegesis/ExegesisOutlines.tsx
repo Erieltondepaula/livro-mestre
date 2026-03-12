@@ -102,16 +102,32 @@ function exportAsDocx(content: string, passage: string) {
   downloadBlob(new Blob(['\ufeff' + htmlContent], { type: 'application/msword;charset=utf-8' }), `esboço-${passage.replace(/\s+/g, '-')}.doc`);
 }
 
-function exportAsPdf(content: string, passage: string) {
+function exportAsPdf(content: string, passage: string, options?: { showHeader?: boolean; showFooter?: boolean; headerText?: string; footerText?: string }) {
+  const { showHeader = false, showFooter = false, headerText = '', footerText = '' } = options || {};
   const printWindow = window.open('', '_blank');
   if (!printWindow) { toast({ title: 'Erro', description: 'Permita pop-ups para exportar PDF', variant: 'destructive' }); return; }
+  
+  const headerHtml = showHeader ? `<div style="text-align:center;font-size:9pt;color:#888;border-bottom:1px solid #ddd;padding-bottom:6pt;margin-bottom:16pt;">${headerText || passage}</div>` : '';
+  const footerHtml = showFooter ? `<div style="text-align:center;font-size:9pt;color:#888;border-top:1px solid #ddd;padding-top:6pt;margin-top:16pt;">${footerText || 'Página'}</div>` : '';
+  
   printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Esboço - ${passage}</title>
-    <style>body{font-family:Georgia,serif;font-size:12pt;line-height:1.8;margin:2cm;color:#1a1a1a}
-    h1{font-size:20pt;text-align:center;margin-bottom:8pt}h2{font-size:15pt;margin-top:16pt;border-bottom:1px solid #ddd;padding-bottom:4pt}
-    h3{font-size:13pt;margin-top:12pt}strong{font-weight:bold}em{font-style:italic}
-    mark{padding:2px 4px;border-radius:3px}
-    blockquote{border-left:3px solid #666;padding-left:12px;color:#555;margin:8pt 0}
-    @media print{body{margin:1.5cm}*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}}</style></head><body>${content}</body></html>`);
+    <style>
+      @page { margin: 2cm 2.5cm 2cm 2.5cm; }
+      body{font-family:Georgia,serif;font-size:12pt;line-height:1.8;margin:0;padding:0;color:#1a1a1a}
+      h1{font-size:20pt;text-align:center;margin-bottom:8pt}h2{font-size:15pt;margin-top:16pt;border-bottom:1px solid #ddd;padding-bottom:4pt}
+      h3{font-size:13pt;margin-top:12pt}strong{font-weight:bold}em{font-style:italic}
+      mark{padding:2px 4px;border-radius:3px}
+      blockquote{border-left:3px solid #666;padding-left:12px;color:#555;margin:8pt 0}
+      hr{border:none;border-top:1px solid #ccc;margin:16pt 0}
+      @media print{*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+        ${showFooter ? '.pdf-footer{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:9pt;color:#888;padding:6pt;}' : ''}
+        ${showHeader ? '.pdf-header{position:fixed;top:0;left:0;right:0;text-align:center;font-size:9pt;color:#888;padding:6pt;border-bottom:1px solid #ddd;}' : ''}
+      }
+    </style></head><body>
+    ${headerHtml}
+    ${content}
+    ${footerHtml}
+    </body></html>`);
   printWindow.document.close();
   setTimeout(() => printWindow.print(), 500);
 }
