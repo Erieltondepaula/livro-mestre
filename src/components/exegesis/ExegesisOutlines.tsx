@@ -582,21 +582,113 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
   // Section elements with color coding
   const SECTION_ELEMENTS = [
-    { id: 'titulo', label: 'Título', color: '🔵' },
-    { id: 'tema', label: 'Tema', color: '🔵' },
-    { id: 'texto_base', label: 'Texto Base', color: '🔵' },
-    { id: 'introducao', label: 'Introdução', color: '🔵' },
-    { id: 'transicao', label: 'Transição', color: '🔵' },
-    { id: 'ponto', label: 'Ponto', color: '🔵' },
-    { id: 'explicacao', label: 'Explicação', color: '🟢' },
-    { id: 'ilustracao', label: 'Ilustração', color: '🟠' },
-    { id: 'verdade', label: 'Verdade', color: '🔴' },
-    { id: 'aplicacao', label: 'Aplicação', color: '🔴' },
-    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴' },
-    { id: 'conclusao', label: 'Conclusão', color: '🔵' },
-    { id: 'apelo', label: 'Apelo', color: '🔴' },
-    { id: 'oracao_final', label: 'Oração Final', color: '🔵' },
+    { id: 'titulo', label: 'Título', color: '🔵', group: 'header' },
+    { id: 'tema', label: 'Tema', color: '🔵', group: 'header' },
+    { id: 'texto_base', label: 'Texto Base', color: '🔵', group: 'header' },
+    { id: 'introducao', label: 'Introdução', color: '🔵', group: 'body' },
+    { id: 'transicao', label: 'Transição', color: '🔵', group: 'body' },
+    { id: 'ponto', label: 'Ponto', color: '🔵', group: 'point' },
+    { id: 'explicacao', label: 'Explicação', color: '🟢', group: 'point' },
+    { id: 'ilustracao', label: 'Ilustração', color: '🟠', group: 'point' },
+    { id: 'verdade', label: 'Verdade', color: '🔴', group: 'point' },
+    { id: 'aplicacao', label: 'Aplicação', color: '🔴', group: 'point' },
+    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴', group: 'point' },
+    { id: 'conclusao', label: 'Conclusão', color: '🔵', group: 'closing' },
+    { id: 'apelo', label: 'Apelo', color: '🔴', group: 'closing' },
+    { id: 'oracao_final', label: 'Oração Final', color: '🔵', group: 'closing' },
   ];
+
+  const SERMON_TEMPLATE = `<h1 style="text-align: center">🔵 TÍTULO</h1>
+<p><strong>🔵 TEMA:</strong> </p>
+<p><strong>🔵 TEXTO BASE:</strong> </p>
+<hr>
+<h2>🔵 INTRODUÇÃO</h2>
+<p><em>Contextualização, conexão com a vida real, apresentação do problema humano e da esperança bíblica. (até 5 minutos)</em></p>
+<p></p>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Da introdução para o 1º ponto)</em></p>
+<hr>
+<h2>🔵 1º PONTO</h2>
+<h3>🟢 Explicação</h3>
+<p><em>Exposição fiel do texto bíblico, contexto, sentido original, o que o texto diz.</em></p>
+<p></p>
+<h3>🟠 Ilustração</h3>
+<p><em>Exemplo bíblico, histórico ou do cotidiano que ilumina a explicação.</em></p>
+<p></p>
+<h3>🔴 Verdade</h3>
+<p><em>Princípio espiritual central revelado pelo texto.</em></p>
+<p></p>
+<h3>🔴 Aplicação</h3>
+<p><em>Como essa verdade confronta, consola e transforma a vida do ouvinte hoje.</em></p>
+<p></p>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 1º para o 2º ponto)</em></p>
+<hr>
+<h2>🔵 2º PONTO</h2>
+<h3>🟢 Explicação</h3>
+<p><em>Desenvolvimento progressivo do texto, mantendo coerência com o tema.</em></p>
+<p></p>
+<h3>🟠 Ilustração</h3>
+<p><em>Imagem clara que ajude o povo a visualizar a verdade bíblica.</em></p>
+<p></p>
+<h3>🔴 Verdade</h3>
+<p><em>O que Deus está afirmando sobre Ele mesmo e sobre nós.</em></p>
+<p></p>
+<h3>🔴 Aplicação</h3>
+<p><em>Chamado prático à fé, obediência e dependência do Senhor.</em></p>
+<p></p>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 2º para o 3º ponto)</em></p>
+<hr>
+<h2>🔵 3º PONTO</h2>
+<h3>🟢 Explicação</h3>
+<p><em>Aprofundamento da mensagem, ligação com o todo das Escrituras.</em></p>
+<p></p>
+<h3>🟠 Ilustração</h3>
+<p><em>História que prepare o coração para o clímax do sermão.</em></p>
+<p></p>
+<h3>🔴 Verdade</h3>
+<p><em>Declaração clara da vontade de Deus revelada no texto.</em></p>
+<p></p>
+<h3>🔴 Aplicação</h3>
+<p><em>Exortação pastoral, com graça e verdade.</em></p>
+<p></p>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 3º para o 4º ponto)</em></p>
+<hr>
+<h2>🔵 4º PONTO — Foco em Cristo</h2>
+<h3>🟢 Explicação</h3>
+<p><em>Como o texto aponta para Cristo, Sua obra, Seu caráter e Sua missão.</em></p>
+<p></p>
+<h3>🟠 Ilustração</h3>
+<p><em>Cena dos Evangelhos, da cruz, da graça, do cuidado de Cristo.</em></p>
+<p></p>
+<h3>🔴 Verdade</h3>
+<p><em>Cristo é a resposta final, suficiente e eterna.</em></p>
+<p></p>
+<h3>🔴 Aplicação</h3>
+<p><em>Convite à fé, arrependimento, descanso e entrega total a Jesus.</em></p>
+<p></p>
+<blockquote><p>📖 "Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei." — Mateus 11:28, ACF</p></blockquote>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 4º ponto para a conclusão)</em></p>
+<hr>
+<h2>🔵 CONCLUSÃO</h2>
+<p><em>Síntese do sermão, retomando o tema e reforçando a esperança em Cristo.</em></p>
+<p></p>
+<h2>🔴 APELO</h2>
+<p><em>Chamado claro, bíblico e amoroso à decisão espiritual.</em></p>
+<p></p>
+<h2>🔵 ORAÇÃO FINAL</h2>
+<p><em>Entrega, gratidão e dependência total do Senhor.</em></p>
+<p></p>`;
+
+  const handleInsertTemplate = () => {
+    if (manualContent.replace(/<[^>]+>/g, '').trim().length > 20) {
+      const confirm = window.confirm('O editor já possui conteúdo. Deseja substituir pelo template completo?');
+      if (!confirm) return;
+    }
+    setManualContent(SERMON_TEMPLATE);
+    if (editorRef.current) {
+      editorRef.current.insertContent(''); // force re-render
+    }
+    toast({ title: '📋 Template inserido!', description: 'Estrutura completa do sermão adicionada ao editor.' });
+  };
 
   return (
     <div className="space-y-6">
