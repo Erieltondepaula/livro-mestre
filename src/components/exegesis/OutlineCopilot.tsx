@@ -5,7 +5,8 @@ import {
   RefreshCw, Target, FileText, Loader2, X, Globe, Database,
   Video, BookMarked, BarChart3, Check, XCircle, Copy, GripVertical,
   ExternalLink, Search, Compass, ArrowRight, Mic, MapPin, TrendingUp,
-  Zap, GraduationCap, Award
+  Zap, GraduationCap, Award, Highlighter, PenTool, Library,
+  Film, ScrollText, Users, Church
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
