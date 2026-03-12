@@ -502,6 +502,29 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     return getPassageFromContent(contentText);
   }, [getPassageText, getPassageFromContent]);
 
+  const incrementCopilotCounter = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: existing } = await supabase
+        .from('copilot_user_patterns')
+        .select('id, total_outlines_analyzed, copilot_level')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        const newTotal = (existing.total_outlines_analyzed || 0) + 1;
+        let newLevel = 1;
+        if (newTotal >= 20) newLevel = 4;
+        else if (newTotal >= 10) newLevel = 3;
+        else if (newTotal >= 5) newLevel = 2;
+        await supabase.from('copilot_user_patterns')
+          .update({ total_outlines_analyzed: newTotal, copilot_level: newLevel })
+          .eq('id', existing.id);
+      }
+    } catch {}
+  };
+
   const handleSaveManual = async () => {
     if (!manualContent.trim()) {
       toast({ title: "Escreva algo no esboço antes de salvar", variant: "destructive" });
@@ -525,6 +548,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           setLastSavedOutlineId(result.id);
           toast({ title: "Esboço manual salvo com sucesso!" });
           onFetch();
+          // Increment copilot counter only on first save of new outline
+          incrementCopilotCounter();
         }
       }
       lastSavedContentRef.current = manualContent;
