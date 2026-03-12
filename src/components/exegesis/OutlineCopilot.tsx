@@ -103,6 +103,49 @@ interface DetectedPatterns {
   estilo_escrita?: string | null;
 }
 
+interface SelectedTextAnalysis {
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  rewriteSuggestion: string;
+  relatedVerses: string[];
+  rhetoricalAnalysis: string;
+}
+
+interface ResourceBook {
+  title: string;
+  author: string;
+  reason: string;
+}
+
+interface ResourceThesis {
+  title: string;
+  institution: string;
+  reason: string;
+}
+
+interface ResourceDocumentary {
+  title: string;
+  platform: string;
+  reason: string;
+}
+
+interface ResourceSermon {
+  preacher: string;
+  role: string;
+  era: string;
+  title: string;
+  approach: string;
+  searchUrl: string;
+}
+
+interface ResourceSuggestions {
+  books: ResourceBook[];
+  theses: ResourceThesis[];
+  documentaries: ResourceDocumentary[];
+  sermons: ResourceSermon[];
+}
+
 interface CopilotAnalysis {
   overallScore: number;
   detectedPosition?: DetectedPosition;
@@ -115,6 +158,8 @@ interface CopilotAnalysis {
   baseTextContext?: BaseTextContext | null;
   detectedPatterns?: DetectedPatterns | null;
   copilotLevel?: number;
+  selectedTextAnalysis?: SelectedTextAnalysis | null;
+  resourceSuggestions?: ResourceSuggestions | null;
 }
 
 // Research Types
