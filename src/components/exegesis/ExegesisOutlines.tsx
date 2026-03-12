@@ -293,6 +293,19 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   useEffect(() => { onFetch(); }, [onFetch]);
 
   // ===== AUTO-SAVE =====
+  // Helper to extract passage from content (defined early for auto-save)
+  const getPassageFromContentEarly = (contentText: string): string => {
+    const plain = contentText.replace(/<[^>]+>/g, '').trim();
+    const textoBaseMatch = plain.match(/TEXTO\s*BASE\s*[:：]?\s*(.+?)(?:\n|$)/i);
+    if (textoBaseMatch?.[1]?.trim()) return textoBaseMatch[1].trim().substring(0, 100);
+    const tituloMatch = plain.match(/T[ÍI]TULO\s*[:：]?\s*(.+?)(?:\n|$)/i);
+    if (tituloMatch?.[1]?.trim()) return tituloMatch[1].trim().substring(0, 100);
+    const temaMatch = plain.match(/TEMA\s*[:：]?\s*(.+?)(?:\n|$)/i);
+    if (temaMatch?.[1]?.trim()) return temaMatch[1].trim().substring(0, 100);
+    const firstLine = plain.split('\n').find(l => l.trim().length > 3);
+    return firstLine?.trim().substring(0, 100) || 'Esboço sem título';
+  };
+
   useEffect(() => {
     if (!manualContent.trim() || outlineMode !== 'manual') return;
     
@@ -302,16 +315,17 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
     
     autoSaveRef.current = setTimeout(async () => {
-      const passage = getPassageText();
-      if (!passage || !manualContent.trim()) return;
+      if (!manualContent.trim()) return;
+      
+      // Auto-extract passage from content if no bible passage selected
+      const selectedPassage = getPassageText();
+      const passage = selectedPassage || getPassageFromContentEarly(manualContent);
       
       setAutoSaveStatus('saving');
       try {
         if (lastSavedOutlineId) {
-          // Update existing outline
           await onUpdateContent(lastSavedOutlineId, manualContent);
         } else {
-          // Create new outline
           const result = await onSave({
             passage,
             outline_type: selectedType,

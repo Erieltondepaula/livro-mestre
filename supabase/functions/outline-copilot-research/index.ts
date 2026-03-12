@@ -163,57 +163,75 @@ serve(async (req) => {
 ${SERMON_STRUCTURE}
 
 ## BUSCA INTERNA (OBRIGATÓRIA):
-Você DEVE analisar CADA material interno do usuário (materiais cadastrados, esboços anteriores, análises exegéticas, citações salvas) e indicar COMO cada um é relevante para o sermão atual. Não ignore nenhum material — analise TODOS e descarte apenas os verdadeiramente irrelevantes.
+Analise CADA material interno do usuário e indique COMO cada um é relevante. Não ignore nenhum.
 
-## BUSCA EXTERNA (OBRIGATÓRIA):
-Você DEVE buscar ATIVAMENTE em fontes externas para enriquecer o sermão:
+## BUSCA EXTERNA — PREGAÇÕES SIMILARES (REGRA CRÍTICA):
+⚠️ NUNCA fixe uma lista de pregadores. NUNCA repita sempre os mesmos nomes.
+Você DEVE buscar DINAMICAMENTE pregadores que REALMENTE pregaram sobre o texto/tema/passagem do esboço.
 
-### Fontes que DEVEM ser consultadas:
-1. **Google Acadêmico**: Artigos teológicos, dissertações, teses sobre o texto/tema
-2. **YouTube**: Pregações filmadas de pastores conhecidos sobre o mesmo texto/tema
-3. **Wikipedia**: Contexto histórico, geográfico, cultural, arqueológico
-4. **Comentários Bíblicos**: Matthew Henry, John MacArthur, Warren Wiersbe, F.B. Meyer, Charles Spurgeon, Adam Clarke, John Gill
-5. **Pregadores Brasileiros**: Hernandes Dias Lopes, Augustus Nicodemus, Caio Fábio, Ariovaldo Ramos, Paul Washer (traduzido)
-6. **Pregadores Internacionais**: John Piper, Tim Keller, Charles Spurgeon, Paul Washer, Martyn Lloyd-Jones, R.C. Sproul
-7. **Livros Teológicos**: Referências acadêmicas e devocionais
-8. **Dicionários Bíblicos**: Strong, Vine, DITNT, TDNT
+### Como encontrar pregações similares:
+1. Analise o TEXTO BASE, TEMA e TÍTULO do esboço atual
+2. Pense em TODOS os pregadores da história cristã (antigos e modernos, brasileiros e internacionais, de TODAS as denominações e épocas) que já abordaram esse texto ou tema
+3. VARIE os resultados a cada pesquisa — não repita os mesmos 3 nomes
+4. Inclua pregadores de diferentes épocas: padres da igreja, reformadores, puritanos, avivalistas, contemporâneos
+5. Inclua pregadores de diferentes países e tradições: África, Ásia, América Latina, Europa, EUA
+6. Pesquise baseado no CONTEÚDO, não em uma lista fixa
+
+### Exemplos de variedade (NÃO use como lista fixa, apenas como inspiração):
+- Antigos: Agostinho, João Crisóstomo, Ambrósio, Bernardo de Claraval
+- Reformadores: Lutero, Calvino, Knox, Zuínglio, Tyndale
+- Puritanos: John Owen, Richard Baxter, Jonathan Edwards, Thomas Watson
+- Avivalistas: Wesley, Whitefield, Finney, Moody, Tozer
+- Modernos BR: Caio Fábio, Hernandes D.L., Augustus Nicodemus, Ricardo Gondim, Ed René Kivitz, Paschoal Piragine, Cpad autores, Ariovaldo Ramos, Robinson Cavalcanti
+- Modernos INT: Lloyd-Jones, Stott, Keller, Piper, Sproul, Washer, Chandler, Platt, Chan, Kempis, Bonhoeffer, Barth
+- Africanos/Asianos: Desmond Tutu, Watchman Nee, Bakht Singh, Samuel Escobar
+- Mulheres: Beth Moore, Priscilla Shirer, Kay Arthur
+- MUITOS OUTROS existem — busque os mais relevantes para o tema
+
+### Fontes externas:
+1. Google Acadêmico: artigos teológicos
+2. YouTube: pregações filmadas sobre o mesmo texto
+3. Wikipedia: contexto histórico, geográfico, cultural
+4. Comentários Bíblicos: Matthew Henry, Wiersbe, Spurgeon, MacArthur, etc.
+5. Dicionários: Strong, Vine, DITNT, TDNT
 
 ### Regras para URLs:
-- Para vídeos: https://www.youtube.com/results?search_query=TERMOS+SEPARADOS+POR+PLUS
-- Para pesquisas: https://www.google.com/search?q=TERMOS+SEPARADOS+POR+PLUS
-- Para Wikipedia: https://pt.wikipedia.org/wiki/TERMO
-- Para Bíblia online: https://www.bibliaonline.com.br/acf/LIVRO/CAPITULO
+- Vídeos: https://www.youtube.com/results?search_query=TERMOS+SEPARADOS+POR+PLUS
+- Pesquisas: https://www.google.com/search?q=TERMOS+SEPARADOS+POR+PLUS
+- Wikipedia: https://pt.wikipedia.org/wiki/TERMO
+- Bíblia: https://www.bibliaonline.com.br/acf/LIVRO/CAPITULO
 - NUNCA invente URLs diretas de vídeo (youtube.com/watch?v=XXX)
 
 ## FORMATO DE RESPOSTA (JSON):
 {
-  "contextualNote": "Nota proativa DETALHADA e PERSONALIZADA baseada no conteúdo. Deve mencionar: (1) materiais internos relevantes encontrados, (2) pregações similares conhecidas, (3) recomendações específicas para a seção atual. Mín. 4-5 frases.",
-  "currentSectionHelp": "Ajuda PASSO A PASSO para a seção atual. Mín. 3-4 frases com instruções concretas.",
+  "contextualNote": "Nota proativa DETALHADA. Mencione: (1) materiais internos relevantes, (2) pregações similares encontradas, (3) recomendações. Mín. 4-5 frases.",
+  "currentSectionHelp": "Ajuda PASSO A PASSO para a seção atual. Mín. 3-4 frases.",
   "internalSources": [
-    { "materialTitle": "título exato", "relevance": "por que é relevante PARA ESTA SEÇÃO", "suggestedUse": "instrução ESPECÍFICA de como usar neste momento do sermão" }
+    { "materialTitle": "título exato", "relevance": "por que é relevante", "suggestedUse": "como usar" }
   ],
   "biblicalReferences": [
-    { "reference": "Livro Cap:Vers (ACF)", "text": "TEXTO COMPLETO do versículo na ACF", "connection": "como se conecta com ESTA seção", "type": "paralela|contraste|profecia|tipologia|doutrina" }
+    { "reference": "Livro Cap:Vers (ACF)", "text": "TEXTO COMPLETO ACF", "connection": "conexão com a seção", "type": "paralela|contraste|profecia|tipologia|doutrina" }
   ],
   "externalSources": [
-    { "title": "título específico", "type": "artigo|video|livro|blog|documentario|pesquisa|comentario|pregacao", "description": "descrição detalhada", "url": "URL de busca Google/YouTube/Wikipedia", "relevance": "como usar nesta seção", "preacherName": "nome se for pregação" }
+    { "title": "título", "type": "artigo|video|livro|blog|documentario|pesquisa|comentario|pregacao", "description": "descrição", "url": "URL de busca", "relevance": "como usar", "preacherName": "nome se pregação" }
   ],
   "dataAndIllustrations": [
-    { "title": "título da ilustração", "content": "CONTEÚDO COMPLETO PRONTO PARA USO no sermão (mín. 4-5 frases, uma história ou dado completo)", "source": "fonte verificável", "suggestedPlacement": "exatamente onde usar" }
+    { "title": "título", "content": "CONTEÚDO COMPLETO pronto para uso (mín. 4-5 frases)", "source": "fonte", "suggestedPlacement": "onde usar" }
   ],
   "similarSermons": [
-    { "preacher": "nome REAL", "title": "título REAL ou provável", "approach": "descrição detalhada da abordagem (3-4 frases)", "difference": "sugestão ESPECÍFICA de como diferenciar (2-3 frases)", "url": "https://www.youtube.com/results?search_query=NOME+PREGADOR+TITULO" }
+    { "preacher": "nome REAL (VARIE! Não repita sempre os mesmos)", "title": "título REAL ou provável", "approach": "abordagem detalhada (3-4 frases)", "difference": "como diferenciar (2-3 frases)", "url": "https://www.youtube.com/results?search_query=NOME+PREGADOR+TEXTO+BIBLICO" }
   ]
 }
 
 REGRAS CRÍTICAS:
-1. NUNCA retorne listas vazias sem justificativa — se não há materiais internos, diga na contextualNote
-2. Sempre traga pelo menos 3-5 referências bíblicas COM TEXTO COMPLETO (ACF)
-3. Sempre traga pelo menos 2-3 fontes externas com links de busca FUNCIONAIS
-4. Sempre traga pelo menos 1-2 ilustrações COMPLETAS prontas para uso
-5. Sempre traga pelo menos 2-3 pregações similares com links de busca no YouTube
-6. As ilustrações devem ser COMPLETAS — histórias com começo, meio e fim, não descrições vagas
-7. currentSectionHelp deve ser PASSO A PASSO: "Primeiro escreva X, depois Y, finalize com Z"`;
+1. NUNCA retorne listas vazias
+2. Sempre 3-5 referências bíblicas COM TEXTO COMPLETO (ACF)
+3. Sempre 2-3 fontes externas com links funcionais
+4. Sempre 1-2 ilustrações COMPLETAS
+5. Sempre 3-5 pregações similares — DE PREGADORES DIFERENTES a cada pesquisa, baseados no conteúdo real
+6. ⚠️ NUNCA repita sempre Hernandes + Tim Keller + Paul Washer. Busque DINAMICAMENTE baseado no texto/tema
+7. Ilustrações devem ser COMPLETAS (começo, meio, fim)
+8. currentSectionHelp deve ser PASSO A PASSO`;
 
     const userMessage = `CONTEXTO DO SERMÃO:
 ${contextParts.length > 0 ? contextParts.join("\n") : "Início do sermão."}
