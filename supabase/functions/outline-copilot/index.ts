@@ -480,6 +480,19 @@ ${contextParts.length > 0 ? contextParts.join('\n') : 'Nenhum elemento anterior 
 ⭐ SEÇÃO QUE O USUÁRIO ESTÁ EDITANDO AGORA: ${currentElement || 'não especificado'}
 (Foque sua análise e sugestões NESTA SEÇÃO. O usuário selecionou esta seção na interface.)
 
+${selectedText ? `🔎 TEXTO SELECIONADO PELO USUÁRIO (o usuário destacou este trecho — analise-o em profundidade):
+"${selectedText}"
+
+INSTRUÇÕES PARA TEXTO SELECIONADO:
+- Analise o trecho selecionado detalhadamente
+- Identifique: tema, argumento, texto bíblico citado, coerência, possíveis melhorias
+- Sugira melhorias específicas para este trecho
+- Se contém referência bíblica, verifique precisão e contexto
+- Se contém erro gramatical, corrija com explicação
+- Sugira alternativas de redação mais fortes
+- Retorne análise no campo "selectedTextAnalysis" do JSON
+` : ''}
+
 ${userPatternsContext ? `\nPERFIL DE ESTILO DO USUÁRIO (aprendido de esboços anteriores):\n${userPatternsContext}\n\nUSE ESTES PADRÕES para personalizar suas sugestões ao estilo do usuário.\n` : ''}
 
 ${previousOutlinesContext ? `\nESBOÇOS ANTERIORES DO USUÁRIO:\n${previousOutlinesContext}\n\nCompare o esboço atual com os anteriores. Detecte melhorias e novos padrões.\n` : ''}
