@@ -858,22 +858,22 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
             {/* Editor + Copilot Layout */}
             <div className="flex flex-col lg:flex-row gap-3">
               {/* Editor */}
-              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'lg:flex-[2]' : 'flex-1'}`}
-                   style={{ height: 'calc(100vh - 320px)', minHeight: '450px' }}>
+              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'lg:flex-[3]' : 'flex-1'}`}
+                   style={{ height: 'calc(100vh - 340px)', minHeight: '500px' }}>
                 <ExegesisRichEditor
                   ref={editorRef}
                   content={manualContent}
                   onChange={setManualContent}
                   onSelectionChange={(text) => setSelectedText(text)}
-                  placeholder="Comece a escrever seu esboço... O Copiloto IA vai analisar em tempo real."
+                  placeholder="Comece a escrever seu esboço... O Copiloto IA vai analisar em tempo real. 💡 Use o botão 'Inserir Template Completo' acima para começar com a estrutura padrão."
                   minHeight="100%"
                 />
               </div>
 
               {/* Copilot Panel - fills remaining space */}
               {hasModuleAccess('exegese.esbocos.texto_livre.copiloto') && showCopilot && (
-                <div className="lg:flex-1 lg:min-w-[380px] border rounded-lg bg-card overflow-hidden flex flex-col"
-                     style={{ height: 'calc(100vh - 320px)', minHeight: '450px' }}>
+                <div className="lg:flex-[2] lg:min-w-[400px] lg:max-w-[700px] border rounded-lg bg-card overflow-hidden flex flex-col"
+                     style={{ height: 'calc(100vh - 340px)', minHeight: '500px' }}>
                   <OutlineCopilot
                     content={manualContent}
                     currentElement={currentElement}

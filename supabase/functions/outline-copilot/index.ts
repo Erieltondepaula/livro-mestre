@@ -650,7 +650,8 @@ Responda APENAS com o JSON no formato especificado.`;
       };
     }
 
-    // Save detected patterns to DB asynchronously
+    // Save detected patterns to DB - only update style patterns, NOT increment counter
+    // The counter should only increment on outline SAVE, not on every analysis
     if (analysis.detectedPatterns) {
       try {
         const dp = analysis.detectedPatterns;
@@ -659,13 +660,15 @@ Responda APENAS com o JSON no formato especificado.`;
           .select("id, total_outlines_analyzed, copilot_level")
           .single();
 
-        const totalAnalyzed = (existing?.total_outlines_analyzed || 0) + 1;
-        let newLevel = 1;
+        // Keep existing counter - don't increment on analysis
+        const totalAnalyzed = existing?.total_outlines_analyzed || 0;
+        let newLevel = existing?.copilot_level || 1;
         if (totalAnalyzed >= 20) newLevel = 4;
         else if (totalAnalyzed >= 10) newLevel = 3;
         else if (totalAnalyzed >= 5) newLevel = 2;
 
-        const patternData = {
+        // Only update style patterns, not the counter
+        const patternData: Record<string, any> = {
           padrao_introducao: dp.padrao_introducao || null,
           padrao_titulo: dp.padrao_titulo || null,
           padrao_transicao: dp.padrao_transicao || null,
@@ -674,8 +677,6 @@ Responda APENAS com o JSON no formato especificado.`;
           palavras_frequentes: dp.palavras_frequentes || [],
           expressoes_frequentes: dp.expressoes_frequentes || [],
           estilo_escrita: dp.estilo_escrita || null,
-          total_outlines_analyzed: totalAnalyzed,
-          copilot_level: newLevel,
         };
 
         if (existing) {
@@ -683,7 +684,12 @@ Responda APENAS com o JSON no formato especificado.`;
         } else {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            await supabase.from("copilot_user_patterns").insert({ ...patternData, user_id: user.id });
+            await supabase.from("copilot_user_patterns").insert({ 
+              ...patternData, 
+              user_id: user.id, 
+              total_outlines_analyzed: 0,
+              copilot_level: 1 
+            });
           }
         }
 

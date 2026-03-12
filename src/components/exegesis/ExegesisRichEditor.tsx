@@ -519,6 +519,21 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
         <div className="flex-1 overflow-y-auto">
           <EditorContent editor={editor} />
         </div>
+
+        {/* Status bar with word/char count */}
+        <div className="flex-shrink-0 border-t bg-muted/30 px-3 py-1 flex items-center justify-between text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <span>{wordCount} palavras</span>
+            <span>{charCount} caracteres</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {editor && (
+              <span>
+                Linha {editor.state.selection.$head.pos}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </TooltipProvider>
   );
