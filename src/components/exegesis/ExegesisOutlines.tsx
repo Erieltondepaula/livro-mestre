@@ -502,6 +502,29 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     return getPassageFromContent(contentText);
   }, [getPassageText, getPassageFromContent]);
 
+  const incrementCopilotCounter = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: existing } = await supabase
+        .from('copilot_user_patterns')
+        .select('id, total_outlines_analyzed, copilot_level')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        const newTotal = (existing.total_outlines_analyzed || 0) + 1;
+        let newLevel = 1;
+        if (newTotal >= 20) newLevel = 4;
+        else if (newTotal >= 10) newLevel = 3;
+        else if (newTotal >= 5) newLevel = 2;
+        await supabase.from('copilot_user_patterns')
+          .update({ total_outlines_analyzed: newTotal, copilot_level: newLevel })
+          .eq('id', existing.id);
+      }
+    } catch {}
+  };
+
   const handleSaveManual = async () => {
     if (!manualContent.trim()) {
       toast({ title: "Escreva algo no esboço antes de salvar", variant: "destructive" });
@@ -525,6 +548,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           setLastSavedOutlineId(result.id);
           toast({ title: "Esboço manual salvo com sucesso!" });
           onFetch();
+          // Increment copilot counter only on first save of new outline
+          incrementCopilotCounter();
         }
       }
       lastSavedContentRef.current = manualContent;
@@ -582,21 +607,113 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 
   // Section elements with color coding
   const SECTION_ELEMENTS = [
-    { id: 'titulo', label: 'Título', color: '🔵' },
-    { id: 'tema', label: 'Tema', color: '🔵' },
-    { id: 'texto_base', label: 'Texto Base', color: '🔵' },
-    { id: 'introducao', label: 'Introdução', color: '🔵' },
-    { id: 'transicao', label: 'Transição', color: '🔵' },
-    { id: 'ponto', label: 'Ponto', color: '🔵' },
-    { id: 'explicacao', label: 'Explicação', color: '🟢' },
-    { id: 'ilustracao', label: 'Ilustração', color: '🟠' },
-    { id: 'verdade', label: 'Verdade', color: '🔴' },
-    { id: 'aplicacao', label: 'Aplicação', color: '🔴' },
-    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴' },
-    { id: 'conclusao', label: 'Conclusão', color: '🔵' },
-    { id: 'apelo', label: 'Apelo', color: '🔴' },
-    { id: 'oracao_final', label: 'Oração Final', color: '🔵' },
+    { id: 'titulo', label: 'Título', color: '🔵', group: 'header' },
+    { id: 'tema', label: 'Tema', color: '🔵', group: 'header' },
+    { id: 'texto_base', label: 'Texto Base', color: '🔵', group: 'header' },
+    { id: 'introducao', label: 'Introdução', color: '🔵', group: 'body' },
+    { id: 'transicao', label: 'Transição', color: '🔵', group: 'body' },
+    { id: 'ponto', label: 'Ponto', color: '🔵', group: 'point' },
+    { id: 'explicacao', label: 'Explicação', color: '🟢', group: 'point' },
+    { id: 'ilustracao', label: 'Ilustração', color: '🟠', group: 'point' },
+    { id: 'verdade', label: 'Verdade', color: '🔴', group: 'point' },
+    { id: 'aplicacao', label: 'Aplicação', color: '🔴', group: 'point' },
+    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴', group: 'point' },
+    { id: 'conclusao', label: 'Conclusão', color: '🔵', group: 'closing' },
+    { id: 'apelo', label: 'Apelo', color: '🔴', group: 'closing' },
+    { id: 'oracao_final', label: 'Oração Final', color: '🔵', group: 'closing' },
   ];
+
+  const SERMON_TEMPLATE = `<h1 style="text-align: center">🔵 TÍTULO</h1>
+<p><strong>🔵 TEMA:</strong> </p>
+<p><strong>🔵 TEXTO BASE:</strong> </p>
+<hr>
+<h2>🔵 INTRODUÇÃO</h2>
+<p><em>Contextualização, conexão com a vida real, apresentação do problema humano e da esperança bíblica. (até 5 minutos)</em></p>
+<p></p>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Da introdução para o 1º ponto)</em></p>
+<hr>
+<h2>🔵 1º PONTO</h2>
+<h3>🟢 Explicação</h3>
+<p><em>Exposição fiel do texto bíblico, contexto, sentido original, o que o texto diz.</em></p>
+<p></p>
+<h3>🟠 Ilustração</h3>
+<p><em>Exemplo bíblico, histórico ou do cotidiano que ilumina a explicação.</em></p>
+<p></p>
+<h3>🔴 Verdade</h3>
+<p><em>Princípio espiritual central revelado pelo texto.</em></p>
+<p></p>
+<h3>🔴 Aplicação</h3>
+<p><em>Como essa verdade confronta, consola e transforma a vida do ouvinte hoje.</em></p>
+<p></p>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 1º para o 2º ponto)</em></p>
+<hr>
+<h2>🔵 2º PONTO</h2>
+<h3>🟢 Explicação</h3>
+<p><em>Desenvolvimento progressivo do texto, mantendo coerência com o tema.</em></p>
+<p></p>
+<h3>🟠 Ilustração</h3>
+<p><em>Imagem clara que ajude o povo a visualizar a verdade bíblica.</em></p>
+<p></p>
+<h3>🔴 Verdade</h3>
+<p><em>O que Deus está afirmando sobre Ele mesmo e sobre nós.</em></p>
+<p></p>
+<h3>🔴 Aplicação</h3>
+<p><em>Chamado prático à fé, obediência e dependência do Senhor.</em></p>
+<p></p>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 2º para o 3º ponto)</em></p>
+<hr>
+<h2>🔵 3º PONTO</h2>
+<h3>🟢 Explicação</h3>
+<p><em>Aprofundamento da mensagem, ligação com o todo das Escrituras.</em></p>
+<p></p>
+<h3>🟠 Ilustração</h3>
+<p><em>História que prepare o coração para o clímax do sermão.</em></p>
+<p></p>
+<h3>🔴 Verdade</h3>
+<p><em>Declaração clara da vontade de Deus revelada no texto.</em></p>
+<p></p>
+<h3>🔴 Aplicação</h3>
+<p><em>Exortação pastoral, com graça e verdade.</em></p>
+<p></p>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 3º para o 4º ponto)</em></p>
+<hr>
+<h2>🔵 4º PONTO — Foco em Cristo</h2>
+<h3>🟢 Explicação</h3>
+<p><em>Como o texto aponta para Cristo, Sua obra, Seu caráter e Sua missão.</em></p>
+<p></p>
+<h3>🟠 Ilustração</h3>
+<p><em>Cena dos Evangelhos, da cruz, da graça, do cuidado de Cristo.</em></p>
+<p></p>
+<h3>🔴 Verdade</h3>
+<p><em>Cristo é a resposta final, suficiente e eterna.</em></p>
+<p></p>
+<h3>🔴 Aplicação</h3>
+<p><em>Convite à fé, arrependimento, descanso e entrega total a Jesus.</em></p>
+<p></p>
+<blockquote><p>📖 "Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei." — Mateus 11:28, ACF</p></blockquote>
+<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 4º ponto para a conclusão)</em></p>
+<hr>
+<h2>🔵 CONCLUSÃO</h2>
+<p><em>Síntese do sermão, retomando o tema e reforçando a esperança em Cristo.</em></p>
+<p></p>
+<h2>🔴 APELO</h2>
+<p><em>Chamado claro, bíblico e amoroso à decisão espiritual.</em></p>
+<p></p>
+<h2>🔵 ORAÇÃO FINAL</h2>
+<p><em>Entrega, gratidão e dependência total do Senhor.</em></p>
+<p></p>`;
+
+  const handleInsertTemplate = () => {
+    if (manualContent.replace(/<[^>]+>/g, '').trim().length > 20) {
+      const confirm = window.confirm('O editor já possui conteúdo. Deseja substituir pelo template completo?');
+      if (!confirm) return;
+    }
+    setManualContent(SERMON_TEMPLATE);
+    if (editorRef.current) {
+      editorRef.current.insertContent(''); // force re-render
+    }
+    toast({ title: '📋 Template inserido!', description: 'Estrutura completa do sermão adicionada ao editor.' });
+  };
 
   return (
     <div className="space-y-6">
@@ -709,52 +826,79 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         {/* Manual Mode Editor */}
         {outlineMode === 'manual' ? (
           <div className="space-y-3">
-            {/* Section Selector with color legend */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 flex-wrap text-[9px] text-muted-foreground">
-                <span className="font-semibold">Legenda:</span>
-                <span>🔵 Estrutura</span>
-                <span>🟢 Explicação bíblica</span>
-                <span>🟠 Ilustração</span>
-                <span>🔴 Verdade e Aplicação</span>
-              </div>
+            {/* Template Insert + Section Selector */}
+            <div className="space-y-3">
+              {/* Quick Actions Bar */}
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-xs font-medium text-muted-foreground">Editando:</p>
-                {SECTION_ELEMENTS.map(el => (
-                  <button
-                    key={el.id}
-                    onClick={() => setCurrentElement(el.id)}
-                    className={`text-[10px] px-2 py-1 rounded-full border transition-all ${
-                      currentElement === el.id 
-                        ? 'bg-primary/10 text-primary border-primary/30 font-semibold' 
-                        : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'
-                    }`}
-                  >
-                    {el.color} {el.label}
-                  </button>
-                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs border-dashed border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={handleInsertTemplate}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  📋 Inserir Template Completo
+                </Button>
+                <div className="flex-1" />
+                <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+                  <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700">🔵 Estrutura</span>
+                  <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-700">🟢 Explicação</span>
+                  <span className="px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-700">🟠 Ilustração</span>
+                  <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-700">🔴 Verdade/Aplicação</span>
+                </div>
+              </div>
+
+              {/* Grouped Section Selector */}
+              <div className="flex items-center gap-1 flex-wrap">
+                <p className="text-xs font-medium text-muted-foreground mr-1">Seção:</p>
+                {(() => {
+                  const groups = [
+                    { key: 'header', label: 'Cabeçalho', sep: '|' },
+                    { key: 'body', label: 'Corpo', sep: '|' },
+                    { key: 'point', label: 'Pontos', sep: '|' },
+                    { key: 'closing', label: 'Encerramento', sep: '' },
+                  ];
+                  return groups.map((group, gi) => (
+                    <div key={group.key} className="flex items-center gap-0.5">
+                      {SECTION_ELEMENTS.filter(el => el.group === group.key).map(el => (
+                        <button
+                          key={el.id}
+                          onClick={() => setCurrentElement(el.id)}
+                          className={`text-[10px] px-2 py-1 rounded-md border transition-all ${
+                            currentElement === el.id 
+                              ? 'bg-primary/15 text-primary border-primary/40 font-bold shadow-sm' 
+                              : 'bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:border-border'
+                          }`}
+                        >
+                          {el.color} {el.label}
+                        </button>
+                      ))}
+                      {gi < groups.length - 1 && <span className="text-muted-foreground/30 mx-0.5">│</span>}
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
 
             {/* Editor + Copilot Layout */}
             <div className="flex flex-col lg:flex-row gap-3">
               {/* Editor */}
-              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'lg:flex-[2]' : 'flex-1'}`}
-                   style={{ height: 'calc(100vh - 320px)', minHeight: '450px' }}>
+              <div className={`${showCopilot && hasModuleAccess('exegese.esbocos.texto_livre.copiloto') ? 'lg:flex-[3]' : 'flex-1'}`}
+                   style={{ height: 'calc(100vh - 340px)', minHeight: '500px' }}>
                 <ExegesisRichEditor
                   ref={editorRef}
                   content={manualContent}
                   onChange={setManualContent}
                   onSelectionChange={(text) => setSelectedText(text)}
-                  placeholder="Comece a escrever seu esboço... O Copiloto IA vai analisar em tempo real."
+                  placeholder="Comece a escrever seu esboço... O Copiloto IA vai analisar em tempo real. 💡 Use o botão 'Inserir Template Completo' acima para começar com a estrutura padrão."
                   minHeight="100%"
                 />
               </div>
 
               {/* Copilot Panel - fills remaining space */}
               {hasModuleAccess('exegese.esbocos.texto_livre.copiloto') && showCopilot && (
-                <div className="lg:flex-1 lg:min-w-[380px] border rounded-lg bg-card overflow-hidden flex flex-col"
-                     style={{ height: 'calc(100vh - 320px)', minHeight: '450px' }}>
+                <div className="lg:flex-[2] lg:min-w-[400px] lg:max-w-[700px] border rounded-lg bg-card overflow-hidden flex flex-col"
+                     style={{ height: 'calc(100vh - 340px)', minHeight: '500px' }}>
                   <OutlineCopilot
                     content={manualContent}
                     currentElement={currentElement}
