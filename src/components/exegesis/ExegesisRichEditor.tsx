@@ -146,6 +146,8 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
   const [showLegend, setShowLegend] = useState(false);
   const [customFonts, setCustomFonts] = useState<string[]>([]);
   const [currentFontSize, setCurrentFontSize] = useState(16);
+  const [wordCount, setWordCount] = useState(0);
+  const [charCount, setCharCount] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -164,6 +166,10 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
     editable,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+      // Update word/char count
+      const text = editor.state.doc.textContent;
+      setCharCount(text.length);
+      setWordCount(text.trim() ? text.trim().split(/\s+/).length : 0);
     },
     onSelectionUpdate: ({ editor }) => {
       if (onSelectionChange) {
@@ -171,6 +177,9 @@ export const ExegesisRichEditor = forwardRef<ExegesisRichEditorRef, ExegesisRich
         if (from !== to) {
           const selectedText = editor.state.doc.textBetween(from, to, ' ');
           onSelectionChange(selectedText);
+        } else {
+          // Clear selection when cursor is collapsed (no text selected)
+          onSelectionChange('');
         }
       }
     },
