@@ -908,6 +908,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                   </Button>
                   
                   {templateMenuOpen && (
+                    <>
+                    <div className="fixed inset-0 z-40" onClick={() => setTemplateMenuOpen(false)} />
                     <div className="absolute top-full left-0 mt-1 z-50 bg-card border rounded-lg shadow-xl w-80 max-h-96 overflow-auto">
                       {/* Default Template */}
                       <button
