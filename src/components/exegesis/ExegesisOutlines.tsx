@@ -959,6 +959,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                         <span className="text-sm font-medium">Salvar editor atual como modelo</span>
                       </button>
                     </div>
+                    </>
                   )}
                 </div>
 
