@@ -801,30 +801,57 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         {/* Manual Mode Editor */}
         {outlineMode === 'manual' ? (
           <div className="space-y-3">
-            {/* Section Selector with color legend */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 flex-wrap text-[9px] text-muted-foreground">
-                <span className="font-semibold">Legenda:</span>
-                <span>🔵 Estrutura</span>
-                <span>🟢 Explicação bíblica</span>
-                <span>🟠 Ilustração</span>
-                <span>🔴 Verdade e Aplicação</span>
-              </div>
+            {/* Template Insert + Section Selector */}
+            <div className="space-y-3">
+              {/* Quick Actions Bar */}
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-xs font-medium text-muted-foreground">Editando:</p>
-                {SECTION_ELEMENTS.map(el => (
-                  <button
-                    key={el.id}
-                    onClick={() => setCurrentElement(el.id)}
-                    className={`text-[10px] px-2 py-1 rounded-full border transition-all ${
-                      currentElement === el.id 
-                        ? 'bg-primary/10 text-primary border-primary/30 font-semibold' 
-                        : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'
-                    }`}
-                  >
-                    {el.color} {el.label}
-                  </button>
-                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs border-dashed border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={handleInsertTemplate}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  📋 Inserir Template Completo
+                </Button>
+                <div className="flex-1" />
+                <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+                  <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700">🔵 Estrutura</span>
+                  <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-700">🟢 Explicação</span>
+                  <span className="px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-700">🟠 Ilustração</span>
+                  <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-red-700">🔴 Verdade/Aplicação</span>
+                </div>
+              </div>
+
+              {/* Grouped Section Selector */}
+              <div className="flex items-center gap-1 flex-wrap">
+                <p className="text-xs font-medium text-muted-foreground mr-1">Seção:</p>
+                {(() => {
+                  const groups = [
+                    { key: 'header', label: 'Cabeçalho', sep: '|' },
+                    { key: 'body', label: 'Corpo', sep: '|' },
+                    { key: 'point', label: 'Pontos', sep: '|' },
+                    { key: 'closing', label: 'Encerramento', sep: '' },
+                  ];
+                  return groups.map((group, gi) => (
+                    <div key={group.key} className="flex items-center gap-0.5">
+                      {SECTION_ELEMENTS.filter(el => el.group === group.key).map(el => (
+                        <button
+                          key={el.id}
+                          onClick={() => setCurrentElement(el.id)}
+                          className={`text-[10px] px-2 py-1 rounded-md border transition-all ${
+                            currentElement === el.id 
+                              ? 'bg-primary/15 text-primary border-primary/40 font-bold shadow-sm' 
+                              : 'bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:border-border'
+                          }`}
+                        >
+                          {el.color} {el.label}
+                        </button>
+                      ))}
+                      {gi < groups.length - 1 && <span className="text-muted-foreground/30 mx-0.5">│</span>}
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
 
