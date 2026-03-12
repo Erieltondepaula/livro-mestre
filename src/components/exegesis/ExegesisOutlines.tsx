@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2, Monitor, Presentation, Search, Tag, Filter, CopyPlus, Brain } from 'lucide-react';
+import { FileText, Send, Loader2, Copy, Trash2, Check, ChevronDown, ChevronUp, MessageSquare, Save, Download, Edit3, Eye, BookOpen, History, Sparkles, AlertTriangle, Info, CheckCircle2, Monitor, Presentation, Search, Tag, Filter, CopyPlus, Brain, Plus, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -306,6 +306,66 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedContentRef = useRef<string>('');
 
+  // Template management
+  interface OutlineTemplate { id: string; name: string; description: string | null; content: string; is_default: boolean; }
+  const [savedTemplates, setSavedTemplates] = useState<OutlineTemplate[]>([]);
+  const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateDesc, setNewTemplateDesc] = useState('');
+
+  // Load templates
+  useEffect(() => {
+    const loadTemplates = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('outline_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (data) setSavedTemplates(data as unknown as OutlineTemplate[]);
+    };
+    loadTemplates();
+  }, []);
+
+  const handleSaveAsTemplate = async () => {
+    if (!newTemplateName.trim() || !manualContent.trim()) {
+      toast({ title: 'Preencha o nome do modelo e tenha conteúdo no editor', variant: 'destructive' });
+      return;
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data, error } = await supabase.from('outline_templates').insert({
+      user_id: user.id,
+      name: newTemplateName.trim(),
+      description: newTemplateDesc.trim() || null,
+      content: manualContent,
+      is_default: false,
+    } as any).select().single();
+    if (error) { toast({ title: 'Erro ao salvar modelo', variant: 'destructive' }); return; }
+    setSavedTemplates(prev => [data as unknown as OutlineTemplate, ...prev]);
+    setSaveTemplateOpen(false);
+    setNewTemplateName('');
+    setNewTemplateDesc('');
+    toast({ title: '✅ Modelo salvo!', description: `"${newTemplateName}" disponível para uso futuro.` });
+  };
+
+  const handleLoadTemplate = (template: OutlineTemplate) => {
+    if (manualContent.replace(/<[^>]+>/g, '').trim().length > 20) {
+      if (!window.confirm('O editor já possui conteúdo. Deseja substituir pelo modelo selecionado?')) return;
+    }
+    setManualContent(template.content);
+    setTemplateMenuOpen(false);
+    toast({ title: `📋 Modelo "${template.name}" aplicado!` });
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    if (!window.confirm('Excluir este modelo permanentemente?')) return;
+    await supabase.from('outline_templates').delete().eq('id', id);
+    setSavedTemplates(prev => prev.filter(t => t.id !== id));
+    toast({ title: 'Modelo excluído' });
+  };
   useEffect(() => { onFetch(); }, [onFetch]);
 
   // ===== AUTO-SAVE =====
@@ -834,15 +894,75 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
             <div className="space-y-3">
               {/* Quick Actions Bar */}
               <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs border-dashed border-primary/40 text-primary hover:bg-primary/10"
-                  onClick={handleInsertTemplate}
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  📋 Inserir Template Completo
-                </Button>
+                {/* Template Dropdown */}
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs border-dashed border-primary/40 text-primary hover:bg-primary/10"
+                    onClick={() => setTemplateMenuOpen(!templateMenuOpen)}
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    📋 Modelos de Esboço
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                  
+                  {templateMenuOpen && (
+                    <>
+                    <div className="fixed inset-0 z-40" onClick={() => setTemplateMenuOpen(false)} />
+                    <div className="absolute top-full left-0 mt-1 z-50 bg-card border rounded-lg shadow-xl w-80 max-h-96 overflow-auto">
+                      {/* Default Template */}
+                      <button
+                        onClick={() => { handleInsertTemplate(); setTemplateMenuOpen(false); }}
+                        className="w-full text-left px-3 py-2.5 hover:bg-muted/50 border-b border-border flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4 text-primary shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium">Template Padrão</p>
+                          <p className="text-[10px] text-muted-foreground">Título, Tema, Texto Base, 3 Pontos, Conclusão</p>
+                        </div>
+                      </button>
+                      
+                      {/* Saved Templates */}
+                      {savedTemplates.length > 0 && (
+                        <div className="border-b border-border">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase px-3 pt-2 pb-1">Meus Modelos</p>
+                          {savedTemplates.map(t => (
+                            <div key={t.id} className="flex items-center gap-1 px-3 py-2 hover:bg-muted/50 group">
+                              <button
+                                onClick={() => handleLoadTemplate(t)}
+                                className="flex-1 text-left"
+                              >
+                                <p className="text-sm font-medium truncate">{t.name}</p>
+                                {t.description && <p className="text-[10px] text-muted-foreground truncate">{t.description}</p>}
+                              </button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(t.id); }}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Save Current as Template */}
+                      <button
+                        onClick={() => { setTemplateMenuOpen(false); setSaveTemplateOpen(true); }}
+                        disabled={!manualContent.replace(/<[^>]+>/g, '').trim()}
+                        className="w-full text-left px-3 py-2.5 hover:bg-muted/50 flex items-center gap-2 text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-4 h-4 shrink-0" />
+                        <span className="text-sm font-medium">Salvar editor atual como modelo</span>
+                      </button>
+                    </div>
+                    </>
+                  )}
+                </div>
+
                 <div className="flex-1" />
                 <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
                   <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700">🔵 Estrutura</span>
@@ -1330,6 +1450,47 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           passage={preacherMode.passage}
           onClose={() => setPreacherMode(null)}
         />
+      )}
+
+      {/* Save Template Dialog */}
+      {saveTemplateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setSaveTemplateOpen(false)}>
+          <div className="bg-card border rounded-xl shadow-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Save className="w-5 h-5 text-primary" /> Salvar como Modelo
+            </h3>
+            <p className="text-sm text-muted-foreground">O conteúdo atual do editor será salvo como modelo reutilizável.</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Nome do Modelo *</label>
+                <input
+                  type="text"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  placeholder="Ex: Sermão Expositivo 3 Pontos"
+                  className="input-library w-full text-sm mt-1"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Descrição (opcional)</label>
+                <input
+                  type="text"
+                  value={newTemplateDesc}
+                  onChange={(e) => setNewTemplateDesc(e.target.value)}
+                  placeholder="Ex: Modelo com introdução, 3 pontos e conclusão"
+                  className="input-library w-full text-sm mt-1"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Button onClick={handleSaveAsTemplate} className="btn-library-primary flex-1" disabled={!newTemplateName.trim()}>
+                <Save className="w-4 h-4 mr-2" /> Salvar Modelo
+              </Button>
+              <Button variant="outline" onClick={() => setSaveTemplateOpen(false)}>Cancelar</Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* PDF Export Options Dialog */}
