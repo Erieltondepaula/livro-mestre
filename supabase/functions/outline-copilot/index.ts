@@ -326,7 +326,7 @@ serve(async (req) => {
   }
 
   try {
-    const { content, currentElement, previousElements } = await req.json();
+    const { content, currentElement, selectedText, previousElements } = await req.json();
     
     if (!content) {
       return new Response(
