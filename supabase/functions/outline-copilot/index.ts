@@ -340,7 +340,26 @@ REGRAS IMPORTANTES:
 - "baseTextContext" é OBRIGATÓRIO sempre que um texto base for detectado. Se não houver texto base ainda, retorne null.
 - "detectedPatterns" é OBRIGATÓRIO - analise o estilo do usuário com base no conteúdo.
 - Cada seção do sermão DEVE ser verificada contra o texto base. Se se afasta, alerte em thematicAlert.
-- Use o campo "currentElement" para focar sua análise na seção que o usuário está editando.`;
+- Use o campo "currentElement" para focar sua análise na seção que o usuário está editando.
+- Se "selectedText" estiver presente, OBRIGATORIAMENTE preencha "selectedTextAnalysis" com análise profunda do trecho, incluindo reescrita sugerida.
+- "resourceSuggestions" é OBRIGATÓRIO - sempre sugira:
+  * 2-3 livros relevantes ao tema/texto base (comentários bíblicos, teologia, homilética)
+  * 1-2 teses/dissertações acadêmicas sobre o tema
+  * 1-2 documentários ou mídias visuais relevantes
+  * 3-5 sermões de pregadores VARIADOS de TODAS as épocas e funções ministeriais:
+    - Pais da Igreja (séc. I-V): Agostinho, Crisóstomo, Irineu, Atanásio, Tertuliano
+    - Reformadores (séc. XVI): Lutero, Calvino, Knox, Zuínglio, Tyndale
+    - Puritanos (séc. XVII-XVIII): Owen, Baxter, Edwards, Watson, Bunyan
+    - Avivalistas (séc. XVIII-XIX): Wesley, Whitefield, Finney, Moody, Spurgeon
+    - Doutores/Teólogos: Lloyd-Jones, Sproul, Packer, Berkhof, Grudem
+    - Evangelistas: Billy Graham, Reinhard Bonnke, Luis Palau, D.L. Moody
+    - Pastores/Mestres: Keller, Stott, MacArthur, Tozer, Ravenhill
+    - Profetas/Avivalistas modernos: Leonard Ravenhill, David Wilkerson, Keith Green
+    - Brasileiros: Hernandes D.L., Augustus Nicodemus, Paschoal Piragine, Caio Fábio, Franklin Ferreira
+    - Africanos/Asianos/Latinos: Desmond Tutu, Watchman Nee, Bakht Singh, Samuel Escobar, René Padilla
+    - Mulheres: Beth Moore, Priscilla Shirer, Kay Arthur, Elisabeth Elliot
+    NUNCA repita os mesmos pregadores. VARIE SEMPRE baseado no conteúdo.`;
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
