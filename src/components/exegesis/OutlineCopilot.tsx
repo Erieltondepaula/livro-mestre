@@ -696,7 +696,205 @@ export function OutlineCopilot({ content, currentElement, selectedText, previous
               </>
             )}
 
-            {/* Section Help from Research */}
+            {/* ===== SELECTED TEXT ANALYSIS ===== */}
+            {selectedText && selectedText.length > 3 && (
+              <div className="p-3 lg:p-4 rounded-lg bg-violet-500/10 border-2 border-violet-500/30 animate-in fade-in">
+                <div className="flex items-start gap-2 mb-3">
+                  <Highlighter className="w-5 h-5 text-violet-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs lg:text-sm font-bold text-violet-700">🔎 Analisando seleção em tempo real</p>
+                    <p className="text-[10px] lg:text-xs text-violet-600/70 mt-0.5 italic truncate max-w-xs">"{selectedText.substring(0, 80)}..."</p>
+                  </div>
+                </div>
+
+                {analysis?.selectedTextAnalysis ? (
+                  <div className="space-y-3">
+                    {analysis.selectedTextAnalysis.summary && (
+                      <p className="text-xs lg:text-sm text-violet-700/90 leading-relaxed">{analysis.selectedTextAnalysis.summary}</p>
+                    )}
+
+                    {analysis.selectedTextAnalysis.strengths?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-green-700 mb-1">✅ Pontos fortes:</p>
+                        {analysis.selectedTextAnalysis.strengths.map((s, i) => (
+                          <p key={i} className="text-xs lg:text-sm text-green-700/80 ml-3">• {s}</p>
+                        ))}
+                      </div>
+                    )}
+
+                    {analysis.selectedTextAnalysis.improvements?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-amber-700 mb-1">📝 Melhorias sugeridas:</p>
+                        {analysis.selectedTextAnalysis.improvements.map((imp, i) => (
+                          <div key={i} className="flex items-start gap-2 group ml-1">
+                            <span className="text-amber-500 mt-0.5">•</span>
+                            <p className="text-xs lg:text-sm text-amber-700/80 flex-1">{imp}</p>
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleCopyToClipboard(imp)}>
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {analysis.selectedTextAnalysis.rewriteSuggestion && (
+                      <div className="p-3 bg-violet-500/10 rounded-lg border border-violet-500/20">
+                        <p className="text-xs font-semibold text-violet-700 mb-1.5">✍️ Sugestão de reescrita:</p>
+                        <p className="text-xs lg:text-sm text-violet-700/90 italic leading-relaxed">{analysis.selectedTextAnalysis.rewriteSuggestion}</p>
+                        <div className="flex gap-1.5 mt-2">
+                          <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs text-green-600 hover:bg-green-500/10 gap-1"
+                            onClick={() => handleApply(selectedText, analysis.selectedTextAnalysis!.rewriteSuggestion)}>
+                            <Check className="w-3 h-3" /> Substituir
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs text-muted-foreground hover:bg-muted/50 gap-1"
+                            onClick={() => handleCopyToClipboard(analysis.selectedTextAnalysis!.rewriteSuggestion)}>
+                            <Copy className="w-3 h-3" /> Copiar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {analysis.selectedTextAnalysis.relatedVerses?.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-purple-700 mb-1">📖 Versículos relacionados:</p>
+                        {analysis.selectedTextAnalysis.relatedVerses.map((v, i) => (
+                          <div key={i} className="flex items-center gap-2 ml-1">
+                            <p className="text-xs lg:text-sm text-purple-700/80 flex-1">• {v}</p>
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px]"
+                              onClick={() => handleInsertRef(v)}>
+                              <Check className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {analysis.selectedTextAnalysis.rhetoricalAnalysis && (
+                      <p className="text-xs text-muted-foreground italic leading-relaxed">
+                        🎤 {analysis.selectedTextAnalysis.rhetoricalAnalysis}
+                      </p>
+                    )}
+                  </div>
+                ) : isLoading ? (
+                  <div className="flex items-center gap-2 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+                    <p className="text-xs text-violet-600">Analisando trecho selecionado...</p>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {/* ===== RESOURCE SUGGESTIONS (Books, Theses, Documentaries, Sermons) ===== */}
+            {analysis?.resourceSuggestions && (
+              <CollapsibleSection
+                icon={<Library className="w-4 h-4 text-indigo-600" />}
+                title="📚 Recursos Sugeridos (Livros, Teses, Documentários, Pregadores)"
+                badge={
+                  (analysis.resourceSuggestions.books?.length || 0) +
+                  (analysis.resourceSuggestions.theses?.length || 0) +
+                  (analysis.resourceSuggestions.documentaries?.length || 0) +
+                  (analysis.resourceSuggestions.sermons?.length || 0)
+                }
+                badgeColor="bg-indigo-500/20 text-indigo-700"
+                expanded={expandedSections.includes('resources')}
+                onToggle={() => toggleSection('resources')}
+              >
+                {/* Books */}
+                {analysis.resourceSuggestions.books?.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-foreground/80 mb-2 flex items-center gap-1">
+                      <BookMarked className="w-3.5 h-3.5" /> Livros Recomendados
+                    </p>
+                    {analysis.resourceSuggestions.books.map((book, idx) => (
+                      <div key={idx} className="p-2.5 rounded bg-indigo-500/5 border border-indigo-500/10 mb-2">
+                        <p className="text-xs lg:text-sm font-medium">{book.title}</p>
+                        <p className="text-xs text-muted-foreground">por {book.author}</p>
+                        <p className="text-xs text-indigo-700/70 mt-1">{book.reason}</p>
+                        <a href={`https://www.google.com/search?q=${encodeURIComponent(`${book.title} ${book.author} livro`)}`}
+                          target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
+                          <ExternalLink className="w-3 h-3" /> Pesquisar
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Theses */}
+                {analysis.resourceSuggestions.theses?.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-foreground/80 mb-2 flex items-center gap-1">
+                      <ScrollText className="w-3.5 h-3.5" /> Teses & Dissertações
+                    </p>
+                    {analysis.resourceSuggestions.theses.map((thesis, idx) => (
+                      <div key={idx} className="p-2.5 rounded bg-cyan-500/5 border border-cyan-500/10 mb-2">
+                        <p className="text-xs lg:text-sm font-medium">{thesis.title}</p>
+                        <p className="text-xs text-muted-foreground">{thesis.institution}</p>
+                        <p className="text-xs text-cyan-700/70 mt-1">{thesis.reason}</p>
+                        <a href={`https://scholar.google.com/scholar?q=${encodeURIComponent(thesis.title)}`}
+                          target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
+                          <ExternalLink className="w-3 h-3" /> Google Acadêmico
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Documentaries */}
+                {analysis.resourceSuggestions.documentaries?.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-foreground/80 mb-2 flex items-center gap-1">
+                      <Film className="w-3.5 h-3.5" /> Documentários & Mídias
+                    </p>
+                    {analysis.resourceSuggestions.documentaries.map((doc, idx) => (
+                      <div key={idx} className="p-2.5 rounded bg-amber-500/5 border border-amber-500/10 mb-2">
+                        <p className="text-xs lg:text-sm font-medium">{doc.title}</p>
+                        <p className="text-xs text-muted-foreground">{doc.platform}</p>
+                        <p className="text-xs text-amber-700/70 mt-1">{doc.reason}</p>
+                        <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${doc.title} documentário`)}`}
+                          target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1">
+                          <ExternalLink className="w-3 h-3" /> Buscar no YouTube
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Sermons by category */}
+                {analysis.resourceSuggestions.sermons?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-foreground/80 mb-2 flex items-center gap-1">
+                      <Church className="w-3.5 h-3.5" /> Pregadores ao Longo dos Séculos
+                    </p>
+                    {analysis.resourceSuggestions.sermons.map((sermon, idx) => {
+                      const roleEmoji: Record<string, string> = {
+                        avivalista: '🔥', evangelista: '📢', doutor: '🎓', mestre: '📖',
+                        profeta: '⚡', pastor: '🤝', reformador: '⚔️', puritano: '📜',
+                        padre_igreja: '⛪',
+                      };
+                      return (
+                        <div key={idx} className="p-2.5 rounded bg-rose-500/5 border border-rose-500/10 mb-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-xs lg:text-sm font-semibold text-rose-700">
+                              {roleEmoji[sermon.role] || '🎙️'} {sermon.preacher}
+                            </p>
+                            <span className="text-[10px] px-1.5 py-0.5 bg-rose-500/10 text-rose-600 rounded capitalize">{sermon.role?.replace('_', ' ')}</span>
+                            {sermon.era && <span className="text-[10px] text-muted-foreground">({sermon.era})</span>}
+                          </div>
+                          <p className="text-xs text-foreground/80 mt-1">"{sermon.title}"</p>
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{sermon.approach}</p>
+                          <a href={sermon.searchUrl || `https://www.youtube.com/results?search_query=${encodeURIComponent(`${sermon.preacher} ${sermon.title} sermão pregação`)}`}
+                            target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1.5">
+                            <ExternalLink className="w-3 h-3" /> Buscar pregação
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CollapsibleSection>
+            )}
+
             {research?.currentSectionHelp && (
               <div className="p-3 lg:p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
                 <div className="flex items-start gap-2">
