@@ -605,23 +605,46 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático', outline_descriptive: 'Descritivo', outline_normative: 'Normativo', outline_theological: 'Teológico' };
   const isHtml = (content: string) => content.includes('<h1') || content.includes('<h2') || content.includes('<p>') || content.includes('<strong>');
 
-  // Section elements with color coding
+  // Section elements with color coding - clicking inserts into editor
   const SECTION_ELEMENTS = [
-    { id: 'titulo', label: 'Título', color: '🔵', group: 'header' },
-    { id: 'tema', label: 'Tema', color: '🔵', group: 'header' },
-    { id: 'texto_base', label: 'Texto Base', color: '🔵', group: 'header' },
-    { id: 'introducao', label: 'Introdução', color: '🔵', group: 'body' },
-    { id: 'transicao', label: 'Transição', color: '🔵', group: 'body' },
-    { id: 'ponto', label: 'Ponto', color: '🔵', group: 'point' },
-    { id: 'explicacao', label: 'Explicação', color: '🟢', group: 'point' },
-    { id: 'ilustracao', label: 'Ilustração', color: '🟠', group: 'point' },
-    { id: 'verdade', label: 'Verdade', color: '🔴', group: 'point' },
-    { id: 'aplicacao', label: 'Aplicação', color: '🔴', group: 'point' },
-    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴', group: 'point' },
-    { id: 'conclusao', label: 'Conclusão', color: '🔵', group: 'closing' },
-    { id: 'apelo', label: 'Apelo', color: '🔴', group: 'closing' },
-    { id: 'oracao_final', label: 'Oração Final', color: '🔵', group: 'closing' },
+    { id: 'titulo', label: 'Título', color: '🔵', group: 'header', insert: '<h1 style="text-align: center">🔵 TÍTULO: </h1>' },
+    { id: 'tema', label: 'Tema', color: '🔵', group: 'header', insert: '<p><strong>🔵 TEMA:</strong> </p>' },
+    { id: 'texto_base', label: 'Texto Base', color: '🔵', group: 'header', insert: '<p><strong>🔵 TEXTO BASE:</strong> </p>' },
+    { id: 'introducao', label: 'Introdução', color: '🔵', group: 'body', insert: '<h2>🔵 INTRODUÇÃO</h2><p></p>' },
+    { id: 'transicao', label: 'Transição', color: '🔵', group: 'body', insert: '<p><strong>🔵 TRANSIÇÃO</strong></p>' },
+    { id: 'ponto', label: 'Ponto', color: '🔵', group: 'point', insert: '<h2>🔵 PONTO</h2><p></p>' },
+    { id: 'explicacao', label: 'Explicação', color: '🟢', group: 'point', insert: '<h3>🟢 Explicação</h3><p></p>' },
+    { id: 'ilustracao', label: 'Ilustração', color: '🟠', group: 'point', insert: '<h3>🟠 Ilustração</h3><p></p>' },
+    { id: 'verdade', label: 'Verdade', color: '🔴', group: 'point', insert: '<h3>🔴 Verdade</h3><p></p>' },
+    { id: 'aplicacao', label: 'Aplicação', color: '🔴', group: 'point', insert: '<h3>🔴 Aplicação</h3><p></p>' },
+    { id: 'frase_efeito', label: 'Frase de Efeito', color: '🔴', group: 'point', insert: '<blockquote><p>🔴 <em>Frase de impacto...</em></p></blockquote>' },
+    { id: 'citacao', label: 'Citação', color: '🟡', group: 'point', insert: '<blockquote><p>📖 <em>"Citação..."</em> — <strong>Fonte (Pregador, Livro, Vídeo, Artigo...)</strong></p></blockquote>' },
+    { id: 'desenvolvimento', label: 'Desenvolvimento', color: '🟢', group: 'point', insert: '<h3>🟢 Desenvolvimento</h3><p></p>' },
+    { id: 'conclusao', label: 'Conclusão', color: '🔵', group: 'closing', insert: '<h2>🔵 CONCLUSÃO</h2><p></p>' },
+    { id: 'apelo', label: 'Apelo', color: '🔴', group: 'closing', insert: '<h2>🔴 APELO</h2><p></p>' },
+    { id: 'oracao_final', label: 'Oração Final', color: '🔵', group: 'closing', insert: '<h2>🔵 ORAÇÃO FINAL</h2><p></p>' },
   ];
+
+  // Track point counter for auto-numbering
+  const pointCounterRef = useRef(0);
+
+  const handleInsertSection = (element: typeof SECTION_ELEMENTS[0]) => {
+    setCurrentElement(element.id);
+    let htmlToInsert = element.insert;
+    
+    // Auto-number points
+    if (element.id === 'ponto') {
+      pointCounterRef.current += 1;
+      htmlToInsert = `<hr><h2>🔵 ${pointCounterRef.current}º PONTO</h2><p></p>`;
+    }
+    
+    if (editorRef.current) {
+      editorRef.current.insertContent(htmlToInsert);
+    } else {
+      setManualContent(prev => prev + htmlToInsert);
+    }
+    toast({ title: `${element.color} ${element.label} inserido` });
+  };
 
   const SERMON_TEMPLATE = `<h1 style="text-align: center">🔵 TÍTULO</h1>
 <p><strong>🔵 TEMA:</strong> </p>
