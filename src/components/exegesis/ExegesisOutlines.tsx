@@ -306,6 +306,66 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedContentRef = useRef<string>('');
 
+  // Template management
+  interface OutlineTemplate { id: string; name: string; description: string | null; content: string; is_default: boolean; }
+  const [savedTemplates, setSavedTemplates] = useState<OutlineTemplate[]>([]);
+  const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateDesc, setNewTemplateDesc] = useState('');
+
+  // Load templates
+  useEffect(() => {
+    const loadTemplates = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('outline_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (data) setSavedTemplates(data as unknown as OutlineTemplate[]);
+    };
+    loadTemplates();
+  }, []);
+
+  const handleSaveAsTemplate = async () => {
+    if (!newTemplateName.trim() || !manualContent.trim()) {
+      toast({ title: 'Preencha o nome do modelo e tenha conteúdo no editor', variant: 'destructive' });
+      return;
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data, error } = await supabase.from('outline_templates').insert({
+      user_id: user.id,
+      name: newTemplateName.trim(),
+      description: newTemplateDesc.trim() || null,
+      content: manualContent,
+      is_default: false,
+    } as any).select().single();
+    if (error) { toast({ title: 'Erro ao salvar modelo', variant: 'destructive' }); return; }
+    setSavedTemplates(prev => [data as unknown as OutlineTemplate, ...prev]);
+    setSaveTemplateOpen(false);
+    setNewTemplateName('');
+    setNewTemplateDesc('');
+    toast({ title: '✅ Modelo salvo!', description: `"${newTemplateName}" disponível para uso futuro.` });
+  };
+
+  const handleLoadTemplate = (template: OutlineTemplate) => {
+    if (manualContent.replace(/<[^>]+>/g, '').trim().length > 20) {
+      if (!window.confirm('O editor já possui conteúdo. Deseja substituir pelo modelo selecionado?')) return;
+    }
+    setManualContent(template.content);
+    setTemplateMenuOpen(false);
+    toast({ title: `📋 Modelo "${template.name}" aplicado!` });
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    if (!window.confirm('Excluir este modelo permanentemente?')) return;
+    await supabase.from('outline_templates').delete().eq('id', id);
+    setSavedTemplates(prev => prev.filter(t => t.id !== id));
+    toast({ title: 'Modelo excluído' });
+  };
   useEffect(() => { onFetch(); }, [onFetch]);
 
   // ===== AUTO-SAVE =====
