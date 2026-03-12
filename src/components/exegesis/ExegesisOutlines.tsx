@@ -1331,6 +1331,67 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
           onClose={() => setPreacherMode(null)}
         />
       )}
+
+      {/* PDF Export Options Dialog */}
+      {pdfDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setPdfDialogOpen(false)}>
+          <div className="bg-card border rounded-xl shadow-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Download className="w-5 h-5 text-primary" /> Exportar PDF
+            </h3>
+            <p className="text-sm text-muted-foreground">Configure as opções de exportação antes de gerar o PDF.</p>
+            
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pdfOptions.showHeader}
+                  onChange={(e) => setPdfOptions(prev => ({ ...prev, showHeader: e.target.checked }))}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <span className="text-sm font-medium">Adicionar cabeçalho</span>
+              </label>
+              {pdfOptions.showHeader && (
+                <input
+                  type="text"
+                  value={pdfOptions.headerText}
+                  onChange={(e) => setPdfOptions(prev => ({ ...prev, headerText: e.target.value }))}
+                  placeholder="Texto do cabeçalho (ex: Nome da Igreja, Pregador)"
+                  className="input-library w-full text-sm"
+                />
+              )}
+              
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pdfOptions.showFooter}
+                  onChange={(e) => setPdfOptions(prev => ({ ...prev, showFooter: e.target.checked }))}
+                  className="w-4 h-4 rounded border-border"
+                />
+                <span className="text-sm font-medium">Adicionar rodapé</span>
+              </label>
+              {pdfOptions.showFooter && (
+                <input
+                  type="text"
+                  value={pdfOptions.footerText}
+                  onChange={(e) => setPdfOptions(prev => ({ ...prev, footerText: e.target.value }))}
+                  placeholder="Texto do rodapé (ex: Data, Série)"
+                  className="input-library w-full text-sm"
+                />
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <Button onClick={confirmPdfExport} className="btn-library-primary flex-1">
+                <Download className="w-4 h-4 mr-2" /> Gerar PDF
+              </Button>
+              <Button variant="outline" onClick={() => setPdfDialogOpen(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
