@@ -305,6 +305,28 @@ FORMATO DE RESPOSTA (JSON estrito):
     "palavras_frequentes": ["palavra1", "palavra2"],
     "expressoes_frequentes": ["expressão1"],
     "estilo_escrita": "descrição do estilo geral ou null"
+  },
+  "selectedTextAnalysis": {
+    "summary": "Resumo do trecho selecionado",
+    "strengths": ["Ponto forte 1", "Ponto forte 2"],
+    "improvements": ["Melhoria sugerida 1 com exemplo de reescrita", "Melhoria 2"],
+    "rewriteSuggestion": "Versão reescrita e melhorada do trecho selecionado (texto completo)",
+    "relatedVerses": ["Versículo relacionado 1 (ACF)", "Versículo 2"],
+    "rhetoricalAnalysis": "Análise retórica: força persuasiva, clareza, progressão lógica"
+  },
+  "resourceSuggestions": {
+    "books": [
+      { "title": "Nome do livro", "author": "Autor", "reason": "Por que é relevante para o tema/seção atual" }
+    ],
+    "theses": [
+      { "title": "Título da tese/dissertação", "institution": "Universidade", "reason": "Relevância" }
+    ],
+    "documentaries": [
+      { "title": "Nome do documentário", "platform": "Onde encontrar", "reason": "Relevância" }
+    ],
+    "sermons": [
+      { "preacher": "Nome do pregador", "role": "avivalista|evangelista|doutor|mestre|profeta|pastor|reformador|puritano|padre_igreja", "era": "época/século", "title": "Título do sermão", "approach": "Como abordou o tema", "searchUrl": "URL de busca no YouTube/Google" }
+    ]
   }
 }
 
