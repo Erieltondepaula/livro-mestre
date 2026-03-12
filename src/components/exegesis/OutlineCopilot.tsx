@@ -396,15 +396,11 @@ export function OutlineCopilot({ content, currentElement, selectedText, previous
     }
   }, [content, currentElement, previousElements, analysis?.detectedPosition]);
 
-  // Debounced analysis - also triggers on selectedText change
+  // Debounced analysis - triggers on content or selectedText change
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    // Shorter debounce for selection changes
     const delay = selectedText ? 800 : 1500;
-    debounceRef.current = setTimeout(() => {
-      lastContentRef.current = ''; // Force re-analyze on selection change
-      analyzeContent();
-    }, delay);
+    debounceRef.current = setTimeout(() => analyzeContent(), delay);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [content, selectedText, analyzeContent]);
 
