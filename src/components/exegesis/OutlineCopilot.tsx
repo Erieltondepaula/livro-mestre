@@ -299,6 +299,8 @@ export function OutlineCopilot({ content, currentElement, selectedText, previous
   const lastContentRef = useRef<string>('');
   const lastResearchContentRef = useRef<string>('');
 
+  const lastSelectedTextRef = useRef<string>('');
+
   const analyzeContent = useCallback(async () => {
     if (!content || content.replace(/<[^>]+>/g, '').trim().length < 10) {
       setAnalysis(null);
@@ -306,8 +308,11 @@ export function OutlineCopilot({ content, currentElement, selectedText, previous
     }
 
     const plainContent = content.replace(/<[^>]+>/g, '').trim();
-    if (plainContent === lastContentRef.current) return;
+    const currentSelected = selectedText || '';
+    // Re-analyze if content changed OR selected text changed
+    if (plainContent === lastContentRef.current && currentSelected === lastSelectedTextRef.current) return;
     lastContentRef.current = plainContent;
+    lastSelectedTextRef.current = currentSelected;
 
     setIsLoading(true);
     setError(null);
