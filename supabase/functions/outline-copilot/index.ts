@@ -305,6 +305,28 @@ FORMATO DE RESPOSTA (JSON estrito):
     "palavras_frequentes": ["palavra1", "palavra2"],
     "expressoes_frequentes": ["expressão1"],
     "estilo_escrita": "descrição do estilo geral ou null"
+  },
+  "selectedTextAnalysis": {
+    "summary": "Resumo do trecho selecionado",
+    "strengths": ["Ponto forte 1", "Ponto forte 2"],
+    "improvements": ["Melhoria sugerida 1 com exemplo de reescrita", "Melhoria 2"],
+    "rewriteSuggestion": "Versão reescrita e melhorada do trecho selecionado (texto completo)",
+    "relatedVerses": ["Versículo relacionado 1 (ACF)", "Versículo 2"],
+    "rhetoricalAnalysis": "Análise retórica: força persuasiva, clareza, progressão lógica"
+  },
+  "resourceSuggestions": {
+    "books": [
+      { "title": "Nome do livro", "author": "Autor", "reason": "Por que é relevante para o tema/seção atual" }
+    ],
+    "theses": [
+      { "title": "Título da tese/dissertação", "institution": "Universidade", "reason": "Relevância" }
+    ],
+    "documentaries": [
+      { "title": "Nome do documentário", "platform": "Onde encontrar", "reason": "Relevância" }
+    ],
+    "sermons": [
+      { "preacher": "Nome do pregador", "role": "avivalista|evangelista|doutor|mestre|profeta|pastor|reformador|puritano|padre_igreja", "era": "época/século", "title": "Título do sermão", "approach": "Como abordou o tema", "searchUrl": "URL de busca no YouTube/Google" }
+    ]
   }
 }
 
@@ -318,7 +340,26 @@ REGRAS IMPORTANTES:
 - "baseTextContext" é OBRIGATÓRIO sempre que um texto base for detectado. Se não houver texto base ainda, retorne null.
 - "detectedPatterns" é OBRIGATÓRIO - analise o estilo do usuário com base no conteúdo.
 - Cada seção do sermão DEVE ser verificada contra o texto base. Se se afasta, alerte em thematicAlert.
-- Use o campo "currentElement" para focar sua análise na seção que o usuário está editando.`;
+- Use o campo "currentElement" para focar sua análise na seção que o usuário está editando.
+- Se "selectedText" estiver presente, OBRIGATORIAMENTE preencha "selectedTextAnalysis" com análise profunda do trecho, incluindo reescrita sugerida.
+- "resourceSuggestions" é OBRIGATÓRIO - sempre sugira:
+  * 2-3 livros relevantes ao tema/texto base (comentários bíblicos, teologia, homilética)
+  * 1-2 teses/dissertações acadêmicas sobre o tema
+  * 1-2 documentários ou mídias visuais relevantes
+  * 3-5 sermões de pregadores VARIADOS de TODAS as épocas e funções ministeriais:
+    - Pais da Igreja (séc. I-V): Agostinho, Crisóstomo, Irineu, Atanásio, Tertuliano
+    - Reformadores (séc. XVI): Lutero, Calvino, Knox, Zuínglio, Tyndale
+    - Puritanos (séc. XVII-XVIII): Owen, Baxter, Edwards, Watson, Bunyan
+    - Avivalistas (séc. XVIII-XIX): Wesley, Whitefield, Finney, Moody, Spurgeon
+    - Doutores/Teólogos: Lloyd-Jones, Sproul, Packer, Berkhof, Grudem
+    - Evangelistas: Billy Graham, Reinhard Bonnke, Luis Palau, D.L. Moody
+    - Pastores/Mestres: Keller, Stott, MacArthur, Tozer, Ravenhill
+    - Profetas/Avivalistas modernos: Leonard Ravenhill, David Wilkerson, Keith Green
+    - Brasileiros: Hernandes D.L., Augustus Nicodemus, Paschoal Piragine, Caio Fábio, Franklin Ferreira
+    - Africanos/Asianos/Latinos: Desmond Tutu, Watchman Nee, Bakht Singh, Samuel Escobar, René Padilla
+    - Mulheres: Beth Moore, Priscilla Shirer, Kay Arthur, Elisabeth Elliot
+    NUNCA repita os mesmos pregadores. VARIE SEMPRE baseado no conteúdo.`;
+
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -326,7 +367,7 @@ serve(async (req) => {
   }
 
   try {
-    const { content, currentElement, previousElements } = await req.json();
+    const { content, currentElement, selectedText, previousElements } = await req.json();
     
     if (!content) {
       return new Response(
@@ -479,6 +520,19 @@ ${contextParts.length > 0 ? contextParts.join('\n') : 'Nenhum elemento anterior 
 
 ⭐ SEÇÃO QUE O USUÁRIO ESTÁ EDITANDO AGORA: ${currentElement || 'não especificado'}
 (Foque sua análise e sugestões NESTA SEÇÃO. O usuário selecionou esta seção na interface.)
+
+${selectedText ? `🔎 TEXTO SELECIONADO PELO USUÁRIO (o usuário destacou este trecho — analise-o em profundidade):
+"${selectedText}"
+
+INSTRUÇÕES PARA TEXTO SELECIONADO:
+- Analise o trecho selecionado detalhadamente
+- Identifique: tema, argumento, texto bíblico citado, coerência, possíveis melhorias
+- Sugira melhorias específicas para este trecho
+- Se contém referência bíblica, verifique precisão e contexto
+- Se contém erro gramatical, corrija com explicação
+- Sugira alternativas de redação mais fortes
+- Retorne análise no campo "selectedTextAnalysis" do JSON
+` : ''}
 
 ${userPatternsContext ? `\nPERFIL DE ESTILO DO USUÁRIO (aprendido de esboços anteriores):\n${userPatternsContext}\n\nUSE ESTES PADRÕES para personalizar suas sugestões ao estilo do usuário.\n` : ''}
 
