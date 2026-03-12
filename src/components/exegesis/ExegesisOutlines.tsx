@@ -1148,7 +1148,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                           <CopyPlus className="w-3.5 h-3.5" /> Duplicar
                         </Button>
                         <div className="flex-1" />
-                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsPdf(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
+                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => handlePdfExport(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
                           <Download className="w-3 h-3" /> PDF
                         </Button>
                         <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => exportAsDocx(isHtml(o.content) ? o.content : renderMarkdown(o.content), o.passage)}>
