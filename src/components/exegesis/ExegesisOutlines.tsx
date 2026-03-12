@@ -871,9 +871,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                 </div>
               </div>
 
-              {/* Grouped Section Selector */}
+              {/* Grouped Section Selector — click to INSERT */}
               <div className="flex items-center gap-1 flex-wrap">
-                <p className="text-xs font-medium text-muted-foreground mr-1">Seção:</p>
+                <p className="text-xs font-medium text-muted-foreground mr-1">Inserir Seção:</p>
                 {(() => {
                   const groups = [
                     { key: 'header', label: 'Cabeçalho', sep: '|' },
@@ -886,8 +886,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                       {SECTION_ELEMENTS.filter(el => el.group === group.key).map(el => (
                         <button
                           key={el.id}
-                          onClick={() => setCurrentElement(el.id)}
-                          className={`text-[10px] px-2 py-1 rounded-md border transition-all ${
+                          onClick={() => handleInsertSection(el)}
+                          title={`Clique para inserir "${el.label}" no editor`}
+                          className={`text-[10px] px-2 py-1 rounded-md border transition-all cursor-pointer ${
                             currentElement === el.id 
                               ? 'bg-primary/15 text-primary border-primary/40 font-bold shadow-sm' 
                               : 'bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/60 hover:border-border'
