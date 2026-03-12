@@ -667,80 +667,44 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
 <p><strong>🔵 TEXTO BASE:</strong> </p>
 <hr>
 <h2>🔵 INTRODUÇÃO</h2>
-<p><em>Contextualização, conexão com a vida real, apresentação do problema humano e da esperança bíblica. (até 5 minutos)</em></p>
 <p></p>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Da introdução para o 1º ponto)</em></p>
+<p><strong>🔵 TRANSIÇÃO</strong></p>
 <hr>
 <h2>🔵 1º PONTO</h2>
-<h3>🟢 Explicação</h3>
-<p><em>Exposição fiel do texto bíblico, contexto, sentido original, o que o texto diz.</em></p>
+<h3>🟢 Desenvolvimento</h3>
 <p></p>
-<h3>🟠 Ilustração</h3>
-<p><em>Exemplo bíblico, histórico ou do cotidiano que ilumina a explicação.</em></p>
-<p></p>
-<h3>🔴 Verdade</h3>
-<p><em>Princípio espiritual central revelado pelo texto.</em></p>
-<p></p>
-<h3>🔴 Aplicação</h3>
-<p><em>Como essa verdade confronta, consola e transforma a vida do ouvinte hoje.</em></p>
-<p></p>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 1º para o 2º ponto)</em></p>
+<h3>🔴 Frase de Impacto</h3>
+<blockquote><p><em></em></p></blockquote>
+<p><strong>🔵 TRANSIÇÃO</strong></p>
 <hr>
 <h2>🔵 2º PONTO</h2>
-<h3>🟢 Explicação</h3>
-<p><em>Desenvolvimento progressivo do texto, mantendo coerência com o tema.</em></p>
+<h3>🟢 Desenvolvimento</h3>
 <p></p>
-<h3>🟠 Ilustração</h3>
-<p><em>Imagem clara que ajude o povo a visualizar a verdade bíblica.</em></p>
-<p></p>
-<h3>🔴 Verdade</h3>
-<p><em>O que Deus está afirmando sobre Ele mesmo e sobre nós.</em></p>
-<p></p>
-<h3>🔴 Aplicação</h3>
-<p><em>Chamado prático à fé, obediência e dependência do Senhor.</em></p>
-<p></p>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 2º para o 3º ponto)</em></p>
+<p><strong>🔵 TRANSIÇÃO</strong></p>
 <hr>
 <h2>🔵 3º PONTO</h2>
-<h3>🟢 Explicação</h3>
-<p><em>Aprofundamento da mensagem, ligação com o todo das Escrituras.</em></p>
+<h3>🟢 Desenvolvimento</h3>
 <p></p>
-<h3>🟠 Ilustração</h3>
-<p><em>História que prepare o coração para o clímax do sermão.</em></p>
-<p></p>
-<h3>🔴 Verdade</h3>
-<p><em>Declaração clara da vontade de Deus revelada no texto.</em></p>
-<p></p>
-<h3>🔴 Aplicação</h3>
-<p><em>Exortação pastoral, com graça e verdade.</em></p>
-<p></p>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 3º para o 4º ponto)</em></p>
-<hr>
-<h2>🔵 4º PONTO — Foco em Cristo</h2>
-<h3>🟢 Explicação</h3>
-<p><em>Como o texto aponta para Cristo, Sua obra, Seu caráter e Sua missão.</em></p>
-<p></p>
-<h3>🟠 Ilustração</h3>
-<p><em>Cena dos Evangelhos, da cruz, da graça, do cuidado de Cristo.</em></p>
-<p></p>
-<h3>🔴 Verdade</h3>
-<p><em>Cristo é a resposta final, suficiente e eterna.</em></p>
-<p></p>
-<h3>🔴 Aplicação</h3>
-<p><em>Convite à fé, arrependimento, descanso e entrega total a Jesus.</em></p>
-<p></p>
-<blockquote><p>📖 "Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei." — Mateus 11:28, ACF</p></blockquote>
-<p><strong>🔵 TRANSIÇÃO</strong> <em>(Do 4º ponto para a conclusão)</em></p>
 <hr>
 <h2>🔵 CONCLUSÃO</h2>
-<p><em>Síntese do sermão, retomando o tema e reforçando a esperança em Cristo.</em></p>
-<p></p>
-<h2>🔴 APELO</h2>
-<p><em>Chamado claro, bíblico e amoroso à decisão espiritual.</em></p>
-<p></p>
-<h2>🔵 ORAÇÃO FINAL</h2>
-<p><em>Entrega, gratidão e dependência total do Senhor.</em></p>
 <p></p>`;
+
+  // PDF export state
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [pdfOptions, setPdfOptions] = useState({ showHeader: false, showFooter: false, headerText: '', footerText: '' });
+  const [pdfExportData, setPdfExportData] = useState<{ content: string; passage: string } | null>(null);
+
+  const handlePdfExport = (content: string, passage: string) => {
+    setPdfExportData({ content, passage });
+    setPdfDialogOpen(true);
+  };
+
+  const confirmPdfExport = () => {
+    if (pdfExportData) {
+      exportAsPdf(pdfExportData.content, pdfExportData.passage, pdfOptions);
+    }
+    setPdfDialogOpen(false);
+  };
 
   const handleInsertTemplate = () => {
     if (manualContent.replace(/<[^>]+>/g, '').trim().length > 20) {
@@ -748,10 +712,11 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       if (!confirm) return;
     }
     setManualContent(SERMON_TEMPLATE);
+    pointCounterRef.current = 3; // Template starts with 3 points
     if (editorRef.current) {
       editorRef.current.insertContent(''); // force re-render
     }
-    toast({ title: '📋 Template inserido!', description: 'Estrutura completa do sermão adicionada ao editor.' });
+    toast({ title: '📋 Template inserido!', description: 'Estrutura flexível — adicione ou remova seções usando os botões acima.' });
   };
 
   return (
