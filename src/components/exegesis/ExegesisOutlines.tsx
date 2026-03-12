@@ -1449,6 +1449,47 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         />
       )}
 
+      {/* Save Template Dialog */}
+      {saveTemplateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setSaveTemplateOpen(false)}>
+          <div className="bg-card border rounded-xl shadow-xl p-6 max-w-md w-full mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Save className="w-5 h-5 text-primary" /> Salvar como Modelo
+            </h3>
+            <p className="text-sm text-muted-foreground">O conteúdo atual do editor será salvo como modelo reutilizável.</p>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Nome do Modelo *</label>
+                <input
+                  type="text"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  placeholder="Ex: Sermão Expositivo 3 Pontos"
+                  className="input-library w-full text-sm mt-1"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Descrição (opcional)</label>
+                <input
+                  type="text"
+                  value={newTemplateDesc}
+                  onChange={(e) => setNewTemplateDesc(e.target.value)}
+                  placeholder="Ex: Modelo com introdução, 3 pontos e conclusão"
+                  className="input-library w-full text-sm mt-1"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <Button onClick={handleSaveAsTemplate} className="btn-library-primary flex-1" disabled={!newTemplateName.trim()}>
+                <Save className="w-4 h-4 mr-2" /> Salvar Modelo
+              </Button>
+              <Button variant="outline" onClick={() => setSaveTemplateOpen(false)}>Cancelar</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PDF Export Options Dialog */}
       {pdfDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setPdfDialogOpen(false)}>
