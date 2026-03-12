@@ -894,15 +894,72 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
             <div className="space-y-3">
               {/* Quick Actions Bar */}
               <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs border-dashed border-primary/40 text-primary hover:bg-primary/10"
-                  onClick={handleInsertTemplate}
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  📋 Inserir Template Completo
-                </Button>
+                {/* Template Dropdown */}
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 text-xs border-dashed border-primary/40 text-primary hover:bg-primary/10"
+                    onClick={() => setTemplateMenuOpen(!templateMenuOpen)}
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    📋 Modelos de Esboço
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                  
+                  {templateMenuOpen && (
+                    <div className="absolute top-full left-0 mt-1 z-50 bg-card border rounded-lg shadow-xl w-80 max-h-96 overflow-auto">
+                      {/* Default Template */}
+                      <button
+                        onClick={() => { handleInsertTemplate(); setTemplateMenuOpen(false); }}
+                        className="w-full text-left px-3 py-2.5 hover:bg-muted/50 border-b border-border flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4 text-primary shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium">Template Padrão</p>
+                          <p className="text-[10px] text-muted-foreground">Título, Tema, Texto Base, 3 Pontos, Conclusão</p>
+                        </div>
+                      </button>
+                      
+                      {/* Saved Templates */}
+                      {savedTemplates.length > 0 && (
+                        <div className="border-b border-border">
+                          <p className="text-[10px] font-semibold text-muted-foreground uppercase px-3 pt-2 pb-1">Meus Modelos</p>
+                          {savedTemplates.map(t => (
+                            <div key={t.id} className="flex items-center gap-1 px-3 py-2 hover:bg-muted/50 group">
+                              <button
+                                onClick={() => handleLoadTemplate(t)}
+                                className="flex-1 text-left"
+                              >
+                                <p className="text-sm font-medium truncate">{t.name}</p>
+                                {t.description && <p className="text-[10px] text-muted-foreground truncate">{t.description}</p>}
+                              </button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(t.id); }}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Save Current as Template */}
+                      <button
+                        onClick={() => { setTemplateMenuOpen(false); setSaveTemplateOpen(true); }}
+                        disabled={!manualContent.replace(/<[^>]+>/g, '').trim()}
+                        className="w-full text-left px-3 py-2.5 hover:bg-muted/50 flex items-center gap-2 text-primary disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-4 h-4 shrink-0" />
+                        <span className="text-sm font-medium">Salvar editor atual como modelo</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex-1" />
                 <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
                   <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700">🔵 Estrutura</span>
