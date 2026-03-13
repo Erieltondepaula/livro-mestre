@@ -120,6 +120,10 @@ export function ExegesisView() {
             />
           </TabsContent>
         )}
+
+        <TabsContent value="mindmap">
+          <MindMapEditor />
+        </TabsContent>
       </Tabs>
     </div>
   );
