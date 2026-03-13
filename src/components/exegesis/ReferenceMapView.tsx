@@ -693,6 +693,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           {references.map((ref, i) => {
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
+            const isAnySelected = !!selectedRef;
+            const dimmed = isAnySelected && !isSelected;
             const textLen = ref.ref.length;
             const boxW = isMobileScreen ? Math.max(100, textLen * 7.5 + 28) : Math.max(120, textLen * 8.8 + 34);
             const boxH = isMobileScreen ? 32 : 36;
@@ -700,6 +702,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             return (
               <g
                 key={`node-${i}`}
+                opacity={dimmed ? 0.4 : 1}
+                style={{ transition: 'opacity 0.3s' }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNodeClick(ref);
