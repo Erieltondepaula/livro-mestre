@@ -702,7 +702,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             return (
               <g
                 key={`node-${i}`}
-                style={{ transition: 'opacity 0.3s', cursor: 'pointer' }}
+                style={{ transition: 'opacity 0.3s', cursor: 'pointer', opacity: dimmed ? 0.4 : 1 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNodeClick(ref);
