@@ -748,7 +748,6 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   }
                 }}
                 onMouseLeave={() => { /* keep tooltip visible until another node is hovered */ }}
-                style={{ cursor: 'pointer' }}
                 className="transition-transform"
               >
                 {/* Glow on selected */}
