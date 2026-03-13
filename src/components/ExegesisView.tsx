@@ -1,4 +1,4 @@
-import { BookOpen, History, FileText, Library, Link2 } from 'lucide-react';
+import { BookOpen, History, FileText, Library, Link2, MapPin } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useExegesis } from '@/hooks/useExegesis';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +7,7 @@ import { ExegesisHistory } from '@/components/exegesis/ExegesisHistory';
 import { ExegesisOutlines } from '@/components/exegesis/ExegesisOutlines';
 import { ExegesisMaterials } from '@/components/exegesis/ExegesisMaterials';
 import { CrossReferencesView } from '@/components/exegesis/CrossReferencesView';
+import { MindMapEditor } from '@/components/exegesis/MindMapEditor';
 import { useEffect } from 'react';
 
 export function ExegesisView() {
@@ -61,6 +62,9 @@ export function ExegesisView() {
               {materials.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded-full ml-0.5">{materials.length}</span>}
             </TabsTrigger>
           )}
+          <TabsTrigger value="mindmap" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+            <MapPin className="w-4 h-4 hidden sm:block" /> <span className="truncate">Mapa Mental</span>
+          </TabsTrigger>
         </TabsList>
 
         {hasModuleAccess('exegese.analisar') && (
@@ -116,6 +120,10 @@ export function ExegesisView() {
             />
           </TabsContent>
         )}
+
+        <TabsContent value="mindmap">
+          <MindMapEditor />
+        </TabsContent>
       </Tabs>
     </div>
   );

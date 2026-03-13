@@ -635,38 +635,22 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             transition: isPanning ? 'none' : 'transform 0.2s ease-out',
           }}
         >
-          {/* Colorful radial lines from center to each node */}
+          {/* Lines from center to each node — cleaner with gradient opacity */}
           {references.map((ref, i) => {
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
+            const isAnySelected = !!selectedRef;
+            const dimmed = isAnySelected && !isSelected;
             return (
               <line
                 key={`line-${i}`}
                 x1={CX} y1={CY}
                 x2={pos.x} y2={pos.y}
                 stroke={ref.color}
-                strokeWidth={isSelected ? 3 : 1.8}
-                strokeDasharray={isSelected ? 'none' : '6,4'}
-                opacity={isSelected ? 0.98 : 0.62}
-              />
-            );
-          })}
-
-          {/* Sequential chain lines connecting nodes in order */}
-          {references.map((ref, i) => {
-            if (i === 0) return null;
-            const prev = getNodePos(i - 1);
-            const curr = getNodePos(i);
-            const isInChain = selectedData && (ref.order === selectedData.order || ref.order === selectedData.order + 1 || references[i - 1].order === selectedData.order);
-            return (
-              <line
-                key={`chain-${i}`}
-                x1={prev.x} y1={prev.y}
-                x2={curr.x} y2={curr.y}
-                stroke={isInChain ? ref.color : references[i - 1].color}
-                strokeWidth={isInChain ? 2.4 : 1.3}
-                strokeDasharray="6,4"
-                opacity={isInChain ? 0.85 : 0.5}
+                strokeWidth={isSelected ? 3 : 1.5}
+                strokeDasharray={isSelected ? 'none' : '8,6'}
+                opacity={isSelected ? 0.9 : dimmed ? 0.15 : 0.4}
+                style={{ transition: 'opacity 0.3s, stroke-width 0.3s' }}
               />
             );
           })}
@@ -709,6 +693,8 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
           {references.map((ref, i) => {
             const pos = getNodePos(i);
             const isSelected = selectedRef === ref.ref;
+            const isAnySelected = !!selectedRef;
+            const dimmed = isAnySelected && !isSelected;
             const textLen = ref.ref.length;
             const boxW = isMobileScreen ? Math.max(100, textLen * 7.5 + 28) : Math.max(120, textLen * 8.8 + 34);
             const boxH = isMobileScreen ? 32 : 36;
@@ -716,6 +702,7 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
             return (
               <g
                 key={`node-${i}`}
+                style={{ transition: 'opacity 0.3s', cursor: 'pointer', opacity: dimmed ? 0.4 : 1 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNodeClick(ref);
@@ -760,7 +747,6 @@ export function ReferenceMapView({ centralTheme, content, keywords }: ReferenceM
                   }
                 }}
                 onMouseLeave={() => { /* keep tooltip visible until another node is hovered */ }}
-                style={{ cursor: 'pointer' }}
                 className="transition-transform"
               >
                 {/* Glow on selected */}

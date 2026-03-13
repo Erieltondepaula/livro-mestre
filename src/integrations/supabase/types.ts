@@ -580,6 +580,42 @@ export type Database = {
           },
         ]
       }
+      mind_maps: {
+        Row: {
+          created_at: string
+          description: string | null
+          edges: Json
+          id: string
+          nodes: Json
+          title: string
+          updated_at: string
+          user_id: string
+          viewport: Json | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          edges?: Json
+          id?: string
+          nodes?: Json
+          title?: string
+          updated_at?: string
+          user_id: string
+          viewport?: Json | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          edges?: Json
+          id?: string
+          nodes?: Json
+          title?: string
+          updated_at?: string
+          user_id?: string
+          viewport?: Json | null
+        }
+        Relationships: []
+      }
       note_book_links: {
         Row: {
           book_id: string
