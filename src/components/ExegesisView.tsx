@@ -62,6 +62,9 @@ export function ExegesisView() {
               {materials.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded-full ml-0.5">{materials.length}</span>}
             </TabsTrigger>
           )}
+          <TabsTrigger value="mindmap" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
+            <MapPin className="w-4 h-4 hidden sm:block" /> <span className="truncate">Mapa Mental</span>
+          </TabsTrigger>
         </TabsList>
 
         {hasModuleAccess('exegese.analisar') && (
