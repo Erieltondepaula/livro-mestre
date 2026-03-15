@@ -81,7 +81,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     );
   }, [readings, selectedBibleId]);
 
-  // All Bible readings (for search and page count)
+  // All Bible readings (for search)
   const allBibleReadings = useMemo(() => 
     readings.filter(r => {
       const book = books.find(b => b.id === r.livroId);
@@ -90,17 +90,16 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     [readings, books]
   );
 
-  // Calculate total pages read using MAX logic per Bible book
+  // Pages read by Bible from official status records
   const pagesReadByBibleId = useMemo(() => {
-    const pagesByBook: Record<string, number> = {};
-    allBibleReadings.forEach(r => {
-      const bookId = r.livroId;
-      if (!pagesByBook[bookId] || r.paginaFinal > pagesByBook[bookId]) {
-        pagesByBook[bookId] = r.paginaFinal;
+    const bibleIds = new Set(bibleLibraryBooks.map(b => b.id));
+    return statuses.reduce<Record<string, number>>((acc, status) => {
+      if (bibleIds.has(status.livroId)) {
+        acc[status.livroId] = status.quantidadeLida || 0;
       }
-    });
-    return pagesByBook;
-  }, [allBibleReadings]);
+      return acc;
+    }, {});
+  }, [statuses, bibleLibraryBooks]);
 
   const totalPagesRead = useMemo(() => {
     if (selectedBibleId !== 'all') {
