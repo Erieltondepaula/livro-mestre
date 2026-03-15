@@ -101,11 +101,17 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
     return Object.values(pagesByBook).reduce((sum, p) => sum + p, 0);
   }, [allBibleReadings]);
 
-  // Total pages in all Bible library books
-  const totalBiblePages = useMemo(() => 
-    bibleLibraryBooks.reduce((sum, b) => sum + b.totalPaginas, 0),
-    [bibleLibraryBooks]
-  );
+  // Total pages: use the max totalPaginas among Bible books (they're editions of the same Bible)
+  const totalBiblePages = useMemo(() => {
+    if (selectedBibleId !== 'all') {
+      const book = bibleLibraryBooks.find(b => b.id === selectedBibleId);
+      return book?.totalPaginas || 0;
+    }
+    // For combined view, use the max (all editions have roughly the same page count)
+    return bibleLibraryBooks.length > 0 
+      ? Math.max(...bibleLibraryBooks.map(b => b.totalPaginas))
+      : 0;
+  }, [bibleLibraryBooks, selectedBibleId]);
 
   // Build index for search: bible readings with page mapping
   const readingIndex = useMemo(() => {
