@@ -6,11 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { bibleBooks, bibleCategories } from '@/data/bibleData';
-import type { Book as BookType, DailyReading } from '@/types/library';
+import type { Book as BookType, DailyReading, BookStatus } from '@/types/library';
 
 interface BibleProgressViewProps {
   readings: DailyReading[];
   books: BookType[];
+  statuses: BookStatus[];
 }
 
 interface BookProgress {
