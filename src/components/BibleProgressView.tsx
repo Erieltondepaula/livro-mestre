@@ -90,7 +90,7 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
   );
 
   // Calculate total pages read using MAX logic per Bible book
-  const totalPagesRead = useMemo(() => {
+  const pagesReadByBibleId = useMemo(() => {
     const pagesByBook: Record<string, number> = {};
     allBibleReadings.forEach(r => {
       const bookId = r.livroId;
@@ -98,19 +98,23 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
         pagesByBook[bookId] = r.paginaFinal;
       }
     });
-    return Object.values(pagesByBook).reduce((sum, p) => sum + p, 0);
+    return pagesByBook;
   }, [allBibleReadings]);
 
-  // Total pages: use the max totalPaginas among Bible books (they're editions of the same Bible)
+  const totalPagesRead = useMemo(() => {
+    if (selectedBibleId !== 'all') {
+      return pagesReadByBibleId[selectedBibleId] || 0;
+    }
+    return Object.values(pagesReadByBibleId).reduce((sum, p) => sum + p, 0);
+  }, [pagesReadByBibleId, selectedBibleId]);
+
+  // Total pages per Bible
   const totalBiblePages = useMemo(() => {
     if (selectedBibleId !== 'all') {
       const book = bibleLibraryBooks.find(b => b.id === selectedBibleId);
       return book?.totalPaginas || 0;
     }
-    // For combined view, use the max (all editions have roughly the same page count)
-    return bibleLibraryBooks.length > 0 
-      ? Math.max(...bibleLibraryBooks.map(b => b.totalPaginas))
-      : 0;
+    return bibleLibraryBooks.reduce((sum, b) => sum + b.totalPaginas, 0);
   }, [bibleLibraryBooks, selectedBibleId]);
 
   // Build index for search: bible readings with page mapping
