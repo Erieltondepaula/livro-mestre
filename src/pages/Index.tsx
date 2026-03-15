@@ -249,7 +249,7 @@ const Index = () => {
       case 'notas':
         return <Suspense fallback={fallback}><EnhancedNotesView books={books} /></Suspense>;
       case 'biblia':
-        return <Suspense fallback={fallback}><BibleProgressView readings={readings} books={books} /></Suspense>;
+        return <Suspense fallback={fallback}><BibleProgressView readings={readings} books={books} statuses={statuses} /></Suspense>;
       case 'dicionario':
         return <Suspense fallback={fallback}><DictionaryView /></Suspense>;
       case 'relatorios':
