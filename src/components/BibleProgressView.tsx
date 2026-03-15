@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, CheckCircle, Circle, TrendingUp, Book } from 'lucide-react';
+import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { bibleBooks, bibleCategories } from '@/data/bibleData';
 import type { Book as BookType, DailyReading } from '@/types/library';
 
@@ -18,8 +20,43 @@ interface BookProgress {
   progress: number;
 }
 
+// Slugs for bibliaonline.com.br ACF links
+const BIBLE_ONLINE_SLUGS: Record<string, string> = {
+  'Gênesis': 'gn', 'Êxodo': 'ex', 'Levítico': 'lv', 'Números': 'nm', 'Deuteronômio': 'dt',
+  'Josué': 'js', 'Juízes': 'jz', 'Rute': 'rt', '1 Samuel': '1sm', '2 Samuel': '2sm',
+  '1 Reis': '1rs', '2 Reis': '2rs', '1 Crônicas': '1cr', '2 Crônicas': '2cr',
+  'Esdras': 'ed', 'Neemias': 'ne', 'Ester': 'et', 'Jó': 'jo',
+  'Salmos': 'sl', 'Provérbios': 'pv', 'Eclesiastes': 'ec', 'Cânticos': 'ct',
+  'Isaías': 'is', 'Jeremias': 'jr', 'Lamentações': 'lm', 'Ezequiel': 'ez', 'Daniel': 'dn',
+  'Oséias': 'os', 'Joel': 'jl', 'Amós': 'am', 'Obadias': 'ob', 'Jonas': 'jn',
+  'Miquéias': 'mq', 'Naum': 'na', 'Habacuque': 'hc', 'Sofonias': 'sf',
+  'Ageu': 'ag', 'Zacarias': 'zc', 'Malaquias': 'ml',
+  'Mateus': 'mt', 'Marcos': 'mc', 'Lucas': 'lc', 'João': 'jo',
+  'Atos': 'at', 'Romanos': 'rm', '1 Coríntios': '1co', '2 Coríntios': '2co',
+  'Gálatas': 'gl', 'Efésios': 'ef', 'Filipenses': 'fp', 'Colossenses': 'cl',
+  '1 Tessalonicenses': '1ts', '2 Tessalonicenses': '2ts',
+  '1 Timóteo': '1tm', '2 Timóteo': '2tm', 'Tito': 'tt', 'Filemom': 'fm',
+  'Hebreus': 'hb', 'Tiago': 'tg', '1 Pedro': '1pe', '2 Pedro': '2pe',
+  '1 João': '1jo', '2 João': '2jo', '3 João': '3jo', 'Judas': 'jd', 'Apocalipse': 'ap',
+};
+
+function getBibleUrl(bookName: string, chapter: number): string | null {
+  const slug = BIBLE_ONLINE_SLUGS[bookName];
+  if (!slug) return null;
+  return `https://www.bibliaonline.com.br/acf/${slug}/${chapter}`;
+}
+
+interface SearchResult {
+  bibleBook: string;
+  bibleChapter: number;
+  bibleVerseStart?: number;
+  bibleVerseEnd?: number;
+  page: number;
+  endPage: number;
+  date?: string;
+}
+
 export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
-  // Filter Bible books from the library
   const bibleLibraryBooks = useMemo(() => 
     books.filter(b => 
       b.categoria?.toLowerCase() === 'bíblia' || 
@@ -28,26 +65,96 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
     [books]
   );
 
-  // State for selected Bible book (use 'all' to show combined, or book ID for specific)
   const [selectedBibleId, setSelectedBibleId] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchMode, setSearchMode] = useState<'reference' | 'page'>('reference');
+  const [showSearch, setShowSearch] = useState(false);
 
-  // Filter readings based on selected Bible book
   const filteredReadings = useMemo(() => {
     if (selectedBibleId === 'all') {
-      // All Bible readings
       return readings.filter(r => r.bibleBook && r.bibleChapter);
     }
-    // Readings for specific Bible book
     return readings.filter(r => 
       r.livroId === selectedBibleId && r.bibleBook && r.bibleChapter
     );
   }, [readings, selectedBibleId]);
 
+  // All Bible readings (for search and page count)
+  const allBibleReadings = useMemo(() => 
+    readings.filter(r => {
+      const book = books.find(b => b.id === r.livroId);
+      return book && (book.categoria?.toLowerCase() === 'bíblia' || book.categoria?.toLowerCase() === 'biblia');
+    }),
+    [readings, books]
+  );
+
+  // Calculate total pages read using MAX logic per Bible book
+  const totalPagesRead = useMemo(() => {
+    const pagesByBook: Record<string, number> = {};
+    allBibleReadings.forEach(r => {
+      const bookId = r.livroId;
+      if (!pagesByBook[bookId] || r.paginaFinal > pagesByBook[bookId]) {
+        pagesByBook[bookId] = r.paginaFinal;
+      }
+    });
+    return Object.values(pagesByBook).reduce((sum, p) => sum + p, 0);
+  }, [allBibleReadings]);
+
+  // Total pages in all Bible library books
+  const totalBiblePages = useMemo(() => 
+    bibleLibraryBooks.reduce((sum, b) => sum + b.totalPaginas, 0),
+    [bibleLibraryBooks]
+  );
+
+  // Build index for search: bible readings with page mapping
+  const readingIndex = useMemo(() => {
+    return allBibleReadings
+      .filter(r => r.bibleBook && r.bibleChapter)
+      .map(r => ({
+        bibleBook: r.bibleBook!,
+        bibleChapter: r.bibleChapter!,
+        bibleVerseStart: r.bibleVerseStart,
+        bibleVerseEnd: r.bibleVerseEnd,
+        page: r.paginaInicial,
+        endPage: r.paginaFinal,
+        date: r.dataInicio ? new Date(r.dataInicio).toLocaleDateString('pt-BR') : r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : undefined,
+      } as SearchResult));
+  }, [allBibleReadings]);
+
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    if (searchMode === 'page') {
+      // Search by page number → find bible book/chapter/verse
+      const pageNum = parseInt(searchQuery.trim());
+      if (isNaN(pageNum)) {
+        setSearchResults([]);
+        return;
+      }
+      const results = readingIndex.filter(r => 
+        pageNum >= r.page && pageNum <= r.endPage
+      );
+      setSearchResults(results);
+    } else {
+      // Search by reference (book, chapter, verse) → find page
+      const query = searchQuery.trim().toLowerCase();
+      const results = readingIndex.filter(r => {
+        const refStr = `${r.bibleBook} ${r.bibleChapter}${r.bibleVerseStart ? ':' + r.bibleVerseStart : ''}${r.bibleVerseEnd ? '-' + r.bibleVerseEnd : ''}`.toLowerCase();
+        const bookMatch = r.bibleBook.toLowerCase().includes(query);
+        const fullMatch = refStr.includes(query);
+        return bookMatch || fullMatch;
+      });
+      setSearchResults(results);
+    }
+  };
+
   // Calculate progress for each Bible book
   const bookProgress = useMemo(() => {
     const progress: Record<string, BookProgress> = {};
-    
-    // Initialize all books
     bibleBooks.forEach(book => {
       progress[book.name] = {
         name: book.name,
@@ -57,7 +164,6 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
       };
     });
 
-    // Mark chapters as read
     filteredReadings.forEach(reading => {
       if (reading.bibleBook && reading.bibleChapter) {
         const bookData = progress[reading.bibleBook];
@@ -67,7 +173,6 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
       }
     });
 
-    // Calculate percentages
     Object.values(progress).forEach(book => {
       book.progress = book.totalChapters > 0 
         ? (book.chaptersRead.size / book.totalChapters) * 100 
@@ -77,18 +182,14 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
     return progress;
   }, [filteredReadings]);
 
-  // Group by testament
   const oldTestamentBooks = bibleBooks.filter(b => b.testament === 'old').map(b => bookProgress[b.name]);
   const newTestamentBooks = bibleBooks.filter(b => b.testament === 'new').map(b => bookProgress[b.name]);
 
-  // Calculate overall stats
   const totalChapters = bibleBooks.reduce((sum, b) => sum + b.chapters.length, 0);
   const totalRead = Object.values(bookProgress).reduce((sum, b) => sum + b.chaptersRead.size, 0);
   const overallProgress = totalChapters > 0 ? (totalRead / totalChapters) * 100 : 0;
-
   const completedBooks = Object.values(bookProgress).filter(b => b.progress === 100).length;
 
-  // Get the selected Bible book name for display
   const selectedBibleName = useMemo(() => {
     if (selectedBibleId === 'all') return 'Todas as Bíblias';
     const book = bibleLibraryBooks.find(b => b.id === selectedBibleId);
@@ -103,11 +204,11 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
         )}
         {books.map((book) => (
           <div key={book.name} className="flex items-center gap-3">
-          <div className="flex-shrink-0">
-            {book.progress === 100 ? (
-              <CheckCircle className="w-4 h-4 text-success" />
-            ) : book.progress > 0 ? (
-              <TrendingUp className="w-4 h-4 text-primary" />
+            <div className="flex-shrink-0">
+              {book.progress === 100 ? (
+                <CheckCircle className="w-4 h-4 text-success" />
+              ) : book.progress > 0 ? (
+                <TrendingUp className="w-4 h-4 text-primary" />
               ) : (
                 <Circle className="w-4 h-4 text-muted-foreground/50" />
               )}
@@ -130,7 +231,6 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
     );
   };
 
-  // Group by categories
   const renderByCategory = (testament: 'old' | 'new') => {
     const categories = bibleCategories.filter(c => c.testament === testament);
     return categories.map(category => {
@@ -158,7 +258,6 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
           </p>
         </div>
 
-        {/* Bible selector */}
         {bibleLibraryBooks.length > 1 && (
           <div className="flex items-center gap-2">
             <Book className="w-4 h-4 text-muted-foreground" />
@@ -179,7 +278,6 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
         )}
       </div>
 
-      {/* Selected Bible indicator */}
       {bibleLibraryBooks.length > 1 && selectedBibleId !== 'all' && (
         <div className="card-library p-3 bg-primary/5 border-primary/20">
           <p className="text-sm text-muted-foreground">
@@ -188,8 +286,8 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
         </div>
       )}
 
-      {/* Overall Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Overall Stats - now 3 rows of 2 on mobile, 6 cols on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         <div className="card-library p-4 text-center">
           <p className="text-2xl font-bold text-primary">{overallProgress.toFixed(1)}%</p>
           <p className="text-xs text-muted-foreground">Progresso Total</p>
@@ -206,6 +304,14 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
           <p className="text-2xl font-bold text-success">{completedBooks}</p>
           <p className="text-xs text-muted-foreground">Livros Completos</p>
         </div>
+        <div className="card-library p-4 text-center">
+          <p className="text-2xl font-bold text-primary">{totalPagesRead.toLocaleString('pt-BR')}</p>
+          <p className="text-xs text-muted-foreground">Páginas Lidas</p>
+        </div>
+        <div className="card-library p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">{totalBiblePages > 0 ? totalBiblePages.toLocaleString('pt-BR') : '—'}</p>
+          <p className="text-xs text-muted-foreground">Total de Páginas</p>
+        </div>
       </div>
 
       {/* Overall Progress Bar */}
@@ -217,6 +323,112 @@ export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
           <span className="text-sm text-muted-foreground">{overallProgress.toFixed(1)}%</span>
         </div>
         <Progress value={overallProgress} className="h-4" />
+      </div>
+
+      {/* Search Section */}
+      <div className="card-library p-4 md:p-6">
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          className="flex items-center gap-2 w-full text-left font-medium text-sm md:text-base"
+        >
+          <Search className="w-5 h-5 text-primary" />
+          <span>Buscar Capítulo ↔ Página</span>
+          <span className="ml-auto text-xs text-muted-foreground">{showSearch ? '▲' : '▼'}</span>
+        </button>
+
+        {showSearch && (
+          <div className="mt-4 space-y-4 animate-fade-in">
+            {/* Mode toggle */}
+            <div className="flex gap-2">
+              <Button
+                variant={searchMode === 'reference' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setSearchMode('reference'); setSearchResults([]); setSearchQuery(''); }}
+                className="flex-1 text-xs md:text-sm"
+              >
+                <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+                Livro/Capítulo → Página
+              </Button>
+              <Button
+                variant={searchMode === 'page' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => { setSearchMode('page'); setSearchResults([]); setSearchQuery(''); }}
+                className="flex-1 text-xs md:text-sm"
+              >
+                <FileText className="w-3.5 h-3.5 mr-1.5" />
+                Página → Livro/Capítulo
+              </Button>
+            </div>
+
+            {/* Search input */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  placeholder={searchMode === 'reference' ? 'Ex: Gênesis, Gênesis 1, João 3' : 'Ex: 150'}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="pr-8"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <Button size="sm" onClick={handleSearch}>
+                <Search className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Results */}
+            {searchResults.length > 0 && (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                <p className="text-xs text-muted-foreground">{searchResults.length} resultado(s) encontrado(s)</p>
+                {searchResults.map((result, idx) => {
+                  const url = getBibleUrl(result.bibleBook, result.bibleChapter);
+                  const verseStr = result.bibleVerseStart
+                    ? `:${result.bibleVerseStart}${result.bibleVerseEnd ? '-' + result.bibleVerseEnd : ''}`
+                    : '';
+                  return (
+                    <div key={idx} className="flex items-center justify-between gap-2 p-3 rounded-lg bg-muted/50 border border-border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          📖 {result.bibleBook} {result.bibleChapter}{verseStr}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Páginas {result.page}–{result.endPage}
+                          {result.date && ` • ${result.date}`}
+                        </p>
+                      </div>
+                      {url && (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium px-2 py-1 rounded-md hover:bg-primary/10 transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Bíblia Online</span>
+                          <span className="sm:hidden">ACF</span>
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {searchQuery && searchResults.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum registro encontrado. Certifique-se de que a leitura foi registrada.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Testament Tabs */}
