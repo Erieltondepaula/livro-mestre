@@ -57,7 +57,7 @@ interface SearchResult {
   date?: string;
 }
 
-export function BibleProgressView({ readings, books }: BibleProgressViewProps) {
+export function BibleProgressView({ readings, books, statuses }: BibleProgressViewProps) {
   const bibleLibraryBooks = useMemo(() => 
     books.filter(b => 
       b.categoria?.toLowerCase() === 'bíblia' || 
