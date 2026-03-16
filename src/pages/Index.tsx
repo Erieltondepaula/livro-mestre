@@ -22,6 +22,7 @@ const HelpView = lazy(() => import('@/components/HelpView').then(m => ({ default
 const EnhancedNotesView = lazy(() => import('@/components/notes/EnhancedNotesView').then(m => ({ default: m.EnhancedNotesView })));
 const ReadingReportsView = lazy(() => import('@/components/ReadingReportsView').then(m => ({ default: m.ReadingReportsView })));
 const ExegesisView = lazy(() => import('@/components/ExegesisView').then(m => ({ default: m.ExegesisView })));
+const BibleStudyView = lazy(() => import('@/components/BibleStudyView').then(m => ({ default: m.BibleStudyView })));
 const SystemDiagnosticsView = lazy(() => import('@/components/SystemDiagnosticsView').then(m => ({ default: m.SystemDiagnosticsView })));
 const FlashcardsView = lazy(() => import('@/components/FlashcardsView').then(m => ({ default: m.FlashcardsView })));
 
@@ -256,6 +257,8 @@ const Index = () => {
         return <Suspense fallback={fallback}><ReadingReportsView books={books} readings={readings} statuses={statuses} /></Suspense>;
       case 'exegese':
         return <Suspense fallback={fallback}><ExegesisView /></Suspense>;
+      case 'estudo_biblico':
+        return <Suspense fallback={fallback}><BibleStudyView /></Suspense>;
       case 'flashcards':
         return <Suspense fallback={fallback}><FlashcardsView /></Suspense>;
       case 'diagnostico':
