@@ -372,6 +372,28 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           <Link2 className="w-4 h-4" /> Tipo de Referência Cruzada
         </h3>
+
+        {/* Organization filter tabs */}
+        <div className="flex flex-wrap gap-1.5 pb-2 border-b border-border">
+          {[
+            { id: 'category', label: '📂 Por Categoria', description: 'Organize por tipo de referência' },
+            { id: 'book', label: '📖 Por Livro Bíblico', description: 'Agrupe por livro da Bíblia' },
+            { id: 'theology', label: '⛪ Contexto Teológico', description: 'Organize por tema teológico' },
+          ].map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => {
+                // The AI already organizes by the selected type - these filters set additional context
+                const typeMap: Record<string, string> = { category: 'all', book: 'all', theology: 'doctrinal' };
+                if (filter.id === 'theology') setSelectedRefType('doctrinal');
+              }}
+              className="text-xs px-2.5 py-1 rounded-full border border-border bg-card hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
           {CROSS_REF_TYPES.map(type => {
             const isActive = selectedRefType === type.id;
