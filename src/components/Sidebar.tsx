@@ -34,6 +34,7 @@ const navItems = [
   { id: 'notas' as View, label: 'Notas', icon: StickyNote },
   { id: 'biblia' as View, label: 'Progresso Bíblia', icon: Book },
   { id: 'exegese' as View, label: 'Exegese Bíblica', icon: ScrollText },
+  { id: 'estudo_biblico' as View, label: 'Estudo Bíblico', icon: GraduationCap },
   { id: 'dicionario' as View, label: 'Dicionário', icon: Book },
   { id: 'flashcards' as View, label: 'Flashcards', icon: Brain },
   { id: 'relatorios' as View, label: 'Relatórios', icon: BarChart3 },

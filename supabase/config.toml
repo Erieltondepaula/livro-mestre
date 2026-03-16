@@ -1,1 +1,4 @@
 project_id = "gkihrunmbaiogextsicb"
+
+[functions.bible-study]
+verify_jwt = false
