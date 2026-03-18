@@ -34,10 +34,14 @@ interface SavedStudy {
   created_at: string;
 }
 
-interface CommentBlock {
+interface InlineComment {
   id: string;
-  sectionIndex: number;
-  text: string;
+  startOffset: number;
+  endOffset: number;
+  selectedText: string;
+  comment: string;
+  color: 'yellow' | 'green' | 'blue' | 'pink';
+  isHighlightOnly: boolean;
 }
 
 export function BibleStudyView() {
