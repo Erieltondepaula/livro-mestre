@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { BookOpen, Send, Loader2, Copy, Check, FileText, HelpCircle, Lightbulb, Heart, Upload, Trash2, Globe, CheckCircle, X, Plus, Download, Edit3, Save, Image as ImageIcon, MessageSquare, RefreshCw } from 'lucide-react';
+import { BookOpen, Send, Loader2, Copy, Check, FileText, HelpCircle, Lightbulb, Heart, Upload, Trash2, Globe, CheckCircle, X, Plus, Download, Edit3, Save, Image as ImageIcon, MessageSquare, RefreshCw, Highlighter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -34,10 +34,14 @@ interface SavedStudy {
   created_at: string;
 }
 
-interface CommentBlock {
+interface InlineComment {
   id: string;
-  sectionIndex: number;
-  text: string;
+  startOffset: number;
+  endOffset: number;
+  selectedText: string;
+  comment: string;
+  color: 'yellow' | 'green' | 'blue' | 'pink';
+  isHighlightOnly: boolean;
 }
 
 export function BibleStudyView() {
@@ -52,11 +56,15 @@ export function BibleStudyView() {
   const [savedStudies, setSavedStudies] = useState<SavedStudy[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editableContent, setEditableContent] = useState('');
-  const [comments, setComments] = useState<CommentBlock[]>([]);
+  const [comments, setComments] = useState<InlineComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [floatingToolbar, setFloatingToolbar] = useState<{ x: number; y: number; text: string; startOffset: number; endOffset: number } | null>(null);
+  const [commentColor, setCommentColor] = useState<InlineComment['color']>('yellow');
+  const [pendingCommentTarget, setPendingCommentTarget] = useState<{ text: string; startOffset: number; endOffset: number } | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; content: string }[]>([]);
   const resultRef = useRef<HTMLDivElement>(null);
+  const contentDisplayRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -279,9 +287,9 @@ export function BibleStudyView() {
     // Add comments into the export
     let exportText = text;
     if (comments.length > 0) {
-      exportText += '\n\n---\n## 💬 COMENTÁRIOS DO USUÁRIO\n';
+      exportText += '\n\n---\n## 💬 COMENTÁRIOS E DESTAQUES DO USUÁRIO\n';
       comments.forEach((c, i) => {
-        exportText += `\n### Comentário ${i + 1}\n${c.text}\n`;
+        exportText += `\n### ${c.isHighlightOnly ? '🖍️ Destaque' : '💬 Comentário'} ${i + 1}\n> "${c.selectedText}"\n${c.comment ? `\n${c.comment}\n` : ''}`;
       });
     }
 
@@ -310,12 +318,24 @@ export function BibleStudyView() {
     }
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    setComments(prev => [...prev, { id: crypto.randomUUID(), sectionIndex: prev.length, text: newComment.trim() }]);
+  const handleAddComment = (isHighlightOnly = false) => {
+    if (!pendingCommentTarget) return;
+    if (!isHighlightOnly && !newComment.trim()) return;
+    
+    setComments(prev => [...prev, {
+      id: crypto.randomUUID(),
+      startOffset: pendingCommentTarget.startOffset,
+      endOffset: pendingCommentTarget.endOffset,
+      selectedText: pendingCommentTarget.text,
+      comment: isHighlightOnly ? '' : newComment.trim(),
+      color: commentColor,
+      isHighlightOnly,
+    }]);
     setNewComment('');
     setShowCommentInput(false);
-    toast({ title: "Comentário adicionado!" });
+    setPendingCommentTarget(null);
+    setFloatingToolbar(null);
+    toast({ title: isHighlightOnly ? "Texto destacado!" : "Comentário adicionado!" });
   };
 
   const handleDeleteComment = (id: string) => {
@@ -340,8 +360,75 @@ export function BibleStudyView() {
     toast({ title: "Estudo carregado", description: "Você pode editar ou re-analisar." });
   };
 
+  const displayContent = lastResult || currentStream;
+
+  // Handle text selection for inline comments
+  const handleTextSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !contentDisplayRef.current) {
+      setFloatingToolbar(null);
+      return;
+    }
+    
+    const text = selection.toString().trim();
+    if (!text || text.length < 2) {
+      setFloatingToolbar(null);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const containerRect = contentDisplayRef.current.getBoundingClientRect();
+    
+    const fullText = displayContent || '';
+    const startOffset = fullText.indexOf(text);
+    const endOffset = startOffset + text.length;
+    
+    setFloatingToolbar({
+      x: rect.left - containerRect.left + rect.width / 2,
+      y: rect.top - containerRect.top - 10,
+      text,
+      startOffset,
+      endOffset,
+    });
+  }, [displayContent]);
+
+  // Close floating toolbar on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.floating-comment-toolbar') && !target.closest('.comment-input-inline')) {
+        // Small delay to allow button clicks to register
+        setTimeout(() => {
+          const sel = window.getSelection();
+          if (!sel || sel.isCollapsed) {
+            setFloatingToolbar(null);
+          }
+        }, 200);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const renderMarkdown = (text: string) => {
-    let html = text
+    // First apply inline comment highlights
+    let processedText = text;
+    // Sort comments by startOffset descending so we don't mess up positions
+    const sortedComments = [...comments].sort((a, b) => b.startOffset - a.startOffset);
+    for (const c of sortedComments) {
+      if (c.startOffset >= 0 && c.startOffset < processedText.length) {
+        const colorMap = { yellow: '#fef08a', green: '#bbf7d0', blue: '#bfdbfe', pink: '#fbcfe8' };
+        const bg = colorMap[c.color];
+        const before = processedText.substring(0, c.startOffset);
+        const highlighted = processedText.substring(c.startOffset, c.endOffset);
+        const after = processedText.substring(c.endOffset);
+        const tooltipAttr = c.comment ? ` title="${c.comment.replace(/"/g, '&quot;')}"` : '';
+        processedText = `${before}<mark style="background-color:${bg};padding:1px 3px;border-radius:3px;cursor:pointer;" data-comment-id="${c.id}"${tooltipAttr}>${highlighted}</mark>${after}`;
+      }
+    }
+    
+    let html = processedText
       .replace(/^### (.*$)/gm, '<h3 class="text-base font-bold mt-4 mb-2 text-foreground">$1</h3>')
       .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-5 mb-2 text-foreground">$1</h2>')
       .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h1>')
@@ -358,7 +445,12 @@ export function BibleStudyView() {
     return `<p class="text-sm leading-relaxed text-foreground/90 mb-2">${html}</p>`;
   };
 
-  const displayContent = lastResult || currentStream;
+  const COLOR_OPTIONS: { id: InlineComment['color']; label: string; bg: string }[] = [
+    { id: 'yellow', label: 'Amarelo', bg: 'bg-yellow-200' },
+    { id: 'green', label: 'Verde', bg: 'bg-green-200' },
+    { id: 'blue', label: 'Azul', bg: 'bg-blue-200' },
+    { id: 'pink', label: 'Rosa', bg: 'bg-pink-200' },
+  ];
 
   return (
     <div className="space-y-6">
@@ -486,9 +578,6 @@ A IA utilizará automaticamente seus Materiais (Exegese >> Materiais) como refer
                           <Save className="w-3.5 h-3.5" /> Salvar
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={() => { setShowCommentInput(!showCommentInput); }} className="gap-1 text-xs">
-                        <MessageSquare className="w-3.5 h-3.5" /> Comentar
-                      </Button>
                       <Button variant="ghost" size="sm" onClick={handleExport} className="gap-1 text-xs">
                         <Download className="w-3.5 h-3.5" /> Exportar
                       </Button>
@@ -501,34 +590,64 @@ A IA utilizará automaticamente seus Materiais (Exegese >> Materiais) como refer
                 </div>
               </div>
 
-              {/* Comment input */}
-              {showCommentInput && (
-                <div className="flex gap-2 p-3 bg-accent/10 rounded-lg border border-accent/30">
-                  <Input
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Digite seu comentário..."
-                    className="flex-1 text-sm"
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
-                  />
-                  <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>
-                    Adicionar
-                  </Button>
+              {/* Inline comment input (when user selected text and clicked "Comentar") */}
+              {showCommentInput && pendingCommentTarget && (
+                <div className="comment-input-inline p-3 bg-accent/10 rounded-lg border border-accent/30 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Comentando sobre: <span className="font-medium text-foreground">"{pendingCommentTarget.text.substring(0, 80)}{pendingCommentTarget.text.length > 80 ? '...' : ''}"</span>
+                  </p>
+                  <div className="flex gap-1.5 items-center">
+                    <span className="text-xs text-muted-foreground">Cor:</span>
+                    {COLOR_OPTIONS.map(c => (
+                      <button key={c.id} onClick={() => setCommentColor(c.id)}
+                        className={`w-5 h-5 rounded-full border-2 transition-all ${c.bg} ${commentColor === c.id ? 'border-foreground scale-110' : 'border-transparent'}`}
+                        title={c.label} />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Digite seu comentário (ou deixe vazio para apenas destacar)..."
+                      className="flex-1 text-sm"
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment(false); } }}
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={() => handleAddComment(false)} disabled={!newComment.trim()}>
+                      💬 Comentar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleAddComment(true)}>
+                      <Highlighter className="w-3.5 h-3.5 mr-1" /> Só Destacar
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              {/* User comments */}
+              {/* Tip for users */}
+              {!isLoading && !isEditing && !showCommentInput && (
+                <p className="text-xs text-muted-foreground italic flex items-center gap-1.5">
+                  <Highlighter className="w-3 h-3" /> Selecione qualquer texto abaixo para adicionar comentário ou destaque
+                </p>
+              )}
+
+              {/* Comments list */}
               {comments.length > 0 && (
-                <div className="space-y-2">
-                  {comments.map(c => (
-                    <div key={c.id} className="flex items-start gap-2 p-3 bg-accent/10 border border-accent/30 rounded-lg">
-                      <MessageSquare className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm flex-1">{c.text}</p>
-                      <button onClick={() => handleDeleteComment(c.id)} className="text-muted-foreground hover:text-destructive flex-shrink-0">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">💬 Seus Comentários ({comments.length})</h4>
+                  {comments.map(c => {
+                    const colorMap = { yellow: 'border-l-yellow-400 bg-yellow-50 dark:bg-yellow-950/20', green: 'border-l-green-400 bg-green-50 dark:bg-green-950/20', blue: 'border-l-blue-400 bg-blue-50 dark:bg-blue-950/20', pink: 'border-l-pink-400 bg-pink-50 dark:bg-pink-950/20' };
+                    return (
+                      <div key={c.id} className={`flex items-start gap-2 p-2.5 border-l-4 rounded-r-lg ${colorMap[c.color]}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground italic truncate">"{c.selectedText.substring(0, 100)}{c.selectedText.length > 100 ? '...' : ''}"</p>
+                          {c.comment && <p className="text-sm mt-1">{c.comment}</p>}
+                        </div>
+                        <button onClick={() => handleDeleteComment(c.id)} className="text-muted-foreground hover:text-destructive flex-shrink-0 mt-0.5">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -539,10 +658,45 @@ A IA utilizará automaticamente seus Materiais (Exegese >> Materiais) como refer
                   className="min-h-[400px] text-sm font-mono"
                 />
               ) : (
-                <div
-                  className="prose prose-sm max-w-none overflow-x-hidden"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(displayContent) }}
-                />
+                <div className="relative" ref={contentDisplayRef} onMouseUp={handleTextSelection}>
+                  {/* Floating toolbar on text selection */}
+                  {floatingToolbar && (
+                    <div
+                      className="floating-comment-toolbar absolute z-50 flex items-center gap-1 bg-popover border border-border rounded-lg shadow-lg p-1.5"
+                      style={{
+                        left: `${Math.max(0, floatingToolbar.x - 80)}px`,
+                        top: `${floatingToolbar.y - 40}px`,
+                      }}
+                    >
+                      {COLOR_OPTIONS.map(c => (
+                        <button key={c.id} onClick={() => {
+                          setCommentColor(c.id);
+                          setPendingCommentTarget({ text: floatingToolbar.text, startOffset: floatingToolbar.startOffset, endOffset: floatingToolbar.endOffset });
+                          setShowCommentInput(true);
+                          setFloatingToolbar(null);
+                          window.getSelection()?.removeAllRanges();
+                        }}
+                          className={`w-5 h-5 rounded-full ${c.bg} border border-border/50 hover:scale-125 transition-transform`}
+                          title={`Destacar em ${c.label}`} />
+                      ))}
+                      <div className="w-px h-4 bg-border mx-0.5" />
+                      <button onClick={() => {
+                        setPendingCommentTarget({ text: floatingToolbar.text, startOffset: floatingToolbar.startOffset, endOffset: floatingToolbar.endOffset });
+                        setShowCommentInput(true);
+                        setFloatingToolbar(null);
+                        window.getSelection()?.removeAllRanges();
+                      }}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted text-foreground"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" /> Comentar
+                      </button>
+                    </div>
+                  )}
+                  <div
+                    className="prose prose-sm max-w-none overflow-x-hidden"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(displayContent) }}
+                  />
+                </div>
               )}
 
               {/* Re-analyze button */}
