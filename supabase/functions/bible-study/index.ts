@@ -1,39 +1,146 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Você é um especialista em teologia, hermenêutica e estudo bíblico. Seu papel é analisar materiais de estudo bíblico fornecidos pelo usuário e gerar análises completas e didáticas.
+const SYSTEM_PROMPT = `Você é um Especialista em Hermenêutica, Exegese Bíblica e Educação Cristã (EBD).
+Sua função é transformar conteúdos brutos em estudos bíblicos estruturados, profundos, organizados e aplicáveis, com fidelidade absoluta às Escrituras.
 
-## REGRAS:
-- Responda SEMPRE em português brasileiro
-- Use linguagem clara e acessível
-- Formate em Markdown com títulos e seções claras
-- Cite referências bíblicas usando a versão Almeida Corrigida Fiel (ACF)
-- Quando citar materiais do usuário, use o formato: 「citação」(Fonte)
-- Seja teologicamente preciso e academicamente responsável
-- Apresente múltiplas perspectivas quando houver divergência teológica
+## 🧠 CONEXÃO COM BASE DE CONHECIMENTO
+Antes de gerar qualquer resposta, UTILIZE obrigatoriamente os materiais de referência fornecidos (Exegese Bíblica >> Materiais) para:
+- Garantir precisão doutrinária
+- Aprofundar a exegese
+- Evitar interpretações superficiais
 
-## FONTES EXTERNAS:
-Quando usar informações de sua base de conhecimento (não fornecidas pelo usuário), marque claramente com:
+## 📥 PROCESSAMENTO DE ENTRADA (MULTIFORMATO)
+Você deve interpretar conteúdos vindos de:
+- 📄 Documentos (texto extraído de PDF, Word, TXT)
+- 🖼️ Imagens (OCR + INTERPRETAÇÃO — se receber descrição de imagem, extraia todo texto e interprete o contexto visual)
+- 🎧 Áudio/Vídeo (transcrição fornecida)
+
+### 🖼️ REGRA PARA IMAGENS
+Ao receber descrição de imagem:
+- Extrair TODO o texto visível (OCR)
+- Descrever o conteúdo visual (gráfico, pessoas, cenário)
+- Contexto (página de livro, anotação, slide)
+- Transformar em conteúdo utilizável no estudo
+
+## 🔹 FONTES EXTERNAS
+Quando usar informações de sua base de conhecimento geral (não fornecidas pelo usuário), marque claramente com:
 🌐 **Fonte Externa:** [descrição da fonte]
-O usuário poderá decidir se aprova, ignora ou adiciona ao estudo.`;
+O usuário poderá decidir se aprova, ignora ou adiciona ao estudo.
 
-// Rate limiter
+## 📤 REGRAS DE SAÍDA
+- Formato: Markdown estruturado
+- Usar: #, ##, ###, negrito, listas, blocos de citação
+- Sempre incluir referências bíblicas (Almeida Corrigida Fiel - ACF)
+- Clareza visual e organização por seções
+- Usar emojis nos títulos das seções para facilitar navegação
+
+## 💬 SISTEMA DE COMENTÁRIOS
+Inserir blocos de comentário editáveis nas seções principais:
+\`\`\`
+[COMENTÁRIO]
+Digite aqui sua anotação...
+\`\`\`
+
+## ⚠️ REGRAS CRÍTICAS
+- Sempre ter título claro e bíblico
+- Sempre ter estrutura organizada
+- Nunca gerar conteúdo solto sem estrutura
+- Sempre interpretar imagens corretamente quando fornecidas
+- Fidelidade bíblica total
+- Clareza + profundidade
+- Aplicação prática
+- Formação espiritual`;
+
+const STUDY_PROMPTS: Record<string, string> = {
+  complete_study: `Gere um ESTUDO BÍBLICO COMPLETO seguindo EXATAMENTE esta estrutura:
+
+# 🏷️ TÍTULO DO ESTUDO
+Claro, bíblico e temático
+
+## 📖 PÁGINA 1 — LENDO A PALAVRA
+- Texto bíblico principal (com referência completa ACF)
+- Versículos formatados
+- Texto complementar (se houver)
+
+### ❤️ GUARDE NO CORAÇÃO
+Verdade central do estudo
+
+## 📖 PÁGINA 2 — ESTUDANDO A PALAVRA
+### Introdução
+Contexto bíblico e explicação acessível + teológica
+
+### 🔍 DESCOBRINDO A VERDADE
+Definições e explicações centrais
+
+### 📚 TÓPICOS PRINCIPAIS
+Para cada tópico (I, II, III, IV...):
+- Subtópicos (1, 2, 3…)
+- Explicação bíblica
+- Referências ACF
+
+### 🧠 COMPREENDENDO A VERDADE
+Consolidação do ensino
+
+### 🔥 APLICANDO A VERDADE
+Aplicações práticas para:
+- Vida Pessoal
+- Família
+- Igreja
+- Trabalho/Sociedade
+
+### 💭 PENSE NISSO
+Frase de impacto
+
+### ❓ PERGUNTAS PARA DISCUSSÃO
+3 a 5 perguntas para estudo em grupo
+
+## 🔗 REFERÊNCIAS BÍBLICAS RELACIONADAS
+Passagens que complementam o estudo, com texto na ACF.`,
+
+  summary: `Faça um RESUMO SIMPLIFICADO com:
+- Tópicos objetivos e claros
+- Pontos principais destacados
+- Fidelidade ao conteúdo original
+- Referências bíblicas relevantes (ACF)
+- Conclusão sintética`,
+
+  questions: `Gere PERGUNTAS E RESPOSTAS para estudo:
+1. 10 perguntas de compreensão (verificar entendimento)
+2. 5 perguntas de reflexão (aplicação pessoal)
+3. 3 perguntas de aprofundamento (para estudo avançado)
+Para CADA pergunta, forneça resposta detalhada com referências bíblicas (ACF).`,
+
+  practical_applications: `Extraia APLICAÇÕES PRÁTICAS 100% concretas:
+Para cada aplicação:
+1. Identifique o princípio bíblico
+2. Explique como se aplica hoje
+3. Dê exemplo prático e específico
+4. Sugira ação concreta para esta semana
+5. Inclua versículo de apoio (ACF)`,
+
+  devotional_generation: `Gere um NOVO DEVOCIONAL com esta estrutura:
+1. Texto Base (versículo principal ACF)
+2. Reflexão (conectada ao material e devocionais existentes)
+3. Aplicação (prática e pessoal)
+4. Oração (inspirativa e conectada ao tema)
+Identifique temas em comum com devocionais existentes e reutilize conceitos relevantes.`,
+};
+
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10;
-const RATE_WINDOW = 60_000;
-
 function checkRateLimit(key: string): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(key);
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW });
+    rateLimitMap.set(key, { count: 1, resetAt: now + 60_000 });
     return true;
   }
-  if (entry.count >= RATE_LIMIT) return false;
+  if (entry.count >= 10) return false;
   entry.count++;
   return true;
 }
@@ -44,118 +151,59 @@ serve(async (req) => {
   try {
     const clientIP = req.headers.get("x-forwarded-for") || "unknown";
     if (!checkRateLimit(clientIP)) {
-      return new Response(
-        JSON.stringify({ error: "Muitas requisições. Tente novamente em alguns segundos." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Muitas requisições. Tente novamente em alguns segundos." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { content, analysis_type, materials_context, devotionals_context } = await req.json();
+    const { content, analysis_type, user_id } = await req.json();
+    if (!content?.trim()) {
+      return new Response(JSON.stringify({ error: "Conteúdo não fornecido" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    let userPrompt = "";
+    // Fetch materials from DB if user_id provided
+    let materialsContext = "";
+    let devotionalsContext = "";
+    if (user_id) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const sb = createClient(supabaseUrl, supabaseKey);
 
-    const materialsSection = materials_context
-      ? `\n\n---\n**📚 MATERIAIS DE REFERÊNCIA DO USUÁRIO:**\n${materials_context}\n---\n`
-      : "";
+        const { data: materials } = await sb
+          .from("exegesis_materials")
+          .select("title, description, theme, author, material_category, content_origin")
+          .eq("user_id", user_id)
+          .limit(50);
 
-    const devotionalsSection = devotionals_context
-      ? `\n\n---\n**📖 DEVOCIONAIS DO USUÁRIO (usar como fonte de análise):**\n${devotionals_context}\n---\n`
-      : "";
+        if (materials?.length) {
+          materialsContext = "\n\n---\n**📚 BASE DE CONHECIMENTO DO USUÁRIO (Exegese Bíblica >> Materiais):**\nUse estes materiais como referência obrigatória para embasar a análise:\n" +
+            materials.map(m => `- [${m.material_category}] "${m.title}"${m.author ? ` por ${m.author}` : ""}${m.theme ? ` | Tema: ${m.theme}` : ""}${m.description ? ` — ${m.description.substring(0, 300)}` : ""}`).join("\n") +
+            "\n---\n";
 
-    switch (analysis_type) {
-      case "complete_study":
-        userPrompt = `Analise o seguinte material de estudo bíblico e gere uma análise COMPLETA:
-
-**MATERIAL FORNECIDO:**
-${content}
-${materialsSection}${devotionalsSection}
-
-Gere a análise com as seguintes seções:
-
-## 📝 RESUMO SIMPLIFICADO
-Um resumo claro e conciso do material, acessível a qualquer pessoa.
-
-## 📖 EXPLICAÇÃO DIDÁTICA
-Explique o conteúdo de forma detalhada e didática, como se estivesse ensinando a alguém que está começando a estudar a Bíblia.
-
-## 🎯 PRINCIPAIS PONTOS DO ESTUDO
-Liste os pontos mais importantes extraídos do material, numerados e organizados.
-
-## ❓ PERGUNTAS PARA REFLEXÃO
-Gere perguntas relevantes baseadas no conteúdo (mínimo 5 perguntas).
-
-## ✅ RESPOSTAS
-Forneça respostas detalhadas e bem fundamentadas para cada pergunta.
-
-## 💡 APLICAÇÕES PRÁTICAS
-Como aplicar os ensinamentos na vida cotidiana. Seja específico e prático.
-
-## 🔗 REFERÊNCIAS BÍBLICAS RELACIONADAS
-Liste passagens bíblicas que complementam ou aprofundam o estudo, com o texto na ACF.`;
-        break;
-
-      case "summary":
-        userPrompt = `Faça um RESUMO SIMPLIFICADO do seguinte material:
-
-${content}
-${materialsSection}
-
-O resumo deve ser:
-- Claro e acessível
-- Destacar os pontos principais
-- Manter a fidelidade ao conteúdo original
-- Incluir referências bíblicas relevantes (ACF)`;
-        break;
-
-      case "questions":
-        userPrompt = `Com base no seguinte material, gere PERGUNTAS E RESPOSTAS para estudo:
-
-${content}
-${materialsSection}
-
-Gere:
-1. 10 perguntas de compreensão (verificar entendimento)
-2. 5 perguntas de reflexão (aplicação pessoal)
-3. 3 perguntas de aprofundamento (para estudo avançado)
-
-Para CADA pergunta, forneça uma resposta detalhada e bem fundamentada com referências bíblicas (ACF).`;
-        break;
-
-      case "practical_applications":
-        userPrompt = `Com base no seguinte material, extraia APLICAÇÕES PRÁTICAS:
-
-${content}
-${materialsSection}
-
-Para cada aplicação:
-1. Identifique o princípio bíblico
-2. Explique como se aplica hoje
-3. Dê um exemplo prático e específico
-4. Sugira uma ação concreta que a pessoa pode fazer esta semana
-5. Inclua versículo de apoio (ACF)`;
-        break;
-
-      case "devotional_generation":
-        userPrompt = `Com base no seguinte material e nos devocionais existentes do usuário, gere um NOVO DEVOCIONAL:
-
-**MATERIAL BASE:**
-${content}
-${materialsSection}${devotionalsSection}
-
-O devocional deve:
-1. Identificar temas em comum com os devocionais existentes
-2. Comparar conteúdos e reutilizar conceitos relevantes
-3. Ter uma estrutura clara: Texto Base → Reflexão → Aplicação → Oração
-4. Ser original mas conectado ao acervo do usuário
-5. Incluir referências bíblicas na ACF`;
-        break;
-
-      default:
-        userPrompt = `Analise o seguinte conteúdo de estudo bíblico:\n\n${content}\n${materialsSection}${devotionalsSection}\nForneça uma análise completa com resumo, pontos principais, perguntas e aplicações práticas.`;
+          devotionalsContext = materials
+            .filter(m => m.material_category === "devocional")
+            .map(m => `- "${m.title}"${m.author ? ` (${m.author})` : ""}${m.theme ? ` [Tema: ${m.theme}]` : ""}${m.description ? `: ${m.description.substring(0, 200)}` : ""}`)
+            .join("\n");
+          if (devotionalsContext) {
+            devotionalsContext = "\n\n---\n**📖 DEVOCIONAIS EXISTENTES DO USUÁRIO:**\n" + devotionalsContext + "\n---\n";
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching materials:", e);
+      }
     }
+
+    const promptTemplate = STUDY_PROMPTS[analysis_type] || STUDY_PROMPTS.complete_study;
+
+    const userPrompt = `Analise o seguinte material e ${promptTemplate}
+
+**MATERIAL FORNECIDO PELO USUÁRIO:**
+${content}
+${materialsContext}${analysis_type === "devotional_generation" ? devotionalsContext : ""}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -175,23 +223,17 @@ O devocional deve:
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns segundos." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(JSON.stringify({ error: "Limite de requisições excedido." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao seu workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(JSON.stringify({ error: "Créditos insuficientes." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Erro no serviço de IA" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ error: "Erro no serviço de IA" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     return new Response(response.body, {
@@ -199,9 +241,7 @@ O devocional deve:
     });
   } catch (e) {
     console.error("bible-study error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
