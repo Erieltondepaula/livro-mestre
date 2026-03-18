@@ -445,7 +445,12 @@ export function BibleStudyView() {
     return `<p class="text-sm leading-relaxed text-foreground/90 mb-2">${html}</p>`;
   };
 
-  const displayContent = lastResult || currentStream;
+  const COLOR_OPTIONS: { id: InlineComment['color']; label: string; bg: string }[] = [
+    { id: 'yellow', label: 'Amarelo', bg: 'bg-yellow-200' },
+    { id: 'green', label: 'Verde', bg: 'bg-green-200' },
+    { id: 'blue', label: 'Azul', bg: 'bg-blue-200' },
+    { id: 'pink', label: 'Rosa', bg: 'bg-pink-200' },
+  ];
 
   return (
     <div className="space-y-6">
