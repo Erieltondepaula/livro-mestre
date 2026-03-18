@@ -578,9 +578,6 @@ A IA utilizará automaticamente seus Materiais (Exegese >> Materiais) como refer
                           <Save className="w-3.5 h-3.5" /> Salvar
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={() => { setShowCommentInput(!showCommentInput); }} className="gap-1 text-xs">
-                        <MessageSquare className="w-3.5 h-3.5" /> Comentar
-                      </Button>
                       <Button variant="ghost" size="sm" onClick={handleExport} className="gap-1 text-xs">
                         <Download className="w-3.5 h-3.5" /> Exportar
                       </Button>
@@ -593,34 +590,64 @@ A IA utilizará automaticamente seus Materiais (Exegese >> Materiais) como refer
                 </div>
               </div>
 
-              {/* Comment input */}
-              {showCommentInput && (
-                <div className="flex gap-2 p-3 bg-accent/10 rounded-lg border border-accent/30">
-                  <Input
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Digite seu comentário..."
-                    className="flex-1 text-sm"
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment(); } }}
-                  />
-                  <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>
-                    Adicionar
-                  </Button>
+              {/* Inline comment input (when user selected text and clicked "Comentar") */}
+              {showCommentInput && pendingCommentTarget && (
+                <div className="comment-input-inline p-3 bg-accent/10 rounded-lg border border-accent/30 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Comentando sobre: <span className="font-medium text-foreground">"{pendingCommentTarget.text.substring(0, 80)}{pendingCommentTarget.text.length > 80 ? '...' : ''}"</span>
+                  </p>
+                  <div className="flex gap-1.5 items-center">
+                    <span className="text-xs text-muted-foreground">Cor:</span>
+                    {COLOR_OPTIONS.map(c => (
+                      <button key={c.id} onClick={() => setCommentColor(c.id)}
+                        className={`w-5 h-5 rounded-full border-2 transition-all ${c.bg} ${commentColor === c.id ? 'border-foreground scale-110' : 'border-transparent'}`}
+                        title={c.label} />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Digite seu comentário (ou deixe vazio para apenas destacar)..."
+                      className="flex-1 text-sm"
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment(false); } }}
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={() => handleAddComment(false)} disabled={!newComment.trim()}>
+                      💬 Comentar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleAddComment(true)}>
+                      <Highlighter className="w-3.5 h-3.5 mr-1" /> Só Destacar
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              {/* User comments */}
+              {/* Tip for users */}
+              {!isLoading && !isEditing && !showCommentInput && (
+                <p className="text-xs text-muted-foreground italic flex items-center gap-1.5">
+                  <Highlighter className="w-3 h-3" /> Selecione qualquer texto abaixo para adicionar comentário ou destaque
+                </p>
+              )}
+
+              {/* Comments list */}
               {comments.length > 0 && (
-                <div className="space-y-2">
-                  {comments.map(c => (
-                    <div key={c.id} className="flex items-start gap-2 p-3 bg-accent/10 border border-accent/30 rounded-lg">
-                      <MessageSquare className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                      <p className="text-sm flex-1">{c.text}</p>
-                      <button onClick={() => handleDeleteComment(c.id)} className="text-muted-foreground hover:text-destructive flex-shrink-0">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">💬 Seus Comentários ({comments.length})</h4>
+                  {comments.map(c => {
+                    const colorMap = { yellow: 'border-l-yellow-400 bg-yellow-50 dark:bg-yellow-950/20', green: 'border-l-green-400 bg-green-50 dark:bg-green-950/20', blue: 'border-l-blue-400 bg-blue-50 dark:bg-blue-950/20', pink: 'border-l-pink-400 bg-pink-50 dark:bg-pink-950/20' };
+                    return (
+                      <div key={c.id} className={`flex items-start gap-2 p-2.5 border-l-4 rounded-r-lg ${colorMap[c.color]}`}>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground italic truncate">"{c.selectedText.substring(0, 100)}{c.selectedText.length > 100 ? '...' : ''}"</p>
+                          {c.comment && <p className="text-sm mt-1">{c.comment}</p>}
+                        </div>
+                        <button onClick={() => handleDeleteComment(c.id)} className="text-muted-foreground hover:text-destructive flex-shrink-0 mt-0.5">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -631,10 +658,45 @@ A IA utilizará automaticamente seus Materiais (Exegese >> Materiais) como refer
                   className="min-h-[400px] text-sm font-mono"
                 />
               ) : (
-                <div
-                  className="prose prose-sm max-w-none overflow-x-hidden"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(displayContent) }}
-                />
+                <div className="relative" ref={contentDisplayRef} onMouseUp={handleTextSelection}>
+                  {/* Floating toolbar on text selection */}
+                  {floatingToolbar && (
+                    <div
+                      className="floating-comment-toolbar absolute z-50 flex items-center gap-1 bg-popover border border-border rounded-lg shadow-lg p-1.5"
+                      style={{
+                        left: `${Math.max(0, floatingToolbar.x - 80)}px`,
+                        top: `${floatingToolbar.y - 40}px`,
+                      }}
+                    >
+                      {COLOR_OPTIONS.map(c => (
+                        <button key={c.id} onClick={() => {
+                          setCommentColor(c.id);
+                          setPendingCommentTarget({ text: floatingToolbar.text, startOffset: floatingToolbar.startOffset, endOffset: floatingToolbar.endOffset });
+                          setShowCommentInput(true);
+                          setFloatingToolbar(null);
+                          window.getSelection()?.removeAllRanges();
+                        }}
+                          className={`w-5 h-5 rounded-full ${c.bg} border border-border/50 hover:scale-125 transition-transform`}
+                          title={`Destacar em ${c.label}`} />
+                      ))}
+                      <div className="w-px h-4 bg-border mx-0.5" />
+                      <button onClick={() => {
+                        setPendingCommentTarget({ text: floatingToolbar.text, startOffset: floatingToolbar.startOffset, endOffset: floatingToolbar.endOffset });
+                        setShowCommentInput(true);
+                        setFloatingToolbar(null);
+                        window.getSelection()?.removeAllRanges();
+                      }}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted text-foreground"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" /> Comentar
+                      </button>
+                    </div>
+                  )}
+                  <div
+                    className="prose prose-sm max-w-none overflow-x-hidden"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(displayContent) }}
+                  />
+                </div>
               )}
 
               {/* Re-analyze button */}
