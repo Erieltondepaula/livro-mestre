@@ -287,9 +287,9 @@ export function BibleStudyView() {
     // Add comments into the export
     let exportText = text;
     if (comments.length > 0) {
-      exportText += '\n\n---\n## 💬 COMENTÁRIOS DO USUÁRIO\n';
+      exportText += '\n\n---\n## 💬 COMENTÁRIOS E DESTAQUES DO USUÁRIO\n';
       comments.forEach((c, i) => {
-        exportText += `\n### Comentário ${i + 1}\n${c.text}\n`;
+        exportText += `\n### ${c.isHighlightOnly ? '🖍️ Destaque' : '💬 Comentário'} ${i + 1}\n> "${c.selectedText}"\n${c.comment ? `\n${c.comment}\n` : ''}`;
       });
     }
 
