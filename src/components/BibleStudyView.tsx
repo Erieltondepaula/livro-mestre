@@ -360,6 +360,8 @@ export function BibleStudyView() {
     toast({ title: "Estudo carregado", description: "Você pode editar ou re-analisar." });
   };
 
+  const displayContent = lastResult || currentStream;
+
   // Handle text selection for inline comments
   const handleTextSelection = useCallback(() => {
     const selection = window.getSelection();
@@ -378,7 +380,6 @@ export function BibleStudyView() {
     const rect = range.getBoundingClientRect();
     const containerRect = contentDisplayRef.current.getBoundingClientRect();
     
-    // Get text offset in the original content
     const fullText = displayContent || '';
     const startOffset = fullText.indexOf(text);
     const endOffset = startOffset + text.length;
