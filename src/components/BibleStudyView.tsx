@@ -318,12 +318,24 @@ export function BibleStudyView() {
     }
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    setComments(prev => [...prev, { id: crypto.randomUUID(), sectionIndex: prev.length, text: newComment.trim() }]);
+  const handleAddComment = (isHighlightOnly = false) => {
+    if (!pendingCommentTarget) return;
+    if (!isHighlightOnly && !newComment.trim()) return;
+    
+    setComments(prev => [...prev, {
+      id: crypto.randomUUID(),
+      startOffset: pendingCommentTarget.startOffset,
+      endOffset: pendingCommentTarget.endOffset,
+      selectedText: pendingCommentTarget.text,
+      comment: isHighlightOnly ? '' : newComment.trim(),
+      color: commentColor,
+      isHighlightOnly,
+    }]);
     setNewComment('');
     setShowCommentInput(false);
-    toast({ title: "Comentário adicionado!" });
+    setPendingCommentTarget(null);
+    setFloatingToolbar(null);
+    toast({ title: isHighlightOnly ? "Texto destacado!" : "Comentário adicionado!" });
   };
 
   const handleDeleteComment = (id: string) => {
