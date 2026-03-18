@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { BookOpen, Send, Loader2, Copy, Check, FileText, HelpCircle, Lightbulb, Heart, Upload, Trash2, Globe, CheckCircle, X, Plus, Download, Edit3, Save, Image as ImageIcon, MessageSquare, RefreshCw } from 'lucide-react';
+import { BookOpen, Send, Loader2, Copy, Check, FileText, HelpCircle, Lightbulb, Heart, Upload, Trash2, Globe, CheckCircle, X, Plus, Download, Edit3, Save, Image as ImageIcon, MessageSquare, RefreshCw, Highlighter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
