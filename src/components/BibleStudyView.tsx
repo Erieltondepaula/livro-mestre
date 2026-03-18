@@ -56,11 +56,15 @@ export function BibleStudyView() {
   const [savedStudies, setSavedStudies] = useState<SavedStudy[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [editableContent, setEditableContent] = useState('');
-  const [comments, setComments] = useState<CommentBlock[]>([]);
+  const [comments, setComments] = useState<InlineComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [floatingToolbar, setFloatingToolbar] = useState<{ x: number; y: number; text: string; startOffset: number; endOffset: number } | null>(null);
+  const [commentColor, setCommentColor] = useState<InlineComment['color']>('yellow');
+  const [pendingCommentTarget, setPendingCommentTarget] = useState<{ text: string; startOffset: number; endOffset: number } | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<{ name: string; content: string }[]>([]);
   const resultRef = useRef<HTMLDivElement>(null);
+  const contentDisplayRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
