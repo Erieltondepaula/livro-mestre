@@ -360,8 +360,74 @@ export function BibleStudyView() {
     toast({ title: "Estudo carregado", description: "Você pode editar ou re-analisar." });
   };
 
+  // Handle text selection for inline comments
+  const handleTextSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !contentDisplayRef.current) {
+      setFloatingToolbar(null);
+      return;
+    }
+    
+    const text = selection.toString().trim();
+    if (!text || text.length < 2) {
+      setFloatingToolbar(null);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const containerRect = contentDisplayRef.current.getBoundingClientRect();
+    
+    // Get text offset in the original content
+    const fullText = displayContent || '';
+    const startOffset = fullText.indexOf(text);
+    const endOffset = startOffset + text.length;
+    
+    setFloatingToolbar({
+      x: rect.left - containerRect.left + rect.width / 2,
+      y: rect.top - containerRect.top - 10,
+      text,
+      startOffset,
+      endOffset,
+    });
+  }, [displayContent]);
+
+  // Close floating toolbar on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.floating-comment-toolbar') && !target.closest('.comment-input-inline')) {
+        // Small delay to allow button clicks to register
+        setTimeout(() => {
+          const sel = window.getSelection();
+          if (!sel || sel.isCollapsed) {
+            setFloatingToolbar(null);
+          }
+        }, 200);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const renderMarkdown = (text: string) => {
-    let html = text
+    // First apply inline comment highlights
+    let processedText = text;
+    // Sort comments by startOffset descending so we don't mess up positions
+    const sortedComments = [...comments].sort((a, b) => b.startOffset - a.startOffset);
+    for (const c of sortedComments) {
+      if (c.startOffset >= 0 && c.startOffset < processedText.length) {
+        const colorMap = { yellow: '#fef08a', green: '#bbf7d0', blue: '#bfdbfe', pink: '#fbcfe8' };
+        const bg = colorMap[c.color];
+        const before = processedText.substring(0, c.startOffset);
+        const highlighted = processedText.substring(c.startOffset, c.endOffset);
+        const after = processedText.substring(c.endOffset);
+        const tooltipAttr = c.comment ? ` title="${c.comment.replace(/"/g, '&quot;')}"` : '';
+        processedText = `${before}<mark style="background-color:${bg};padding:1px 3px;border-radius:3px;cursor:pointer;" data-comment-id="${c.id}"${tooltipAttr}>${highlighted}</mark>${after}`;
+      }
+    }
+    
+    let html = processedText
       .replace(/^### (.*$)/gm, '<h3 class="text-base font-bold mt-4 mb-2 text-foreground">$1</h3>')
       .replace(/^## (.*$)/gm, '<h2 class="text-lg font-bold mt-5 mb-2 text-foreground">$1</h2>')
       .replace(/^# (.*$)/gm, '<h1 class="text-xl font-bold mt-6 mb-3 text-foreground">$1</h1>')
