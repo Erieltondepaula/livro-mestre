@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X, Sparkles, ClipboardPaste, Film, Image, Video, Search } from 'lucide-react';
+import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X, Sparkles, ClipboardPaste, Film, Image, Video, Search, Eye } from 'lucide-react';
+import { MaterialViewerDialog } from './MaterialViewerDialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
@@ -45,6 +46,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   const [batchClassifying, setBatchClassifying] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
   const [materialSearch, setMaterialSearch] = useState('');
+  const [viewingMaterial, setViewingMaterial] = useState<ExegesisMaterial | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -319,7 +321,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
               ) : (
                 <div className="space-y-2">
                   {filteredMaterials.map(m => (
-                    <div key={m.id} className="card-library overflow-hidden">
+                    <div key={m.id} className="card-library overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => setViewingMaterial(m)}>
                       <div className="p-3 flex items-center gap-3">
                         {getIcon(m.material_type)}
                         <div className="flex-1 min-w-0">
@@ -338,12 +340,15 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                             </div>
                           )}
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           {onUpdateMetadata && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editingMetaId === m.id ? setEditingMetaId(null) : startEditMeta(m)}>
                               <Tag className="w-3.5 h-3.5" />
                             </Button>
                           )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewingMaterial(m)} title="Visualizar">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
                           {m.url && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(m.url!, '_blank')}>
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -384,6 +389,12 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
           </TabsContent>
         ))}
       </Tabs>
+
+      <MaterialViewerDialog
+        material={viewingMaterial}
+        open={!!viewingMaterial}
+        onOpenChange={(open) => { if (!open) setViewingMaterial(null); }}
+      />
     </div>
   );
 }
