@@ -340,12 +340,15 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                             </div>
                           )}
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           {onUpdateMetadata && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editingMetaId === m.id ? setEditingMetaId(null) : startEditMeta(m)}>
                               <Tag className="w-3.5 h-3.5" />
                             </Button>
                           )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewingMaterial(m)} title="Visualizar">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
                           {m.url && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(m.url!, '_blank')}>
                               <ExternalLink className="w-3.5 h-3.5" />
