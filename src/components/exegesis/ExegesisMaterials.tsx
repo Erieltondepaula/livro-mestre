@@ -44,11 +44,20 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   const [metaForm, setMetaForm] = useState<{ theme: string; keywords: string; bible_references: string; author: string; content_origin: string }>({ theme: '', keywords: '', bible_references: '', author: '', content_origin: 'texto' });
   const [batchClassifying, setBatchClassifying] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
+  const [materialSearch, setMaterialSearch] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
 
-  const filteredMaterials = materials.filter(m => m.material_category === activeCategory);
+  const filteredMaterials = materials.filter(m => {
+    if (m.material_category !== activeCategory) return false;
+    if (!materialSearch.trim()) return true;
+    const q = materialSearch.toLowerCase();
+    return m.title.toLowerCase().includes(q) 
+      || (m.description || '').toLowerCase().includes(q) 
+      || (m.author || '').toLowerCase().includes(q)
+      || (m.theme || '').toLowerCase().includes(q);
+  });
 
   const handleFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
