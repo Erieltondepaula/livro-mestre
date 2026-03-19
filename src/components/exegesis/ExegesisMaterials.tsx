@@ -389,6 +389,12 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
           </TabsContent>
         ))}
       </Tabs>
+
+      <MaterialViewerDialog
+        material={viewingMaterial}
+        open={!!viewingMaterial}
+        onOpenChange={(open) => { if (!open) setViewingMaterial(null); }}
+      />
     </div>
   );
 }
