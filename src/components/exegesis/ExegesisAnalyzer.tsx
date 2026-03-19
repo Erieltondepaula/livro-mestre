@@ -364,9 +364,23 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
               <span className="text-xs text-muted-foreground">📖 {lastResult.passage.substring(0, 60)}</span>
               {saved && <span className="text-xs text-green-600 flex items-center gap-1"><Check className="w-3 h-3" /> Salvo</span>}
             </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(lastResult.content); toast({ title: "Copiado!" }); }}>
-              <Copy className="w-3.5 h-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Exportar .md" onClick={() => {
+                const header = `# ${ANALYSIS_TYPES.find(t => t.id === lastResult.type)?.label} — ${lastResult.passage}\n\n`;
+                const blob = new Blob([header + lastResult.content], { type: 'text/markdown;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `exegese-${lastResult.passage.replace(/\s+/g, '-').substring(0, 40)}.md`;
+                link.click();
+                URL.revokeObjectURL(url);
+              }}>
+                <Download className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(lastResult.content); toast({ title: "Copiado!" }); }}>
+                <Copy className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
           <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(lastResult.content) }} />
           {/* Map for Geographic/Historical - AI generated image */}
