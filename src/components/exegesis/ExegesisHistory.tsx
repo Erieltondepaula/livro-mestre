@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp, Map, Leaf } from 'lucide-react';
+import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp, Map, Leaf, Filter, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -19,7 +19,9 @@ const TYPE_LABELS: Record<string, string> = {
   full_exegesis: 'Exegese Completa', context_analysis: 'Contexto', word_study: 'Estudo de Palavras',
   genre_analysis: 'Gênero Literário', theological_analysis: 'Teologia', application: 'Aplicação',
   inductive_method: 'Método Indutivo', version_comparison: 'Versões', devotional: 'Devocional',
+  geographic_historical: 'Geográfico/Histórico', lessons_applications: 'Lições e Aplicações',
   question: 'Pergunta Livre',
+  cross_references: 'Ref. Cruzadas',
   outline_expository: 'Esboço Expositivo', outline_textual: 'Esboço Textual', outline_thematic: 'Esboço Temático',
 };
 
@@ -30,19 +32,42 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: 
   const [notesValue, setNotesValue] = useState('');
   const [historyMapStyle, setHistoryMapStyle] = useState<'geometric' | 'organic'>('geometric');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<string>('all');
 
   useEffect(() => { onFetch(); }, [onFetch]);
 
-  const filtered = analyses.filter(a => {
-    const q = search.toLowerCase();
-    return !q || a.passage.toLowerCase().includes(q) || a.analysis_type.toLowerCase().includes(q) || a.content.toLowerCase().includes(q);
-  });
+  // Get unique analysis types for filter
+  const availableTypes = useMemo(() => {
+    const types = new Set(analyses.map(a => a.analysis_type));
+    return Array.from(types).sort();
+  }, [analyses]);
+
+  const filtered = useMemo(() => {
+    return analyses.filter(a => {
+      const q = search.toLowerCase();
+      const matchesSearch = !q || a.passage.toLowerCase().includes(q) || a.analysis_type.toLowerCase().includes(q) || a.content.toLowerCase().includes(q);
+      const matchesType = filterType === 'all' || a.analysis_type === filterType;
+      return matchesSearch && matchesType;
+    });
+  }, [analyses, search, filterType]);
 
   const handleCopy = (id: string, content: string) => {
     navigator.clipboard.writeText(content);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
     toast({ title: "Copiado!" });
+  };
+
+  const handleExportMd = (a: ExegesisAnalysis) => {
+    const header = `# ${TYPE_LABELS[a.analysis_type] || a.analysis_type} — ${a.passage}\n\n> Data: ${new Date(a.created_at).toLocaleDateString('pt-BR')}\n\n`;
+    const notes = a.notes ? `\n\n---\n\n## Anotações\n\n${a.notes}` : '';
+    const blob = new Blob([header + a.content + notes], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `exegese-${a.passage.replace(/\s+/g, '-').substring(0, 40)}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleSaveNotes = async (id: string) => {
@@ -68,14 +93,31 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: 
 
   return (
     <div className="space-y-4">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por passagem, tipo ou conteúdo..." className="input-library w-full pl-9 text-sm" />
+      {/* Search + Filter Row */}
+      <div className="flex gap-2 flex-col sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por passagem, tipo ou conteúdo..." className="input-library w-full pl-9 text-sm" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="input-library text-sm min-w-[160px]">
+            <option value="all">Todos os tipos ({analyses.length})</option>
+            {availableTypes.map(t => (
+              <option key={t} value={t}>{TYPE_LABELS[t] || t} ({analyses.filter(a => a.analysis_type === t).length})</option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {/* Results count */}
+      {(search || filterType !== 'all') && (
+        <p className="text-xs text-muted-foreground">{filtered.length} resultado(s) encontrado(s)</p>
+      )}
 
       {filtered.length === 0 ? (
         <div className="card-library p-8 text-center">
-          <p className="text-sm text-muted-foreground">{search ? 'Nenhum resultado encontrado.' : 'Nenhuma análise salva ainda. Use a aba "Analisar" para gerar uma.'}</p>
+          <p className="text-sm text-muted-foreground">{search || filterType !== 'all' ? 'Nenhum resultado encontrado.' : 'Nenhuma análise salva ainda. Use a aba "Analisar" para gerar uma.'}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -93,6 +135,9 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: 
                     <p className="text-[10px] text-muted-foreground mt-1">{new Date(a.created_at).toLocaleDateString('pt-BR')} às {new Date(a.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" title="Exportar .md" onClick={(e) => { e.stopPropagation(); handleExportMd(a); }}>
+                      <Download className="w-3.5 h-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleCopy(a.id, a.content); }}>
                       {copiedId === a.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                     </Button>
