@@ -173,6 +173,11 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
         {CATEGORIES.map(cat => (
           <TabsContent key={cat.id} value={cat.id}>
             <div className="space-y-4">
+              {/* Search within materials */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="text" value={materialSearch} onChange={(e) => setMaterialSearch(e.target.value)} placeholder={`Buscar em ${cat.label.toLowerCase()}...`} className="input-library w-full pl-9 text-sm" />
+              </div>
               <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={() => { setShowUpload(!showUpload); setShowLink(false); setShowPaste(false); }} className="gap-2">
                   <Upload className="w-4 h-4" /> Enviar Arquivos
