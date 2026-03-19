@@ -321,7 +321,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
               ) : (
                 <div className="space-y-2">
                   {filteredMaterials.map(m => (
-                    <div key={m.id} className="card-library overflow-hidden">
+                    <div key={m.id} className="card-library overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={() => setViewingMaterial(m)}>
                       <div className="p-3 flex items-center gap-3">
                         {getIcon(m.material_type)}
                         <div className="flex-1 min-w-0">
