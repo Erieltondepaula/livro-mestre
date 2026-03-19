@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X, Sparkles, ClipboardPaste, Film, Image, Video } from 'lucide-react';
+import { Upload, Link2, Youtube, FileText, Trash2, Plus, ExternalLink, Loader2, Files, BookOpen, BookMarked, Languages, Heart, Tag, Edit3, Check, X, Sparkles, ClipboardPaste, Film, Image, Video, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
@@ -44,11 +44,20 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   const [metaForm, setMetaForm] = useState<{ theme: string; keywords: string; bible_references: string; author: string; content_origin: string }>({ theme: '', keywords: '', bible_references: '', author: '', content_origin: 'texto' });
   const [batchClassifying, setBatchClassifying] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
+  const [materialSearch, setMaterialSearch] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
 
-  const filteredMaterials = materials.filter(m => m.material_category === activeCategory);
+  const filteredMaterials = materials.filter(m => {
+    if (m.material_category !== activeCategory) return false;
+    if (!materialSearch.trim()) return true;
+    const q = materialSearch.toLowerCase();
+    return m.title.toLowerCase().includes(q) 
+      || (m.description || '').toLowerCase().includes(q) 
+      || (m.author || '').toLowerCase().includes(q)
+      || (m.theme || '').toLowerCase().includes(q);
+  });
 
   const handleFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -164,6 +173,11 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
         {CATEGORIES.map(cat => (
           <TabsContent key={cat.id} value={cat.id}>
             <div className="space-y-4">
+              {/* Search within materials */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="text" value={materialSearch} onChange={(e) => setMaterialSearch(e.target.value)} placeholder={`Buscar em ${cat.label.toLowerCase()}...`} className="input-library w-full pl-9 text-sm" />
+              </div>
               <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" size="sm" onClick={() => { setShowUpload(!showUpload); setShowLink(false); setShowPaste(false); }} className="gap-2">
                   <Upload className="w-4 h-4" /> Enviar Arquivos
@@ -254,11 +268,11 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                   <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-library w-full text-sm" placeholder="Título do material (opcional)" />
                   <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="input-library w-full text-sm" placeholder="Descrição breve (opcional)" />
                   <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                    <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" multiple onChange={handleFilesSelect} className="hidden" id="exegesis-file-upload" />
+                    <input ref={fileRef} type="file" accept={activeCategory === 'midia' ? '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mp3,.wav' : '.pdf,.doc,.docx'} multiple onChange={handleFilesSelect} className="hidden" id="exegesis-file-upload" />
                     <label htmlFor="exegesis-file-upload" className="cursor-pointer space-y-2 block">
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground/60" />
                       <p className="text-sm font-medium text-foreground">Clique para selecionar arquivos</p>
-                      <p className="text-xs text-muted-foreground">Aceita: PDF, DOC, DOCX • Múltiplos arquivos</p>
+                      <p className="text-xs text-muted-foreground">{activeCategory === 'midia' ? 'Aceita: PDF, DOC, DOCX, JPG, PNG, MP4, MP3' : 'Aceita: PDF, DOC, DOCX'} • Múltiplos arquivos</p>
                     </label>
                   </div>
                   {uploadingFiles.length > 0 && (
