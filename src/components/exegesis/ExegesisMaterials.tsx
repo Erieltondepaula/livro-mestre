@@ -268,11 +268,11 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                   <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-library w-full text-sm" placeholder="Título do material (opcional)" />
                   <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className="input-library w-full text-sm" placeholder="Descrição breve (opcional)" />
                   <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                    <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" multiple onChange={handleFilesSelect} className="hidden" id="exegesis-file-upload" />
+                    <input ref={fileRef} type="file" accept={activeCategory === 'midia' ? '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mp3,.wav' : '.pdf,.doc,.docx'} multiple onChange={handleFilesSelect} className="hidden" id="exegesis-file-upload" />
                     <label htmlFor="exegesis-file-upload" className="cursor-pointer space-y-2 block">
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground/60" />
                       <p className="text-sm font-medium text-foreground">Clique para selecionar arquivos</p>
-                      <p className="text-xs text-muted-foreground">Aceita: PDF, DOC, DOCX • Múltiplos arquivos</p>
+                      <p className="text-xs text-muted-foreground">{activeCategory === 'midia' ? 'Aceita: PDF, DOC, DOCX, JPG, PNG, MP4, MP3' : 'Aceita: PDF, DOC, DOCX'} • Múltiplos arquivos</p>
                     </label>
                   </div>
                   {uploadingFiles.length > 0 && (
