@@ -46,6 +46,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   const [batchClassifying, setBatchClassifying] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
   const [materialSearch, setMaterialSearch] = useState('');
+  const [viewingMaterial, setViewingMaterial] = useState<ExegesisMaterial | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
