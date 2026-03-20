@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Bold, Italic, Underline as UnderlineIcon, Highlighter, 
   Download, Edit3, Eye, FileText, ExternalLink, Loader2,
-  Type, Palette
+  Type
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -17,11 +17,11 @@ interface Props {
 }
 
 const HIGHLIGHT_COLORS = [
-  { name: 'Amarelo', color: '#fef08a', class: 'bg-yellow-200' },
-  { name: 'Verde', color: '#bbf7d0', class: 'bg-green-200' },
-  { name: 'Azul', color: '#bfdbfe', class: 'bg-blue-200' },
-  { name: 'Rosa', color: '#fbcfe8', class: 'bg-pink-200' },
-  { name: 'Laranja', color: '#fed7aa', class: 'bg-orange-200' },
+  { name: 'Amarelo', color: '#fef08a' },
+  { name: 'Verde', color: '#bbf7d0' },
+  { name: 'Azul', color: '#bfdbfe' },
+  { name: 'Rosa', color: '#fbcfe8' },
+  { name: 'Laranja', color: '#fed7aa' },
 ];
 
 export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
@@ -31,6 +31,7 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isPdf, setIsPdf] = useState(false);
+  const [isImage, setIsImage] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
   const loadContent = useCallback(async () => {
@@ -39,69 +40,85 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
     setContent('');
     setFileUrl(null);
     setIsPdf(false);
+    setIsImage(false);
 
     try {
-      // If it has a file_path, try to get a URL from storage
       if (material.file_path) {
-        const ext = material.file_path.split('.').pop()?.toLowerCase();
+        const ext = material.file_path.split('.').pop()?.toLowerCase() || '';
         
-        if (ext === 'pdf') {
-          const { data } = supabase.storage.from('exegesis-materials').getPublicUrl(material.file_path);
-          if (data?.publicUrl) {
-            setFileUrl(data.publicUrl);
-            setIsPdf(true);
+        // Always use signed URLs since the bucket is private
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from('exegesis-materials')
+          .createSignedUrl(material.file_path, 3600);
+
+        if (signedError) {
+          console.error('Signed URL error:', signedError);
+          // Fallback to description
+          if (material.description) {
+            setContent(material.description);
             setLoading(false);
             return;
           }
+          setContent(`Erro ao carregar arquivo: ${signedError.message}`);
+          setLoading(false);
+          return;
         }
-        
-        // For text-based files, try to download and read
-        if (['txt', 'md', 'doc', 'docx'].includes(ext || '')) {
-          const { data, error } = await supabase.storage.from('exegesis-materials').download(material.file_path);
-          if (!error && data) {
-            const text = await data.text();
+
+        const url = signedData.signedUrl;
+
+        if (ext === 'pdf') {
+          setFileUrl(url);
+          setIsPdf(true);
+          setLoading(false);
+          return;
+        }
+
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+          setFileUrl(url);
+          setIsImage(true);
+          setLoading(false);
+          return;
+        }
+
+        // Text files - download and read
+        if (['txt', 'md', 'doc', 'docx'].includes(ext)) {
+          const { data: dlData, error: dlError } = await supabase.storage
+            .from('exegesis-materials')
+            .download(material.file_path);
+          if (!dlError && dlData) {
+            const text = await dlData.text();
             setContent(text);
             setLoading(false);
             return;
           }
         }
 
-        // For images
-        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) {
-          const { data } = supabase.storage.from('exegesis-materials').getPublicUrl(material.file_path);
-          if (data?.publicUrl) {
-            setFileUrl(data.publicUrl);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Fallback: get signed URL
-        const { data } = await supabase.storage.from('exegesis-materials').createSignedUrl(material.file_path, 3600);
-        if (data?.signedUrl) {
-          setFileUrl(data.signedUrl);
-          if (ext === 'pdf') setIsPdf(true);
-          setLoading(false);
-          return;
-        }
+        // Other files - show as link
+        setFileUrl(url);
+        setLoading(false);
+        return;
       }
 
-      // If it has a URL (external link)
+      // External URL
       if (material.url) {
         setFileUrl(material.url);
         setLoading(false);
         return;
       }
 
-      // If it has description as content (pasted content)
+      // Pasted content / description
       if (material.description) {
         setContent(material.description);
       } else {
-        setContent('Este material não possui conteúdo de texto visualizável diretamente. Use o botão "Abrir Externo" para visualizar.');
+        setContent('Este material não possui conteúdo de texto visualizável. Use o botão "Abrir Externo" para visualizar.');
       }
     } catch (err) {
       console.error('Error loading material:', err);
-      setContent('Erro ao carregar conteúdo do material.');
+      if (material.description) {
+        setContent(material.description);
+      } else {
+        setContent('Erro ao carregar conteúdo do material.');
+      }
     } finally {
       setLoading(false);
     }
@@ -128,8 +145,7 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
   const handleExport = () => {
     if (!editorRef.current || !material) return;
     const htmlContent = editorRef.current.innerHTML;
-    const blob = new Blob([`
-<!DOCTYPE html>
+    const blob = new Blob([`<!DOCTYPE html>
 <html lang="pt-BR">
 <head><meta charset="utf-8"><title>${material.title}</title>
 <style>body{font-family:Georgia,serif;max-width:800px;margin:2rem auto;padding:0 1rem;line-height:1.8;color:#1a1a1a}
@@ -144,7 +160,7 @@ mark{padding:2px 4px;border-radius:2px}</style></head>
     toast({ title: 'Exportado com sucesso!' });
   };
 
-  const isImageFile = material?.file_path && ['jpg', 'jpeg', 'png', 'gif', 'webp'].some(ext => material.file_path?.toLowerCase().endsWith(ext));
+  const showToolbar = !isPdf && !isImage && !loading && content;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,7 +176,7 @@ mark{padding:2px 4px;border-radius:2px}</style></head>
         </DialogHeader>
 
         {/* Toolbar */}
-        {!isPdf && !isImageFile && !fileUrl?.startsWith('http') && (
+        {showToolbar && (
           <div className="flex items-center gap-1 px-4 py-2 border-b bg-muted/30 shrink-0 flex-wrap">
             <Button
               variant={isEditing ? "default" : "outline"}
@@ -251,7 +267,7 @@ mark{padding:2px 4px;border-radius:2px}</style></head>
               className="w-full h-full border-0"
               title={material?.title}
             />
-          ) : isImageFile && fileUrl ? (
+          ) : isImage && fileUrl ? (
             <div className="p-6 flex items-center justify-center h-full">
               <img src={fileUrl} alt={material?.title} className="max-w-full max-h-full object-contain rounded-lg shadow-md" />
             </div>
@@ -270,18 +286,10 @@ mark{padding:2px 4px;border-radius:2px}</style></head>
               contentEditable={isEditing}
               suppressContentEditableWarning
               className={`p-6 min-h-full text-sm leading-relaxed whitespace-pre-wrap focus:outline-none select-text ${
-                isEditing 
-                  ? 'bg-background cursor-text' 
-                  : 'bg-background/50'
+                isEditing ? 'bg-background cursor-text' : 'bg-background/50'
               }`}
               style={{ fontFamily: 'Georgia, "Times New Roman", serif', lineHeight: '1.9' }}
               dangerouslySetInnerHTML={{ __html: content.replace(/\n/g, '<br>') }}
-              onPaste={(e) => {
-                // Allow normal paste behavior (Ctrl+V)
-                if (!isEditing) {
-                  e.preventDefault();
-                }
-              }}
             />
           )}
         </div>
@@ -294,7 +302,7 @@ mark{padding:2px 4px;border-radius:2px}</style></head>
             {material?.author && `Autor: ${material.author}`}
           </span>
           <span>
-            {isEditing ? '✏️ Modo edição — Ctrl+B (negrito), Ctrl+I (itálico), Ctrl+U (sublinhado)' : '👁️ Modo leitura — Selecione texto e destaque com cores'}
+            {isEditing ? '✏️ Modo edição — Ctrl+B, Ctrl+I, Ctrl+U' : '👁️ Modo leitura — Selecione texto e destaque com cores'}
           </span>
         </div>
       </DialogContent>
