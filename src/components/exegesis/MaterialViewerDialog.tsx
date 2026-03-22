@@ -278,7 +278,7 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
     wrapper.style.width = `${viewport.width}px`;
     wrapper.style.minHeight = `${viewport.height}px`;
 
-    await page.render({ canvasContext: context, viewport }).promise;
+    await page.render({ canvasContext: context, viewport, canvas } as any).promise;
     if (token !== renderTokenRef.current) return;
     await extractPageText(doc, pageNumber);
   }, [extractPageText, scale]);
