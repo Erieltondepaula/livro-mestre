@@ -35,8 +35,17 @@ import {
   Util,
   getDocument,
   type PDFDocumentProxy,
-  type TextItem,
 } from 'pdfjs-dist';
+
+interface TextItem {
+  str: string;
+  dir: string;
+  transform: number[];
+  width: number;
+  height: number;
+  fontName: string;
+  hasEOL: boolean;
+}
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
@@ -269,7 +278,7 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
     wrapper.style.width = `${viewport.width}px`;
     wrapper.style.minHeight = `${viewport.height}px`;
 
-    await page.render({ canvasContext: context, viewport }).promise;
+    await page.render({ canvasContext: context, viewport, canvas } as any).promise;
     if (token !== renderTokenRef.current) return;
     await extractPageText(doc, pageNumber);
   }, [extractPageText, scale]);
@@ -581,7 +590,7 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
   }, [annotations, fileBytes]);
 
   const downloadBytes = (bytes: Uint8Array, fileName: string) => {
-    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -600,7 +609,7 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
       const savedBytes = await pdf.save();
       const { error } = await supabase.storage
         .from('exegesis-materials')
-        .update(material.file_path, new Blob([savedBytes], { type: 'application/pdf' }), { contentType: 'application/pdf', upsert: true });
+        .update(material.file_path, new Blob([new Uint8Array(savedBytes)], { type: 'application/pdf' }), { contentType: 'application/pdf', upsert: true });
       if (error) throw error;
 
       const nextBytes = new Uint8Array(savedBytes);
