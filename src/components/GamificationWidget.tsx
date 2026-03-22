@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Flame, Trophy, Target, Calendar, Award } from 'lucide-react';
+import { Flame, Trophy, Target, Calendar, Award, ChevronDown, ChevronUp, Check, Lock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { format, differenceInCalendarDays, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import type { DailyReading } from '@/types/library';
 
@@ -19,17 +19,41 @@ interface ReadingGoal {
   current_streak: number;
   longest_streak: number;
   last_reading_date: string | null;
-  total_badges: any[];
+  total_badges: string[];
 }
 
-const BADGES = [
-  { id: 'first_read', label: '📖 Primeira Leitura', condition: (stats: any) => stats.totalDays >= 1 },
-  { id: 'week_streak', label: '🔥 7 dias seguidos', condition: (stats: any) => stats.streak >= 7 },
-  { id: 'month_streak', label: '🏆 30 dias seguidos', condition: (stats: any) => stats.streak >= 30 },
-  { id: 'hundred_pages', label: '📚 100 páginas lidas', condition: (stats: any) => stats.totalPages >= 100 },
-  { id: 'thousand_pages', label: '🎯 1.000 páginas', condition: (stats: any) => stats.totalPages >= 1000 },
-  { id: 'bookworm', label: '🐛 5 livros completos', condition: (stats: any) => stats.completedBooks >= 5 },
-  { id: 'scholar', label: '🎓 50 palavras no dicionário', condition: (stats: any) => stats.vocabCount >= 50 },
+interface BadgeDef {
+  id: string;
+  label: string;
+  icon: string;
+  description: string;
+  condition: (stats: BadgeStats) => boolean;
+}
+
+interface BadgeStats {
+  totalDays: number;
+  streak: number;
+  totalPages: number;
+  completedBooks: number;
+  vocabCount: number;
+}
+
+const BADGES: BadgeDef[] = [
+  { id: 'first_read', icon: '📖', label: 'Primeira Leitura', description: 'Registre sua primeira leitura', condition: (s) => s.totalDays >= 1 },
+  { id: 'ten_pages', icon: '📄', label: '10 Páginas', description: 'Leia 10 páginas no total', condition: (s) => s.totalPages >= 10 },
+  { id: 'fifty_pages', icon: '📑', label: '50 Páginas', description: 'Leia 50 páginas no total', condition: (s) => s.totalPages >= 50 },
+  { id: 'hundred_pages', icon: '📚', label: '100 Páginas', description: 'Leia 100 páginas no total', condition: (s) => s.totalPages >= 100 },
+  { id: 'five_hundred_pages', icon: '📕', label: '500 Páginas', description: 'Leia 500 páginas no total', condition: (s) => s.totalPages >= 500 },
+  { id: 'thousand_pages', icon: '🎯', label: '1.000 Páginas', description: 'Leia 1.000 páginas no total', condition: (s) => s.totalPages >= 1000 },
+  { id: 'three_day_streak', icon: '🔥', label: '3 Dias Seguidos', description: 'Leia 3 dias consecutivos', condition: (s) => s.streak >= 3 },
+  { id: 'week_streak', icon: '🔥', label: '7 Dias Seguidos', description: 'Leia 7 dias consecutivos', condition: (s) => s.streak >= 7 },
+  { id: 'two_week_streak', icon: '💪', label: '14 Dias Seguidos', description: 'Leia 14 dias consecutivos', condition: (s) => s.streak >= 14 },
+  { id: 'month_streak', icon: '🏆', label: '30 Dias Seguidos', description: 'Leia 30 dias consecutivos', condition: (s) => s.streak >= 30 },
+  { id: 'one_book', icon: '✅', label: '1 Livro Completo', description: 'Conclua 1 livro', condition: (s) => s.completedBooks >= 1 },
+  { id: 'three_books', icon: '📗', label: '3 Livros Completos', description: 'Conclua 3 livros', condition: (s) => s.completedBooks >= 3 },
+  { id: 'bookworm', icon: '🐛', label: '5 Livros Completos', description: 'Conclua 5 livros', condition: (s) => s.completedBooks >= 5 },
+  { id: 'ten_vocab', icon: '📝', label: '10 Palavras', description: 'Salve 10 palavras no dicionário', condition: (s) => s.vocabCount >= 10 },
+  { id: 'scholar', icon: '🎓', label: '50 Palavras', description: 'Salve 50 palavras no dicionário', condition: (s) => s.vocabCount >= 50 },
 ];
 
 export function GamificationWidget({ readings }: GamificationWidgetProps) {
@@ -37,6 +61,9 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
   const [goal, setGoal] = useState<ReadingGoal | null>(null);
   const [editingGoal, setEditingGoal] = useState(false);
   const [newGoalValue, setNewGoalValue] = useState('20');
+  const [showBadges, setShowBadges] = useState(false);
+  const [completedBooks, setCompletedBooks] = useState(0);
+  const [vocabCount, setVocabCount] = useState(0);
 
   const loadGoal = useCallback(async () => {
     if (!user) return;
@@ -48,23 +75,34 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
         current_streak: data.current_streak,
         longest_streak: data.longest_streak,
         last_reading_date: data.last_reading_date,
-        total_badges: Array.isArray(data.total_badges) ? data.total_badges : [],
+        total_badges: Array.isArray(data.total_badges) ? (data.total_badges as string[]) : [],
       });
       setNewGoalValue(String(data.daily_page_goal));
     }
   }, [user]);
 
-  useEffect(() => { loadGoal(); }, [loadGoal]);
+  // Load extra stats for badge evaluation
+  const loadExtraStats = useCallback(async () => {
+    if (!user) return;
+    const [statusRes, vocabRes] = await Promise.all([
+      supabase.from('statuses').select('id').eq('user_id', user.id).eq('status', 'Concluido'),
+      supabase.from('vocabulary').select('id').eq('user_id', user.id),
+    ]);
+    setCompletedBooks(statusRes.data?.length || 0);
+    setVocabCount(vocabRes.data?.length || 0);
+  }, [user]);
+
+  useEffect(() => { loadGoal(); loadExtraStats(); }, [loadGoal, loadExtraStats]);
 
   // Calculate streak from readings
   const streakData = useMemo(() => {
-    if (readings.length === 0) return { streak: 0, todayPages: 0 };
+    if (readings.length === 0) return { streak: 0, todayPages: 0, totalPages: 0, totalDays: 0 };
     
     const today = format(new Date(), 'yyyy-MM-dd');
     const readingDays = new Map<string, number>();
+    let totalPages = 0;
     
     for (const r of readings) {
-      // Try multiple date sources: dataInicio, created_at, or build from dia/mes
       let dateStr: string | null = null;
       if (r.dataInicio) {
         dateStr = format(new Date(r.dataInicio), 'yyyy-MM-dd');
@@ -75,19 +113,19 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
       if (dateStr) {
         readingDays.set(dateStr, (readingDays.get(dateStr) || 0) + r.quantidadePaginas);
       }
+      totalPages += r.quantidadePaginas;
     }
     
     const todayPages = readingDays.get(today) || 0;
+    const totalDays = readingDays.size;
     
-    // Calculate streak
     let streak = 0;
     let checkDate = new Date();
     
-    // If no reading today, start from yesterday
     if (!readingDays.has(today)) {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      if (!readingDays.has(format(yesterday, 'yyyy-MM-dd'))) return { streak: 0, todayPages };
+      if (!readingDays.has(format(yesterday, 'yyyy-MM-dd'))) return { streak: 0, todayPages, totalPages, totalDays };
       checkDate = yesterday;
     }
     
@@ -101,22 +139,50 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
       }
     }
     
-    return { streak, todayPages };
+    return { streak, todayPages, totalPages, totalDays };
   }, [readings]);
+
+  // Evaluate and persist badges
+  const badgeStats: BadgeStats = useMemo(() => ({
+    totalDays: streakData.totalDays,
+    streak: Math.max(streakData.streak, goal?.longest_streak || 0),
+    totalPages: streakData.totalPages,
+    completedBooks,
+    vocabCount,
+  }), [streakData, goal?.longest_streak, completedBooks, vocabCount]);
+
+  const earnedBadgeIds = useMemo(() => 
+    BADGES.filter(b => b.condition(badgeStats)).map(b => b.id),
+    [badgeStats]
+  );
+
+  // Persist new badges to DB
+  useEffect(() => {
+    if (!user || !goal) return;
+    const currentBadges = goal.total_badges || [];
+    const newBadges = earnedBadgeIds.filter(id => !currentBadges.includes(id));
+    if (newBadges.length === 0) return;
+
+    const allBadges = [...currentBadges, ...newBadges];
+    supabase.from('reading_goals').update({ total_badges: allBadges }).eq('id', goal.id).then(() => {
+      setGoal(prev => prev ? { ...prev, total_badges: allBadges } : prev);
+      const newBadgeLabels = BADGES.filter(b => newBadges.includes(b.id));
+      newBadgeLabels.forEach(b => {
+        toast({ title: `🏅 Nova Conquista!`, description: `${b.icon} ${b.label}` });
+      });
+    });
+  }, [earnedBadgeIds, user, goal]);
 
   // Update streak in DB
   useEffect(() => {
     if (!user || !goal) return;
-    const updateStreak = async () => {
-      if (streakData.streak !== goal.current_streak || streakData.streak > goal.longest_streak) {
-        await supabase.from('reading_goals').update({
-          current_streak: streakData.streak,
-          longest_streak: Math.max(streakData.streak, goal.longest_streak),
-          last_reading_date: format(new Date(), 'yyyy-MM-dd'),
-        }).eq('id', goal.id);
-      }
-    };
-    updateStreak();
+    if (streakData.streak !== goal.current_streak || streakData.streak > goal.longest_streak) {
+      supabase.from('reading_goals').update({
+        current_streak: streakData.streak,
+        longest_streak: Math.max(streakData.streak, goal.longest_streak),
+        last_reading_date: format(new Date(), 'yyyy-MM-dd'),
+      }).eq('id', goal.id);
+    }
   }, [streakData.streak, user, goal]);
 
   const handleSaveGoal = async () => {
@@ -163,7 +229,6 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {/* Daily Progress */}
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-primary" />
@@ -173,42 +238,70 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
             <Progress value={progress} className="h-1.5" />
           </div>
           
-          {/* Streak */}
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-orange-500" />
+              <Flame className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs text-muted-foreground">Sequência</span>
             </div>
             <p className="text-lg font-bold text-foreground">{streakData.streak} <span className="text-xs font-normal text-muted-foreground">dias</span></p>
           </div>
           
-          {/* Best Streak */}
           <div className="space-y-2">
             <div className="flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5 text-amber-500" />
+              <Trophy className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs text-muted-foreground">Recorde</span>
             </div>
             <p className="text-lg font-bold text-foreground">{Math.max(streakData.streak, goal?.longest_streak || 0)} <span className="text-xs font-normal text-muted-foreground">dias</span></p>
           </div>
           
-          {/* Badges */}
-          <div className="space-y-2">
+          <div className="space-y-2 cursor-pointer" onClick={() => setShowBadges(!showBadges)}>
             <div className="flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-purple-500" />
+              <Award className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs text-muted-foreground">Conquistas</span>
             </div>
-            <p className="text-lg font-bold text-foreground">{goal?.total_badges?.length || 0}</p>
+            <p className="text-lg font-bold text-foreground flex items-center gap-1">
+              {earnedBadgeIds.length}/{BADGES.length}
+              {showBadges ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </p>
           </div>
         </div>
       )}
 
-      {/* Streak Flame Animation */}
+      {/* Streak Flame */}
       {streakData.streak >= 3 && (
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
-          <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
-          <span className="text-sm font-medium text-orange-700 dark:text-orange-400">
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
+          <Flame className="w-5 h-5 text-primary animate-pulse" />
+          <span className="text-sm font-medium text-primary">
             {streakData.streak} dias consecutivos! Continue assim! 🔥
           </span>
+        </div>
+      )}
+
+      {/* Badges Grid */}
+      {showBadges && (
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-2 border-t border-border">
+          {BADGES.map((badge) => {
+            const earned = earnedBadgeIds.includes(badge.id);
+            return (
+              <div
+                key={badge.id}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg text-center transition-all ${
+                  earned
+                    ? 'bg-primary/10 border border-primary/30'
+                    : 'bg-muted/50 border border-transparent opacity-50'
+                }`}
+                title={badge.description}
+              >
+                <span className="text-2xl">{badge.icon}</span>
+                <span className="text-[10px] leading-tight font-medium text-foreground">{badge.label}</span>
+                {earned ? (
+                  <Check className="w-3 h-3 text-primary" />
+                ) : (
+                  <Lock className="w-3 h-3 text-muted-foreground" />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
