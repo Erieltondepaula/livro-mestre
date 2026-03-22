@@ -609,7 +609,7 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
       const savedBytes = await pdf.save();
       const { error } = await supabase.storage
         .from('exegesis-materials')
-        .update(material.file_path, new Blob([savedBytes.buffer], { type: 'application/pdf' }), { contentType: 'application/pdf', upsert: true });
+        .update(material.file_path, new Blob([new Uint8Array(savedBytes)], { type: 'application/pdf' }), { contentType: 'application/pdf', upsert: true });
       if (error) throw error;
 
       const nextBytes = new Uint8Array(savedBytes);
