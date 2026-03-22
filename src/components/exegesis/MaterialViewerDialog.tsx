@@ -35,8 +35,17 @@ import {
   Util,
   getDocument,
   type PDFDocumentProxy,
-  type TextItem,
 } from 'pdfjs-dist';
+
+interface TextItem {
+  str: string;
+  dir: string;
+  transform: number[];
+  width: number;
+  height: number;
+  fontName: string;
+  hasEOL: boolean;
+}
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
