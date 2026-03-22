@@ -64,9 +64,16 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
     const readingDays = new Map<string, number>();
     
     for (const r of readings) {
-      const date = r.dataInicio ? format(r.dataInicio, 'yyyy-MM-dd') : null;
-      if (date) {
-        readingDays.set(date, (readingDays.get(date) || 0) + r.quantidadePaginas);
+      // Try multiple date sources: dataInicio, created_at, or build from dia/mes
+      let dateStr: string | null = null;
+      if (r.dataInicio) {
+        dateStr = format(new Date(r.dataInicio), 'yyyy-MM-dd');
+      } else if (r.created_at) {
+        dateStr = format(new Date(r.created_at), 'yyyy-MM-dd');
+      }
+      
+      if (dateStr) {
+        readingDays.set(dateStr, (readingDays.get(dateStr) || 0) + r.quantidadePaginas);
       }
     }
     
