@@ -140,8 +140,8 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
       }
       totalPages += r.quantidadePaginas;
 
-      if (r.tempo) totalMinutes += parseMinutes(r.tempo);
-      if (r.capituloBiblia) chaptersRead++;
+      if (r.tempoGasto) totalMinutes += r.tempoGasto;
+      if (r.bibleChapter) chaptersRead++;
 
       // Time-based stats
       if (readDate && dateStr) {
