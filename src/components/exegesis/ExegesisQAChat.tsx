@@ -265,22 +265,27 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       
       {/* Compact header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/20 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm leading-tight">Assistente Bíblico</h3>
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-              {materials.length} materiais integrados
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm leading-tight">Assistente Bíblico</h3>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                {materials.length} materiais{webSearchEnabled ? ' + Web' : ''}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5" title="Buscar fontes externas (Wikipedia, arXiv, SciELO)">
+              <Globe className={`w-3.5 h-3.5 ${webSearchEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Switch
+                checked={webSearchEnabled}
+                onCheckedChange={setWebSearchEnabled}
+                className="scale-75"
+              />
+            </div>
             className="h-8 w-8"
             onClick={() => setShowPassageSelector(!showPassageSelector)}
             title="Selecionar passagem"
