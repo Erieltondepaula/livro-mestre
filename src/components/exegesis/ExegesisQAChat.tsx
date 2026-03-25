@@ -428,9 +428,18 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
               <div className="flex justify-start">
                 <div className="bg-muted/50 rounded-2xl rounded-bl-md px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
-                    <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
-                    <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                    {searchingWeb && (
+                      <span className="text-[10px] text-muted-foreground mr-1 flex items-center gap-1">
+                        <Globe className="w-3 h-3 animate-spin" /> Buscando na web...
+                      </span>
+                    )}
+                    {!searchingWeb && (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
+                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
