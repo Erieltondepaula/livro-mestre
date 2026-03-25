@@ -477,7 +477,6 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           <p className="text-[10px] text-muted-foreground text-center mt-1.5">
             {materials.length} materiais{webSearchEnabled ? ' + Wikipedia, arXiv, SciELO' : ''} • Enter para enviar
           </p>
-          </p>
         </div>
       </div>
     </div>
