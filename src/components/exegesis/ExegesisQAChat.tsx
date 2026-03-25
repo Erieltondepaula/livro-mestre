@@ -138,6 +138,25 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
       const materialsCtx = getFullMaterialsContext();
 
+      // Web search (parallel, non-blocking)
+      let webContext = '';
+      if (webSearchEnabled) {
+        setSearchingWeb(true);
+        try {
+          const searchQuery = passage ? `${passage} ${text}` : text;
+          const { data: searchData } = await supabase.functions.invoke('web-search', {
+            body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
+          });
+          if (searchData?.context) {
+            webContext = searchData.context;
+          }
+        } catch (e) {
+          console.warn('Web search failed, continuing without:', e);
+        } finally {
+          setSearchingWeb(false);
+        }
+      }
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -147,7 +166,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
         body: JSON.stringify({
           passage: passage || text,
           type: 'question',
-          question: `${text}\n\n## Histórico da conversa:\n${history}`,
+          question: `${text}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
           materials_context: materialsCtx,
           conversation_history: history,
         }),
