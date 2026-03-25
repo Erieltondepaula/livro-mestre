@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, BookOpen, MessageCircle, Settings2, X, ChevronDown } from 'lucide-react';
+import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -31,6 +33,8 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassageSelector, setShowPassageSelector] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [searchingWeb, setSearchingWeb] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
