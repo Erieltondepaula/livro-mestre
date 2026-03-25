@@ -286,12 +286,15 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
                 className="scale-75"
               />
             </div>
-            className="h-8 w-8"
-            onClick={() => setShowPassageSelector(!showPassageSelector)}
-            title="Selecionar passagem"
-          >
-            <BookOpen className="w-4 h-4" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowPassageSelector(!showPassageSelector)}
+              title="Selecionar passagem"
+            >
+              <BookOpen className="w-4 h-4" />
+            </Button>
           {messages.length > 0 && (
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleClear} title="Limpar conversa">
               <Trash2 className="w-4 h-4" />
