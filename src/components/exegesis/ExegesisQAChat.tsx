@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, BookOpen, MessageCircle, Settings2, X, ChevronDown } from 'lucide-react';
+import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import { useAuth } from '@/contexts/AuthContext';
 import type { ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   id: string;
@@ -31,6 +33,8 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassageSelector, setShowPassageSelector] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [searchingWeb, setSearchingWeb] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -134,6 +138,25 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
       const materialsCtx = getFullMaterialsContext();
 
+      // Web search (parallel, non-blocking)
+      let webContext = '';
+      if (webSearchEnabled) {
+        setSearchingWeb(true);
+        try {
+          const searchQuery = passage ? `${passage} ${text}` : text;
+          const { data: searchData } = await supabase.functions.invoke('web-search', {
+            body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
+          });
+          if (searchData?.context) {
+            webContext = searchData.context;
+          }
+        } catch (e) {
+          console.warn('Web search failed, continuing without:', e);
+        } finally {
+          setSearchingWeb(false);
+        }
+      }
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -143,7 +166,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
         body: JSON.stringify({
           passage: passage || text,
           type: 'question',
-          question: `${text}\n\n## Histórico da conversa:\n${history}`,
+          question: `${text}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
           materials_context: materialsCtx,
           conversation_history: history,
         }),
@@ -242,28 +265,36 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       
       {/* Compact header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/20 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm leading-tight">Assistente Bíblico</h3>
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-              {materials.length} materiais integrados
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+              <MessageCircle className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm leading-tight">Assistente Bíblico</h3>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                {materials.length} materiais{webSearchEnabled ? ' + Web' : ''}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setShowPassageSelector(!showPassageSelector)}
-            title="Selecionar passagem"
-          >
-            <BookOpen className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5" title="Buscar fontes externas (Wikipedia, arXiv, SciELO)">
+              <Globe className={`w-3.5 h-3.5 ${webSearchEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Switch
+                checked={webSearchEnabled}
+                onCheckedChange={setWebSearchEnabled}
+                className="scale-75"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowPassageSelector(!showPassageSelector)}
+              title="Selecionar passagem"
+            >
+              <BookOpen className="w-4 h-4" />
+            </Button>
           {messages.length > 0 && (
             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleClear} title="Limpar conversa">
               <Trash2 className="w-4 h-4" />
@@ -397,9 +428,18 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
               <div className="flex justify-start">
                 <div className="bg-muted/50 rounded-2xl rounded-bl-md px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
-                    <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
-                    <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                    {searchingWeb && (
+                      <span className="text-[10px] text-muted-foreground mr-1 flex items-center gap-1">
+                        <Globe className="w-3 h-3 animate-spin" /> Buscando na web...
+                      </span>
+                    )}
+                    {!searchingWeb && (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
+                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -435,7 +475,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-            Respostas baseadas em {materials.length} materiais • Pressione Enter para enviar
+            {materials.length} materiais{webSearchEnabled ? ' + Wikipedia, arXiv, SciELO' : ''} • Enter para enviar
           </p>
         </div>
       </div>
