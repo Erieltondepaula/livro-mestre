@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
-import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin, ExternalLink, Download } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin, ExternalLink, Download, FileText, StickyNote } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
-import type { ExegesisAnalysis } from '@/hooks/useExegesis';
+import type { ExegesisAnalysis, ExegesisMaterial } from '@/hooks/useExegesis';
 import { MapImageViewer, appendMapImageUrl } from './MapImageViewer';
+import { supabase } from '@/integrations/supabase/client';
 
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
@@ -18,6 +20,8 @@ interface Props {
   onSave: (analysis: { passage: string; analysis_type: string; question?: string; content: string }) => Promise<ExegesisAnalysis | null>;
   getMaterialsContext?: () => string | undefined;
   materialsCount?: number;
+  materials?: ExegesisMaterial[];
+  onCreateNote?: (title: string, content: string) => void;
 }
 
 const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType; description: string }[] = [
@@ -37,7 +41,7 @@ const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount = 0 }: Props) {
+export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapterStart, setChapterStart] = useState('');
   const [chapterEnd, setChapterEnd] = useState('');
@@ -52,6 +56,8 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
   const [saved, setSaved] = useState(false);
   const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [searchingWeb, setSearchingWeb] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
