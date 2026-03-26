@@ -444,7 +444,9 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         </p>
 
         <Button onClick={handleSearch} disabled={isLoading || !getPassageText()} className="w-full gap-2" size="lg">
-          {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Buscando referências...</> : <><Search className="w-4 h-4" /> Buscar Referências Cruzadas</>}
+          {isLoading ? (
+            searchingWeb ? <><Globe className="w-4 h-4 animate-spin" /> Buscando fontes externas...</> : <><Loader2 className="w-4 h-4 animate-spin" /> Buscando referências...</>
+          ) : <><Search className="w-4 h-4" /> Buscar Referências Cruzadas</>}
         </Button>
 
         {isLoading && (
