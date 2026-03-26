@@ -377,11 +377,13 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
           <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Digite sua pergunta sobre o texto bíblico..." className="min-h-[80px]" />
         )}
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <Button onClick={handleAnalyze} disabled={isLoading || !getPassageText()} className="btn-library-primary flex-1 sm:flex-none">
-            {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analisando...</> : <><Send className="w-4 h-4 mr-2" /> Analisar</>}
+            {isLoading ? (
+              searchingWeb ? <><Globe className="w-4 h-4 mr-2 animate-spin" /> Buscando fontes...</> : <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analisando...</>
+            ) : <><Send className="w-4 h-4 mr-2" /> Analisar</>}
           </Button>
-          {isLoading && <Button variant="outline" onClick={() => { abortRef.current?.abort(); setIsLoading(false); setCurrentStream(''); }}>Cancelar</Button>}
+          {isLoading && <Button variant="outline" onClick={() => { abortRef.current?.abort(); setIsLoading(false); setCurrentStream(''); setSearchingWeb(false); }}>Cancelar</Button>}
         </div>
       </div>
 
