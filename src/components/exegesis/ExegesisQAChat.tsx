@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown } from 'lucide-react';
+import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -485,12 +485,12 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 }
 
 /* ---- Chat Bubble Component ---- */
-function ChatBubble({ message }: { message: Message }) {
+function ChatBubble({ message, onCreateNote }: { message: Message; onCreateNote?: (title: string, content: string) => void }) {
   const isUser = message.role === 'user';
   const time = message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2 group`}>
       <div
         className={`relative max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
           isUser
@@ -510,9 +510,35 @@ function ChatBubble({ message }: { message: Message }) {
             <ReactMarkdown>{message.content || '...'}</ReactMarkdown>
           </div>
         )}
-        <span className={`text-[9px] block mt-1 ${isUser ? 'text-primary-foreground/60 text-right' : 'text-muted-foreground/60'}`}>
-          {time}
-        </span>
+        <div className="flex items-center justify-between mt-1">
+          <span className={`text-[9px] ${isUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'}`}>
+            {time}
+          </span>
+          {!isUser && message.content && (
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => { navigator.clipboard.writeText(message.content); toast({ title: "Copiado!" }); }}
+                className="p-1 rounded hover:bg-background/50 text-muted-foreground/60 hover:text-foreground"
+                title="Copiar"
+              >
+                <Copy className="w-3 h-3" />
+              </button>
+              {onCreateNote && (
+                <button
+                  onClick={() => {
+                    const title = message.passage ? `Chat — ${message.passage}` : `Chat Exegético — ${new Date().toLocaleDateString('pt-BR')}`;
+                    onCreateNote(title, message.content);
+                    toast({ title: "📝 Nota criada!" });
+                  }}
+                  className="p-1 rounded hover:bg-background/50 text-muted-foreground/60 hover:text-foreground"
+                  title="Criar nota"
+                >
+                  <StickyNote className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
