@@ -514,6 +514,14 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Copiado' : 'Copiar'}
               </Button>
+              {onCreateNote && displayContent && (
+                <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => {
+                  onCreateNote(`Ref. Cruzadas — ${lastResult?.passage || getPassageText()}`, displayContent);
+                  toast({ title: "📝 Nota criada!" });
+                }}>
+                  <StickyNote className="w-3.5 h-3.5" /> Criar Nota
+                </Button>
+              )}
               {saved && (
                 <Badge variant="secondary" className="text-[10px] gap-1">
                   <Save className="w-3 h-3" /> Salvo
