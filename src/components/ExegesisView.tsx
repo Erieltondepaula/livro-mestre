@@ -145,7 +145,7 @@ export function ExegesisView() {
         )}
 
         <TabsContent value="qa_chat">
-          <ExegesisQAChat getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} />
+          <ExegesisQAChat getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />
         </TabsContent>
 
         <TabsContent value="mindmap">
