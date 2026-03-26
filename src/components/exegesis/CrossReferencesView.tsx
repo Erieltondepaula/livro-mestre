@@ -15,7 +15,11 @@ interface Props {
   onSave: (analysis: { passage: string; analysis_type: string; question?: string; content: string }) => Promise<ExegesisAnalysis | null>;
   getMaterialsContext?: () => string | undefined;
   materialsCount?: number;
+  materials?: ExegesisMaterial[];
+  onCreateNote?: (title: string, content: string) => void;
 }
+
+import type { ExegesisMaterial } from '@/hooks/useExegesis';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -53,7 +57,7 @@ const BIBLE_ONLINE_SLUGS: Record<string, string> = {
   '1 João': '1jo', '2 João': '2jo', '3 João': '3jo', 'Judas': 'jd', 'Apocalipse': 'ap',
 };
 
-export function CrossReferencesView({ onSave, getMaterialsContext, materialsCount = 0 }: Props) {
+export function CrossReferencesView({ onSave, getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
   const { user } = useAuth();
   const [bibleBook, setBibleBook] = useState('');
   const [chapterStart, setChapterStart] = useState('');

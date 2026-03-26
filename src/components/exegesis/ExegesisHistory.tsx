@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp, Map, Leaf, Filter, Download } from 'lucide-react';
+import { Search, Copy, Trash2, Check, MessageSquare, ChevronDown, ChevronUp, Map, Leaf, Filter, Download, StickyNote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
@@ -13,6 +13,7 @@ interface Props {
   onFetch: () => void;
   onUpdateNotes: (id: string, notes: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onCreateNote?: (title: string, content: string) => void;
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -25,7 +26,7 @@ const TYPE_LABELS: Record<string, string> = {
   outline_expository: 'Esboço Expositivo', outline_textual: 'Esboço Textual', outline_thematic: 'Esboço Temático',
 };
 
-export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete }: Props) {
+export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete, onCreateNote }: Props) {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
