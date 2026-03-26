@@ -142,6 +142,15 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete, on
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleCopy(a.id, a.content); }}>
                       {copiedId === a.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
                     </Button>
+                    {onCreateNote && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Criar nota" onClick={(e) => {
+                        e.stopPropagation();
+                        onCreateNote(`${TYPE_LABELS[a.analysis_type] || a.analysis_type} — ${a.passage}`, a.content);
+                        toast({ title: "📝 Nota criada!" });
+                      }}>
+                        <StickyNote className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(a.id); }}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
