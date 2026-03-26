@@ -266,13 +266,31 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
           <Search className="w-4 h-4" /> Selecionar Passagem
         </h3>
 
-        {/* Materials indicator */}
+        {/* Materials + Web Search indicator */}
         {materialsCount > 0 && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" />
-            <span className="text-xs text-primary font-medium">
-              📚 {materialsCount} materiais na Base de Conhecimento — serão consultados automaticamente na análise
-            </span>
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" />
+                <span className="text-xs text-primary font-medium">
+                  📚 {materialsCount} materiais — fonte primária (100%)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5" title="Complementar com fontes externas (Wikipedia, arXiv, SciELO)">
+                <Globe className={`w-3.5 h-3.5 ${webSearchEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                <Switch checked={webSearchEnabled} onCheckedChange={setWebSearchEnabled} className="scale-75" />
+                <span className="text-[10px] text-muted-foreground">Web</span>
+              </div>
+            </div>
+            {materials.length > 0 && (
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                {materials.filter(m => m.material_category === 'comentario').length > 0 && <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">📘 Comentários {materials.filter(m => m.material_category === 'comentario').length}</span>}
+                {materials.filter(m => m.material_category === 'dicionario').length > 0 && <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full">📙 Dicionários {materials.filter(m => m.material_category === 'dicionario').length}</span>}
+                {materials.filter(m => m.material_category === 'livro').length > 0 && <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full">📚 Livros {materials.filter(m => m.material_category === 'livro').length}</span>}
+                {materials.filter(m => m.material_category === 'devocional').length > 0 && <span className="bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full">📗 Devocionais {materials.filter(m => m.material_category === 'devocional').length}</span>}
+                {materials.filter(m => m.material_category === 'midia').length > 0 && <span className="bg-pink-500/10 text-pink-600 dark:text-pink-400 px-1.5 py-0.5 rounded-full">🎬 Mídia {materials.filter(m => m.material_category === 'midia').length}</span>}
+              </div>
+            )}
           </div>
         )}
 
