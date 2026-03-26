@@ -422,7 +422,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
         ) : (
           <div className="max-w-3xl mx-auto px-4 py-4 space-y-1">
             {messages.map((msg, idx) => (
-              <ChatBubble key={msg.id} message={msg} />
+              <ChatBubble key={msg.id} message={msg} onCreateNote={onCreateNote} />
             ))}
 
             {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
