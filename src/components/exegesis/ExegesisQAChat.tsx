@@ -23,11 +23,12 @@ interface Props {
   getMaterialsContext?: () => string | undefined;
   materialsCount?: number;
   materials?: ExegesisMaterial[];
+  onCreateNote?: (title: string, content: string) => void;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materials = [] }: Props) {
+export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
