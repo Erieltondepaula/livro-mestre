@@ -144,13 +144,30 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
     abortRef.current = controller;
 
     try {
+      // Web search for external context
+      let webContext = '';
+      if (webSearchEnabled) {
+        setSearchingWeb(true);
+        try {
+          const { data: searchData } = await supabase.functions.invoke('web-search', {
+            body: { query: `${passage} referências cruzadas bíblicas`, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
+          });
+          if (searchData?.context) webContext = searchData.context;
+        } catch (e) { console.warn('Web search failed:', e); }
+        finally { setSearchingWeb(false); }
+      }
+
+      const questionWithWeb = webContext
+        ? `${selectedRefType}\n\n## FONTES EXTERNAS (filtro crítico — materiais locais têm PRIORIDADE):\n${webContext}`
+        : selectedRefType;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({
           passage,
           type: 'cross_references',
-          question: selectedRefType,
+          question: questionWithWeb,
           query_mode: queryType,
           materials_context: getMaterialsContext?.(),
         }),
