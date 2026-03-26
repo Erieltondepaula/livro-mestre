@@ -425,6 +425,15 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(lastResult.content); toast({ title: "Copiado!" }); }}>
                 <Copy className="w-3.5 h-3.5" />
               </Button>
+              {onCreateNote && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Criar nota a partir desta análise" onClick={() => {
+                  const title = `${ANALYSIS_TYPES.find(t => t.id === lastResult.type)?.label} — ${lastResult.passage}`;
+                  onCreateNote(title, lastResult.content);
+                  toast({ title: "📝 Nota criada!", description: "Acesse em Notas para editar." });
+                }}>
+                  <StickyNote className="w-3.5 h-3.5" />
+                </Button>
+              )}
             </div>
           </div>
           <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(lastResult.content) }} />
