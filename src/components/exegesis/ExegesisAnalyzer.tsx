@@ -160,10 +160,28 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
     abortRef.current = controller;
 
     try {
+      // Web search for external sources
+      let webContext = '';
+      if (webSearchEnabled) {
+        setSearchingWeb(true);
+        try {
+          const searchQuery = `${passage} ${selectedType === 'question' ? question : selectedType}`;
+          const { data: searchData } = await supabase.functions.invoke('web-search', {
+            body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
+          });
+          if (searchData?.context) webContext = searchData.context;
+        } catch (e) { console.warn('Web search failed:', e); }
+        finally { setSearchingWeb(false); }
+      }
+
+      const questionWithWeb = webContext
+        ? `${question.trim() || ''}\n\n## FONTES EXTERNAS (use com filtro crítico — materiais locais têm PRIORIDADE ABSOLUTA):\n${webContext}`
+        : question.trim() || undefined;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ passage, type: selectedType, question: question.trim() || undefined, materials_context: getMaterialsContext?.() }),
+        body: JSON.stringify({ passage, type: selectedType, question: questionWithWeb, materials_context: getMaterialsContext?.() }),
         signal: controller.signal,
       });
 
