@@ -9,10 +9,12 @@ import { ExegesisMaterials } from '@/components/exegesis/ExegesisMaterials';
 import { CrossReferencesView } from '@/components/exegesis/CrossReferencesView';
 import { MindMapEditor } from '@/components/exegesis/MindMapEditor';
 import { ExegesisQAChat } from '@/components/exegesis/ExegesisQAChat';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 export function ExegesisView() {
-  const { hasModuleAccess } = useAuth();
+  const { hasModuleAccess, user } = useAuth();
   const {
     analyses, outlines, materials, loading,
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
@@ -25,6 +27,23 @@ export function ExegesisView() {
 
   // Pre-fetch materials and analyses so context is available
   useEffect(() => { fetchMaterials(); fetchAnalyses(); }, [fetchMaterials, fetchAnalyses]);
+
+  // Create note from analysis content
+  const handleCreateNote = useCallback(async (title: string, content: string) => {
+    if (!user) return;
+    try {
+      await supabase.from('notes').insert({
+        user_id: user.id,
+        title,
+        content,
+        note_type: 'permanente',
+        tags: ['exegese'],
+      });
+      toast({ title: '📝 Nota criada!', description: 'Acesse em Notas para editar.' });
+    } catch (e) {
+      console.error('Error creating note:', e);
+    }
+  }, [user]);
 
   return (
     <div className="space-y-6">
@@ -73,19 +92,19 @@ export function ExegesisView() {
 
         {hasModuleAccess('exegese.analisar') && (
           <TabsContent value="analyze">
-            <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
+            <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />
           </TabsContent>
         )}
 
         {hasModuleAccess('exegese.ref_cruzadas') && (
           <TabsContent value="cross_refs">
-            <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} />
+            <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />
           </TabsContent>
         )}
 
         {hasModuleAccess('exegese.historico') && (
           <TabsContent value="history">
-            <ExegesisHistory analyses={analyses} onFetch={fetchAnalyses} onUpdateNotes={updateAnalysisNotes} onDelete={deleteAnalysis} />
+            <ExegesisHistory analyses={analyses} onFetch={fetchAnalyses} onUpdateNotes={updateAnalysisNotes} onDelete={deleteAnalysis} onCreateNote={handleCreateNote} />
           </TabsContent>
         )}
 
