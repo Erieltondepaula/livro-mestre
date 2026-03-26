@@ -1,12 +1,13 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink, Map, Leaf } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, Save, Link2, BookMarked, ExternalLink, Map, Leaf, Globe, StickyNote } from 'lucide-react';
 import { ReferenceMapView } from './ReferenceMapView';
 import { ReferenceMapOrganic } from './ReferenceMapOrganic';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import type { ExegesisAnalysis } from '@/hooks/useExegesis';
@@ -15,7 +16,11 @@ interface Props {
   onSave: (analysis: { passage: string; analysis_type: string; question?: string; content: string }) => Promise<ExegesisAnalysis | null>;
   getMaterialsContext?: () => string | undefined;
   materialsCount?: number;
+  materials?: ExegesisMaterial[];
+  onCreateNote?: (title: string, content: string) => void;
 }
+
+import type { ExegesisMaterial } from '@/hooks/useExegesis';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -53,7 +58,7 @@ const BIBLE_ONLINE_SLUGS: Record<string, string> = {
   '1 João': '1jo', '2 João': '2jo', '3 João': '3jo', 'Judas': 'jd', 'Apocalipse': 'ap',
 };
 
-export function CrossReferencesView({ onSave, getMaterialsContext, materialsCount = 0 }: Props) {
+export function CrossReferencesView({ onSave, getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
   const { user } = useAuth();
   const [bibleBook, setBibleBook] = useState('');
   const [chapterStart, setChapterStart] = useState('');
@@ -66,6 +71,8 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   const [selectedRefType, setSelectedRefType] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [searchingWeb, setSearchingWeb] = useState(false);
   const [lastResult, setLastResult] = useState<{ passage: string; content: string; keywords?: string[] } | null>(null);
   const [saved, setSaved] = useState(false);
   const [loadingLast, setLoadingLast] = useState(true);
@@ -138,13 +145,30 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
     abortRef.current = controller;
 
     try {
+      // Web search for external context
+      let webContext = '';
+      if (webSearchEnabled) {
+        setSearchingWeb(true);
+        try {
+          const { data: searchData } = await supabase.functions.invoke('web-search', {
+            body: { query: `${passage} referências cruzadas bíblicas`, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
+          });
+          if (searchData?.context) webContext = searchData.context;
+        } catch (e) { console.warn('Web search failed:', e); }
+        finally { setSearchingWeb(false); }
+      }
+
+      const questionWithWeb = webContext
+        ? `${selectedRefType}\n\n## FONTES EXTERNAS (filtro crítico — materiais locais têm PRIORIDADE):\n${webContext}`
+        : selectedRefType;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({
           passage,
           type: 'cross_references',
-          question: selectedRefType,
+          question: questionWithWeb,
           query_mode: queryType,
           materials_context: getMaterialsContext?.(),
         }),
@@ -272,11 +296,20 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         </div>
 
         {materialsCount > 0 && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" />
-            <span className="text-xs text-primary font-medium">
-              📚 {materialsCount} materiais na Base de Conhecimento — serão consultados nas referências
-            </span>
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" />
+                <span className="text-xs text-primary font-medium">
+                  📚 {materialsCount} materiais — fonte primária (100%)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5" title="Complementar com fontes externas">
+                <Globe className={`w-3.5 h-3.5 ${webSearchEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                <Switch checked={webSearchEnabled} onCheckedChange={setWebSearchEnabled} className="scale-75" />
+                <span className="text-[10px] text-muted-foreground">Web</span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -411,7 +444,9 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         </p>
 
         <Button onClick={handleSearch} disabled={isLoading || !getPassageText()} className="w-full gap-2" size="lg">
-          {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Buscando referências...</> : <><Search className="w-4 h-4" /> Buscar Referências Cruzadas</>}
+          {isLoading ? (
+            searchingWeb ? <><Globe className="w-4 h-4 animate-spin" /> Buscando fontes externas...</> : <><Loader2 className="w-4 h-4 animate-spin" /> Buscando referências...</>
+          ) : <><Search className="w-4 h-4" /> Buscar Referências Cruzadas</>}
         </Button>
 
         {isLoading && (
@@ -479,6 +514,14 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Copiado' : 'Copiar'}
               </Button>
+              {onCreateNote && displayContent && (
+                <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => {
+                  onCreateNote(`Ref. Cruzadas — ${lastResult?.passage || getPassageText()}`, displayContent);
+                  toast({ title: "📝 Nota criada!" });
+                }}>
+                  <StickyNote className="w-3.5 h-3.5" /> Criar Nota
+                </Button>
+              )}
               {saved && (
                 <Badge variant="secondary" className="text-[10px] gap-1">
                   <Save className="w-3 h-3" /> Salvo

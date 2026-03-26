@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
-import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin, ExternalLink, Download } from 'lucide-react';
+import { BookOpen, Search, Send, Loader2, Copy, Check, BookMarked, ScrollText, Languages, Church, Lightbulb, MessageCircleQuestion, Save, BookText, GitCompare, Heart, Globe, MapPin, ExternalLink, Download, FileText, StickyNote } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
-import type { ExegesisAnalysis } from '@/hooks/useExegesis';
+import type { ExegesisAnalysis, ExegesisMaterial } from '@/hooks/useExegesis';
 import { MapImageViewer, appendMapImageUrl } from './MapImageViewer';
+import { supabase } from '@/integrations/supabase/client';
 
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
@@ -18,6 +20,8 @@ interface Props {
   onSave: (analysis: { passage: string; analysis_type: string; question?: string; content: string }) => Promise<ExegesisAnalysis | null>;
   getMaterialsContext?: () => string | undefined;
   materialsCount?: number;
+  materials?: ExegesisMaterial[];
+  onCreateNote?: (title: string, content: string) => void;
 }
 
 const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType; description: string }[] = [
@@ -37,7 +41,7 @@ const ANALYSIS_TYPES: { id: AnalysisType; label: string; icon: React.ElementType
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount = 0 }: Props) {
+export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
   const [bibleBook, setBibleBook] = useState('');
   const [chapterStart, setChapterStart] = useState('');
   const [chapterEnd, setChapterEnd] = useState('');
@@ -52,6 +56,8 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
   const [saved, setSaved] = useState(false);
   const [mapImageUrl, setMapImageUrl] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [searchingWeb, setSearchingWeb] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -154,10 +160,28 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
     abortRef.current = controller;
 
     try {
+      // Web search for external sources
+      let webContext = '';
+      if (webSearchEnabled) {
+        setSearchingWeb(true);
+        try {
+          const searchQuery = `${passage} ${selectedType === 'question' ? question : selectedType}`;
+          const { data: searchData } = await supabase.functions.invoke('web-search', {
+            body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
+          });
+          if (searchData?.context) webContext = searchData.context;
+        } catch (e) { console.warn('Web search failed:', e); }
+        finally { setSearchingWeb(false); }
+      }
+
+      const questionWithWeb = webContext
+        ? `${question.trim() || ''}\n\n## FONTES EXTERNAS (use com filtro crítico — materiais locais têm PRIORIDADE ABSOLUTA):\n${webContext}`
+        : question.trim() || undefined;
+
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ passage, type: selectedType, question: question.trim() || undefined, materials_context: getMaterialsContext?.() }),
+        body: JSON.stringify({ passage, type: selectedType, question: questionWithWeb, materials_context: getMaterialsContext?.() }),
         signal: controller.signal,
       });
 
@@ -242,13 +266,31 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
           <Search className="w-4 h-4" /> Selecionar Passagem
         </h3>
 
-        {/* Materials indicator */}
+        {/* Materials + Web Search indicator */}
         {materialsCount > 0 && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" />
-            <span className="text-xs text-primary font-medium">
-              📚 {materialsCount} materiais na Base de Conhecimento — serão consultados automaticamente na análise
-            </span>
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" />
+                <span className="text-xs text-primary font-medium">
+                  📚 {materialsCount} materiais — fonte primária (100%)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5" title="Complementar com fontes externas (Wikipedia, arXiv, SciELO)">
+                <Globe className={`w-3.5 h-3.5 ${webSearchEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                <Switch checked={webSearchEnabled} onCheckedChange={setWebSearchEnabled} className="scale-75" />
+                <span className="text-[10px] text-muted-foreground">Web</span>
+              </div>
+            </div>
+            {materials.length > 0 && (
+              <div className="flex flex-wrap gap-1 text-[10px]">
+                {materials.filter(m => m.material_category === 'comentario').length > 0 && <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">📘 Comentários {materials.filter(m => m.material_category === 'comentario').length}</span>}
+                {materials.filter(m => m.material_category === 'dicionario').length > 0 && <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full">📙 Dicionários {materials.filter(m => m.material_category === 'dicionario').length}</span>}
+                {materials.filter(m => m.material_category === 'livro').length > 0 && <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full">📚 Livros {materials.filter(m => m.material_category === 'livro').length}</span>}
+                {materials.filter(m => m.material_category === 'devocional').length > 0 && <span className="bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full">📗 Devocionais {materials.filter(m => m.material_category === 'devocional').length}</span>}
+                {materials.filter(m => m.material_category === 'midia').length > 0 && <span className="bg-pink-500/10 text-pink-600 dark:text-pink-400 px-1.5 py-0.5 rounded-full">🎬 Mídia {materials.filter(m => m.material_category === 'midia').length}</span>}
+              </div>
+            )}
           </div>
         )}
 
@@ -335,11 +377,13 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
           <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Digite sua pergunta sobre o texto bíblico..." className="min-h-[80px]" />
         )}
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <Button onClick={handleAnalyze} disabled={isLoading || !getPassageText()} className="btn-library-primary flex-1 sm:flex-none">
-            {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analisando...</> : <><Send className="w-4 h-4 mr-2" /> Analisar</>}
+            {isLoading ? (
+              searchingWeb ? <><Globe className="w-4 h-4 mr-2 animate-spin" /> Buscando fontes...</> : <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analisando...</>
+            ) : <><Send className="w-4 h-4 mr-2" /> Analisar</>}
           </Button>
-          {isLoading && <Button variant="outline" onClick={() => { abortRef.current?.abort(); setIsLoading(false); setCurrentStream(''); }}>Cancelar</Button>}
+          {isLoading && <Button variant="outline" onClick={() => { abortRef.current?.abort(); setIsLoading(false); setCurrentStream(''); setSearchingWeb(false); }}>Cancelar</Button>}
         </div>
       </div>
 
@@ -381,6 +425,15 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { navigator.clipboard.writeText(lastResult.content); toast({ title: "Copiado!" }); }}>
                 <Copy className="w-3.5 h-3.5" />
               </Button>
+              {onCreateNote && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Criar nota a partir desta análise" onClick={() => {
+                  const title = `${ANALYSIS_TYPES.find(t => t.id === lastResult.type)?.label} — ${lastResult.passage}`;
+                  onCreateNote(title, lastResult.content);
+                  toast({ title: "📝 Nota criada!", description: "Acesse em Notas para editar." });
+                }}>
+                  <StickyNote className="w-3.5 h-3.5" />
+                </Button>
+              )}
             </div>
           </div>
           <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(lastResult.content) }} />
