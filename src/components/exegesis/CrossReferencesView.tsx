@@ -295,11 +295,20 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         </div>
 
         {materialsCount > 0 && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-primary" />
-            <span className="text-xs text-primary font-medium">
-              📚 {materialsCount} materiais na Base de Conhecimento — serão consultados nas referências
-            </span>
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" />
+                <span className="text-xs text-primary font-medium">
+                  📚 {materialsCount} materiais — fonte primária (100%)
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5" title="Complementar com fontes externas">
+                <Globe className={`w-3.5 h-3.5 ${webSearchEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                <Switch checked={webSearchEnabled} onCheckedChange={setWebSearchEnabled} className="scale-75" />
+                <span className="text-[10px] text-muted-foreground">Web</span>
+              </div>
+            </div>
           </div>
         )}
 
