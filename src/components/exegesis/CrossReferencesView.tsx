@@ -70,6 +70,8 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
   const [selectedRefType, setSelectedRefType] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [currentStream, setCurrentStream] = useState('');
+  const [webSearchEnabled, setWebSearchEnabled] = useState(true);
+  const [searchingWeb, setSearchingWeb] = useState(false);
   const [lastResult, setLastResult] = useState<{ passage: string; content: string; keywords?: string[] } | null>(null);
   const [saved, setSaved] = useState(false);
   const [loadingLast, setLoadingLast] = useState(true);
