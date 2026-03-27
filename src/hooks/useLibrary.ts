@@ -67,7 +67,7 @@ export function useLibrary() {
         status: newStatus,
       })
       .eq('book_id', bookId);
-  };
+  }, []);
 
   const { user } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
