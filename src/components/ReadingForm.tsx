@@ -112,20 +112,37 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
   const tempoEmMinutos = parseTimeToMinutes(tempoGasto);
   const tempoMedioPorDiaMinutos = diasLeitura > 0 && tempoEmMinutos ? tempoEmMinutos / diasLeitura : 0;
 
-  const addBibleEntry = () => {
-    if (!currentBibleBook || !currentBibleChapter) return;
-    
-    const newEntry: BibleEntry = {
+  const buildCurrentBibleEntry = (): BibleEntry | null => {
+    if (!currentBibleBook || !currentBibleChapter) return null;
+
+    return {
       id: crypto.randomUUID(),
       bibleBook: currentBibleBook,
       bibleChapter: currentBibleChapter,
       bibleVerseStart: currentBibleVerseStart,
       bibleVerseEnd: currentBibleVerseEnd,
     };
-    
-    setBibleEntries([...bibleEntries, newEntry]);
-    
-    // Reset current fields
+  };
+
+  const normalizeBibleEntries = (entries: BibleEntry[]) => {
+    const unique = new Map<string, BibleEntry>();
+
+    entries.forEach((entry) => {
+      const key = [entry.bibleBook, entry.bibleChapter, entry.bibleVerseStart || '', entry.bibleVerseEnd || ''].join('|');
+      if (!unique.has(key)) {
+        unique.set(key, entry);
+      }
+    });
+
+    return Array.from(unique.values());
+  };
+
+  const addBibleEntry = () => {
+    const newEntry = buildCurrentBibleEntry();
+    if (!newEntry) return;
+
+    setBibleEntries((prev) => normalizeBibleEntries([...prev, newEntry]));
+
     setCurrentBibleBook('');
     setCurrentBibleChapter('');
     setCurrentBibleVerseStart('');
@@ -147,9 +164,17 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
     // Salvar o valor em MINUTOS (decimal)
     const tempoFinal = parseTimeToMinutes(tempoGasto);
 
+    const currentPendingBibleEntry = buildCurrentBibleEntry();
+    const bibleEntriesToSubmit = isBibleCategory
+      ? normalizeBibleEntries([
+          ...bibleEntries,
+          ...(currentPendingBibleEntry ? [currentPendingBibleEntry] : []),
+        ])
+      : [];
+
     // Para livros bíblicos com múltiplas entradas, submeter cada uma
-    if (isBibleCategory && bibleEntries.length > 0) {
-      bibleEntries.forEach((entry, index) => {
+    if (isBibleCategory && bibleEntriesToSubmit.length > 0) {
+      bibleEntriesToSubmit.forEach((entry, index) => {
         if (mode === 'daily') {
           if (!dia) return;
 
@@ -160,7 +185,7 @@ export function ReadingForm({ books, onSubmit }: ReadingFormProps) {
             mes,
             paginaInicial: parseInt(paginaInicial),
             paginaFinal: parseInt(paginaFinal),
-            tempoGasto: index === 0 ? tempoFinal : 0, // Só a primeira entrada tem o tempo
+            tempoGasto: index === 0 ? tempoFinal : 0,
             isRetroactive: false,
             bibleBook: entry.bibleBook,
             bibleChapter: entry.bibleChapter ? parseInt(entry.bibleChapter) : undefined,

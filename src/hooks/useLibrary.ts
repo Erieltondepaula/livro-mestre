@@ -41,6 +41,34 @@ function getAverageReadingTimePerPage(category: string | undefined): number {
 }
 
 export function useLibrary() {
+  const recalculateBookStatus = useCallback(async (bookId: string) => {
+    const [{ data: bookData }, { data: allBookReadings }] = await Promise.all([
+      supabase.from('books').select('id, total_pages, category').eq('id', bookId).single(),
+      supabase.from('readings').select('end_page').eq('book_id', bookId),
+    ]);
+
+    if (!bookData) return;
+
+    const maxPageRead = allBookReadings && allBookReadings.length > 0
+      ? Math.max(...allBookReadings.map(r => r.end_page), 0)
+      : 0;
+
+    const correctedPagesRead = Math.min(maxPageRead, bookData.total_pages);
+    const newStatus = correctedPagesRead >= bookData.total_pages
+      ? 'Concluido'
+      : correctedPagesRead > 0
+        ? 'Lendo'
+        : 'Não iniciado';
+
+    await supabase
+      .from('statuses')
+      .update({
+        pages_read: correctedPagesRead,
+        status: newStatus,
+      })
+      .eq('book_id', bookId);
+  };
+
   const { user } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [readings, setReadings] = useState<DailyReading[]>([]);
@@ -450,18 +478,7 @@ export function useLibrary() {
           return null;
         }
         
-        // Update status to final page
-        const newPagesRead = reading.paginaFinal;
-        const newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
-        
-        await supabase
-          .from('statuses')
-          .update({
-            pages_read: newPagesRead,
-            status: newStatus,
-          })
-          .eq('book_id', reading.livroId);
-        
+        await recalculateBookStatus(reading.livroId);
         await loadData();
         return { id: 'bulk-insert' };
       }
@@ -496,37 +513,10 @@ export function useLibrary() {
       return null;
     }
 
-    // Update status
-    // For retroactive readings, set pages directly to paginaFinal
-    // For regular readings, accumulate pages
-    let newPagesRead: number;
-    let newStatus: string;
-
-    // CORREÇÃO: Para evitar acumulação incorreta de páginas (especialmente para Bíblia),
-    // Sempre recalcular baseado em MAX(end_page) de todas as leituras
-    const { data: allBookReadings } = await supabase
-      .from('readings')
-      .select('end_page')
-      .eq('book_id', reading.livroId);
-    
-    // O valor correto é o maior end_page entre todas as leituras OU a página final atual
-    const maxFromExisting = allBookReadings && allBookReadings.length > 0 
-      ? Math.max(...allBookReadings.map(r => r.end_page)) 
-      : 0;
-    newPagesRead = Math.max(maxFromExisting, reading.paginaFinal);
-    newStatus = bookData && newPagesRead >= bookData.total_pages ? 'Concluido' : 'Lendo';
-
-    await supabase
-      .from('statuses')
-      .update({
-        pages_read: newPagesRead,
-        status: newStatus,
-      })
-      .eq('book_id', reading.livroId);
-
+    await recalculateBookStatus(reading.livroId);
     await loadData();
     return newReadingData;
-  }, [loadData, user]);
+  }, [loadData, recalculateBookStatus, user]);
 
   // Update reading and recalculate status
   const updateReading = useCallback(async (reading: DailyReading) => {
@@ -557,42 +547,10 @@ export function useLibrary() {
       return null;
     }
 
-    // Recalculate status based on all readings for this book
-    // Get all readings for this book and find max page reached
-    const { data: allBookReadings } = await supabase
-      .from('readings')
-      .select('end_page')
-      .eq('book_id', reading.livroId);
-    
-    if (allBookReadings) {
-      const maxPageRead = Math.max(...allBookReadings.map(r => r.end_page), 0);
-      
-      // Get book total pages
-      const { data: bookData } = await supabase
-        .from('books')
-        .select('total_pages')
-        .eq('id', reading.livroId)
-        .single();
-      
-      if (bookData) {
-        // Ensure we don't exceed total pages
-        const correctedPagesRead = Math.min(maxPageRead, bookData.total_pages);
-        const newStatus = correctedPagesRead >= bookData.total_pages ? 'Concluido' : 
-                         correctedPagesRead > 0 ? 'Lendo' : 'Não iniciado';
-        
-        await supabase
-          .from('statuses')
-          .update({
-            pages_read: correctedPagesRead,
-            status: newStatus,
-          })
-          .eq('book_id', reading.livroId);
-      }
-    }
-
+    await recalculateBookStatus(reading.livroId);
     await loadData();
     return reading;
-  }, [loadData, user]);
+  }, [loadData, recalculateBookStatus, user]);
 
   // Add evaluation
   const addEvaluation = useCallback(async (evaluation: Omit<BookEvaluation, 'id'>) => {
