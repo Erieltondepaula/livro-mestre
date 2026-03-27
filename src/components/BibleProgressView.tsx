@@ -198,7 +198,14 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const totalChapters = bibleBooks.reduce((sum, b) => sum + b.chapters.length, 0);
   const totalRead = Object.values(bookProgress).reduce((sum, b) => sum + b.chaptersRead.size, 0);
   const overallProgress = totalChapters > 0 ? (totalRead / totalChapters) * 100 : 0;
-  const completedBooks = Object.values(bookProgress).filter(b => b.progress === 100).length;
+
+  // Count completed books: 100% chapters OR all chapters registered individually
+  const completedBooks = Object.values(bookProgress).filter(b => {
+    if (b.progress === 100) return true;
+    // Also check if chaptersRead matches totalChapters (handles rounding)
+    if (b.chaptersRead.size >= b.totalChapters && b.totalChapters > 0) return true;
+    return false;
+  }).length;
 
   const selectedBibleName = useMemo(() => {
     if (selectedBibleId === 'all') return 'Todas as Bíblias';

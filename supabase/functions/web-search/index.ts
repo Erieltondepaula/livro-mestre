@@ -10,9 +10,49 @@ interface SearchResult {
   title: string;
   snippet: string;
   url: string;
+  author?: string;
+  year?: string;
+  doi?: string;
+  abnt_citation?: string;
 }
 
-// Wikipedia API (free, no key needed)
+function formatDate(): string {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const months = ['jan.', 'fev.', 'mar.', 'abr.', 'maio', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'];
+  return `${day} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
+
+function buildAbntCitation(result: SearchResult): string {
+  const accessDate = formatDate();
+  const author = result.author || result.source.toUpperCase();
+  const year = result.year || new Date().getFullYear().toString();
+  const title = result.title;
+
+  if (result.source.startsWith("Wikipedia")) {
+    return `${title.toUpperCase()}. In: WIKIPÉDIA: a enciclopédia livre. [S.l.]: Wikimedia Foundation, ${year}. Disponível em: ${result.url}. Acesso em: ${accessDate}.`;
+  }
+
+  if (result.source === "arXiv") {
+    const authorFormatted = result.author ? result.author.split(',')[0].trim().toUpperCase() : "AUTOR DESCONHECIDO";
+    return `${authorFormatted}. ${title}. arXiv, ${year}. Disponível em: ${result.url}. Acesso em: ${accessDate}.`;
+  }
+
+  if (result.source === "SciELO") {
+    const authorFormatted = result.author ? result.author.split(',')[0].trim().toUpperCase() : "AUTOR DESCONHECIDO";
+    const doiRef = result.doi ? ` DOI: ${result.doi}.` : '';
+    return `${authorFormatted}. ${title}. SciELO, ${year}.${doiRef} Disponível em: ${result.url}. Acesso em: ${accessDate}.`;
+  }
+
+  if (result.source === "ERIC") {
+    const authorFormatted = result.author ? result.author.split(',')[0].trim().toUpperCase() : "AUTOR DESCONHECIDO";
+    return `${authorFormatted}. ${title}. ERIC, ${year}. Disponível em: ${result.url}. Acesso em: ${accessDate}.`;
+  }
+
+  return `${author.toUpperCase()}. ${title}. ${year}. Disponível em: ${result.url}. Acesso em: ${accessDate}.`;
+}
+
+// Wikipedia API
 async function searchWikipedia(query: string, lang = "pt"): Promise<SearchResult[]> {
   try {
     const url = `https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=3&format=json&utf8=1&srprop=snippet`;
@@ -21,19 +61,24 @@ async function searchWikipedia(query: string, lang = "pt"): Promise<SearchResult
     });
     if (!resp.ok) return [];
     const data = await resp.json();
-    return (data.query?.search || []).map((item: any) => ({
-      source: `Wikipedia (${lang})`,
-      title: item.title,
-      snippet: item.snippet.replace(/<[^>]+>/g, "").substring(0, 500),
-      url: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`,
-    }));
+    return (data.query?.search || []).map((item: any) => {
+      const result: SearchResult = {
+        source: `Wikipedia (${lang.toUpperCase()})`,
+        title: item.title,
+        snippet: item.snippet.replace(/<[^>]+>/g, "").substring(0, 500),
+        url: `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, "_"))}`,
+        year: new Date().getFullYear().toString(),
+      };
+      result.abnt_citation = buildAbntCitation(result);
+      return result;
+    });
   } catch (e) {
     console.error("Wikipedia search error:", e);
     return [];
   }
 }
 
-// Wikipedia extract (get full summary for a page)
+// Wikipedia extract
 async function getWikipediaExtract(title: string, lang = "pt"): Promise<string> {
   try {
     const url = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(title)}&format=json&utf8=1`;
@@ -50,7 +95,7 @@ async function getWikipediaExtract(title: string, lang = "pt"): Promise<string> 
   }
 }
 
-// arXiv API (free, no key needed) — good for theology/philosophy papers
+// arXiv API
 async function searchArxiv(query: string): Promise<SearchResult[]> {
   try {
     const url = `http://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(query)}&start=0&max_results=3`;
@@ -66,8 +111,14 @@ async function searchArxiv(query: string): Promise<SearchResult[]> {
       const title = entry.match(/<title>([\s\S]*?)<\/title>/)?.[1]?.trim().replace(/\n/g, " ") || "";
       const summary = entry.match(/<summary>([\s\S]*?)<\/summary>/)?.[1]?.trim().replace(/\n/g, " ").substring(0, 400) || "";
       const link = entry.match(/<id>([\s\S]*?)<\/id>/)?.[1]?.trim() || "";
+      const authorMatch = entry.match(/<author><name>([\s\S]*?)<\/name>/);
+      const author = authorMatch?.[1]?.trim() || "";
+      const publishedMatch = entry.match(/<published>([\s\S]*?)<\/published>/);
+      const year = publishedMatch?.[1]?.substring(0, 4) || "";
       if (title) {
-        results.push({ source: "arXiv", title, snippet: summary, url: link });
+        const result: SearchResult = { source: "arXiv", title, snippet: summary, url: link, author, year };
+        result.abnt_citation = buildAbntCitation(result);
+        results.push(result);
       }
     }
     return results;
@@ -77,31 +128,33 @@ async function searchArxiv(query: string): Promise<SearchResult[]> {
   }
 }
 
-// SciELO API (free, no key needed) — Brazilian academic articles
+// SciELO API
 async function searchScielo(query: string): Promise<SearchResult[]> {
   try {
-    const url = `https://search.scielo.org/?q=${encodeURIComponent(query)}&lang=pt&count=3&output=json&from=0`;
-    const resp = await fetch(url, {
-      headers: { "User-Agent": "BiblicalExegesisApp/1.0 (scholarly research)" },
-    });
-    if (!resp.ok) return [];
-    
-    // SciELO returns HTML, try alternative API
     const articleMetaUrl = `https://articlemeta.scielo.org/api/v1/article/?q=${encodeURIComponent(query)}&limit=3`;
-    const resp2 = await fetch(articleMetaUrl, {
+    const resp = await fetch(articleMetaUrl, {
       headers: { "User-Agent": "BiblicalExegesisApp/1.0" },
     });
-    if (!resp2.ok) return [];
-    const data = await resp2.json();
+    if (!resp.ok) return [];
+    const data = await resp.json();
     
     return (data.objects || []).slice(0, 3).map((item: any) => {
       const title = item.title || item.original_title || "Artigo SciELO";
-      return {
+      const titleStr = typeof title === 'object' ? (title.pt || title.en || Object.values(title)[0] || "Artigo") : title;
+      const author = item.authors?.[0]?.surname ? `${item.authors[0].surname}, ${item.authors[0].given_names || ''}` : undefined;
+      const year = item.publication_date?.substring(0, 4) || undefined;
+      const doi = item.doi || undefined;
+      const result: SearchResult = {
         source: "SciELO",
-        title: typeof title === 'object' ? (title.pt || title.en || Object.values(title)[0] || "Artigo") : title,
+        title: titleStr,
         snippet: (item.abstract?.pt || item.abstract?.en || "").substring(0, 400),
-        url: item.doi ? `https://doi.org/${item.doi}` : `https://www.scielo.br/`,
+        url: doi ? `https://doi.org/${doi}` : `https://www.scielo.br/`,
+        author,
+        year,
+        doi,
       };
+      result.abnt_citation = buildAbntCitation(result);
+      return result;
     });
   } catch (e) {
     console.error("SciELO search error:", e);
@@ -109,7 +162,7 @@ async function searchScielo(query: string): Promise<SearchResult[]> {
   }
 }
 
-// ERIC API (free, no key needed) — education research
+// ERIC API
 async function searchEric(query: string): Promise<SearchResult[]> {
   try {
     const url = `https://api.ies.ed.gov/eric/?search=${encodeURIComponent(query)}&rows=3&format=json`;
@@ -118,12 +171,20 @@ async function searchEric(query: string): Promise<SearchResult[]> {
     });
     if (!resp.ok) return [];
     const data = await resp.json();
-    return (data.response?.docs || []).map((doc: any) => ({
-      source: "ERIC",
-      title: doc.title || "Artigo ERIC",
-      snippet: (doc.description || "").substring(0, 400),
-      url: doc.url || `https://eric.ed.gov/?id=${doc.id}`,
-    }));
+    return (data.response?.docs || []).map((doc: any) => {
+      const author = doc.author?.[0] || undefined;
+      const year = doc.publicationdateyear?.toString() || undefined;
+      const result: SearchResult = {
+        source: "ERIC",
+        title: doc.title || "Artigo ERIC",
+        snippet: (doc.description || "").substring(0, 400),
+        url: doc.url || `https://eric.ed.gov/?id=${doc.id}`,
+        author,
+        year,
+      };
+      result.abnt_citation = buildAbntCitation(result);
+      return result;
+    });
   } catch (e) {
     console.error("ERIC search error:", e);
     return [];
@@ -149,21 +210,11 @@ serve(async (req) => {
     
     const promises: Promise<SearchResult[]>[] = [];
 
-    if (enabledSources.includes("wikipedia_pt")) {
-      promises.push(searchWikipedia(query, "pt"));
-    }
-    if (enabledSources.includes("wikipedia_en")) {
-      promises.push(searchWikipedia(query, "en"));
-    }
-    if (enabledSources.includes("arxiv")) {
-      promises.push(searchArxiv(query));
-    }
-    if (enabledSources.includes("scielo")) {
-      promises.push(searchScielo(query));
-    }
-    if (enabledSources.includes("eric")) {
-      promises.push(searchEric(query));
-    }
+    if (enabledSources.includes("wikipedia_pt")) promises.push(searchWikipedia(query, "pt"));
+    if (enabledSources.includes("wikipedia_en")) promises.push(searchWikipedia(query, "en"));
+    if (enabledSources.includes("arxiv")) promises.push(searchArxiv(query));
+    if (enabledSources.includes("scielo")) promises.push(searchScielo(query));
+    if (enabledSources.includes("eric")) promises.push(searchEric(query));
 
     const results = (await Promise.all(promises)).flat();
 
@@ -173,27 +224,42 @@ serve(async (req) => {
     
     if (wikiResults.length > 0) {
       const extractPromises = wikiResults.slice(0, 2).map(async (r) => {
-        const lang = r.source.includes("en") ? "en" : "pt";
+        const lang = r.source.includes("EN") ? "en" : "pt";
         const extract = await getWikipediaExtract(r.title, lang);
         if (extract) extracts[r.title] = extract;
       });
       await Promise.all(extractPromises);
     }
 
-    // Build enriched context string
+    // Build enriched context string with ABNT citations
     let contextString = "";
     if (results.length > 0) {
       contextString = "\n\n## 🌐 FONTES EXTERNAS (Pesquisa Acadêmica):\n";
+      contextString += "\n**INSTRUÇÃO DE CITAÇÃO:** Ao utilizar informações das fontes abaixo, SEMPRE cite no formato ABNT com citação direta (entre aspas) ou indireta (paráfrase), indicando autor e ano. Inclua a referência completa ao final.\n";
+      
       for (const r of results) {
-        contextString += `\n### ${r.source}: ${r.title}\n`;
+        contextString += `\n### ${r.source}: ${r.title}`;
+        if (r.author) contextString += ` — ${r.author}`;
+        if (r.year) contextString += ` (${r.year})`;
+        contextString += `\n`;
+        
         if (extracts[r.title]) {
           contextString += `${extracts[r.title]}\n`;
         } else if (r.snippet) {
           contextString += `${r.snippet}\n`;
         }
         contextString += `🔗 ${r.url}\n`;
+        if (r.abnt_citation) {
+          contextString += `📎 **Ref. ABNT:** ${r.abnt_citation}\n`;
+        }
       }
-      contextString += `\n**INSTRUÇÃO:** Use estas fontes externas como COMPLEMENTO aos materiais do usuário. Cite a fonte quando usar informações delas. Os materiais do usuário são SEMPRE a prioridade.\n`;
+      
+      contextString += `\n**REGRAS DE CITAÇÃO:**\n`;
+      contextString += `- Citação Direta: Transcreva entre aspas, indicando (AUTOR, ano, p. X)\n`;
+      contextString += `- Citação Indireta: Parafraseie indicando (AUTOR, ano)\n`;
+      contextString += `- Apud: Se citar autor via outro, use (AUTOR1 apud AUTOR2, ano)\n`;
+      contextString += `- Referências: Liste no final em formato ABNT\n`;
+      contextString += `- Os materiais do usuário são SEMPRE a prioridade absoluta. Fontes externas são COMPLEMENTO acadêmico.\n`;
     }
 
     return new Response(

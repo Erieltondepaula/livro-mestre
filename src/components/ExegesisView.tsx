@@ -1,5 +1,5 @@
-import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
+import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight } from 'lucide-react';
 import { useExegesis } from '@/hooks/useExegesis';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
@@ -12,6 +12,17 @@ import { ExegesisQAChat } from '@/components/exegesis/ExegesisQAChat';
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap';
+
+interface MenuItem {
+  id: ExegesisSection;
+  label: string;
+  icon: React.ElementType;
+  moduleKey?: string;
+  badge?: number;
+}
 
 export function ExegesisView() {
   const { hasModuleAccess, user } = useAuth();
@@ -25,10 +36,10 @@ export function ExegesisView() {
     classifyContent, extractMetadata, suggestImprovements, classifyAllMaterials,
   } = useExegesis();
 
-  // Pre-fetch materials and analyses so context is available
   useEffect(() => { fetchMaterials(); fetchAnalyses(); }, [fetchMaterials, fetchAnalyses]);
 
-  // Create note from analysis content
+  const [activeSection, setActiveSection] = useState<ExegesisSection | null>(null);
+
   const handleCreateNote = useCallback(async (title: string, content: string) => {
     if (!user) return;
     try {
@@ -45,113 +56,126 @@ export function ExegesisView() {
     }
   }, [user]);
 
+  const menuItems: MenuItem[] = [
+    ...(hasModuleAccess('exegese.analisar') ? [{ id: 'analyze' as const, label: 'Analisar Passagem', icon: BookOpen }] : []),
+    ...(hasModuleAccess('exegese.ref_cruzadas') ? [{ id: 'cross_refs' as const, label: 'Referências Cruzadas', icon: Link2 }] : []),
+    ...(hasModuleAccess('exegese.historico') ? [{ id: 'history' as const, label: 'Histórico de Análises', icon: History }] : []),
+    ...(hasModuleAccess('exegese.esbocos') ? [{ id: 'outlines' as const, label: 'Esboços de Sermões', icon: FileText }] : []),
+    ...(hasModuleAccess('exegese.materiais') ? [{ id: 'materials' as const, label: 'Materiais de Referência', icon: Library, badge: materials.length }] : []),
+    { id: 'qa_chat', label: 'Chat de Perguntas', icon: MessageCircle },
+    { id: 'mindmap', label: 'Mapa Mental', icon: MapPin },
+  ];
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'analyze':
+        return <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
+      case 'cross_refs':
+        return <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
+      case 'history':
+        return <ExegesisHistory analyses={analyses} onFetch={fetchAnalyses} onUpdateNotes={updateAnalysisNotes} onDelete={deleteAnalysis} onCreateNote={handleCreateNote} />;
+      case 'outlines':
+        return (
+          <ExegesisOutlines
+            outlines={outlines}
+            onFetch={fetchOutlines}
+            onSave={saveOutline}
+            onUpdateNotes={updateOutlineNotes}
+            onUpdateContent={updateOutlineContent}
+            onDelete={deleteOutline}
+            getMaterialsContext={getMaterialsContext}
+            getRelevantAnalysesContext={getRelevantAnalysesContext}
+            fetchOutlineVersions={fetchOutlineVersions}
+            materialsCount={materials.length}
+            materials={materials}
+            onSuggestImprovements={suggestImprovements}
+          />
+        );
+      case 'materials':
+        return (
+          <ExegesisMaterials
+            materials={materials}
+            loading={loading}
+            onFetch={fetchMaterials}
+            onUpload={uploadMaterial}
+            onAddLink={addLink}
+            onUpdateMetadata={updateMaterialMetadata}
+            onDelete={deleteMaterial}
+            onClassify={classifyContent}
+            onExtractMetadata={extractMetadata}
+            onClassifyAll={classifyAllMaterials}
+          />
+        );
+      case 'qa_chat':
+        return <ExegesisQAChat getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
+      case 'mindmap':
+        return <MindMapEditor />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Header */}
       <div>
-        <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-2">Exegese Bíblica</h2>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          Interprete textos bíblicos com ferramentas de análise exegética, esboços de sermões e biblioteca de referências
-        </p>
+        <div className="flex items-center gap-2">
+          {activeSection && (
+            <button
+              onClick={() => setActiveSection(null)}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              title="Voltar ao menu"
+            >
+              <ChevronRight className="w-5 h-5 rotate-180" />
+            </button>
+          )}
+          <div>
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">
+              {activeSection ? menuItems.find(m => m.id === activeSection)?.label : 'Exegese Bíblica'}
+            </h2>
+            {!activeSection && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Ferramentas de análise exegética, esboços e biblioteca de referências
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
-      <Tabs defaultValue={hasModuleAccess('exegese.analisar') ? 'analyze' : 'history'} className="w-full">
-        <TabsList className="w-full flex overflow-x-auto no-scrollbar">
-          {hasModuleAccess('exegese.analisar') && (
-            <TabsTrigger value="analyze" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-              <BookOpen className="w-4 h-4 hidden sm:block" /> Analisar
-            </TabsTrigger>
-          )}
-          {hasModuleAccess('exegese.ref_cruzadas') && (
-            <TabsTrigger value="cross_refs" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-              <Link2 className="w-4 h-4 hidden sm:block" /> <span className="truncate">Ref. Cruzadas</span>
-            </TabsTrigger>
-          )}
-          {hasModuleAccess('exegese.historico') && (
-            <TabsTrigger value="history" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-              <History className="w-4 h-4 hidden sm:block" /> Histórico
-            </TabsTrigger>
-          )}
-          {hasModuleAccess('exegese.esbocos') && (
-            <TabsTrigger value="outlines" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-              <FileText className="w-4 h-4 hidden sm:block" /> Esboços
-            </TabsTrigger>
-          )}
-          {hasModuleAccess('exegese.materiais') && (
-            <TabsTrigger value="materials" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-              <Library className="w-4 h-4 hidden sm:block" /> Materiais
-              {materials.length > 0 && <span className="text-[10px] bg-primary/10 text-primary px-1 py-0.5 rounded-full ml-0.5">{materials.length}</span>}
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="qa_chat" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <MessageCircle className="w-4 h-4 hidden sm:block" /> <span className="truncate">Perguntas</span>
-          </TabsTrigger>
-          <TabsTrigger value="mindmap" className="gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
-            <MapPin className="w-4 h-4 hidden sm:block" /> <span className="truncate">Mapa Mental</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {hasModuleAccess('exegese.analisar') && (
-          <TabsContent value="analyze">
-            <ExegesisAnalyzer onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />
-          </TabsContent>
-        )}
-
-        {hasModuleAccess('exegese.ref_cruzadas') && (
-          <TabsContent value="cross_refs">
-            <CrossReferencesView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />
-          </TabsContent>
-        )}
-
-        {hasModuleAccess('exegese.historico') && (
-          <TabsContent value="history">
-            <ExegesisHistory analyses={analyses} onFetch={fetchAnalyses} onUpdateNotes={updateAnalysisNotes} onDelete={deleteAnalysis} onCreateNote={handleCreateNote} />
-          </TabsContent>
-        )}
-
-        {hasModuleAccess('exegese.esbocos') && (
-          <TabsContent value="outlines">
-            <ExegesisOutlines
-              outlines={outlines}
-              onFetch={fetchOutlines}
-              onSave={saveOutline}
-              onUpdateNotes={updateOutlineNotes}
-              onUpdateContent={updateOutlineContent}
-              onDelete={deleteOutline}
-              getMaterialsContext={getMaterialsContext}
-              getRelevantAnalysesContext={getRelevantAnalysesContext}
-              fetchOutlineVersions={fetchOutlineVersions}
-              materialsCount={materials.length}
-              materials={materials}
-              onSuggestImprovements={suggestImprovements}
-            />
-          </TabsContent>
-        )}
-
-        {hasModuleAccess('exegese.materiais') && (
-          <TabsContent value="materials">
-            <ExegesisMaterials
-              materials={materials}
-              loading={loading}
-              onFetch={fetchMaterials}
-              onUpload={uploadMaterial}
-              onAddLink={addLink}
-              onUpdateMetadata={updateMaterialMetadata}
-              onDelete={deleteMaterial}
-              onClassify={classifyContent}
-              onExtractMetadata={extractMetadata}
-              onClassifyAll={classifyAllMaterials}
-            />
-          </TabsContent>
-        )}
-
-        <TabsContent value="qa_chat">
-          <ExegesisQAChat getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />
-        </TabsContent>
-
-        <TabsContent value="mindmap">
-          <MindMapEditor />
-        </TabsContent>
-      </Tabs>
+      {/* Menu or Content */}
+      {activeSection === null ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={cn(
+                  "flex items-center gap-3 p-4 rounded-xl border border-border bg-card",
+                  "hover:bg-accent/50 hover:border-primary/30 hover:shadow-md",
+                  "transition-all duration-200 text-left group"
+                )}
+              >
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                  <Icon className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm text-foreground truncate">{item.label}</span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{item.badge}</span>
+                    )}
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        renderContent()
+      )}
     </div>
   );
 }
