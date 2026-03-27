@@ -41,9 +41,9 @@ function getAverageReadingTimePerPage(category: string | undefined): number {
 }
 
 export function useLibrary() {
-  const recalculateBookStatus = useCallback(async (bookId: string) => {
+  const recalculateBookStatus = async (bookId: string) => {
     const [{ data: bookData }, { data: allBookReadings }] = await Promise.all([
-      supabase.from('books').select('id, total_pages, category').eq('id', bookId).single(),
+      supabase.from('books').select('id, total_pages').eq('id', bookId).single(),
       supabase.from('readings').select('end_page').eq('book_id', bookId),
     ]);
 
@@ -67,7 +67,7 @@ export function useLibrary() {
         status: newStatus,
       })
       .eq('book_id', bookId);
-  }, []);
+  };
 
   const { user } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
