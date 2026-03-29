@@ -101,6 +101,7 @@ interface Props {
 }
 
 export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<ThematicCategory | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<ThematicTopic | null>(null);
   const [customTopic, setCustomTopic] = useState('');
@@ -109,6 +110,92 @@ export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount 
   const [loading, setLoading] = useState(false);
   const [useWebSearch, setUseWebSearch] = useState(false);
   const [webSearching, setWebSearching] = useState(false);
+
+  // User custom themes
+  const [userTopics, setUserTopics] = useState<ThematicTopic[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingTopic, setEditingTopic] = useState<(ThematicTopic & { dbId?: string }) | null>(null);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newVerses, setNewVerses] = useState('');
+  const [newSubtopics, setNewSubtopics] = useState('');
+
+  const fetchUserTopics = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('user_thematic_topics')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (data) {
+      setUserTopics(data.map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        description: d.description || '',
+        keyVerses: d.key_verses || [],
+        subtopics: d.subtopics || [],
+      })));
+    }
+  }, [user]);
+
+  useEffect(() => { fetchUserTopics(); }, [fetchUserTopics]);
+
+  const handleSaveTopic = async () => {
+    if (!user || !newTitle.trim()) return;
+    const verses = newVerses.split(',').map(v => v.trim()).filter(Boolean);
+    const subs = newSubtopics.split(',').map(s => s.trim()).filter(Boolean);
+
+    if (editingTopic?.id) {
+      await supabase.from('user_thematic_topics').update({
+        title: newTitle.trim(),
+        description: newDescription.trim(),
+        key_verses: verses,
+        subtopics: subs,
+      }).eq('id', editingTopic.id);
+      toast({ title: '✅ Tema atualizado!' });
+    } else {
+      await supabase.from('user_thematic_topics').insert({
+        user_id: user.id,
+        title: newTitle.trim(),
+        description: newDescription.trim(),
+        key_verses: verses,
+        subtopics: subs,
+      });
+      toast({ title: '✅ Tema adicionado!' });
+    }
+    setShowAddDialog(false);
+    setEditingTopic(null);
+    resetForm();
+    fetchUserTopics();
+  };
+
+  const handleDeleteTopic = async (id: string) => {
+    await supabase.from('user_thematic_topics').delete().eq('id', id);
+    toast({ title: '🗑️ Tema removido' });
+    fetchUserTopics();
+  };
+
+  const openEditDialog = (topic: ThematicTopic) => {
+    setEditingTopic(topic);
+    setNewTitle(topic.title);
+    setNewDescription(topic.description);
+    setNewVerses(topic.keyVerses.join(', '));
+    setNewSubtopics(topic.subtopics.join(', '));
+    setShowAddDialog(true);
+  };
+
+  const resetForm = () => {
+    setNewTitle('');
+    setNewDescription('');
+    setNewVerses('');
+    setNewSubtopics('');
+  };
+
+  const openAddDialog = () => {
+    setEditingTopic(null);
+    resetForm();
+    setShowAddDialog(true);
+  };
 
   const filteredCategories = THEMATIC_CATEGORIES.map(cat => ({
     ...cat,
