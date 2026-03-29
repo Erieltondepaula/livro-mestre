@@ -544,7 +544,25 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {THEMATIC_CATEGORIES.map(cat => {
+          {/* Add theme button */}
+          <button
+            onClick={openAddDialog}
+            className={cn(
+              "flex items-center gap-3 p-4 rounded-xl border border-dashed border-primary/40 bg-primary/5",
+              "hover:bg-primary/10 hover:border-primary/60",
+              "transition-all duration-200 text-left group"
+            )}
+          >
+            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+              <Plus className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="font-medium text-sm text-primary">Adicionar Tema</span>
+              <p className="text-xs text-muted-foreground">Crie seus próprios temas de estudo</p>
+            </div>
+          </button>
+
+          {allCategories.map(cat => {
             const Icon = cat.icon;
             return (
               <button
@@ -553,7 +571,8 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
                 className={cn(
                   "flex items-center gap-3 p-4 rounded-xl border border-border bg-card",
                   "hover:bg-accent/50 hover:border-primary/30 hover:shadow-md",
-                  "transition-all duration-200 text-left group"
+                  "transition-all duration-200 text-left group",
+                  cat.id === 'meus_temas' && "border-primary/20 bg-primary/5"
                 )}
               >
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
@@ -569,6 +588,39 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
           })}
         </div>
       )}
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingTopic ? 'Editar Tema' : 'Novo Tema de Estudo'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Título *</Label>
+              <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Ex: Ética Cristã" />
+            </div>
+            <div>
+              <Label className="text-xs">Descrição</Label>
+              <Textarea value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Breve descrição do tema..." rows={2} />
+            </div>
+            <div>
+              <Label className="text-xs">Versículos-chave (separados por vírgula)</Label>
+              <Input value={newVerses} onChange={e => setNewVerses(e.target.value)} placeholder="Ex: Mateus 5:13-16, Romanos 12:2" />
+            </div>
+            <div>
+              <Label className="text-xs">Subtemas (separados por vírgula)</Label>
+              <Input value={newSubtopics} onChange={e => setNewSubtopics(e.target.value)} placeholder="Ex: Padrão bíblico, Vida prática, Ser luz" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancelar</Button>
+            <Button onClick={handleSaveTopic} disabled={!newTitle.trim()}>
+              {editingTopic ? 'Salvar' : 'Adicionar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
