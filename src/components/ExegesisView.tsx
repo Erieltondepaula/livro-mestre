@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight } from 'lucide-react';
+import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight, Layers } from 'lucide-react';
 import { useExegesis } from '@/hooks/useExegesis';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
@@ -15,7 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap';
+type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap' | 'thematic_study';
 
 interface MenuItem {
   id: ExegesisSection;
