@@ -63,6 +63,7 @@ export function ExegesisView() {
     ...(hasModuleAccess('exegese.historico') ? [{ id: 'history' as const, label: 'Histórico de Análises', icon: History }] : []),
     ...(hasModuleAccess('exegese.esbocos') ? [{ id: 'outlines' as const, label: 'Esboços de Sermões', icon: FileText }] : []),
     ...(hasModuleAccess('exegese.materiais') ? [{ id: 'materials' as const, label: 'Materiais de Referência', icon: Library, badge: materials.length }] : []),
+    { id: 'thematic_study' as const, label: 'Estudo por Tema', icon: Layers },
     { id: 'qa_chat', label: 'Chat de Perguntas', icon: MessageCircle },
     { id: 'mindmap', label: 'Mapa Mental', icon: MapPin },
   ];
