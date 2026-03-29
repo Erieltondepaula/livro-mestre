@@ -9,6 +9,7 @@ import { ExegesisMaterials } from '@/components/exegesis/ExegesisMaterials';
 import { CrossReferencesView } from '@/components/exegesis/CrossReferencesView';
 import { MindMapEditor } from '@/components/exegesis/MindMapEditor';
 import { ExegesisQAChat } from '@/components/exegesis/ExegesisQAChat';
+import { ThematicStudyView } from '@/components/exegesis/ThematicStudyView';
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
