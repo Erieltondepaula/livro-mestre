@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Search, BookOpen, ChevronRight, Send, Loader2, Save, StickyNote, Plus, Sparkles, BookMarked, Heart, Shield, Flame, Users, Star, Compass, Sun, Cloud, Zap, Globe } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Search, BookOpen, ChevronRight, Send, Loader2, Save, StickyNote, Plus, Sparkles, BookMarked, Heart, Shield, Flame, Users, Star, Compass, Sun, Cloud, Zap, Globe, Trash2, Edit2, FolderHeart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
