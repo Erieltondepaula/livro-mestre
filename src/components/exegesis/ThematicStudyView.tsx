@@ -430,34 +430,51 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
           <ChevronRight className="w-4 h-4 rotate-180" /> Voltar às categorias
         </button>
 
-        <div className="flex items-center gap-2 mb-2">
-          {(() => { const Icon = selectedCategory.icon; return <Icon className="w-5 h-5 text-primary" />; })()}
-          <h3 className="font-bold text-foreground">{selectedCategory.label}</h3>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            {(() => { const Icon = selectedCategory.icon; return <Icon className="w-5 h-5 text-primary" />; })()}
+            <h3 className="font-bold text-foreground">{selectedCategory.label}</h3>
+          </div>
+          {selectedCategory.id === 'meus_temas' && (
+            <Button variant="outline" size="sm" onClick={openAddDialog} className="gap-1.5">
+              <Plus className="w-3.5 h-3.5" /> Novo
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-2">
-          {selectedCategory.themes.map(theme => (
-            <button
-              key={theme.id}
-              onClick={() => setSelectedTopic(theme)}
-              className={cn(
+          {selectedCategory.themes.map(theme => {
+            const isUserTheme = selectedCategory.id === 'meus_temas';
+            return (
+              <div key={theme.id} className={cn(
                 "flex items-start gap-3 p-3 rounded-xl border border-border bg-card",
                 "hover:bg-accent/50 hover:border-primary/30 transition-all text-left group"
-              )}
-            >
-              <div className="flex-1 min-w-0">
-                <span className="font-medium text-sm text-foreground">{theme.title}</span>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{theme.description}</p>
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {theme.keyVerses.slice(0, 2).map(v => (
-                    <Badge key={v} variant="secondary" className="text-[10px] px-1.5 py-0">{v}</Badge>
-                  ))}
-                  {theme.keyVerses.length > 2 && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">+{theme.keyVerses.length - 2}</Badge>}
-                </div>
+              )}>
+                <button onClick={() => setSelectedTopic(theme)} className="flex-1 min-w-0 text-left">
+                  <span className="font-medium text-sm text-foreground">{theme.title}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{theme.description}</p>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {theme.keyVerses.slice(0, 2).map(v => (
+                      <Badge key={v} variant="secondary" className="text-[10px] px-1.5 py-0">{v}</Badge>
+                    ))}
+                    {theme.keyVerses.length > 2 && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">+{theme.keyVerses.length - 2}</Badge>}
+                  </div>
+                </button>
+                {isUserTheme ? (
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button onClick={() => openEditDialog(theme)} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Editar">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDeleteTopic(theme.id)} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Excluir">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground mt-1 shrink-0 group-hover:text-primary transition-colors" />
+                )}
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground mt-1 shrink-0 group-hover:text-primary transition-colors" />
-            </button>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
