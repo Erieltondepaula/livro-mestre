@@ -1182,6 +1182,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_thematic_topics: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          key_verses: string[] | null
+          subtopics: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key_verses?: string[] | null
+          subtopics?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          key_verses?: string[] | null
+          subtopics?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vocabulary: {
         Row: {
           analise_contexto: Json | null
