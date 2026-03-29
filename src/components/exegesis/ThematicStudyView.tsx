@@ -197,7 +197,13 @@ export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount 
     setShowAddDialog(true);
   };
 
-  const filteredCategories = THEMATIC_CATEGORIES.map(cat => ({
+  const userCategory: ThematicCategory | null = userTopics.length > 0 ? {
+    id: 'meus_temas', label: 'Meus Temas', icon: FolderHeart, themes: userTopics,
+  } : null;
+
+  const allCategories = [...(userCategory ? [userCategory] : []), ...THEMATIC_CATEGORIES];
+
+  const filteredCategories = allCategories.map(cat => ({
     ...cat,
     themes: cat.themes.filter(t =>
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
