@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight } from 'lucide-react';
+import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight, Layers } from 'lucide-react';
 import { useExegesis } from '@/hooks/useExegesis';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
@@ -9,12 +9,13 @@ import { ExegesisMaterials } from '@/components/exegesis/ExegesisMaterials';
 import { CrossReferencesView } from '@/components/exegesis/CrossReferencesView';
 import { MindMapEditor } from '@/components/exegesis/MindMapEditor';
 import { ExegesisQAChat } from '@/components/exegesis/ExegesisQAChat';
+import { ThematicStudyView } from '@/components/exegesis/ThematicStudyView';
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap';
+type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap' | 'thematic_study';
 
 interface MenuItem {
   id: ExegesisSection;
@@ -62,6 +63,7 @@ export function ExegesisView() {
     ...(hasModuleAccess('exegese.historico') ? [{ id: 'history' as const, label: 'Histórico de Análises', icon: History }] : []),
     ...(hasModuleAccess('exegese.esbocos') ? [{ id: 'outlines' as const, label: 'Esboços de Sermões', icon: FileText }] : []),
     ...(hasModuleAccess('exegese.materiais') ? [{ id: 'materials' as const, label: 'Materiais de Referência', icon: Library, badge: materials.length }] : []),
+    { id: 'thematic_study' as const, label: 'Estudo por Tema', icon: Layers },
     { id: 'qa_chat', label: 'Chat de Perguntas', icon: MessageCircle },
     { id: 'mindmap', label: 'Mapa Mental', icon: MapPin },
   ];
@@ -106,6 +108,8 @@ export function ExegesisView() {
             onClassifyAll={classifyAllMaterials}
           />
         );
+      case 'thematic_study':
+        return <ThematicStudyView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
       case 'qa_chat':
         return <ExegesisQAChat getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
       case 'mindmap':
