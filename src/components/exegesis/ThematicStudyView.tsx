@@ -1,8 +1,11 @@
-import { useState, useCallback } from 'react';
-import { Search, BookOpen, ChevronRight, Send, Loader2, Save, StickyNote, Plus, Sparkles, BookMarked, Heart, Shield, Flame, Users, Star, Compass, Sun, Cloud, Zap, Globe } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Search, BookOpen, ChevronRight, Send, Loader2, Save, StickyNote, Plus, Sparkles, BookMarked, Heart, Shield, Flame, Users, Star, Compass, Sun, Cloud, Zap, Globe, Trash2, Edit2, FolderHeart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
@@ -98,6 +101,7 @@ interface Props {
 }
 
 export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<ThematicCategory | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<ThematicTopic | null>(null);
   const [customTopic, setCustomTopic] = useState('');
@@ -107,7 +111,99 @@ export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount 
   const [useWebSearch, setUseWebSearch] = useState(false);
   const [webSearching, setWebSearching] = useState(false);
 
-  const filteredCategories = THEMATIC_CATEGORIES.map(cat => ({
+  // User custom themes
+  const [userTopics, setUserTopics] = useState<ThematicTopic[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingTopic, setEditingTopic] = useState<(ThematicTopic & { dbId?: string }) | null>(null);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newVerses, setNewVerses] = useState('');
+  const [newSubtopics, setNewSubtopics] = useState('');
+
+  const fetchUserTopics = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('user_thematic_topics')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (data) {
+      setUserTopics(data.map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        description: d.description || '',
+        keyVerses: d.key_verses || [],
+        subtopics: d.subtopics || [],
+      })));
+    }
+  }, [user]);
+
+  useEffect(() => { fetchUserTopics(); }, [fetchUserTopics]);
+
+  const handleSaveTopic = async () => {
+    if (!user || !newTitle.trim()) return;
+    const verses = newVerses.split(',').map(v => v.trim()).filter(Boolean);
+    const subs = newSubtopics.split(',').map(s => s.trim()).filter(Boolean);
+
+    if (editingTopic?.id) {
+      await supabase.from('user_thematic_topics').update({
+        title: newTitle.trim(),
+        description: newDescription.trim(),
+        key_verses: verses,
+        subtopics: subs,
+      }).eq('id', editingTopic.id);
+      toast({ title: '✅ Tema atualizado!' });
+    } else {
+      await supabase.from('user_thematic_topics').insert({
+        user_id: user.id,
+        title: newTitle.trim(),
+        description: newDescription.trim(),
+        key_verses: verses,
+        subtopics: subs,
+      });
+      toast({ title: '✅ Tema adicionado!' });
+    }
+    setShowAddDialog(false);
+    setEditingTopic(null);
+    resetForm();
+    fetchUserTopics();
+  };
+
+  const handleDeleteTopic = async (id: string) => {
+    await supabase.from('user_thematic_topics').delete().eq('id', id);
+    toast({ title: '🗑️ Tema removido' });
+    fetchUserTopics();
+  };
+
+  const openEditDialog = (topic: ThematicTopic) => {
+    setEditingTopic(topic);
+    setNewTitle(topic.title);
+    setNewDescription(topic.description);
+    setNewVerses(topic.keyVerses.join(', '));
+    setNewSubtopics(topic.subtopics.join(', '));
+    setShowAddDialog(true);
+  };
+
+  const resetForm = () => {
+    setNewTitle('');
+    setNewDescription('');
+    setNewVerses('');
+    setNewSubtopics('');
+  };
+
+  const openAddDialog = () => {
+    setEditingTopic(null);
+    resetForm();
+    setShowAddDialog(true);
+  };
+
+  const userCategory: ThematicCategory | null = userTopics.length > 0 ? {
+    id: 'meus_temas', label: 'Meus Temas', icon: FolderHeart, themes: userTopics,
+  } : null;
+
+  const allCategories = [...(userCategory ? [userCategory] : []), ...THEMATIC_CATEGORIES];
+
+  const filteredCategories = allCategories.map(cat => ({
     ...cat,
     themes: cat.themes.filter(t =>
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -334,34 +430,51 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
           <ChevronRight className="w-4 h-4 rotate-180" /> Voltar às categorias
         </button>
 
-        <div className="flex items-center gap-2 mb-2">
-          {(() => { const Icon = selectedCategory.icon; return <Icon className="w-5 h-5 text-primary" />; })()}
-          <h3 className="font-bold text-foreground">{selectedCategory.label}</h3>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            {(() => { const Icon = selectedCategory.icon; return <Icon className="w-5 h-5 text-primary" />; })()}
+            <h3 className="font-bold text-foreground">{selectedCategory.label}</h3>
+          </div>
+          {selectedCategory.id === 'meus_temas' && (
+            <Button variant="outline" size="sm" onClick={openAddDialog} className="gap-1.5">
+              <Plus className="w-3.5 h-3.5" /> Novo
+            </Button>
+          )}
         </div>
 
         <div className="grid gap-2">
-          {selectedCategory.themes.map(theme => (
-            <button
-              key={theme.id}
-              onClick={() => setSelectedTopic(theme)}
-              className={cn(
+          {selectedCategory.themes.map(theme => {
+            const isUserTheme = selectedCategory.id === 'meus_temas';
+            return (
+              <div key={theme.id} className={cn(
                 "flex items-start gap-3 p-3 rounded-xl border border-border bg-card",
                 "hover:bg-accent/50 hover:border-primary/30 transition-all text-left group"
-              )}
-            >
-              <div className="flex-1 min-w-0">
-                <span className="font-medium text-sm text-foreground">{theme.title}</span>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{theme.description}</p>
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {theme.keyVerses.slice(0, 2).map(v => (
-                    <Badge key={v} variant="secondary" className="text-[10px] px-1.5 py-0">{v}</Badge>
-                  ))}
-                  {theme.keyVerses.length > 2 && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">+{theme.keyVerses.length - 2}</Badge>}
-                </div>
+              )}>
+                <button onClick={() => setSelectedTopic(theme)} className="flex-1 min-w-0 text-left">
+                  <span className="font-medium text-sm text-foreground">{theme.title}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{theme.description}</p>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {theme.keyVerses.slice(0, 2).map(v => (
+                      <Badge key={v} variant="secondary" className="text-[10px] px-1.5 py-0">{v}</Badge>
+                    ))}
+                    {theme.keyVerses.length > 2 && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">+{theme.keyVerses.length - 2}</Badge>}
+                  </div>
+                </button>
+                {isUserTheme ? (
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button onClick={() => openEditDialog(theme)} className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Editar">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDeleteTopic(theme.id)} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive" title="Excluir">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground mt-1 shrink-0 group-hover:text-primary transition-colors" />
+                )}
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground mt-1 shrink-0 group-hover:text-primary transition-colors" />
-            </button>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
@@ -448,7 +561,25 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {THEMATIC_CATEGORIES.map(cat => {
+          {/* Add theme button */}
+          <button
+            onClick={openAddDialog}
+            className={cn(
+              "flex items-center gap-3 p-4 rounded-xl border border-dashed border-primary/40 bg-primary/5",
+              "hover:bg-primary/10 hover:border-primary/60",
+              "transition-all duration-200 text-left group"
+            )}
+          >
+            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+              <Plus className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="font-medium text-sm text-primary">Adicionar Tema</span>
+              <p className="text-xs text-muted-foreground">Crie seus próprios temas de estudo</p>
+            </div>
+          </button>
+
+          {allCategories.map(cat => {
             const Icon = cat.icon;
             return (
               <button
@@ -457,7 +588,8 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
                 className={cn(
                   "flex items-center gap-3 p-4 rounded-xl border border-border bg-card",
                   "hover:bg-accent/50 hover:border-primary/30 hover:shadow-md",
-                  "transition-all duration-200 text-left group"
+                  "transition-all duration-200 text-left group",
+                  cat.id === 'meus_temas' && "border-primary/20 bg-primary/5"
                 )}
               >
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
@@ -473,6 +605,39 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
           })}
         </div>
       )}
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingTopic ? 'Editar Tema' : 'Novo Tema de Estudo'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Título *</Label>
+              <Input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Ex: Ética Cristã" />
+            </div>
+            <div>
+              <Label className="text-xs">Descrição</Label>
+              <Textarea value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Breve descrição do tema..." rows={2} />
+            </div>
+            <div>
+              <Label className="text-xs">Versículos-chave (separados por vírgula)</Label>
+              <Input value={newVerses} onChange={e => setNewVerses(e.target.value)} placeholder="Ex: Mateus 5:13-16, Romanos 12:2" />
+            </div>
+            <div>
+              <Label className="text-xs">Subtemas (separados por vírgula)</Label>
+              <Input value={newSubtopics} onChange={e => setNewSubtopics(e.target.value)} placeholder="Ex: Padrão bíblico, Vida prática, Ser luz" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancelar</Button>
+            <Button onClick={handleSaveTopic} disabled={!newTitle.trim()}>
+              {editingTopic ? 'Salvar' : 'Adicionar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
