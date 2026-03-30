@@ -1580,8 +1580,55 @@ Para cada um, explique em 2-3 frases POR QUE ele é poderoso e como usá-lo:
       case "thematic_study":
         userPrompt = requestContent || `Elabore um estudo temático bíblico completo sobre "${passage}".`;
         if (materials_context) {
-          userPrompt = `## MATERIAIS DO USUÁRIO (USE OBRIGATORIAMENTE 100%):\n${materials_context}\n\n${userPrompt}`;
+          userPrompt = `## MATERIAIS DO USUÁRIO (USE OBRIGATORIAMENTE como FONTE PRIMÁRIA):\n${materials_context}\n\n${userPrompt}`;
         }
+        // Append sermon-quality structure prompt
+        userPrompt += `\n\n## 📌 PADRÃO DE QUALIDADE — ESTUDO TEMÁTICO PADRÃO PÚLPITO
+
+**ESTRUTURA OBRIGATÓRIA:**
+
+1. **TÍTULO** — Forte, bíblico e temático
+2. **TEXTO BASE** — Com os versículos ESCRITOS COMPLETOS (ACF)
+3. **INTRODUÇÃO** — Contextualizar com a realidade atual, gerar identificação emocional, mostrar o problema claramente, apontar necessidade de resposta bíblica
+4. **TRANSIÇÃO** — Conectar raciocínio (não apenas frases soltas), tom pastoral e progressivo
+5. **4 PONTOS PRINCIPAIS** (numerados 1 a 4) — Cada ponto DEVE seguir:
+   - **TEXTO:** Versículo COMPLETO escrito (não apenas referência)
+   - **DESENVOLVIMENTO:** Explicação profunda, pastoral, contínua, conectando com a realidade. Deve fluir como fala de pregação.
+   - **APLICAÇÃO:** Aplicação direta ligada ao desenvolvimento
+   - **REFERÊNCIAS:** Outros textos bíblicos relacionados
+   - **FRASE:** Frase curta, forte, memorável, estilo impacto de púlpito
+   - **APLICAÇÃO PRÁTICA:** Direcionamento claro e direto para o dia a dia
+6. **TRANSIÇÃO PARA CONCLUSÃO**
+7. **CONCLUSÃO** — Retomar os 4 pontos resumidamente, reforçar a mensagem central, apontar Cristo como centro, linguagem forte e pastoral
+8. **APELO** — Seguir progressão: IDENTIFICAÇÃO (dor) → REVELAÇÃO (verdade) → CONFRONTO (realidade vs vontade de Deus) → CHAMADO (convite direto) → RESTAURAÇÃO (esperança em Cristo)
+
+**REGRAS DOS PONTOS:**
+- Ponto 1 → Deve ter REFERÊNCIAS cruzadas
+- Ponto 2 → Foco em sustentação emocional/espiritual
+- Ponto 3 → Deve conter ILUSTRAÇÃO
+- Ponto 4 → Deve conter ILUSTRAÇÃO e tratar de limite, maturidade ou discernimento
+
+**FORMATAÇÃO:**
+- Texto contínuo, fluido, estilo leitura de púlpito
+- Linguagem pastoral, como se estivesse sendo pregado ao vivo
+- Evitar linguagem acadêmica
+- Profundidade espiritual + aplicação prática
+- Sempre conectar com a vida real
+- Cristo como centro absoluto
+
+**OS 4 PILARES EM CADA PONTO:**
+1. CHOQUE DE REALIDADE (confronto amoroso que faz o ouvinte se reconhecer)
+2. QUEBRA DE EXPECTATIVA (perspectiva nova, ângulo contra-intuitivo)
+3. A PERGUNTA CERTA (pergunta retórica profunda que ecoa na mente)
+4. ESPERANÇA AFIRMATIVA (afirmação de valor em Cristo, coragem para mudar)
+
+**FRASES DO APELO (usar variações):**
+- "Talvez hoje eu esteja falando com você…"
+- "Deixe-me te dizer algo com clareza…"
+- "Mas hoje Deus está te chamando…"
+- "Se o Espírito Santo falou com você…"
+
+**RESULTADO ESPERADO:** Um estudo que parece pronto para ser pregado, tem fluidez natural de púlpito, conecta com a vida real, confronta e acolhe, e termina com um apelo forte e transformador.`;
         break;
 
       default:
