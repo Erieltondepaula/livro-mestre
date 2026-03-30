@@ -1577,6 +1577,13 @@ Para cada um, explique em 2-3 frases POR QUE ele é poderoso e como usá-lo:
         // This type generates an image, not streaming text
         break;
 
+      case "thematic_study":
+        userPrompt = content || `Elabore um estudo temático bíblico completo sobre "${passage}".`;
+        if (materials_context) {
+          userPrompt = `## MATERIAIS DO USUÁRIO (USE OBRIGATORIAMENTE 100%):\n${materials_context}\n\n${userPrompt}`;
+        }
+        break;
+
       default:
         userPrompt = passage || question || "Ajude-me a entender princípios de exegese bíblica.";
     }
