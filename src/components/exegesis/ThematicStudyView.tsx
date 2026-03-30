@@ -543,6 +543,13 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
           </div>
         )}
 
+        {loading && !studyResult && (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">{webSearching ? 'Buscando fontes externas...' : 'Gerando estudo temático...'}</p>
+          </div>
+        )}
+
         {studyResult && (
           <div className="space-y-3">
             <div className="flex gap-2 flex-wrap">
