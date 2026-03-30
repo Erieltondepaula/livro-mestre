@@ -227,6 +227,8 @@ export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount 
   const [loading, setLoading] = useState(false);
   const [useWebSearch, setUseWebSearch] = useState(false);
   const [webSearching, setWebSearching] = useState(false);
+  const [showResultView, setShowResultView] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   // User custom themes
   const [userTopics, setUserTopics] = useState<ThematicTopic[]>([]);
