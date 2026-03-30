@@ -340,6 +340,11 @@ export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount 
 
     setLoading(true);
     setStudyResult('');
+    setShowResultView(true);
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       const materialsContext = getMaterialsContext?.() || '';
@@ -377,7 +382,7 @@ Elabore um ESTUDO TEMÁTICO COMPLETO e PROFUNDO sobre "${themeTitle}" seguindo e
 - Relevância para a vida cristã atual
 
 ### 📌 Texto Base
-- Passagens principais com referências completas
+- Passagens principais com referências completas (ACF)
 - Contexto dos textos selecionados
 
 ### 🧭 Subtemas para Estudo (mínimo 4 encontros)
@@ -414,40 +419,61 @@ IMPORTANTE:
 - ${materialsContext ? 'PRIORIZE os materiais do usuário como fonte primária' : 'Use fontes bíblicas confiáveis'}
 ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : ''}`;
 
-      const response = await supabase.functions.invoke('exegesis', {
-        body: { type: 'thematic_study', passage: themeTitle, content: prompt, materialsContext },
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          type: 'thematic_study',
+          passage: themeTitle,
+          content: prompt,
+          materials_context: materialsContext,
+        }),
+        signal: controller.signal,
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (!resp.ok) {
+        const e = await resp.json().catch(() => ({}));
+        throw new Error(e.error || `Erro ${resp.status}`);
+      }
+      if (!resp.body) throw new Error('Sem resposta do servidor');
 
-      // Handle streaming
-      const reader = response.data instanceof ReadableStream
-        ? response.data.getReader()
-        : null;
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let fullContent = '';
 
-      if (reader) {
-        const decoder = new TextDecoder();
-        let fullText = '';
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          for (const line of chunk.split('\n')) {
-            if (!line.startsWith('data: ') || line.includes('[DONE]')) continue;
-            try {
-              const parsed = JSON.parse(line.slice(6));
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) {
-                fullText += content;
-                setStudyResult(fullText);
-              }
-            } catch { /* partial */ }
-          }
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, nl);
+          textBuffer = textBuffer.slice(nl + 1);
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (!line.startsWith('data: ') || line.trim() === '' || line.startsWith(':')) continue;
+          const json = line.slice(6).trim();
+          if (json === '[DONE]') break;
+          try {
+            const c = JSON.parse(json).choices?.[0]?.delta?.content;
+            if (c) {
+              fullContent += c;
+              setStudyResult(fullContent);
+            }
+          } catch { /* partial json */ }
         }
       }
-    } catch (e) {
+
+      if (!fullContent) {
+        toast({ title: 'Nenhum conteúdo gerado', variant: 'destructive' });
+      }
+    } catch (e: any) {
+      if (e.name === 'AbortError') return;
       console.error('Thematic study error:', e);
-      toast({ title: 'Erro ao gerar estudo', description: String(e), variant: 'destructive' });
+      toast({ title: 'Erro ao gerar estudo', description: String(e.message || e), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
