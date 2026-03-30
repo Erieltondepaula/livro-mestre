@@ -493,11 +493,11 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
   };
 
   // Topic detail view with study result
-  if (selectedTopic || (customTopic && studyResult)) {
+  if (showResultView || selectedTopic) {
     const topic = selectedTopic;
     return (
       <div className="space-y-4">
-        <button onClick={() => { setSelectedTopic(null); setStudyResult(''); setCustomTopic(''); }} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={() => { setSelectedTopic(null); setStudyResult(''); setCustomTopic(''); setShowResultView(false); abortRef.current?.abort(); }} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ChevronRight className="w-4 h-4 rotate-180" /> Voltar aos temas
         </button>
 
