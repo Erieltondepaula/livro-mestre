@@ -220,7 +220,7 @@ serve(async (req) => {
       );
     }
 
-    const { passage, question, type, materials_context, analyses_context, structure_config, approach, query_mode } = await req.json();
+    const { passage, question, type, materials_context, analyses_context, structure_config, approach, query_mode, content: requestContent } = await req.json();
 
     // Handle get_system_prompt request — return the default prompt for the editor
     if (type === "get_system_prompt") {
@@ -1578,7 +1578,7 @@ Para cada um, explique em 2-3 frases POR QUE ele é poderoso e como usá-lo:
         break;
 
       case "thematic_study":
-        userPrompt = content || `Elabore um estudo temático bíblico completo sobre "${passage}".`;
+        userPrompt = requestContent || `Elabore um estudo temático bíblico completo sobre "${passage}".`;
         if (materials_context) {
           userPrompt = `## MATERIAIS DO USUÁRIO (USE OBRIGATORIAMENTE 100%):\n${materials_context}\n\n${userPrompt}`;
         }
