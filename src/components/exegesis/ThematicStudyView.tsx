@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Search, BookOpen, ChevronRight, Send, Loader2, Save, StickyNote, Plus, Sparkles, BookMarked, Heart, Shield, Flame, Users, Star, Compass, Sun, Cloud, Zap, Globe, Trash2, Edit2, FolderHeart } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Search, BookOpen, ChevronRight, Send, Loader2, Save, StickyNote, Plus, Sparkles, BookMarked, Heart, Shield, Flame, Users, Star, Compass, Sun, Cloud, Zap, Globe, Trash2, Edit2, FolderHeart, DollarSign, Brain, Church } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import type { ExegesisAnalysis, ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
 interface ThematicCategory {
   id: string;
@@ -31,63 +33,178 @@ interface ThematicTopic {
 
 const THEMATIC_CATEGORIES: ThematicCategory[] = [
   {
-    id: 'vida_crista', label: 'Vida Cristã Prática', icon: Heart,
+    id: 'vida_pessoal', label: 'Vida Pessoal', icon: Heart,
     themes: [
-      { id: 'sentido_vida', title: 'Sentido da Vida', description: 'O propósito da existência humana segundo as Escrituras', keyVerses: ['Eclesiastes 12:13', 'Jeremias 29:11', 'Romanos 8:28'], subtopics: ['Propósito divino', 'Identidade em Cristo', 'Chamado e vocação'] },
-      { id: 'cansaco', title: 'Cansaço e Descanso', description: 'Como encontrar repouso e força em Deus', keyVerses: ['Mateus 11:28-30', 'Isaías 40:31', 'Salmos 23'], subtopics: ['Esgotamento emocional', 'Descanso sabático', 'Forças renovadas'] },
-      { id: 'ansiedade', title: 'Ansiedade e Preocupação', description: 'Paz em meio às tribulações', keyVerses: ['Filipenses 4:6-7', 'Mateus 6:25-34', '1 Pedro 5:7'], subtopics: ['Confiança em Deus', 'Entrega das preocupações', 'Paz interior'] },
-      { id: 'perdao', title: 'Perdão', description: 'A importância e o poder do perdão bíblico', keyVerses: ['Efésios 4:32', 'Mateus 6:14-15', 'Marcos 11:25-26'], subtopics: ['Benefícios do perdão', 'Rancor e amargura', 'O dever de perdoar'] },
-      { id: 'fe_dificuldades', title: 'Fé em Tempos Difíceis', description: 'Mantendo a fé nas provações', keyVerses: ['Tiago 1:2-4', 'Romanos 5:3-5', 'Hebreus 11'], subtopics: ['Provas e provações', 'Perseverança', 'Testemunhos bíblicos'] },
+      { id: 'identidade_deus', title: 'Identidade em Deus', description: 'Quem somos em Cristo e nosso valor diante de Deus', keyVerses: ['2 Coríntios 5:17', 'Efésios 2:10', 'Gálatas 2:20'], subtopics: ['Nova criatura', 'Valor em Cristo', 'Imagem de Deus'] },
+      { id: 'proposito_vida', title: 'Propósito de Vida', description: 'Descobrindo o plano de Deus para nossa existência', keyVerses: ['Jeremias 29:11', 'Efésios 2:10', 'Romanos 8:28'], subtopics: ['Chamado divino', 'Vocação', 'Missão pessoal'] },
+      { id: 'autoconhecimento', title: 'Autoconhecimento', description: 'Conhecer a si mesmo à luz das Escrituras', keyVerses: ['Salmos 139:23-24', 'Jeremias 17:9', 'Provérbios 4:23'], subtopics: ['Exame interior', 'Motivações', 'Verdade sobre si'] },
+      { id: 'dominio_proprio', title: 'Domínio Próprio', description: 'Controle e temperança como fruto do Espírito', keyVerses: ['Gálatas 5:22-23', 'Provérbios 25:28', '2 Timóteo 1:7'], subtopics: ['Temperança', 'Disciplina', 'Autocontrole'] },
+      { id: 'disciplina', title: 'Disciplina', description: 'A disciplina como caminho de crescimento', keyVerses: ['Hebreus 12:11', '1 Coríntios 9:27', 'Provérbios 12:1'], subtopics: ['Disciplina espiritual', 'Hábitos santos', 'Perseverança'] },
+      { id: 'sabedoria', title: 'Sabedoria', description: 'Buscando a sabedoria que vem do alto', keyVerses: ['Tiago 1:5', 'Provérbios 9:10', 'Colossenses 2:3'], subtopics: ['Temor do Senhor', 'Decisões sábias', 'Sabedoria prática'] },
+      { id: 'tomada_decisoes', title: 'Tomada de Decisões', description: 'Como decidir segundo a vontade de Deus', keyVerses: ['Provérbios 3:5-6', 'Salmos 32:8', 'Tiago 1:5'], subtopics: ['Direção divina', 'Conselhos', 'Discernimento'] },
+      { id: 'carater_cristao', title: 'Caráter Cristão', description: 'Formando o caráter à semelhança de Cristo', keyVerses: ['Romanos 5:3-4', 'Gálatas 5:22-23', '2 Pedro 1:5-7'], subtopics: ['Virtudes', 'Integridade', 'Transformação'] },
+      { id: 'integridade', title: 'Integridade', description: 'Vivendo com coerência e honestidade', keyVerses: ['Provérbios 11:3', 'Salmos 15', 'Colossenses 3:23'], subtopics: ['Honestidade', 'Transparência', 'Coerência'] },
+      { id: 'responsabilidade', title: 'Responsabilidade Pessoal', description: 'Assumir responsabilidade diante de Deus', keyVerses: ['Romanos 14:12', 'Gálatas 6:5', 'Mateus 25:14-30'], subtopics: ['Mordomia', 'Prestação de contas', 'Talentos'] },
+      { id: 'perseveranca', title: 'Perseverança', description: 'Não desistir no caminho da fé', keyVerses: ['Hebreus 12:1-2', 'Tiago 1:12', 'Gálatas 6:9'], subtopics: ['Firmeza', 'Resistência', 'Recompensa'] },
+      { id: 'resiliencia', title: 'Resiliência', description: 'Levantando-se após as quedas', keyVerses: ['Provérbios 24:16', 'Miquéias 7:8', '2 Coríntios 4:8-9'], subtopics: ['Superação', 'Força em Deus', 'Recomeço'] },
+      { id: 'maturidade', title: 'Maturidade Espiritual', description: 'Crescendo para a estatura de Cristo', keyVerses: ['Efésios 4:13-15', 'Hebreus 5:14', '1 Coríntios 13:11'], subtopics: ['Crescimento', 'Alimento sólido', 'Discernimento'] },
+      { id: 'humildade', title: 'Humildade', description: 'A virtude que Deus honra', keyVerses: ['Filipenses 2:5-8', 'Tiago 4:6', '1 Pedro 5:5-6'], subtopics: ['Exemplo de Cristo', 'Submissão', 'Serviço'] },
+      { id: 'contentamento', title: 'Contentamento', description: 'Aprendendo a estar satisfeito em todas as situações', keyVerses: ['Filipenses 4:11-13', '1 Timóteo 6:6-8', 'Hebreus 13:5'], subtopics: ['Gratidão', 'Suficiência em Cristo', 'Desprendimento'] },
+      { id: 'gratidao', title: 'Gratidão', description: 'Um coração agradecido em todas as coisas', keyVerses: ['1 Tessalonicenses 5:18', 'Colossenses 3:17', 'Salmos 100'], subtopics: ['Ação de graças', 'Reconhecimento', 'Louvor'] },
+      { id: 'tempo_prioridades', title: 'Tempo e Prioridades', description: 'Administrando o tempo segundo Deus', keyVerses: ['Efésios 5:15-16', 'Salmos 90:12', 'Eclesiastes 3:1'], subtopics: ['Remir o tempo', 'Prioridades do Reino', 'Equilíbrio'] },
+      { id: 'foco_direcao', title: 'Foco e Direção', description: 'Olhando para Jesus, o autor da fé', keyVerses: ['Hebreus 12:1-2', 'Filipenses 3:13-14', 'Provérbios 4:25'], subtopics: ['Alvo em Cristo', 'Determinação', 'Clareza'] },
+      { id: 'vida_equilibrada', title: 'Vida Equilibrada', description: 'Equilíbrio entre o espiritual e o cotidiano', keyVerses: ['Eclesiastes 3:1', 'Lucas 2:52', 'Mateus 6:33'], subtopics: ['Corpo, alma, espírito', 'Descanso', 'Prioridades'] },
+      { id: 'crescimento_pessoal', title: 'Crescimento Pessoal', description: 'Desenvolvendo-se em todas as áreas', keyVerses: ['2 Pedro 3:18', 'Provérbios 1:5', 'Lucas 2:52'], subtopics: ['Aprendizado', 'Mentoria', 'Transformação'] },
+    ]
+  },
+  {
+    id: 'vida_espiritual', label: 'Vida Espiritual', icon: Flame,
+    themes: [
+      { id: 'fe', title: 'Fé', description: 'A substância das coisas esperadas', keyVerses: ['Hebreus 11:1', 'Romanos 10:17', 'Marcos 11:22-24'], subtopics: ['Definição bíblica', 'Heróis da fé', 'Fé prática'] },
+      { id: 'oracao', title: 'Oração', description: 'Desenvolvendo uma vida de oração profunda', keyVerses: ['Filipenses 4:6', '1 Tessalonicenses 5:17', 'Mateus 6:5-15'], subtopics: ['Tipos de oração', 'Oração eficaz', 'Pai Nosso'] },
+      { id: 'jejum', title: 'Jejum', description: 'O poder do jejum bíblico', keyVerses: ['Mateus 6:16-18', 'Isaías 58:6-7', 'Atos 13:2-3'], subtopics: ['Propósito', 'Tipos de jejum', 'Jejum coletivo'] },
+      { id: 'leitura_palavra', title: 'Leitura da Palavra', description: 'Alimentando-se das Escrituras', keyVerses: ['Salmos 119:105', 'Josué 1:8', '2 Timóteo 3:16-17'], subtopics: ['Meditação', 'Estudo bíblico', 'Memorização'] },
+      { id: 'intimidade_deus', title: 'Intimidade com Deus', description: 'Aproximando-se do Pai celestial', keyVerses: ['Tiago 4:8', 'Salmos 27:4', 'Jeremias 33:3'], subtopics: ['Buscar a Deus', 'Comunhão', 'Adoração'] },
+      { id: 'presenca_deus', title: 'Presença de Deus', description: 'Viver na consciência da presença divina', keyVerses: ['Salmos 16:11', 'Êxodo 33:14-15', 'Mateus 28:20'], subtopics: ['Manifestação', 'Glória', 'Habitar na presença'] },
+      { id: 'santificacao', title: 'Santificação', description: 'Ser separado para Deus', keyVerses: ['1 Tessalonicenses 4:3', '1 Pedro 1:15-16', 'Romanos 12:1-2'], subtopics: ['Processo', 'Renúncia', 'Consagração'] },
+      { id: 'arrependimento', title: 'Arrependimento', description: 'Mudança de mente e direção rumo a Deus', keyVerses: ['Atos 3:19', '2 Coríntios 7:10', 'Lucas 15:7'], subtopics: ['Convicção', 'Confissão', 'Restauração'] },
+      { id: 'novo_nascimento', title: 'Novo Nascimento', description: 'Nascer de novo pelo Espírito', keyVerses: ['João 3:3-7', '2 Coríntios 5:17', 'Tito 3:5'], subtopics: ['Regeneração', 'Nova vida', 'Transformação'] },
+      { id: 'batismo', title: 'Batismo', description: 'O significado e a importância do batismo', keyVerses: ['Mateus 28:19', 'Romanos 6:3-4', 'Atos 2:38'], subtopics: ['Significado', 'Obediência', 'Identificação com Cristo'] },
+      { id: 'espirito_santo', title: 'Espírito Santo', description: 'A pessoa e a obra do Espírito Santo', keyVerses: ['João 14:16-17', 'Atos 1:8', 'Romanos 8:26-27'], subtopics: ['Consolador', 'Poder', 'Guia'] },
+      { id: 'dons_espirituais', title: 'Dons Espirituais', description: 'Descobrindo e usando os dons do Espírito', keyVerses: ['1 Coríntios 12:4-11', 'Romanos 12:6-8', 'Efésios 4:11-13'], subtopics: ['Diversidade', 'Propósito', 'Edificação'] },
+      { id: 'fruto_espirito', title: 'Fruto do Espírito', description: 'As evidências da ação do Espírito', keyVerses: ['Gálatas 5:22-23', 'João 15:1-8', 'Romanos 8:5-6'], subtopics: ['Amor e alegria', 'Paz e paciência', 'Domínio próprio'] },
+      { id: 'obediencia', title: 'Obediência a Deus', description: 'Obedecer é melhor do que sacrificar', keyVerses: ['1 Samuel 15:22', 'João 14:15', 'Atos 5:29'], subtopics: ['Submissão', 'Frutos', 'Exemplos bíblicos'] },
+      { id: 'dependencia_deus', title: 'Dependência de Deus', description: 'Sem Ele nada podemos fazer', keyVerses: ['João 15:5', 'Provérbios 3:5-6', 'Filipenses 4:13'], subtopics: ['Confiança total', 'Entrega', 'Suficiência divina'] },
+      { id: 'adoracao', title: 'Vida de Adoração', description: 'Adorar em espírito e verdade', keyVerses: ['João 4:23-24', 'Salmos 95:6', 'Romanos 12:1'], subtopics: ['Adoração genuína', 'Estilo de vida', 'Louvor'] },
+      { id: 'temor_senhor', title: 'Temor do Senhor', description: 'O início da sabedoria', keyVerses: ['Provérbios 9:10', 'Salmos 111:10', 'Eclesiastes 12:13'], subtopics: ['Reverência', 'Sabedoria', 'Obediência'] },
+      { id: 'guerra_espiritual', title: 'Guerra Espiritual', description: 'A batalha invisível e nossas armas', keyVerses: ['Efésios 6:10-18', '2 Coríntios 10:4-5', 'Tiago 4:7'], subtopics: ['Armadura de Deus', 'Estratégias do inimigo', 'Vitória em Cristo'] },
+      { id: 'autoridade_espiritual', title: 'Autoridade Espiritual', description: 'O poder delegado por Cristo', keyVerses: ['Lucas 10:19', 'Marcos 16:17-18', 'Mateus 28:18'], subtopics: ['Autoridade do crente', 'Nome de Jesus', 'Poder'] },
+      { id: 'perseveranca_fe', title: 'Perseverança na Fé', description: 'Correr com paciência a carreira', keyVerses: ['Hebreus 12:1-2', 'Apocalipse 2:10', '2 Timóteo 4:7'], subtopics: ['Firmeza', 'Não desistir', 'Galardão'] },
+    ]
+  },
+  {
+    id: 'vida_financeira', label: 'Vida Financeira', icon: DollarSign,
+    themes: [
+      { id: 'mordomia', title: 'Mordomia Cristã', description: 'Administrar os recursos de Deus com fidelidade', keyVerses: ['Mateus 25:14-30', '1 Coríntios 4:2', 'Lucas 16:10-12'], subtopics: ['Fidelidade', 'Prestação de contas', 'Multiplicação'] },
+      { id: 'dizimos', title: 'Dízimos', description: 'O princípio bíblico da devolução', keyVerses: ['Malaquias 3:10', 'Levítico 27:30', 'Mateus 23:23'], subtopics: ['Obediência', 'Bênçãos', 'Fidelidade'] },
+      { id: 'ofertas', title: 'Ofertas', description: 'Dar com alegria e generosidade', keyVerses: ['2 Coríntios 9:7', 'Atos 20:35', 'Lucas 6:38'], subtopics: ['Alegria', 'Sacrifício', 'Semeadura'] },
+      { id: 'generosidade', title: 'Generosidade', description: 'Um coração aberto para dar', keyVerses: ['Provérbios 11:25', '2 Coríntios 9:6-8', 'Atos 20:35'], subtopics: ['Dar sem esperar', 'Bênção de dar', 'Exemplo de Cristo'] },
+      { id: 'prosperidade_biblica', title: 'Prosperidade Bíblica', description: 'O que a Bíblia ensina sobre prosperidade', keyVerses: ['3 João 1:2', 'Josué 1:8', 'Salmos 1:3'], subtopics: ['Prosperidade verdadeira', 'Prioridade do Reino', 'Equilíbrio'] },
+      { id: 'contentamento_financeiro', title: 'Contentamento Financeiro', description: 'Estar satisfeito com o que se tem', keyVerses: ['1 Timóteo 6:6-10', 'Filipenses 4:11-13', 'Hebreus 13:5'], subtopics: ['Gratidão', 'Evitar ganância', 'Suficiência'] },
+      { id: 'administracao_recursos', title: 'Administração de Recursos', description: 'Gerenciar com sabedoria', keyVerses: ['Provérbios 21:20', 'Lucas 14:28-30', 'Provérbios 27:23-24'], subtopics: ['Planejamento', 'Poupança', 'Investimento'] },
+      { id: 'planejamento_financeiro', title: 'Planejamento Financeiro', description: 'Planejar com sabedoria divina', keyVerses: ['Provérbios 21:5', 'Lucas 14:28', 'Provérbios 24:27'], subtopics: ['Orçamento', 'Metas', 'Provisão'] },
+      { id: 'evitar_dividas', title: 'Evitar Dívidas', description: 'Liberdade financeira segundo a Bíblia', keyVerses: ['Romanos 13:8', 'Provérbios 22:7', 'Deuteronômio 28:12'], subtopics: ['Prudência', 'Liberdade', 'Sabedoria'] },
+      { id: 'honestidade_negocios', title: 'Honestidade nos Negócios', description: 'Integridade no trabalho', keyVerses: ['Provérbios 11:1', 'Provérbios 16:11', 'Levítico 19:35-36'], subtopics: ['Balança justa', 'Ética', 'Testemunho'] },
+      { id: 'trabalho_digno', title: 'Trabalho Digno', description: 'Trabalhar como para o Senhor', keyVerses: ['Colossenses 3:23', 'Provérbios 14:23', '2 Tessalonicenses 3:10'], subtopics: ['Diligência', 'Excelência', 'Propósito'] },
+      { id: 'riquezas_perigos', title: 'Riquezas e Perigos', description: 'Os perigos do amor ao dinheiro', keyVerses: ['1 Timóteo 6:10', 'Mateus 6:24', 'Provérbios 23:4-5'], subtopics: ['Avareza', 'Idolatria', 'Prioridades'] },
+      { id: 'prioridade_reino', title: 'Prioridade do Reino', description: 'Buscai primeiro o Reino de Deus', keyVerses: ['Mateus 6:33', 'Lucas 12:31', 'Colossenses 3:1-2'], subtopics: ['Valores eternos', 'Investimento celestial', 'Fé prática'] },
+      { id: 'fidelidade_financeira', title: 'Fidelidade Financeira', description: 'Fiel no pouco, confiado no muito', keyVerses: ['Lucas 16:10', 'Mateus 25:21', 'Lucas 19:17'], subtopics: ['Fidelidade', 'Confiança', 'Crescimento'] },
+      { id: 'semear_colher', title: 'Semear e Colher', description: 'O princípio da semeadura', keyVerses: ['Gálatas 6:7-9', '2 Coríntios 9:6', 'Provérbios 11:18'], subtopics: ['Lei da semeadura', 'Paciência', 'Colheita'] },
+      { id: 'ganancia_gratidao', title: 'Ganância vs Gratidão', description: 'Substituir a ganância pela gratidão', keyVerses: ['Lucas 12:15', 'Hebreus 13:5', '1 Timóteo 6:6'], subtopics: ['Contentamento', 'Perigo da ganância', 'Coração grato'] },
+      { id: 'justica_economica', title: 'Justiça Econômica', description: 'A perspectiva bíblica de justiça', keyVerses: ['Provérbios 31:8-9', 'Amós 5:24', 'Isaías 1:17'], subtopics: ['Justiça', 'Compaixão', 'Equidade'] },
+      { id: 'ajudar_necessitados', title: 'Ajudar os Necessitados', description: 'Cuidar dos pobres', keyVerses: ['Provérbios 19:17', 'Mateus 25:35-40', 'Tiago 2:15-17'], subtopics: ['Compaixão', 'Ação social', 'Misericórdia'] },
+      { id: 'provisao_deus', title: 'Provisão de Deus', description: 'Deus supre todas as necessidades', keyVerses: ['Filipenses 4:19', 'Mateus 6:26-30', 'Salmos 37:25'], subtopics: ['Fidelidade de Deus', 'Confiança', 'Cuidado divino'] },
+      { id: 'confianca_financas', title: 'Confiança em Deus nas Finanças', description: 'Descansar em Deus para provisão', keyVerses: ['Provérbios 3:9-10', 'Salmos 37:25', 'Mateus 6:31-33'], subtopics: ['Entrega', 'Paz', 'Provisão'] },
+    ]
+  },
+  {
+    id: 'familia', label: 'Família', icon: Users,
+    themes: [
+      { id: 'casamento', title: 'Casamento', description: 'A aliança sagrada entre homem e mulher', keyVerses: ['Gênesis 2:24', 'Efésios 5:25-33', 'Hebreus 13:4'], subtopics: ['Aliança', 'Compromisso', 'Fidelidade'] },
+      { id: 'amor_conjugal', title: 'Amor Conjugal', description: 'O amor sacrificial no casamento', keyVerses: ['Efésios 5:25', '1 Coríntios 13:4-7', 'Cânticos 8:6-7'], subtopics: ['Sacrifício', 'Respeito', 'Intimidade'] },
+      { id: 'respeito_lar', title: 'Respeito no Lar', description: 'Cultivar respeito mútuo', keyVerses: ['Efésios 5:33', '1 Pedro 3:7', 'Colossenses 3:19'], subtopics: ['Honra', 'Comunicação', 'Valorização'] },
+      { id: 'papel_marido', title: 'Papel do Marido', description: 'O marido como líder espiritual', keyVerses: ['Efésios 5:25-28', '1 Pedro 3:7', 'Colossenses 3:19'], subtopics: ['Liderança servidora', 'Amor sacrificial', 'Provisão'] },
+      { id: 'papel_esposa', title: 'Papel da Esposa', description: 'A mulher virtuosa', keyVerses: ['Provérbios 31:10-31', 'Efésios 5:22-24', '1 Pedro 3:1-4'], subtopics: ['Sabedoria', 'Força', 'Virtude'] },
+      { id: 'criacao_filhos', title: 'Criação de Filhos', description: 'Instruir os filhos no caminho do Senhor', keyVerses: ['Provérbios 22:6', 'Efésios 6:4', 'Deuteronômio 6:6-7'], subtopics: ['Disciplina com amor', 'Ensino', 'Exemplo'] },
+      { id: 'educacao_biblica', title: 'Educação Bíblica dos Filhos', description: 'Ensinar a Palavra às novas gerações', keyVerses: ['Deuteronômio 6:6-9', 'Salmos 78:1-7', '2 Timóteo 3:14-15'], subtopics: ['Ensino diário', 'Devocionais', 'Transmissão da fé'] },
+      { id: 'honrar_pais', title: 'Honrar Pai e Mãe', description: 'O mandamento com promessa', keyVerses: ['Êxodo 20:12', 'Efésios 6:1-3', 'Provérbios 23:22'], subtopics: ['Respeito', 'Gratidão', 'Cuidado'] },
+      { id: 'unidade_familiar', title: 'Unidade Familiar', description: 'Família unida em Deus', keyVerses: ['Salmos 133:1', 'Josué 24:15', 'Atos 16:31'], subtopics: ['Comunhão', 'Oração em família', 'Propósito'] },
+      { id: 'perdao_familia', title: 'Perdão na Família', description: 'Praticar o perdão entre familiares', keyVerses: ['Efésios 4:32', 'Colossenses 3:13', 'Mateus 18:21-22'], subtopics: ['Reconciliação', 'Misericórdia', 'Restauração'] },
+      { id: 'comunicacao_lar', title: 'Comunicação no Lar', description: 'Falar a verdade com amor', keyVerses: ['Efésios 4:15', 'Efésios 4:29', 'Provérbios 15:1'], subtopics: ['Diálogo', 'Escuta', 'Palavras edificantes'] },
+      { id: 'conflitos_familiares', title: 'Conflitos Familiares', description: 'Resolver conflitos de forma bíblica', keyVerses: ['Mateus 18:15', 'Provérbios 15:1', 'Romanos 12:18'], subtopics: ['Resolução', 'Paciência', 'Graça'] },
+      { id: 'reconciliacao', title: 'Reconciliação', description: 'Restaurando relacionamentos quebrados', keyVerses: ['2 Coríntios 5:18-19', 'Mateus 5:23-24', 'Romanos 12:18'], subtopics: ['Iniciativa', 'Humildade', 'Restauração'] },
+      { id: 'alianca_familiar', title: 'Aliança Familiar', description: 'Compromisso da família com Deus', keyVerses: ['Josué 24:15', 'Gênesis 17:7', 'Atos 16:31'], subtopics: ['Compromisso', 'Fidelidade', 'Legado'] },
+      { id: 'lideranca_lar', title: 'Liderança Espiritual no Lar', description: 'Liderar a família espiritualmente', keyVerses: ['Josué 24:15', 'Efésios 5:25', '1 Timóteo 3:4-5'], subtopics: ['Exemplo', 'Oração', 'Ensino'] },
+      { id: 'protecao_familia', title: 'Proteção da Família', description: 'Proteger o lar espiritual e emocionalmente', keyVerses: ['Salmos 127:1', 'Salmos 91', 'Provérbios 14:26'], subtopics: ['Cobertura', 'Segurança', 'Vigilância'] },
+      { id: 'heranca_espiritual', title: 'Herança Espiritual', description: 'Deixar um legado de fé', keyVerses: ['Salmos 78:4-7', 'Provérbios 13:22', '2 Timóteo 1:5'], subtopics: ['Legado', 'Gerações', 'Influência'] },
+      { id: 'relacao_irmaos', title: 'Relacionamento entre Irmãos', description: 'Fraternidade e amor', keyVerses: ['Salmos 133:1', 'Gênesis 4:9', 'Provérbios 17:17'], subtopics: ['Convivência', 'Respeito', 'Apoio'] },
+      { id: 'familia_igreja', title: 'Família e Igreja', description: 'A família como célula da igreja', keyVerses: ['Atos 2:46-47', 'Romanos 16:5', 'Filemom 1:2'], subtopics: ['Comunhão', 'Serviço juntos', 'Crescimento'] },
+      { id: 'cura_familiar', title: 'Cura Familiar', description: 'Restauração nos relacionamentos familiares', keyVerses: ['Jeremias 30:17', 'Malaquias 4:6', 'Isaías 61:1-3'], subtopics: ['Cura emocional', 'Restauração', 'Perdão'] },
+    ]
+  },
+  {
+    id: 'vida_emocional', label: 'Vida Emocional', icon: Brain,
+    themes: [
+      { id: 'ansiedade_em', title: 'Ansiedade', description: 'Lançando sobre Ele toda a ansiedade', keyVerses: ['Filipenses 4:6-7', '1 Pedro 5:7', 'Mateus 6:25-34'], subtopics: ['Confiança', 'Entrega', 'Paz de Deus'] },
+      { id: 'medo', title: 'Medo', description: 'Não temas, porque Eu sou contigo', keyVerses: ['Isaías 41:10', '2 Timóteo 1:7', 'Salmos 23:4'], subtopics: ['Coragem em Deus', 'Fé vs medo', 'Segurança'] },
+      { id: 'depressao', title: 'Depressão', description: 'Esperança e consolo nas trevas', keyVerses: ['Salmos 42:11', 'Isaías 61:3', 'Salmos 34:18'], subtopics: ['Consolo', 'Esperança', 'Ajuda'] },
+      { id: 'paz_interior', title: 'Paz Interior', description: 'A paz que excede todo entendimento', keyVerses: ['Filipenses 4:7', 'João 14:27', 'Isaías 26:3'], subtopics: ['Paz de Cristo', 'Descanso', 'Serenidade'] },
+      { id: 'alegria', title: 'Alegria', description: 'A alegria do Senhor é a nossa força', keyVerses: ['Neemias 8:10', 'Filipenses 4:4', 'Salmos 16:11'], subtopics: ['Alegria genuína', 'Em meio à dor', 'Fonte da alegria'] },
+      { id: 'esperanca', title: 'Esperança', description: 'Âncora firme para a alma', keyVerses: ['Hebreus 6:19', 'Romanos 15:13', 'Jeremias 29:11'], subtopics: ['Esperança eterna', 'Confiança no futuro', 'Promessas'] },
+      { id: 'cura_emocional', title: 'Cura Emocional', description: 'Deus sara os quebrantados', keyVerses: ['Salmos 147:3', 'Isaías 61:1', 'Salmos 34:18'], subtopics: ['Restauração', 'Libertação', 'Processo de cura'] },
+      { id: 'perdao_em', title: 'Perdão', description: 'Libertar-se através do perdão', keyVerses: ['Efésios 4:32', 'Mateus 6:14-15', 'Marcos 11:25'], subtopics: ['Liberdade', 'Decisão', 'Cura'] },
+      { id: 'magoas', title: 'Mágoas', description: 'Tratando as feridas do coração', keyVerses: ['Hebreus 12:15', 'Efésios 4:31-32', 'Colossenses 3:13'], subtopics: ['Raiz de amargura', 'Libertação', 'Renovação'] },
+      { id: 'raiva', title: 'Raiva', description: 'Irai-vos e não pequeis', keyVerses: ['Efésios 4:26', 'Provérbios 14:29', 'Tiago 1:19-20'], subtopics: ['Controle', 'Expressão saudável', 'Domínio próprio'] },
+      { id: 'controle_emocoes', title: 'Controle das Emoções', description: 'Domínio próprio como fruto do Espírito', keyVerses: ['Gálatas 5:22-23', 'Provérbios 25:28', 'Provérbios 16:32'], subtopics: ['Temperança', 'Equilíbrio', 'Maturidade'] },
+      { id: 'amor_proprio', title: 'Amor Próprio Saudável', description: 'Amar como Deus nos ama', keyVerses: ['Mateus 22:39', 'Efésios 2:10', 'Salmos 139:14'], subtopics: ['Autoaceitação', 'Identidade', 'Valor'] },
+      { id: 'rejeicao', title: 'Rejeição', description: 'O amor de Deus que acolhe', keyVerses: ['Lucas 19:10', '1 Coríntios 1:27-29', 'Isaías 53:3'], subtopics: ['Aceitação em Cristo', 'Cura', 'Pertencimento'] },
+      { id: 'solidao', title: 'Solidão', description: 'Nunca estamos sozinhos com Deus', keyVerses: ['Salmos 23', 'Hebreus 13:5', 'Mateus 28:20'], subtopics: ['Presença de Deus', 'Comunhão', 'Companhia divina'] },
+      { id: 'confianca_em', title: 'Confiança', description: 'Confiar de todo o coração', keyVerses: ['Provérbios 3:5-6', 'Salmos 56:3', 'Isaías 26:4'], subtopics: ['Fé', 'Entrega', 'Segurança'] },
+      { id: 'seguranca_deus', title: 'Segurança em Deus', description: 'Nossa fortaleza e refúgio', keyVerses: ['Salmos 46:1', 'Salmos 91', 'Provérbios 18:10'], subtopics: ['Refúgio', 'Proteção', 'Firmeza'] },
+      { id: 'pensamentos', title: 'Pensamentos', description: 'Levando cativo todo pensamento', keyVerses: ['2 Coríntios 10:5', 'Filipenses 4:8', 'Romanos 12:2'], subtopics: ['Renovação da mente', 'Filtro bíblico', 'Meditação'] },
+      { id: 'renovacao_mente', title: 'Renovação da Mente', description: 'Transformação pela renovação do entendimento', keyVerses: ['Romanos 12:2', 'Efésios 4:23', 'Colossenses 3:10'], subtopics: ['Transformação', 'Novos padrões', 'Mente de Cristo'] },
+      { id: 'descanso', title: 'Descanso', description: 'Encontrando repouso em Deus', keyVerses: ['Mateus 11:28-30', 'Salmos 23:2', 'Êxodo 33:14'], subtopics: ['Repouso', 'Cansaço', 'Forças renovadas'] },
+      { id: 'equilibrio_emocional', title: 'Equilíbrio Emocional', description: 'Estabilidade emocional pela fé', keyVerses: ['Filipenses 4:11-13', 'Isaías 26:3', 'Salmos 112:7'], subtopics: ['Estabilidade', 'Constância', 'Firmeza'] },
+    ]
+  },
+  {
+    id: 'vida_social', label: 'Vida Social e Relacional', icon: Compass,
+    themes: [
+      { id: 'amor_proximo', title: 'Amor ao Próximo', description: 'O mandamento do amor prático', keyVerses: ['Mateus 22:39', 'João 13:34-35', '1 Coríntios 13'], subtopics: ['Amor incondicional', 'Servir', 'Unidade'] },
+      { id: 'perdao_proximo', title: 'Perdão ao Próximo', description: 'Perdoar como fomos perdoados', keyVerses: ['Mateus 18:21-22', 'Efésios 4:32', 'Colossenses 3:13'], subtopics: ['Setenta vezes sete', 'Graça', 'Libertação'] },
+      { id: 'relacionamentos_saudaveis', title: 'Relacionamentos Saudáveis', description: 'Construindo relações à maneira de Deus', keyVerses: ['Provérbios 27:17', 'Eclesiastes 4:9-12', 'Romanos 12:10'], subtopics: ['Reciprocidade', 'Edificação', 'Limites'] },
+      { id: 'amizades', title: 'Amizades', description: 'O valor da amizade verdadeira', keyVerses: ['Provérbios 17:17', 'Provérbios 18:24', 'João 15:13-15'], subtopics: ['Lealdade', 'Fidelidade', 'Companheirismo'] },
+      { id: 'influencia', title: 'Influência', description: 'Ser influência positiva', keyVerses: ['Mateus 5:13-16', 'Filipenses 2:15', '1 Timóteo 4:12'], subtopics: ['Exemplo', 'Testemunho', 'Impacto'] },
+      { id: 'testemunho', title: 'Testemunho Cristão', description: 'Viver o Evangelho no dia a dia', keyVerses: ['Mateus 5:16', '1 Pedro 3:15', 'Atos 1:8'], subtopics: ['Vida exemplar', 'Pregação viva', 'Coerência'] },
+      { id: 'evangelismo', title: 'Evangelismo', description: 'Compartilhar as boas novas', keyVerses: ['Marcos 16:15', 'Romanos 10:14-15', 'Mateus 28:19-20'], subtopics: ['Grande Comissão', 'Métodos', 'Urgência'] },
+      { id: 'justica', title: 'Justiça', description: 'Praticar a justiça como Deus ordena', keyVerses: ['Miquéias 6:8', 'Amós 5:24', 'Isaías 1:17'], subtopics: ['Justiça social', 'Defender oprimidos', 'Retidão'] },
+      { id: 'misericordia', title: 'Misericórdia', description: 'Bem-aventurados os misericordiosos', keyVerses: ['Mateus 5:7', 'Lucas 6:36', 'Miquéias 6:8'], subtopics: ['Compaixão', 'Empatia', 'Ação'] },
+      { id: 'servico', title: 'Serviço ao Próximo', description: 'Servir como Cristo serviu', keyVerses: ['Marcos 10:45', 'Gálatas 5:13', 'João 13:14-15'], subtopics: ['Servir com amor', 'Humildade', 'Exemplo de Cristo'] },
+      { id: 'lideranca', title: 'Liderança', description: 'Liderar com coração de servo', keyVerses: ['Marcos 10:42-45', '1 Pedro 5:2-3', 'Josué 1:9'], subtopics: ['Liderança servidora', 'Responsabilidade', 'Influência'] },
+      { id: 'autoridade_social', title: 'Autoridade', description: 'Respeito às autoridades', keyVerses: ['Romanos 13:1-7', '1 Pedro 2:13-17', 'Tito 3:1'], subtopics: ['Submissão', 'Respeito', 'Obediência'] },
+      { id: 'submissao', title: 'Submissão', description: 'Submeter-se uns aos outros em Deus', keyVerses: ['Efésios 5:21', 'Hebreus 13:17', '1 Pedro 5:5'], subtopics: ['Humildade', 'Ordem', 'Confiança'] },
+      { id: 'convivencia', title: 'Convivência em Comunidade', description: 'Viver em comunhão no corpo de Cristo', keyVerses: ['Atos 2:42-47', 'Hebreus 10:25', 'Romanos 12:10'], subtopics: ['Comunhão', 'Partilha', 'Unidade'] },
+      { id: 'respeito_social', title: 'Respeito', description: 'Honrar a todos como Cristo honrou', keyVerses: ['1 Pedro 2:17', 'Romanos 12:10', 'Filipenses 2:3'], subtopics: ['Honra', 'Dignidade', 'Valorização'] },
+      { id: 'unidade', title: 'Unidade', description: 'Que todos sejam um', keyVerses: ['João 17:21', 'Efésios 4:3', 'Salmos 133:1'], subtopics: ['Um corpo', 'Harmonia', 'Cooperação'] },
+      { id: 'julgamento', title: 'Julgamento vs Discernimento', description: 'Discernir sem julgar injustamente', keyVerses: ['Mateus 7:1-5', 'João 7:24', '1 Coríntios 2:15'], subtopics: ['Discernimento', 'Misericórdia', 'Sabedoria'] },
+      { id: 'humildade_relacoes', title: 'Humildade nas Relações', description: 'Considerar os outros superiores', keyVerses: ['Filipenses 2:3-4', 'Romanos 12:3', '1 Pedro 5:5'], subtopics: ['Altruísmo', 'Servir', 'Desapego'] },
+      { id: 'fazer_bem', title: 'Fazer o Bem', description: 'Não nos cansemos de fazer o bem', keyVerses: ['Gálatas 6:9-10', 'Tiago 4:17', 'Hebreus 13:16'], subtopics: ['Boas obras', 'Generosidade', 'Impacto'] },
+      { id: 'impacto_sociedade', title: 'Impacto na Sociedade', description: 'Transformando o mundo ao redor', keyVerses: ['Mateus 5:13-16', 'Jeremias 29:7', 'Provérbios 11:11'], subtopics: ['Sal e luz', 'Influência', 'Transformação'] },
     ]
   },
   {
     id: 'salvacao_graca', label: 'Salvação e Graça', icon: Star,
     themes: [
-      { id: 'salvacao', title: 'Salvação', description: 'O plano redentor de Deus para a humanidade', keyVerses: ['João 3:16', 'Efésios 2:8-9', 'Romanos 10:9-10'], subtopics: ['Graça de Deus', 'Fé e obras', 'Nova vida em Cristo'] },
-      { id: 'arrependimento', title: 'Arrependimento', description: 'Mudança de mente e direção rumo a Deus', keyVerses: ['Atos 3:19', '2 Coríntios 7:10', 'Lucas 15:7'], subtopics: ['Convicção do Espírito', 'Confissão', 'Restauração'] },
-      { id: 'graca', title: 'Graça de Deus', description: 'O favor imerecido e a bondade divina', keyVerses: ['Efésios 2:8-9', 'Romanos 3:24', '2 Coríntios 12:9'], subtopics: ['Graça vs Lei', 'Graça suficiente', 'Viver pela graça'] },
-    ]
-  },
-  {
-    id: 'carater_cristao', label: 'Caráter Cristão', icon: Shield,
-    themes: [
-      { id: 'humildade', title: 'Humildade', description: 'O valor da humildade no caráter cristão', keyVerses: ['Filipenses 2:5-8', 'Tiago 4:6', '1 Pedro 5:5-6'], subtopics: ['Cristo como modelo', 'Orgulho vs humildade', 'Submissão'] },
-      { id: 'orgulho', title: 'Orgulho', description: 'Os perigos do orgulho e da soberba', keyVerses: ['2 Crônicas 26:3-4,16', 'Filipenses 2:5-8', 'Isaías 14:12-15'], subtopics: ['Como nos afeta', 'Manifestações', 'Submissão a Deus'] },
-      { id: 'integridade', title: 'Integridade e Honestidade', description: 'Viver com verdade e transparência', keyVerses: ['Provérbios 11:3', 'Colossenses 3:23', 'Salmos 15'], subtopics: ['Honestidade no trabalho', 'Verdade vs mentira', 'Caráter íntegro'] },
-      { id: 'etica_crista', title: 'Ética Cristã', description: 'Vivendo os valores do Reino de Deus', keyVerses: ['Mateus 5:13-16', 'Romanos 12', 'Gálatas 5:22-23'], subtopics: ['Padrão bíblico', 'Ética nos relacionamentos', 'Ser luz e sal'] },
-    ]
-  },
-  {
-    id: 'crescimento', label: 'Crescimento Espiritual', icon: Flame,
-    themes: [
-      { id: 'oracao', title: 'Oração', description: 'Desenvolvendo uma vida de oração profunda', keyVerses: ['Filipenses 4:6', '1 Tessalonicenses 5:17', 'Mateus 6:5-15'], subtopics: ['Tipos de oração', 'Oração eficaz', 'Modelo do Pai Nosso'] },
-      { id: 'fruto_espirito', title: 'Fruto do Espírito', description: 'As evidências da ação do Espírito Santo', keyVerses: ['Gálatas 5:22-23', 'João 15:1-8', 'Romanos 8:5-6'], subtopics: ['Amor e alegria', 'Paz e paciência', 'Domínio próprio'] },
-      { id: 'santificacao', title: 'Crescer na Fé', description: 'O processo contínuo de transformação', keyVerses: ['2 Pedro 3:18', 'Filipenses 1:6', 'Romanos 12:1-2'], subtopics: ['Transformação diária', 'Disciplinas espirituais', 'Maturidade cristã'] },
-    ]
-  },
-  {
-    id: 'relacionamentos', label: 'Relacionamentos', icon: Users,
-    themes: [
-      { id: 'amor_proximo', title: 'Amor ao Próximo', description: 'O mandamento do amor prático', keyVerses: ['Mateus 22:39', 'João 13:34-35', '1 Coríntios 13'], subtopics: ['Amor incondicional', 'Servir ao próximo', 'Unidade no corpo'] },
-      { id: 'familia', title: 'Família Cristã', description: 'Princípios bíblicos para o lar', keyVerses: ['Efésios 5:22-33', 'Deuteronômio 6:6-7', 'Provérbios 22:6'], subtopics: ['Casamento', 'Criação de filhos', 'Honrar os pais'] },
-      { id: 'comunhao', title: 'Comunhão e Igreja', description: 'A importância do corpo de Cristo', keyVerses: ['Hebreus 10:25', 'Atos 2:42-47', '1 Coríntios 12'], subtopics: ['Unidade', 'Dons espirituais', 'Servir com excelência'] },
-    ]
-  },
-  {
-    id: 'temas_atuais', label: 'Temas Atuais', icon: Compass,
-    themes: [
-      { id: 'mundo_moderno', title: 'Cristão no Mundo Moderno', description: 'Vivendo a fé no contexto atual', keyVerses: ['Romanos 12:2', 'João 17:14-16', 'Mateus 5:13-16'], subtopics: ['Redes sociais', 'Pressões culturais', 'Testemunho no dia a dia'] },
-      { id: 'racismo', title: 'Racismo e Igualdade', description: 'A visão bíblica sobre igualdade', keyVerses: ['1 Coríntios 12:27', 'Atos 17:26', 'Efésios 2:13-16'], subtopics: ['Deus não faz acepção', 'Em Cristo não há barreiras', 'Amor e justiça'] },
-      { id: 'sofrimento', title: 'Sofrimento e Esperança', description: 'Encontrando esperança no sofrimento', keyVerses: ['Romanos 8:18', '2 Coríntios 4:17', 'Apocalipse 21:4'], subtopics: ['Por que sofremos', 'Consolo de Deus', 'Esperança eterna'] },
+      { id: 'salvacao', title: 'Salvação', description: 'O plano redentor de Deus', keyVerses: ['João 3:16', 'Efésios 2:8-9', 'Romanos 10:9-10'], subtopics: ['Graça', 'Fé', 'Nova vida'] },
+      { id: 'graca', title: 'Graça de Deus', description: 'O favor imerecido de Deus', keyVerses: ['Efésios 2:8-9', 'Romanos 3:24', '2 Coríntios 12:9'], subtopics: ['Graça vs Lei', 'Graça suficiente', 'Viver pela graça'] },
     ]
   },
   {
     id: 'pecado_luta', label: 'Pecado e Luta Espiritual', icon: Zap,
     themes: [
-      { id: 'luxuria', title: 'Luxúria', description: 'Advertências e libertação', keyVerses: ['Romanos 13:13-14', 'Ezequiel 24:13', 'Tiago 4:8'], subtopics: ['Advertências', 'Consequências', 'Libertação'] },
-      { id: 'mentira', title: 'Mentiras', description: 'A verdade como princípio de vida', keyVerses: ['João 8:44', 'Salmos 101:7', 'Efésios 4:25'], subtopics: ['Consequências', 'Deus aborrece a mentira', 'Viver na verdade'] },
-      { id: 'murmuracao', title: 'Murmuração', description: 'Os perigos da reclamação constante', keyVerses: ['Tiago 4:11', 'Números 12:1-3,9-10', 'Salmos 106:21-25'], subtopics: ['Características', 'Como evitar', 'Gratidão como antídoto'] },
-      { id: 'rejeicao', title: 'Rejeição', description: 'O amor de Deus que acolhe', keyVerses: ['Lucas 19:10', '1 Coríntios 1:27-29', '1 Tessalonicenses 4:9'], subtopics: ['Deus não rejeita ninguém', 'O amor de Deus é para todos', 'Nosso chamado ao amor'] },
+      { id: 'luxuria', title: 'Luxúria', description: 'Advertências e caminho de libertação', keyVerses: ['Romanos 13:13-14', 'Mateus 5:28', 'Tiago 4:8'], subtopics: ['Advertências', 'Consequências', 'Libertação'] },
+      { id: 'mentira', title: 'Mentiras', description: 'Viver na verdade', keyVerses: ['João 8:44', 'Efésios 4:25', 'Provérbios 12:22'], subtopics: ['Consequências', 'Verdade', 'Integridade'] },
+      { id: 'murmuracao', title: 'Murmuração', description: 'Os perigos da reclamação', keyVerses: ['Tiago 4:11', 'Filipenses 2:14', 'Números 11:1'], subtopics: ['Gratidão', 'Contentamento', 'Fé'] },
+      { id: 'rejeicao_luta', title: 'Rejeição', description: 'O amor de Deus que acolhe todos', keyVerses: ['Lucas 19:10', '1 Coríntios 1:27-29', 'Isaías 53:3'], subtopics: ['Aceitação', 'Valor em Cristo', 'Pertencimento'] },
+    ]
+  },
+  {
+    id: 'igreja_ministerio', label: 'Igreja e Ministério', icon: Church,
+    themes: [
+      { id: 'igreja_atual', title: 'O Papel da Igreja Hoje', description: 'A missão da Igreja na sociedade', keyVerses: ['Mateus 16:18', 'Atos 2:42-47', 'Efésios 3:10'], subtopics: ['Missão', 'Relevância', 'Impacto'] },
+      { id: 'unidade_corpo', title: 'Unidade no Corpo de Cristo', description: 'Que sejam um', keyVerses: ['1 Coríntios 12:12-27', 'Efésios 4:1-6', 'João 17:21'], subtopics: ['Diversidade', 'Cooperação', 'Amor'] },
+      { id: 'servir_excelencia', title: 'Servir com Excelência', description: 'Tudo para a glória de Deus', keyVerses: ['Colossenses 3:23', '1 Coríntios 10:31', '1 Pedro 4:10-11'], subtopics: ['Dedicação', 'Qualidade', 'Motivação'] },
+      { id: 'importancia_comunhao', title: 'A Importância da Comunhão', description: 'Não deixar de congregar', keyVerses: ['Hebreus 10:25', 'Atos 2:42', 'Salmos 133:1'], subtopics: ['Participação', 'Relacionamento', 'Crescimento'] },
     ]
   },
 ];
