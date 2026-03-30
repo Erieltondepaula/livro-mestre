@@ -501,7 +501,7 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
           <ChevronRight className="w-4 h-4 rotate-180" /> Voltar aos temas
         </button>
 
-        {topic && !studyResult && (
+        {topic && !studyResult && !loading && (
           <div className="space-y-4">
             <div className="p-4 rounded-xl border border-border bg-card">
               <h3 className="text-lg font-bold text-foreground">{topic.title}</h3>
