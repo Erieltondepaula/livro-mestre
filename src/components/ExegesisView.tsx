@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight, Layers } from 'lucide-react';
+import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight, Layers, Heart } from 'lucide-react';
 import { useExegesis } from '@/hooks/useExegesis';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
