@@ -437,6 +437,17 @@ Para cada subtema:
 ### 🎤 Frase de Impacto
 - Uma frase marcante para encerramento
 
+### 📚 Recomendações de Recursos
+- **Livros** recomendados sobre o tema (com autor e breve descrição)
+- **Blogs e sites** confiáveis para aprofundamento
+- **Vídeos e séries** (pregações, documentários, aulas)
+- **Estudos acadêmicos** ou teológicos relevantes
+
+### 📖 Abordagem Cristológica
+- Como CRISTO responde a essa demanda humana?
+- Toda questão antropológica deve ser convertida em Cristologia
+- Mostre como as necessidades humanas (fome, dor, medo, conflito) encontram resposta na pessoa de Cristo
+
 ### 📚 Referências Bibliográficas
 - Cite todas as fontes utilizadas no formato ABNT
 - Inclua materiais do usuário que foram consultados
@@ -445,6 +456,8 @@ IMPORTANTE:
 - Use linguagem acessível, como conversa entre amigos
 - Profundidade teológica SEM termos acadêmicos complexos
 - Cada ponto deve ter aplicação prática real
+- TODA demanda humana deve ser respondida na PESSOA DE CRISTO (Cristologia)
+- Recomende SEMPRE livros, blogs, vídeos e estudos sobre o assunto
 - ${materialsContext ? 'PRIORIZE os materiais do usuário como fonte primária' : 'Use fontes bíblicas confiáveis'}
 ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : ''}`;
 
