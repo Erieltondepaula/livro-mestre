@@ -16,7 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap' | 'thematic_study';
+type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap' | 'thematic_study' | 'devotional';
 
 interface MenuItem {
   id: ExegesisSection;
