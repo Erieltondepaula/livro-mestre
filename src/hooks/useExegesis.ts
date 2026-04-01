@@ -190,6 +190,7 @@ export function useExegesis() {
   const getMaterialsContext = useCallback(() => {
     if (materials.length === 0) return undefined;
     const grouped = {
+      biblia: materials.filter(m => m.material_category === 'biblia'),
       dicionario: materials.filter(m => m.material_category === 'dicionario'),
       comentario: materials.filter(m => m.material_category === 'comentario'),
       livro: materials.filter(m => m.material_category === 'livro'),
@@ -206,6 +207,7 @@ export function useExegesis() {
       if (m.bible_references && (m.bible_references as any).length > 0) line += ` [Refs: ${(m.bible_references as any).join(', ')}]`;
       return line;
     };
+    if (grouped.biblia.length > 0) context += `\n### 📖 Bíblias e Versões:\n${grouped.biblia.map(formatMaterial).join('\n')}`;
     if (grouped.dicionario.length > 0) context += `\n### 📙 Dicionários Bíblicos:\n${grouped.dicionario.map(formatMaterial).join('\n')}`;
     if (grouped.comentario.length > 0) context += `\n### 📘 Comentários Bíblicos:\n${grouped.comentario.map(formatMaterial).join('\n')}`;
     if (grouped.livro.length > 0) context += `\n### 📚 Livros Teológicos:\n${grouped.livro.map(formatMaterial).join('\n')}`;
