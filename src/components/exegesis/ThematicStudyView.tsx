@@ -716,7 +716,15 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
                 "hover:bg-accent/50 hover:border-primary/30 transition-all text-left group"
               )}>
                 <button onClick={() => setSelectedTopic(theme)} className="flex-1 min-w-0 text-left">
-                  <span className="font-medium text-sm text-foreground">{theme.title}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm text-foreground">{theme.title}</span>
+                    {(() => {
+                      const count = getTopicHistory(theme.title).length;
+                      return count > 0 ? (
+                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{count} estudo{count > 1 ? 's' : ''}</span>
+                      ) : null;
+                    })()}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{theme.description}</p>
                   <div className="flex flex-wrap gap-1 mt-1.5">
                     {theme.keyVerses.slice(0, 2).map(v => (
