@@ -20,6 +20,7 @@ interface Props {
 }
 
 const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType; description: string }[] = [
+  { id: 'biblia', label: 'Bíblias', icon: BookOpen, description: 'Bíblias em diversas versões e traduções' },
   { id: 'comentario', label: 'Comentários', icon: BookMarked, description: 'Comentários bíblicos expositivos' },
   { id: 'dicionario', label: 'Dicionários', icon: Languages, description: 'Dicionários bíblicos e teológicos' },
   { id: 'livro', label: 'Livros', icon: BookOpen, description: 'Livros teológicos e de referência' },
