@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy } from 'lucide-react';
+import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
@@ -17,6 +16,14 @@ interface Message {
   content: string;
   passage?: string;
   timestamp: Date;
+  attachments?: Attachment[];
+}
+
+interface Attachment {
+  name: string;
+  type: 'image' | 'document' | 'audio' | 'video';
+  url?: string;
+  transcription?: string;
 }
 
 interface Props {
@@ -36,10 +43,12 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
   const [showPassageSelector, setShowPassageSelector] = useState(false);
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const [searchingWeb, setSearchingWeb] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Bible selectors
   const [bibleBook, setBibleBook] = useState('');
@@ -58,14 +67,13 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
     livros: materials.filter(m => m.material_category === 'livro').length,
     devocionais: materials.filter(m => m.material_category === 'devocional').length,
     midia: materials.filter(m => m.material_category === 'midia').length,
+    biblias: materials.filter(m => m.material_category === ('biblia' as any)).length,
   };
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Build full materials context
   const getFullMaterialsContext = useCallback(() => {
     if (materials.length === 0) return undefined;
     
@@ -75,6 +83,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       livro: materials.filter(m => m.material_category === 'livro'),
       devocional: materials.filter(m => m.material_category === 'devocional'),
       midia: materials.filter(m => m.material_category === 'midia'),
+      biblia: materials.filter(m => m.material_category === ('biblia' as any)),
     };
 
     const formatMaterial = (m: ExegesisMaterial) => {
@@ -82,21 +91,19 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       if (m.author) line += ` por ${m.author}`;
       if (m.description) line += `\n  Descrição: ${m.description}`;
       if (m.theme) line += `\n  Tema: ${m.theme}`;
-      if (m.sub_themes && (m.sub_themes as any).length > 0) line += `\n  Sub-temas: ${(m.sub_themes as any).join(', ')}`;
       if (m.keywords && (m.keywords as any).length > 0) line += `\n  Palavras-chave: ${(m.keywords as any).join(', ')}`;
       if (m.bible_references && (m.bible_references as any).length > 0) line += `\n  Referências: ${(m.bible_references as any).join(', ')}`;
-      if (m.content_origin) line += `\n  Origem: ${m.content_origin}`;
       return line;
     };
 
-    let context = `\n## 📚 BIBLIOTECA COMPLETA DO USUÁRIO (${materials.length} materiais — USE 100% COMO BASE):\n`;
-    context += `\nVocê DEVE utilizar TODOS estes materiais como referência para suas respostas. Cite os materiais relevantes pelo nome.\n`;
+    let context = `\n## 📚 BIBLIOTECA DO USUÁRIO (${materials.length} materiais — USE COMO BASE):\n`;
     
-    if (grouped.comentario.length > 0) context += `\n### 📘 Comentários Bíblicos (${grouped.comentario.length}):\n${grouped.comentario.map(formatMaterial).join('\n\n')}`;
-    if (grouped.dicionario.length > 0) context += `\n\n### 📙 Dicionários Bíblicos (${grouped.dicionario.length}):\n${grouped.dicionario.map(formatMaterial).join('\n\n')}`;
-    if (grouped.livro.length > 0) context += `\n\n### 📚 Livros Teológicos (${grouped.livro.length}):\n${grouped.livro.map(formatMaterial).join('\n\n')}`;
-    if (grouped.devocional.length > 0) context += `\n\n### 📗 Devocionais (${grouped.devocional.length}):\n${grouped.devocional.map(formatMaterial).join('\n\n')}`;
-    if (grouped.midia.length > 0) context += `\n\n### 🎬 Mídia (${grouped.midia.length}):\n${grouped.midia.map(formatMaterial).join('\n\n')}`;
+    if (grouped.biblia.length > 0) context += `\n### 📖 Bíblias e Versões (${grouped.biblia.length}):\n${grouped.biblia.map(formatMaterial).join('\n\n')}`;
+    if (grouped.comentario.length > 0) context += `\n### 📘 Comentários (${grouped.comentario.length}):\n${grouped.comentario.map(formatMaterial).join('\n\n')}`;
+    if (grouped.dicionario.length > 0) context += `\n### 📙 Dicionários (${grouped.dicionario.length}):\n${grouped.dicionario.map(formatMaterial).join('\n\n')}`;
+    if (grouped.livro.length > 0) context += `\n### 📚 Livros (${grouped.livro.length}):\n${grouped.livro.map(formatMaterial).join('\n\n')}`;
+    if (grouped.devocional.length > 0) context += `\n### 📗 Devocionais (${grouped.devocional.length}):\n${grouped.devocional.map(formatMaterial).join('\n\n')}`;
+    if (grouped.midia.length > 0) context += `\n### 🎬 Mídia (${grouped.midia.length}):\n${grouped.midia.map(formatMaterial).join('\n\n')}`;
     
     return context;
   }, [materials]);
@@ -114,14 +121,59 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
     return passage;
   };
 
+  // File handling
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    for (const file of Array.from(files)) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      let type: Attachment['type'] = 'document';
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) type = 'image';
+      else if (['mp3', 'wav', 'm4a', 'ogg'].includes(ext)) type = 'audio';
+      else if (['mp4', 'webm', 'mov'].includes(ext)) type = 'video';
+
+      const url = URL.createObjectURL(file);
+      const attachment: Attachment = { name: file.name, type, url };
+
+      // For audio files, add transcription placeholder
+      if (type === 'audio') {
+        attachment.transcription = `[Transcrição do áudio "${file.name}" será processada pela IA]`;
+      }
+
+      setPendingAttachments(prev => [...prev, attachment]);
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (idx: number) => {
+    setPendingAttachments(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const handleSend = useCallback(async () => {
     const text = input.trim();
-    if (!text || isLoading) return;
+    if ((!text && pendingAttachments.length === 0) || isLoading) return;
 
     const passage = getPassageText();
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text, passage: passage || undefined, timestamp: new Date() };
+    const attachments = [...pendingAttachments];
+    
+    // Build content with attachment info
+    let fullText = text;
+    if (attachments.length > 0) {
+      const attachInfo = attachments.map(a => {
+        if (a.type === 'audio') return `[Áudio enviado: ${a.name}] ${a.transcription || ''}`;
+        if (a.type === 'image') return `[Imagem enviada: ${a.name}]`;
+        if (a.type === 'video') return `[Vídeo enviado: ${a.name}]`;
+        return `[Documento enviado: ${a.name}]`;
+      }).join('\n');
+      fullText = fullText ? `${fullText}\n\n${attachInfo}` : attachInfo;
+    }
+
+    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text || attachments.map(a => a.name).join(', '), passage: passage || undefined, timestamp: new Date(), attachments };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setPendingAttachments([]);
     setIsLoading(true);
 
     const controller = new AbortController();
@@ -139,7 +191,6 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
       const materialsCtx = getFullMaterialsContext();
 
-      // Web search (parallel, non-blocking)
       let webContext = '';
       if (webSearchEnabled) {
         setSearchingWeb(true);
@@ -148,11 +199,9 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           const { data: searchData } = await supabase.functions.invoke('web-search', {
             body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
           });
-          if (searchData?.context) {
-            webContext = searchData.context;
-          }
+          if (searchData?.context) webContext = searchData.context;
         } catch (e) {
-          console.warn('Web search failed, continuing without:', e);
+          console.warn('Web search failed:', e);
         } finally {
           setSearchingWeb(false);
         }
@@ -167,7 +216,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
         body: JSON.stringify({
           passage: passage || text,
           type: 'question',
-          question: `${text}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
+          question: `${fullText}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
           materials_context: materialsCtx,
           conversation_history: history,
         }),
@@ -179,7 +228,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
         if (resp.status === 429) {
           toast({ title: 'Limite atingido', description: 'Aguarde um momento.', variant: 'destructive' });
         } else if (resp.status === 402) {
-          toast({ title: 'Créditos insuficientes', description: 'Adicione créditos para continuar.', variant: 'destructive' });
+          toast({ title: 'Créditos insuficientes', variant: 'destructive' });
         } else {
           throw new Error(e.error || `Erro ${resp.status}`);
         }
@@ -238,14 +287,14 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       }
     } catch (e: any) {
       if (e.name !== 'AbortError') {
-        toast({ title: 'Erro', description: e.message || 'Erro ao processar pergunta', variant: 'destructive' });
+        toast({ title: 'Erro', description: e.message || 'Erro ao processar', variant: 'destructive' });
         setMessages(prev => prev.filter(m => m.id !== assistantId));
       }
     } finally {
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [input, isLoading, messages, getFullMaterialsContext, bibleBook, chapter, verseStart, verseEnd]);
+  }, [input, isLoading, messages, getFullMaterialsContext, bibleBook, chapter, verseStart, verseEnd, pendingAttachments, webSearchEnabled]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -262,157 +311,116 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
   const passageText = getPassageText();
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] min-h-[500px] bg-background rounded-lg border overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-180px)] min-h-[400px] bg-background rounded-lg border overflow-hidden">
       
       {/* Compact header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-muted/20 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <MessageCircle className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm leading-tight">Assistente Bíblico</h3>
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                {materials.length} materiais{webSearchEnabled ? ' + Web' : ''}
-              </div>
+      <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/20 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <MessageCircle className="w-4 h-4 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-xs leading-tight">Assistente Bíblico</h3>
+            <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+              {materials.length} materiais{webSearchEnabled ? ' + Web' : ''}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5" title="Buscar fontes externas (Wikipedia, arXiv, SciELO)">
-              <Globe className={`w-3.5 h-3.5 ${webSearchEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
-              <Switch
-                checked={webSearchEnabled}
-                onCheckedChange={setWebSearchEnabled}
-                className="scale-75"
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setShowPassageSelector(!showPassageSelector)}
-              title="Selecionar passagem"
-            >
-              <BookOpen className="w-4 h-4" />
-            </Button>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" title="Busca web">
+            <Globe className={`w-3 h-3 ${webSearchEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+            <Switch checked={webSearchEnabled} onCheckedChange={setWebSearchEnabled} className="scale-[0.65]" />
+          </div>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowPassageSelector(!showPassageSelector)} title="Passagem">
+            <BookOpen className="w-3.5 h-3.5" />
+          </Button>
           {messages.length > 0 && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleClear} title="Limpar conversa">
-              <Trash2 className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleClear}>
+              <Trash2 className="w-3.5 h-3.5" />
             </Button>
           )}
         </div>
       </div>
 
-      {/* Material badges (compact) */}
-      <div className="px-4 py-1.5 flex flex-wrap gap-1 text-[10px] border-b bg-muted/10 shrink-0">
-        {materialStats.comentarios > 0 && (
-          <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">📘 {materialStats.comentarios}</span>
-        )}
-        {materialStats.dicionarios > 0 && (
-          <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full">📙 {materialStats.dicionarios}</span>
-        )}
-        {materialStats.livros > 0 && (
-          <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full">📚 {materialStats.livros}</span>
-        )}
-        {materialStats.devocionais > 0 && (
-          <span className="bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full">📗 {materialStats.devocionais}</span>
-        )}
-        {materialStats.midia > 0 && (
-          <span className="bg-pink-500/10 text-pink-600 dark:text-pink-400 px-1.5 py-0.5 rounded-full">🎬 {materialStats.midia}</span>
-        )}
-        {passageText && (
-          <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">📖 {passageText}</span>
-        )}
+      {/* Material badges */}
+      <div className="px-3 py-1 flex flex-wrap gap-1 text-[9px] border-b bg-muted/10 shrink-0">
+        {materialStats.biblias > 0 && <span className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-full">📖 {materialStats.biblias}</span>}
+        {materialStats.comentarios > 0 && <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">📘 {materialStats.comentarios}</span>}
+        {materialStats.dicionarios > 0 && <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded-full">📙 {materialStats.dicionarios}</span>}
+        {materialStats.livros > 0 && <span className="bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded-full">📚 {materialStats.livros}</span>}
+        {materialStats.devocionais > 0 && <span className="bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full">📗 {materialStats.devocionais}</span>}
+        {materialStats.midia > 0 && <span className="bg-pink-500/10 text-pink-600 dark:text-pink-400 px-1.5 py-0.5 rounded-full">🎬 {materialStats.midia}</span>}
+        {passageText && <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">📖 {passageText}</span>}
       </div>
 
-      {/* Bible passage selector (collapsible) */}
+      {/* Bible passage selector */}
       {showPassageSelector && (
-        <div className="px-4 py-2.5 border-b bg-muted/5 shrink-0 animate-in slide-in-from-top-2 duration-200">
+        <div className="px-3 py-2 border-b bg-muted/5 shrink-0 animate-in slide-in-from-top-2 duration-200">
           <div className="flex flex-wrap gap-2 items-center">
             <Select value={bibleBook} onValueChange={(v) => { setBibleBook(v === '__clear' ? '' : v); setChapter(''); setVerseStart(''); setVerseEnd(''); }}>
-              <SelectTrigger className="w-[150px] h-8 text-xs">
-                <SelectValue placeholder="📖 Livro" />
-              </SelectTrigger>
+              <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue placeholder="📖 Livro" /></SelectTrigger>
               <SelectContent className="max-h-60">
                 <SelectItem value="__clear">— Sem filtro —</SelectItem>
-                {bibleBookNames.map(name => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
-                ))}
+                {bibleBookNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
               </SelectContent>
             </Select>
-
             {bibleBook && bibleBook !== '__clear' && (
               <Select value={chapter} onValueChange={(v) => { setChapter(v); setVerseStart(''); setVerseEnd(''); }}>
-                <SelectTrigger className="w-[90px] h-8 text-xs">
-                  <SelectValue placeholder="Cap." />
-                </SelectTrigger>
+                <SelectTrigger className="w-[80px] h-7 text-xs"><SelectValue placeholder="Cap." /></SelectTrigger>
                 <SelectContent className="max-h-60">
-                  {chapters.map(ch => (
-                    <SelectItem key={ch} value={String(ch)}>Cap. {ch}</SelectItem>
-                  ))}
+                  {chapters.map(ch => <SelectItem key={ch} value={String(ch)}>Cap. {ch}</SelectItem>)}
                 </SelectContent>
               </Select>
             )}
-
             {chapter && (
               <>
                 <Select value={verseStart} onValueChange={setVerseStart}>
-                  <SelectTrigger className="w-[80px] h-8 text-xs">
-                    <SelectValue placeholder="De v." />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-[70px] h-7 text-xs"><SelectValue placeholder="De v." /></SelectTrigger>
                   <SelectContent className="max-h-60">
                     <SelectItem value="__clear">Todos</SelectItem>
-                    {verses.map(v => (
-                      <SelectItem key={v} value={String(v)}>v. {v}</SelectItem>
-                    ))}
+                    {verses.map(v => <SelectItem key={v} value={String(v)}>v. {v}</SelectItem>)}
                   </SelectContent>
                 </Select>
-
                 {verseStart && verseStart !== '__clear' && (
                   <Select value={verseEnd} onValueChange={setVerseEnd}>
-                    <SelectTrigger className="w-[80px] h-8 text-xs">
-                      <SelectValue placeholder="Até v." />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-[70px] h-7 text-xs"><SelectValue placeholder="Até" /></SelectTrigger>
                     <SelectContent className="max-h-60">
-                      {verses.filter(v => v >= parseInt(verseStart)).map(v => (
-                        <SelectItem key={v} value={String(v)}>v. {v}</SelectItem>
-                      ))}
+                      {verses.filter(v => v >= parseInt(verseStart)).map(v => <SelectItem key={v} value={String(v)}>v. {v}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )}
               </>
             )}
-
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowPassageSelector(false)}>
-              <X className="w-3.5 h-3.5" />
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowPassageSelector(false)}>
+              <X className="w-3 h-3" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* Messages area — full height */}
+      {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground px-6">
-            <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mb-4">
-              <BookOpen className="w-8 h-8 text-primary/40" />
+          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground px-4">
+            <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mb-3">
+              <BookOpen className="w-6 h-6 text-primary/40" />
             </div>
-            <p className="font-semibold text-base text-foreground mb-1">Assistente de Exegese Bíblica</p>
-            <p className="text-xs max-w-md mb-6">
-              Faça perguntas sobre a Bíblia. O sistema utiliza <strong>100% dos seus {materials.length} materiais</strong> como base para respostas fundamentadas.
+            <p className="font-semibold text-sm text-foreground mb-1">Assistente Bíblico</p>
+            <p className="text-[11px] max-w-sm mb-4">
+              Converse naturalmente sobre a Bíblia. Envie textos, imagens, áudios ou documentos.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
               {[
-                'O que significa "justificação pela fé" em Romanos 3?',
-                'Qual o contexto histórico de Êxodo 12?',
-                'Explique a parábola do semeador',
-                'Quais as diferenças entre os evangelhos sinóticos?',
+                'O que significa "justificação pela fé"?',
+                'Me explica a parábola do semeador',
+                'Quem foi o apóstolo Paulo?',
+                'O que a Bíblia diz sobre ansiedade?',
               ].map((suggestion, i) => (
                 <button
                   key={i}
-                  onClick={() => { setInput(suggestion); textareaRef.current?.focus(); }}
-                  className="text-left text-xs p-3 rounded-xl border border-border hover:bg-muted/50 hover:border-primary/20 transition-all duration-200"
+                  onClick={() => { setInput(suggestion); inputRef.current?.focus(); }}
+                  className="text-left text-[11px] p-2.5 rounded-lg border border-border hover:bg-muted/50 hover:border-primary/20 transition-all"
                 >
                   {suggestion}
                 </button>
@@ -420,25 +428,24 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto px-4 py-4 space-y-1">
-            {messages.map((msg, idx) => (
+          <div className="max-w-3xl mx-auto px-3 py-3 space-y-1">
+            {messages.map((msg) => (
               <ChatBubble key={msg.id} message={msg} onCreateNote={onCreateNote} />
             ))}
 
             {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="flex justify-start">
-                <div className="bg-muted/50 rounded-2xl rounded-bl-md px-4 py-3">
+                <div className="bg-muted/50 rounded-2xl rounded-bl-md px-3 py-2">
                   <div className="flex items-center gap-2">
-                    {searchingWeb && (
-                      <span className="text-[10px] text-muted-foreground mr-1 flex items-center gap-1">
+                    {searchingWeb ? (
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <Globe className="w-3 h-3 animate-spin" /> Buscando na web...
                       </span>
-                    )}
-                    {!searchingWeb && (
+                    ) : (
                       <>
-                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
-                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
-                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
                       </>
                     )}
                   </div>
@@ -450,33 +457,66 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
         )}
       </div>
 
-      {/* Input area — sticky bottom */}
-      <div className="border-t bg-background px-4 py-3 shrink-0">
+      {/* Pending attachments */}
+      {pendingAttachments.length > 0 && (
+        <div className="px-3 py-1.5 border-t bg-muted/10 flex flex-wrap gap-1.5 shrink-0">
+          {pendingAttachments.map((a, i) => (
+            <div key={i} className="flex items-center gap-1 bg-muted/50 rounded-md px-2 py-1 text-[10px]">
+              {a.type === 'image' && <Image className="w-3 h-3 text-blue-500" />}
+              {a.type === 'audio' && <Mic className="w-3 h-3 text-green-500" />}
+              {a.type === 'video' && <Video className="w-3 h-3 text-purple-500" />}
+              {a.type === 'document' && <FileText className="w-3 h-3 text-amber-500" />}
+              <span className="max-w-[100px] truncate">{a.name}</span>
+              <button onClick={() => removeAttachment(i)} className="hover:text-destructive"><X className="w-3 h-3" /></button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Input area */}
+      <div className="border-t bg-background px-3 py-2 shrink-0">
         <div className="max-w-3xl mx-auto">
-          <div className="flex gap-2 items-end">
+          <div className="flex gap-1.5 items-center">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.txt"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              onClick={() => fileInputRef.current?.click()}
+              title="Enviar arquivo"
+            >
+              <Paperclip className="w-4 h-4 text-muted-foreground" />
+            </Button>
             <div className="flex-1 relative">
-              <Textarea
-                ref={textareaRef}
+              <input
+                ref={inputRef}
+                type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={passageText ? `Pergunte sobre ${passageText}...` : 'Faça sua pergunta bíblica...'}
-                className="min-h-[48px] max-h-[160px] resize-none text-sm pr-4 rounded-xl border-muted-foreground/20"
-                rows={1}
+                placeholder={passageText ? `Pergunte sobre ${passageText}...` : 'Digite sua pergunta...'}
+                className="w-full h-9 px-3 text-sm rounded-full border border-muted-foreground/20 bg-muted/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
                 disabled={isLoading}
               />
             </div>
             <Button
               onClick={handleSend}
-              disabled={!input.trim() || isLoading}
+              disabled={(!input.trim() && pendingAttachments.length === 0) || isLoading}
               size="icon"
-              className="shrink-0 h-[48px] w-[48px] rounded-xl"
+              className="shrink-0 h-9 w-9 rounded-full"
             >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-1.5">
-            {materials.length} materiais{webSearchEnabled ? ' + Wikipedia, arXiv, SciELO' : ''} • Enter para enviar
+          <p className="text-[9px] text-muted-foreground text-center mt-1">
+            {materials.length} materiais{webSearchEnabled ? ' + Web' : ''} • Enter para enviar
           </p>
         </div>
       </div>
@@ -490,35 +530,50 @@ function ChatBubble({ message, onCreateNote }: { message: Message; onCreateNote?
   const time = message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-2 group`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-1.5 group`}>
       <div
-        className={`relative max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
+        className={`relative max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
           isUser
-            ? 'bg-primary text-primary-foreground rounded-br-md'
-            : 'bg-muted/50 text-foreground rounded-bl-md border border-border/50'
+            ? 'bg-primary text-primary-foreground rounded-br-sm'
+            : 'bg-muted/40 text-foreground rounded-bl-sm border border-border/30'
         }`}
       >
+        {/* Attachments */}
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {message.attachments.map((a, i) => (
+              <div key={i} className="flex items-center gap-1 bg-black/10 rounded px-1.5 py-0.5 text-[10px]">
+                {a.type === 'image' && <Image className="w-3 h-3" />}
+                {a.type === 'audio' && <Mic className="w-3 h-3" />}
+                {a.type === 'video' && <Video className="w-3 h-3" />}
+                {a.type === 'document' && <FileText className="w-3 h-3" />}
+                <span className="max-w-[80px] truncate">{a.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {isUser ? (
           <div>
             {message.passage && (
-              <span className="text-[10px] opacity-80 block mb-1 font-medium">📖 {message.passage}</span>
+              <span className="text-[9px] opacity-80 block mb-0.5 font-medium">📖 {message.passage}</span>
             )}
-            <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+            <p className="whitespace-pre-wrap leading-relaxed text-[13px]">{message.content}</p>
           </div>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 leading-relaxed">
+          <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 leading-relaxed text-[13px]">
             <ReactMarkdown>{message.content || '...'}</ReactMarkdown>
           </div>
         )}
-        <div className="flex items-center justify-between mt-1">
-          <span className={`text-[9px] ${isUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'}`}>
+        <div className="flex items-center justify-between mt-0.5">
+          <span className={`text-[8px] ${isUser ? 'text-primary-foreground/50' : 'text-muted-foreground/50'}`}>
             {time}
           </span>
           {!isUser && message.content && (
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => { navigator.clipboard.writeText(message.content); toast({ title: "Copiado!" }); }}
-                className="p-1 rounded hover:bg-background/50 text-muted-foreground/60 hover:text-foreground"
+                className="p-0.5 rounded hover:bg-background/50 text-muted-foreground/50 hover:text-foreground"
                 title="Copiar"
               >
                 <Copy className="w-3 h-3" />
@@ -526,11 +581,11 @@ function ChatBubble({ message, onCreateNote }: { message: Message; onCreateNote?
               {onCreateNote && (
                 <button
                   onClick={() => {
-                    const title = message.passage ? `Chat — ${message.passage}` : `Chat Exegético — ${new Date().toLocaleDateString('pt-BR')}`;
+                    const title = message.passage ? `Chat — ${message.passage}` : `Chat — ${new Date().toLocaleDateString('pt-BR')}`;
                     onCreateNote(title, message.content);
                     toast({ title: "📝 Nota criada!" });
                   }}
-                  className="p-1 rounded hover:bg-background/50 text-muted-foreground/60 hover:text-foreground"
+                  className="p-0.5 rounded hover:bg-background/50 text-muted-foreground/50 hover:text-foreground"
                   title="Criar nota"
                 >
                   <StickyNote className="w-3 h-3" />
