@@ -27,7 +27,7 @@ export interface ExegesisOutline {
   updated_at: string;
 }
 
-export type MaterialCategory = 'livro' | 'comentario' | 'dicionario' | 'devocional' | 'midia';
+export type MaterialCategory = 'livro' | 'comentario' | 'dicionario' | 'devocional' | 'midia' | 'biblia';
 
 export interface ExegesisMaterial {
   id: string;

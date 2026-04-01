@@ -159,7 +159,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   return (
     <div className="space-y-6">
       <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as MaterialCategory)} className="w-full">
-        <TabsList className="w-full grid grid-cols-5">
+        <TabsList className="w-full grid grid-cols-6">
           {CATEGORIES.map(cat => {
             const Icon = cat.icon;
             const count = getCategoryCount(cat.id);
