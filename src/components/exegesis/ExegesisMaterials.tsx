@@ -29,7 +29,7 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
 ];
 
 export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete, onClassify, onExtractMetadata, onClassifyAll }: Props) {
-  const [activeCategory, setActiveCategory] = useState<MaterialCategory>('comentario');
+  const [activeCategory, setActiveCategory] = useState<MaterialCategory>('biblia');
   const [showUpload, setShowUpload] = useState(false);
   const [showLink, setShowLink] = useState(false);
   const [showPaste, setShowPaste] = useState(false);
