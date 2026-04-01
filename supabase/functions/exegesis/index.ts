@@ -1086,13 +1086,21 @@ Priorize os materiais do usuário.`;
       // parameter within the 3 main types (expository, textual, thematic)
 
       case "question":
-        userPrompt = `Sobre o seguinte texto bíblico:
-
-**Passagem:** ${passage}
+        userPrompt = `Sobre: ${passage}
 ${materialsSection}
-**Pergunta do estudante:** ${question}
+${question}
 
-Responda de forma clara, fundamentada e exegeticamente responsável. Use os princípios hermenêuticos de Gorman, Klein e Fee quando aplicável.`;
+## REGRAS DE RESPOSTA (OBRIGATÓRIO):
+1. Responda de forma CURTA e DIRETA, como numa conversa entre amigos
+2. MÁXIMO 3-4 parágrafos por resposta — NÃO faça textos longos
+3. NÃO gere sermões, esboços ou análises completas — isso é uma CONVERSA
+4. Se a pessoa quiser mais detalhes, ela vai perguntar — não antecipe tudo
+5. Use tom amigável e natural, como se estivesse conversando pessoalmente
+6. Cite os materiais de referência de forma natural (ex: "como diz Wiersbe...")
+7. Se a pergunta for simples, dê uma resposta simples
+8. Se houver áudio/imagem/documento mencionado, reconheça e comente
+9. Use linguagem PASTORAL, acessível, sem termos acadêmicos
+10. Termine com uma pergunta ou convite para continuar a conversa quando apropriado`;
         break;
 
       case "classify_content":

@@ -20,6 +20,7 @@ interface Props {
 }
 
 const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType; description: string }[] = [
+  { id: 'biblia', label: 'Bíblias', icon: BookOpen, description: 'Bíblias em diversas versões e traduções' },
   { id: 'comentario', label: 'Comentários', icon: BookMarked, description: 'Comentários bíblicos expositivos' },
   { id: 'dicionario', label: 'Dicionários', icon: Languages, description: 'Dicionários bíblicos e teológicos' },
   { id: 'livro', label: 'Livros', icon: BookOpen, description: 'Livros teológicos e de referência' },
@@ -28,7 +29,7 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
 ];
 
 export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete, onClassify, onExtractMetadata, onClassifyAll }: Props) {
-  const [activeCategory, setActiveCategory] = useState<MaterialCategory>('comentario');
+  const [activeCategory, setActiveCategory] = useState<MaterialCategory>('biblia');
   const [showUpload, setShowUpload] = useState(false);
   const [showLink, setShowLink] = useState(false);
   const [showPaste, setShowPaste] = useState(false);
@@ -158,7 +159,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   return (
     <div className="space-y-6">
       <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as MaterialCategory)} className="w-full">
-        <TabsList className="w-full grid grid-cols-5">
+        <TabsList className="w-full grid grid-cols-6">
           {CATEGORIES.map(cat => {
             const Icon = cat.icon;
             const count = getCategoryCount(cat.id);

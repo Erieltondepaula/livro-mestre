@@ -111,7 +111,7 @@ export function ExegesisView() {
           />
         );
       case 'thematic_study':
-        return <ThematicStudyView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
+        return <ThematicStudyView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} analyses={analyses} onDeleteAnalysis={deleteAnalysis} />;
       case 'devotional':
         return <DevotionalView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
       case 'qa_chat':
