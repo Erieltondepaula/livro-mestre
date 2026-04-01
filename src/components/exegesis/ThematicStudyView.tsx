@@ -554,7 +554,36 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
           <ChevronRight className="w-4 h-4 rotate-180" /> Voltar aos temas
         </button>
 
-        {topic && !studyResult && !loading && (
+        {/* Viewing a saved history item */}
+        {viewingHistoryItem && (
+          <div className="space-y-3">
+            <button onClick={() => setViewingHistoryItem(null)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <ChevronRight className="w-3 h-3 rotate-180" /> Voltar ao tema
+            </button>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Salvo em {new Date(viewingHistoryItem.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <div className="flex gap-1.5">
+                {onCreateNote && (
+                  <Button variant="outline" size="sm" onClick={() => onCreateNote(`📖 ${viewingHistoryItem.passage}`, viewingHistoryItem.content)} className="gap-1 text-xs h-7">
+                    <StickyNote className="w-3 h-3" /> Nota
+                  </Button>
+                )}
+                {onDeleteAnalysis && (
+                  <Button variant="outline" size="sm" onClick={async () => { await onDeleteAnalysis(viewingHistoryItem.id); setViewingHistoryItem(null); toast({ title: '🗑️ Removido' }); }} className="gap-1 text-xs h-7 text-destructive hover:text-destructive">
+                    <Trash2 className="w-3 h-3" /> Remover
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="prose prose-sm dark:prose-invert max-w-none p-4 rounded-xl border border-border bg-card">
+              <ReactMarkdown>{viewingHistoryItem.content}</ReactMarkdown>
+            </div>
+          </div>
+        )}
+
+        {topic && !studyResult && !loading && !viewingHistoryItem && (
           <div className="space-y-4">
             <div className="p-4 rounded-xl border border-border bg-card">
               <h3 className="text-lg font-bold text-foreground">{topic.title}</h3>
@@ -573,6 +602,37 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
                 </div>
               </div>
             </div>
+
+            {/* Topic history - studies saved for THIS topic */}
+            {(() => {
+              const history = getTopicHistory(topic.title);
+              if (history.length === 0) return null;
+              return (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-primary" />
+                    Estudos salvos sobre "{topic.title}" ({history.length})
+                  </h4>
+                  <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                    {history.map(item => (
+                      <button
+                        key={item.id}
+                        onClick={() => setViewingHistoryItem(item)}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-card hover:bg-accent/50 transition-all text-left"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{item.content.substring(0, 80)}...</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {new Date(item.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground shrink-0 ml-2" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
               <div className="flex items-center gap-2">
@@ -603,11 +663,11 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
           </div>
         )}
 
-        {studyResult && (
+        {studyResult && !viewingHistoryItem && (
           <div className="space-y-3">
             <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={handleSaveAnalysis} className="gap-1.5">
-                <Save className="w-3.5 h-3.5" /> Salvar no Histórico
+                <Save className="w-3.5 h-3.5" /> Salvar neste Tema
               </Button>
               {onCreateNote && (
                 <Button variant="outline" size="sm" onClick={handleCreateNote} className="gap-1.5">
