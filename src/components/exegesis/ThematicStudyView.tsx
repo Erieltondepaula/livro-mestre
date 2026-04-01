@@ -244,9 +244,11 @@ interface Props {
   materialsCount?: number;
   materials?: ExegesisMaterial[];
   onCreateNote?: (title: string, content: string) => void;
+  analyses?: ExegesisAnalysis[];
+  onDeleteAnalysis?: (id: string) => Promise<void>;
 }
 
-export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
+export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount = 0, materials = [], onCreateNote, analyses = [], onDeleteAnalysis }: Props) {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<ThematicCategory | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<ThematicTopic | null>(null);
@@ -257,7 +259,16 @@ export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount 
   const [useWebSearch, setUseWebSearch] = useState(false);
   const [webSearching, setWebSearching] = useState(false);
   const [showResultView, setShowResultView] = useState(false);
+  const [viewingHistoryItem, setViewingHistoryItem] = useState<ExegesisAnalysis | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Get history for the current topic
+  const getTopicHistory = useCallback((topicTitle: string) => {
+    return analyses.filter(a => 
+      a.analysis_type === 'thematic_study' && 
+      a.passage.toLowerCase() === topicTitle.toLowerCase()
+    );
+  }, [analyses]);
 
   // User custom themes
   const [userTopics, setUserTopics] = useState<ThematicTopic[]>([]);
