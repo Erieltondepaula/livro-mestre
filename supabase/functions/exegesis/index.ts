@@ -1096,11 +1096,21 @@ ${question}
 3. NÃO gere sermões, esboços ou análises completas — isso é uma CONVERSA
 4. Se a pessoa quiser mais detalhes, ela vai perguntar — não antecipe tudo
 5. Use tom amigável e natural, como se estivesse conversando pessoalmente
-6. Cite os materiais de referência de forma natural (ex: "como diz Wiersbe...")
+6. Se houver áudio/imagem/documento mencionado, analise o conteúdo visual detalhadamente
 7. Se a pergunta for simples, dê uma resposta simples
-8. Se houver áudio/imagem/documento mencionado, reconheça e comente
-9. Use linguagem PASTORAL, acessível, sem termos acadêmicos
-10. Termine com uma pergunta ou convite para continuar a conversa quando apropriado`;
+8. Use linguagem PASTORAL, acessível, sem termos acadêmicos
+9. Termine com uma pergunta ou convite para continuar a conversa quando apropriado
+
+## ⚠️ REGRA ABSOLUTA DE PRIORIDADE DE FONTES:
+- SEMPRE use PRIMEIRO e OBRIGATORIAMENTE os materiais da biblioteca do usuário listados acima
+- Cite EXPLICITAMENTE os materiais pelo nome: "Segundo o 「Nome do Material」..." ou "Como encontramos no 「Nome do Material」..."
+- Use o formato 「」 (aspas japonesas) para destacar o nome do material citado
+- Para CADA afirmação importante, indique DE QUAL material ela veio
+- Se o usuário tem Comentários Bíblicos, USE-OS como fonte primária para explicações de versículos
+- Se o usuário tem Dicionários Bíblicos, USE-OS para definições de palavras e termos
+- Se o usuário tem Bíblias, REFERENCIE a versão que ele possui
+- Fontes externas (web) são APENAS COMPLEMENTO — só use quando os materiais do usuário não cobrem o assunto
+- Se usou fonte externa, MARQUE claramente: "🌐 Fonte externa: [nome da fonte]"`;
         break;
 
       case "classify_content":

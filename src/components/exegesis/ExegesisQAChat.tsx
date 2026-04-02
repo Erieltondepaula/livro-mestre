@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video } from 'lucide-react';
+import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -10,6 +10,13 @@ import type { ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
 
+interface WebSource {
+  title: string;
+  url: string;
+  source: string;
+  snippet?: string;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -17,6 +24,7 @@ interface Message {
   passage?: string;
   timestamp: Date;
   attachments?: Attachment[];
+  webSources?: WebSource[];
 }
 
 interface Attachment {
@@ -32,11 +40,14 @@ interface Props {
   materialsCount?: number;
   materials?: ExegesisMaterial[];
   onCreateNote?: (title: string, content: string) => void;
+  onAddLink?: (title: string, url: string, materialType: 'youtube' | 'article', category: 'livro' | 'comentario' | 'dicionario' | 'devocional' | 'midia' | 'biblia', description?: string) => Promise<any>;
 }
+
+import type { MaterialCategory } from '@/hooks/useExegesis';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
+export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materials = [], onCreateNote, onAddLink }: Props) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -211,6 +222,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       const materialsCtx = getFullMaterialsContext();
 
       let webContext = '';
+      let webSources: WebSource[] = [];
       if (webSearchEnabled) {
         setSearchingWeb(true);
         try {
@@ -220,6 +232,11 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
             body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
           });
           if (searchData?.context) webContext = searchData.context;
+          if (searchData?.results) {
+            webSources = (searchData.results as any[]).map(r => ({
+              title: r.title, url: r.url, source: r.source, snippet: r.snippet,
+            }));
+          }
         } catch (e) {
           console.warn('Web search failed:', e);
         } finally {
@@ -264,7 +281,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
       if (!resp.body) throw new Error('Sem resposta');
 
-      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', timestamp: new Date() }]);
+      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', timestamp: new Date(), webSources: webSources.length > 0 ? webSources : undefined }]);
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -456,7 +473,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
         ) : (
           <div className="max-w-3xl mx-auto px-3 py-3 space-y-1">
             {messages.map((msg) => (
-              <ChatBubble key={msg.id} message={msg} onCreateNote={onCreateNote} />
+              <ChatBubble key={msg.id} message={msg} onCreateNote={onCreateNote} onAddLink={onAddLink} />
             ))}
 
             {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
@@ -551,9 +568,23 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 }
 
 /* ---- Chat Bubble Component ---- */
-function ChatBubble({ message, onCreateNote }: { message: Message; onCreateNote?: (title: string, content: string) => void }) {
+function ChatBubble({ message, onCreateNote, onAddLink }: {
+  message: Message;
+  onCreateNote?: (title: string, content: string) => void;
+  onAddLink?: (title: string, url: string, materialType: 'youtube' | 'article', category: 'livro' | 'comentario' | 'dicionario' | 'devocional' | 'midia' | 'biblia', description?: string) => Promise<any>;
+}) {
   const isUser = message.role === 'user';
   const time = message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const [savedSources, setSavedSources] = useState<Set<string>>(new Set());
+
+  const handleSaveSource = async (src: WebSource) => {
+    if (!onAddLink) return;
+    const result = await onAddLink(src.title, src.url, 'article', 'livro', `Fonte: ${src.source}. ${src.snippet?.substring(0, 200) || ''}`);
+    if (result) {
+      setSavedSources(prev => new Set(prev).add(src.url));
+      toast({ title: '📚 Fonte salva!', description: `"${src.title}" adicionado aos Materiais.` });
+    }
+  };
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-1.5 group`}>
@@ -591,6 +622,41 @@ function ChatBubble({ message, onCreateNote }: { message: Message; onCreateNote?
             <ReactMarkdown>{message.content || '...'}</ReactMarkdown>
           </div>
         )}
+
+        {/* Web Sources - Save as Reference */}
+        {!isUser && message.webSources && message.webSources.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-border/20">
+            <p className="text-[9px] font-semibold text-muted-foreground mb-1">🌐 Fontes externas utilizadas:</p>
+            <div className="space-y-1">
+              {message.webSources.map((src, i) => (
+                <div key={i} className="flex items-center justify-between gap-1 text-[10px] bg-background/50 rounded px-2 py-1">
+                  <div className="flex-1 min-w-0">
+                    <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block font-medium">
+                      {src.title}
+                    </a>
+                    <span className="text-muted-foreground text-[8px]">{src.source}</span>
+                  </div>
+                  {onAddLink && (
+                    <button
+                      onClick={() => handleSaveSource(src)}
+                      disabled={savedSources.has(src.url)}
+                      className={`shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] transition-colors ${
+                        savedSources.has(src.url)
+                          ? 'bg-green-500/10 text-green-600 cursor-default'
+                          : 'bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer'
+                      }`}
+                      title="Salvar como fonte"
+                    >
+                      <Save className="w-2.5 h-2.5" />
+                      {savedSources.has(src.url) ? 'Salvo' : 'Salvar'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-0.5">
           <span className={`text-[8px] ${isUser ? 'text-primary-foreground/50' : 'text-muted-foreground/50'}`}>
             {time}
