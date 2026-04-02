@@ -222,6 +222,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       const materialsCtx = getFullMaterialsContext();
 
       let webContext = '';
+      let webSources: WebSource[] = [];
       if (webSearchEnabled) {
         setSearchingWeb(true);
         try {
@@ -231,6 +232,11 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
             body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
           });
           if (searchData?.context) webContext = searchData.context;
+          if (searchData?.results) {
+            webSources = (searchData.results as any[]).map(r => ({
+              title: r.title, url: r.url, source: r.source, snippet: r.snippet,
+            }));
+          }
         } catch (e) {
           console.warn('Web search failed:', e);
         } finally {
