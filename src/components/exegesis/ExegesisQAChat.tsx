@@ -23,6 +23,7 @@ interface Attachment {
   name: string;
   type: 'image' | 'document' | 'audio' | 'video';
   url?: string;
+  base64?: string;
   transcription?: string;
 }
 
