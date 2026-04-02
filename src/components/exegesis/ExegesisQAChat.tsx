@@ -281,7 +281,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
       if (!resp.body) throw new Error('Sem resposta');
 
-      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', timestamp: new Date() }]);
+      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', timestamp: new Date(), webSources: webSources.length > 0 ? webSources : undefined }]);
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
