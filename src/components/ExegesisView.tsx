@@ -115,7 +115,7 @@ export function ExegesisView() {
       case 'devotional':
         return <DevotionalView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
       case 'qa_chat':
-        return <ExegesisQAChat getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} />;
+        return <ExegesisQAChat getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} onAddLink={addLink} />;
       case 'mindmap':
         return <MindMapEditor />;
       default:
