@@ -220,7 +220,7 @@ serve(async (req) => {
       );
     }
 
-    const { passage, question, type, materials_context, analyses_context, structure_config, approach, query_mode, content: requestContent } = await req.json();
+    const { passage, question, type, materials_context, analyses_context, structure_config, approach, query_mode, content: requestContent, images } = await req.json();
 
     // Handle get_system_prompt request — return the default prompt for the editor
     if (type === "get_system_prompt") {
@@ -1707,7 +1707,16 @@ Make this the highest quality, most detailed biblical map possible. Ultra high r
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: isJsonType ? "Você é um classificador de conteúdo teológico. Retorne APENAS JSON válido, sem markdown, sem explicações adicionais." : effectiveSystemPrompt },
-          { role: "user", content: userPrompt },
+          { role: "user", content: images && Array.isArray(images) && images.length > 0
+            ? [
+                { type: "text", text: userPrompt },
+                ...images.map((img: string) => ({
+                  type: "image_url",
+                  image_url: { url: img },
+                })),
+              ]
+            : userPrompt
+          },
         ],
         stream: !isJsonType,
       }),

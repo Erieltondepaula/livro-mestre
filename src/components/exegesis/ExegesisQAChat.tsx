@@ -23,6 +23,7 @@ interface Attachment {
   name: string;
   type: 'image' | 'document' | 'audio' | 'video';
   url?: string;
+  base64?: string;
   transcription?: string;
 }
 
@@ -122,6 +123,15 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
   };
 
   // File handling
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -135,6 +145,15 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
       const url = URL.createObjectURL(file);
       const attachment: Attachment = { name: file.name, type, url };
+
+      // Convert images to base64 for AI vision
+      if (type === 'image') {
+        try {
+          attachment.base64 = await fileToBase64(file);
+        } catch (e) {
+          console.error('Error converting image to base64:', e);
+        }
+      }
 
       // For audio files, add transcription placeholder
       if (type === 'audio') {
@@ -208,6 +227,11 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
         }
       }
 
+      // Collect image base64 data for vision
+      const imageData = attachments
+        .filter(a => a.type === 'image' && a.base64)
+        .map(a => a.base64 as string);
+
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -220,6 +244,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           question: `${fullText}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
           materials_context: materialsCtx,
           conversation_history: history,
+          images: imageData.length > 0 ? imageData : undefined,
         }),
         signal: controller.signal,
       });
