@@ -32,7 +32,10 @@ interface Props {
   materialsCount?: number;
   materials?: ExegesisMaterial[];
   onCreateNote?: (title: string, content: string) => void;
+  onAddLink?: (title: string, url: string, materialType: 'youtube' | 'article', category: 'livro' | 'comentario' | 'dicionario' | 'devocional' | 'midia' | 'biblia', description?: string) => Promise<any>;
 }
+
+import type { MaterialCategory } from '@/hooks/useExegesis';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
