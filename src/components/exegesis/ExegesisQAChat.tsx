@@ -568,9 +568,23 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 }
 
 /* ---- Chat Bubble Component ---- */
-function ChatBubble({ message, onCreateNote }: { message: Message; onCreateNote?: (title: string, content: string) => void }) {
+function ChatBubble({ message, onCreateNote, onAddLink }: {
+  message: Message;
+  onCreateNote?: (title: string, content: string) => void;
+  onAddLink?: (title: string, url: string, materialType: 'youtube' | 'article', category: 'livro' | 'comentario' | 'dicionario' | 'devocional' | 'midia' | 'biblia', description?: string) => Promise<any>;
+}) {
   const isUser = message.role === 'user';
   const time = message.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const [savedSources, setSavedSources] = useState<Set<string>>(new Set());
+
+  const handleSaveSource = async (src: WebSource) => {
+    if (!onAddLink) return;
+    const result = await onAddLink(src.title, src.url, 'article', 'livro', `Fonte: ${src.source}. ${src.snippet?.substring(0, 200) || ''}`);
+    if (result) {
+      setSavedSources(prev => new Set(prev).add(src.url));
+      toast({ title: '📚 Fonte salva!', description: `"${src.title}" adicionado aos Materiais.` });
+    }
+  };
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-1.5 group`}>
@@ -608,6 +622,41 @@ function ChatBubble({ message, onCreateNote }: { message: Message; onCreateNote?
             <ReactMarkdown>{message.content || '...'}</ReactMarkdown>
           </div>
         )}
+
+        {/* Web Sources - Save as Reference */}
+        {!isUser && message.webSources && message.webSources.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-border/20">
+            <p className="text-[9px] font-semibold text-muted-foreground mb-1">🌐 Fontes externas utilizadas:</p>
+            <div className="space-y-1">
+              {message.webSources.map((src, i) => (
+                <div key={i} className="flex items-center justify-between gap-1 text-[10px] bg-background/50 rounded px-2 py-1">
+                  <div className="flex-1 min-w-0">
+                    <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block font-medium">
+                      {src.title}
+                    </a>
+                    <span className="text-muted-foreground text-[8px]">{src.source}</span>
+                  </div>
+                  {onAddLink && (
+                    <button
+                      onClick={() => handleSaveSource(src)}
+                      disabled={savedSources.has(src.url)}
+                      className={`shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] transition-colors ${
+                        savedSources.has(src.url)
+                          ? 'bg-green-500/10 text-green-600 cursor-default'
+                          : 'bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer'
+                      }`}
+                      title="Salvar como fonte"
+                    >
+                      <Save className="w-2.5 h-2.5" />
+                      {savedSources.has(src.url) ? 'Salvo' : 'Salvar'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-0.5">
           <span className={`text-[8px] ${isUser ? 'text-primary-foreground/50' : 'text-muted-foreground/50'}`}>
             {time}
