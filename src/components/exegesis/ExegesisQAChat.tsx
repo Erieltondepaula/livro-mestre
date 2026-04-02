@@ -195,7 +195,8 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       if (webSearchEnabled) {
         setSearchingWeb(true);
         try {
-          const searchQuery = passage ? `${passage} ${text}` : text;
+          const searchQuery = (passage ? `${passage} ${text}` : text).trim();
+          if (!searchQuery) throw new Error('Empty query');
           const { data: searchData } = await supabase.functions.invoke('web-search', {
             body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
           });
