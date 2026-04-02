@@ -220,7 +220,7 @@ serve(async (req) => {
       );
     }
 
-    const { passage, question, type, materials_context, analyses_context, structure_config, approach, query_mode, content: requestContent } = await req.json();
+    const { passage, question, type, materials_context, analyses_context, structure_config, approach, query_mode, content: requestContent, images } = await req.json();
 
     // Handle get_system_prompt request — return the default prompt for the editor
     if (type === "get_system_prompt") {
