@@ -10,6 +10,13 @@ import type { ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
 
+interface WebSource {
+  title: string;
+  url: string;
+  source: string;
+  snippet?: string;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -17,6 +24,7 @@ interface Message {
   passage?: string;
   timestamp: Date;
   attachments?: Attachment[];
+  webSources?: WebSource[];
 }
 
 interface Attachment {
