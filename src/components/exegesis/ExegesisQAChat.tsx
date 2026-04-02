@@ -39,7 +39,7 @@ import type { MaterialCategory } from '@/hooks/useExegesis';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
-export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materials = [], onCreateNote }: Props) {
+export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materials = [], onCreateNote, onAddLink }: Props) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
