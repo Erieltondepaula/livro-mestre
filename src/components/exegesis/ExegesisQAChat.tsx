@@ -233,12 +233,18 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           'Content-Type': 'application/json',
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
+        // Collect image base64 data for vision
+        const imageData = attachments
+          .filter(a => a.type === 'image' && a.base64)
+          .map(a => a.base64 as string);
+
         body: JSON.stringify({
           passage: passage || text,
           type: 'question',
           question: `${fullText}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
           materials_context: materialsCtx,
           conversation_history: history,
+          images: imageData.length > 0 ? imageData : undefined,
         }),
         signal: controller.signal,
       });
