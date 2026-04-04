@@ -9,6 +9,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import type { ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  buildAttachmentFromFile,
+  buildAttachmentPrompt,
+  buildRelevantMaterialsContext,
+  shouldSearchWeb,
+  type ChatAttachment as Attachment,
+} from './chatHelpers';
 
 interface WebSource {
   title: string;
@@ -25,14 +32,6 @@ interface Message {
   timestamp: Date;
   attachments?: Attachment[];
   webSources?: WebSource[];
-}
-
-interface Attachment {
-  name: string;
-  type: 'image' | 'document' | 'audio' | 'video';
-  url?: string;
-  base64?: string;
-  transcription?: string;
 }
 
 interface Props {
@@ -61,6 +60,8 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [conversationNoteId, setConversationNoteId] = useState<string | null>(null);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
   // Bible selectors
   const [bibleBook, setBibleBook] = useState('');
@@ -86,40 +87,6 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const getFullMaterialsContext = useCallback(() => {
-    if (materials.length === 0) return undefined;
-    
-    const grouped = {
-      comentario: materials.filter(m => m.material_category === 'comentario'),
-      dicionario: materials.filter(m => m.material_category === 'dicionario'),
-      livro: materials.filter(m => m.material_category === 'livro'),
-      devocional: materials.filter(m => m.material_category === 'devocional'),
-      midia: materials.filter(m => m.material_category === 'midia'),
-      biblia: materials.filter(m => m.material_category === ('biblia' as any)),
-    };
-
-    const formatMaterial = (m: ExegesisMaterial) => {
-      let line = `- **${m.title}**`;
-      if (m.author) line += ` por ${m.author}`;
-      if (m.description) line += `\n  Descrição: ${m.description}`;
-      if (m.theme) line += `\n  Tema: ${m.theme}`;
-      if (m.keywords && (m.keywords as any).length > 0) line += `\n  Palavras-chave: ${(m.keywords as any).join(', ')}`;
-      if (m.bible_references && (m.bible_references as any).length > 0) line += `\n  Referências: ${(m.bible_references as any).join(', ')}`;
-      return line;
-    };
-
-    let context = `\n## 📚 BIBLIOTECA DO USUÁRIO (${materials.length} materiais — USE COMO BASE):\n`;
-    
-    if (grouped.biblia.length > 0) context += `\n### 📖 Bíblias e Versões (${grouped.biblia.length}):\n${grouped.biblia.map(formatMaterial).join('\n\n')}`;
-    if (grouped.comentario.length > 0) context += `\n### 📘 Comentários (${grouped.comentario.length}):\n${grouped.comentario.map(formatMaterial).join('\n\n')}`;
-    if (grouped.dicionario.length > 0) context += `\n### 📙 Dicionários (${grouped.dicionario.length}):\n${grouped.dicionario.map(formatMaterial).join('\n\n')}`;
-    if (grouped.livro.length > 0) context += `\n### 📚 Livros (${grouped.livro.length}):\n${grouped.livro.map(formatMaterial).join('\n\n')}`;
-    if (grouped.devocional.length > 0) context += `\n### 📗 Devocionais (${grouped.devocional.length}):\n${grouped.devocional.map(formatMaterial).join('\n\n')}`;
-    if (grouped.midia.length > 0) context += `\n### 🎬 Mídia (${grouped.midia.length}):\n${grouped.midia.map(formatMaterial).join('\n\n')}`;
-    
-    return context;
-  }, [materials]);
-
   const getPassageText = () => {
     if (!bibleBook || bibleBook === '__clear') return '';
     let passage = bibleBook;
@@ -133,45 +100,93 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
     return passage;
   };
 
-  // File handling
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
+  const serializeMessages = useCallback((items: Message[]) => {
+    return items.map(message => ({
+      ...message,
+      timestamp: message.timestamp.toISOString(),
+    }));
+  }, []);
+
+  const persistConversation = useCallback(async (items: Message[]) => {
+    if (!user) return;
+
+    const preview = items
+      .slice(-8)
+      .map(message => `${message.role === 'user' ? 'Pergunta' : 'Resposta'}: ${message.content}`)
+      .join('\n\n')
+      .slice(0, 6000);
+
+    const payload = {
+      title: 'Chat de Perguntas — Conversa Atual',
+      content: preview || 'Conversa do Chat de Perguntas',
+      content_json: {
+        kind: 'chat_perguntas',
+        messages: serializeMessages(items),
+      } as any,
+      note_type: 'reference',
+      tags: ['chat_perguntas', 'exegese'],
+    };
+
+    if (conversationNoteId) {
+      await supabase.from('notes').update(payload).eq('id', conversationNoteId).eq('user_id', user.id);
+      return;
+    }
+
+    const { data, error } = await supabase.from('notes').insert({ user_id: user.id, ...payload }).select('id').single();
+    if (!error && data?.id) setConversationNoteId(data.id);
+  }, [conversationNoteId, serializeMessages, user]);
+
+  useEffect(() => {
+    if (!user) {
+      setMessages([]);
+      setConversationNoteId(null);
+      setHistoryLoaded(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      const { data } = await supabase
+        .from('notes')
+        .select('id, content_json')
+        .eq('user_id', user.id)
+        .contains('tags', ['chat_perguntas'])
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      const storedMessages = Array.isArray((data?.content_json as any)?.messages)
+        ? ((data?.content_json as any).messages as any[]).map((message) => ({
+            ...message,
+            timestamp: new Date(message.timestamp),
+          }))
+        : [];
+
+      setConversationNoteId(data?.id ?? null);
+      setMessages(storedMessages);
+      setHistoryLoaded(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     for (const file of Array.from(files)) {
-      const ext = file.name.split('.').pop()?.toLowerCase() || '';
-      let type: Attachment['type'] = 'document';
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) type = 'image';
-      else if (['mp3', 'wav', 'm4a', 'ogg'].includes(ext)) type = 'audio';
-      else if (['mp4', 'webm', 'mov'].includes(ext)) type = 'video';
-
-      const url = URL.createObjectURL(file);
-      const attachment: Attachment = { name: file.name, type, url };
-
-      // Convert images to base64 for AI vision
-      if (type === 'image') {
-        try {
-          attachment.base64 = await fileToBase64(file);
-        } catch (e) {
-          console.error('Error converting image to base64:', e);
-        }
+      try {
+        const attachment = await buildAttachmentFromFile(file);
+        setPendingAttachments(prev => [...prev, attachment]);
+      } catch (error) {
+        console.error('Erro ao preparar anexo:', error);
+        toast({ title: 'Erro ao ler arquivo', description: file.name, variant: 'destructive' });
       }
-
-      // For audio files, add transcription placeholder
-      if (type === 'audio') {
-        attachment.transcription = `[Transcrição do áudio "${file.name}" será processada pela IA]`;
-      }
-
-      setPendingAttachments(prev => [...prev, attachment]);
     }
 
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -187,18 +202,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
     const passage = getPassageText();
     const attachments = [...pendingAttachments];
-    
-    // Build content with attachment info
-    let fullText = text;
-    if (attachments.length > 0) {
-      const attachInfo = attachments.map(a => {
-        if (a.type === 'audio') return `[Áudio enviado: ${a.name}] ${a.transcription || ''}`;
-        if (a.type === 'image') return `[Imagem enviada: ${a.name}]`;
-        if (a.type === 'video') return `[Vídeo enviado: ${a.name}]`;
-        return `[Documento enviado: ${a.name}]`;
-      }).join('\n');
-      fullText = fullText ? `${fullText}\n\n${attachInfo}` : attachInfo;
-    }
+    const { prompt: fullText } = buildAttachmentPrompt(text, attachments);
 
     const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text || attachments.map(a => a.name).join(', '), passage: passage || undefined, timestamp: new Date(), attachments };
     setMessages(prev => [...prev, userMsg]);
@@ -213,17 +217,26 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
     let fullContent = '';
 
     try {
-      const history = [...messages, userMsg].slice(-10).map(m => {
+      const nextConversation = [...messages, userMsg];
+      const history = nextConversation.slice(-12).map(m => {
         const prefix = m.role === 'user' ? 'Pergunta' : 'Resposta';
         const passageTag = m.passage ? `[${m.passage}] ` : '';
         return `${prefix}: ${passageTag}${m.content}`;
       }).join('\n\n');
 
-      const materialsCtx = getFullMaterialsContext();
+      const materialsQuery = [passage, text, ...attachments.map(attachment => `${attachment.name} ${attachment.extractedText || ''}`)].join(' ').trim();
+      const { context: materialsCtx, hasRelevantMatches } = await buildRelevantMaterialsContext(materials, materialsQuery || fullText);
 
       let webContext = '';
       let webSources: WebSource[] = [];
-      if (webSearchEnabled) {
+      const allowWebSearch = shouldSearchWeb({
+        explicitText: text,
+        webSearchEnabled,
+        hasRelevantMaterialMatches: hasRelevantMatches,
+        hasMaterials: materials.length > 0,
+      });
+
+      if (allowWebSearch && text) {
         setSearchingWeb(true);
         try {
           const searchQuery = (passage ? `${passage} ${text}` : text).trim();
@@ -231,7 +244,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           const { data: searchData } = await supabase.functions.invoke('web-search', {
             body: { query: searchQuery, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
           });
-          if (searchData?.context) webContext = searchData.context;
+          if (searchData?.context) webContext = `## FONTES EXTERNAS COMPLEMENTARES\n${searchData.context}`;
           if (searchData?.results) {
             webSources = (searchData.results as any[]).map(r => ({
               title: r.title, url: r.url, source: r.source, snippet: r.snippet,
@@ -256,10 +269,10 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
-          passage: passage || text,
+          passage: passage || text || 'Anexos enviados',
           type: 'question',
           question: `${fullText}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
-          materials_context: materialsCtx,
+          materials_context: materialsCtx || getMaterialsContext?.(),
           conversation_history: history,
           images: imageData.length > 0 ? imageData : undefined,
         }),
@@ -328,6 +341,13 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           }
         } catch {}
       }
+
+      let finalMessages: Message[] = [];
+      setMessages(prev => {
+        finalMessages = prev.map(message => message.id === assistantId ? { ...message, content: fullContent } : message);
+        return finalMessages;
+      });
+      await persistConversation(finalMessages);
     } catch (e: any) {
       if (e.name !== 'AbortError') {
         toast({ title: 'Erro', description: e.message || 'Erro ao processar', variant: 'destructive' });
@@ -337,7 +357,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [input, isLoading, messages, getFullMaterialsContext, bibleBook, chapter, verseStart, verseEnd, pendingAttachments, webSearchEnabled]);
+  }, [input, isLoading, messages, bibleBook, chapter, verseStart, verseEnd, pendingAttachments, webSearchEnabled, materials, getMaterialsContext, persistConversation]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -346,10 +366,14 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
     }
   };
 
-  const handleClear = () => {
+  const handleClear = useCallback(async () => {
     if (isLoading) { abortRef.current?.abort(); setIsLoading(false); }
     setMessages([]);
-  };
+    if (conversationNoteId && user) {
+      await supabase.from('notes').delete().eq('id', conversationNoteId).eq('user_id', user.id);
+      setConversationNoteId(null);
+    }
+  }, [conversationNoteId, isLoading, user]);
 
   const passageText = getPassageText();
 
@@ -450,8 +474,8 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
               <BookOpen className="w-6 h-6 text-primary/40" />
             </div>
             <p className="font-semibold text-sm text-foreground mb-1">Assistente Bíblico</p>
-            <p className="text-[11px] max-w-sm mb-4">
-              Converse naturalmente sobre a Bíblia. Envie textos, imagens, áudios ou documentos.
+             <p className="text-[11px] max-w-sm mb-4">
+               Converse naturalmente sobre a Bíblia. O chat começa pelos anexos e prioriza seus Materiais de Referência.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
               {[
@@ -520,7 +544,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       <div className="border-t bg-background px-3 py-2 shrink-0">
         <div className="max-w-3xl mx-auto">
           <div className="flex gap-1.5 items-center">
-            <input
+             <input
               ref={fileInputRef}
               type="file"
               multiple
@@ -559,7 +583,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
             </Button>
           </div>
           <p className="text-[9px] text-muted-foreground text-center mt-1">
-            {materials.length} materiais{webSearchEnabled ? ' + Web' : ''} • Enter para enviar
+            {!historyLoaded ? 'Carregando conversa...' : `${materials.length} materiais${webSearchEnabled ? ' + Web sob demanda' : ''} • Enter para enviar`}
           </p>
         </div>
       </div>
