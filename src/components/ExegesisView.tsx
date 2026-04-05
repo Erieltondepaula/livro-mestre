@@ -112,6 +112,8 @@ export function ExegesisView() {
             onClassifyAll={classifyAllMaterials}
           />
         );
+      case 'bible_study':
+        return <BibleStudyView />;
       case 'thematic_study':
         return <ThematicStudyView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} analyses={analyses} onDeleteAnalysis={deleteAnalysis} />;
       case 'devotional':
