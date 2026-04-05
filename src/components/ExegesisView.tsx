@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight, Layers, Heart } from 'lucide-react';
+import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight, Layers, Heart, GraduationCap } from 'lucide-react';
 import { useExegesis } from '@/hooks/useExegesis';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
@@ -11,12 +11,13 @@ import { MindMapEditor } from '@/components/exegesis/MindMapEditor';
 import { ExegesisQAChat } from '@/components/exegesis/ExegesisQAChat';
 import { ThematicStudyView } from '@/components/exegesis/ThematicStudyView';
 import { DevotionalView } from '@/components/exegesis/DevotionalView';
+import { BibleStudyView } from '@/components/BibleStudyView';
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap' | 'thematic_study' | 'devotional';
+type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap' | 'thematic_study' | 'devotional' | 'bible_study';
 
 interface MenuItem {
   id: ExegesisSection;
@@ -64,6 +65,7 @@ export function ExegesisView() {
     ...(hasModuleAccess('exegese.historico') ? [{ id: 'history' as const, label: 'Histórico de Análises', icon: History }] : []),
     ...(hasModuleAccess('exegese.esbocos') ? [{ id: 'outlines' as const, label: 'Esboços de Sermões', icon: FileText }] : []),
     ...(hasModuleAccess('exegese.materiais') ? [{ id: 'materials' as const, label: 'Materiais de Referência', icon: Library, badge: materials.length }] : []),
+    { id: 'bible_study' as const, label: 'Estudo Bíblico', icon: GraduationCap },
     { id: 'thematic_study' as const, label: 'Estudo por Tema', icon: Layers },
     { id: 'devotional' as const, label: 'Devocionais', icon: Heart },
     { id: 'qa_chat', label: 'Chat de Perguntas', icon: MessageCircle },
@@ -110,6 +112,8 @@ export function ExegesisView() {
             onClassifyAll={classifyAllMaterials}
           />
         );
+      case 'bible_study':
+        return <BibleStudyView />;
       case 'thematic_study':
         return <ThematicStudyView onSave={saveAnalysis} getMaterialsContext={getMaterialsContext} materialsCount={materials.length} materials={materials} onCreateNote={handleCreateNote} analyses={analyses} onDeleteAnalysis={deleteAnalysis} />;
       case 'devotional':

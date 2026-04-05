@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video, Save } from 'lucide-react';
+import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video, Save, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -366,6 +366,13 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
     }
   };
 
+  const handleNewConversation = useCallback(async () => {
+    if (isLoading) { abortRef.current?.abort(); setIsLoading(false); }
+    // Just reset state — the old conversation stays saved in notes
+    setMessages([]);
+    setConversationNoteId(null);
+  }, [isLoading]);
+
   const handleClear = useCallback(async () => {
     if (isLoading) { abortRef.current?.abort(); setIsLoading(false); }
     setMessages([]);
@@ -403,9 +410,14 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
             <BookOpen className="w-3.5 h-3.5" />
           </Button>
           {messages.length > 0 && (
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleClear}>
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={handleNewConversation} title="Nova conversa">
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleClear} title="Limpar conversa">
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </>
           )}
         </div>
       </div>
