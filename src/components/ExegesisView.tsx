@@ -65,6 +65,7 @@ export function ExegesisView() {
     ...(hasModuleAccess('exegese.historico') ? [{ id: 'history' as const, label: 'Histórico de Análises', icon: History }] : []),
     ...(hasModuleAccess('exegese.esbocos') ? [{ id: 'outlines' as const, label: 'Esboços de Sermões', icon: FileText }] : []),
     ...(hasModuleAccess('exegese.materiais') ? [{ id: 'materials' as const, label: 'Materiais de Referência', icon: Library, badge: materials.length }] : []),
+    { id: 'bible_study' as const, label: 'Estudo Bíblico', icon: GraduationCap },
     { id: 'thematic_study' as const, label: 'Estudo por Tema', icon: Layers },
     { id: 'devotional' as const, label: 'Devocionais', icon: Heart },
     { id: 'qa_chat', label: 'Chat de Perguntas', icon: MessageCircle },
