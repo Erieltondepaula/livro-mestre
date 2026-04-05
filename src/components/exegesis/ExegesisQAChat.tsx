@@ -366,6 +366,13 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
     }
   };
 
+  const handleNewConversation = useCallback(async () => {
+    if (isLoading) { abortRef.current?.abort(); setIsLoading(false); }
+    // Just reset state — the old conversation stays saved in notes
+    setMessages([]);
+    setConversationNoteId(null);
+  }, [isLoading]);
+
   const handleClear = useCallback(async () => {
     if (isLoading) { abortRef.current?.abort(); setIsLoading(false); }
     setMessages([]);
