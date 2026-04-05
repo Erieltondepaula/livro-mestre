@@ -411,7 +411,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           </Button>
           {messages.length > 0 && (
             <>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={handleClear} title="Nova conversa">
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={handleNewConversation} title="Nova conversa">
                 <Plus className="w-3.5 h-3.5" />
               </Button>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={handleClear} title="Limpar conversa">
