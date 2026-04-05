@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight, Layers, Heart } from 'lucide-react';
+import { BookOpen, History, FileText, Library, Link2, MapPin, MessageCircle, ChevronRight, Layers, Heart, GraduationCap } from 'lucide-react';
 import { useExegesis } from '@/hooks/useExegesis';
 import { useAuth } from '@/contexts/AuthContext';
 import { ExegesisAnalyzer } from '@/components/exegesis/ExegesisAnalyzer';
@@ -11,12 +11,13 @@ import { MindMapEditor } from '@/components/exegesis/MindMapEditor';
 import { ExegesisQAChat } from '@/components/exegesis/ExegesisQAChat';
 import { ThematicStudyView } from '@/components/exegesis/ThematicStudyView';
 import { DevotionalView } from '@/components/exegesis/DevotionalView';
+import { BibleStudyView } from '@/components/BibleStudyView';
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap' | 'thematic_study' | 'devotional';
+type ExegesisSection = 'analyze' | 'cross_refs' | 'history' | 'outlines' | 'materials' | 'qa_chat' | 'mindmap' | 'thematic_study' | 'devotional' | 'bible_study';
 
 interface MenuItem {
   id: ExegesisSection;
