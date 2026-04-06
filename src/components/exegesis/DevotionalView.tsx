@@ -1,9 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
-import { BookOpen, Send, Loader2, Save, StickyNote, Sparkles, Globe, ChevronRight, Heart, Music, PenLine, HandHeart, Paperclip, X, Image, FileText } from 'lucide-react';
+import { BookOpen, Send, Loader2, Save, StickyNote, Sparkles, Globe, ChevronRight, Heart, Music, PenLine, HandHeart, Paperclip, X, Image, FileText, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +60,12 @@ export function DevotionalView({ onSave, getMaterialsContext, materialsCount = 0
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Search mode: 'passage' or 'text'
+  const [searchMode, setSearchMode] = useState<string>('passage');
+
+  // Free text search
+  const [freeTextQuery, setFreeTextQuery] = useState('');
+
   // Bible selectors
   const [bibleBook, setBibleBook] = useState('');
   const [chapter, setChapter] = useState('');
@@ -86,8 +94,13 @@ export function DevotionalView({ onSave, getMaterialsContext, materialsCount = 0
 
   const passageText = getPassageText();
 
-  // Devotional materials from the library
+  // The effective query: either a passage or free text
+  const effectiveQuery = searchMode === 'text' ? freeTextQuery.trim() : passageText.trim();
+  const canGenerate = effectiveQuery.length > 0;
+
+  // Devotional + Bible materials from the library
   const devotionalMaterials = materials.filter(m => m.material_category === 'devocional');
+  const bibliaMaterials = materials.filter(m => m.material_category === ('biblia' as any));
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -108,8 +121,8 @@ export function DevotionalView({ onSave, getMaterialsContext, materialsCount = 0
   };
 
   const generateDevotional = useCallback(async () => {
-    if (!passageText.trim()) {
-      toast({ title: 'Selecione um livro bíblico', variant: 'destructive' });
+    if (!canGenerate) {
+      toast({ title: searchMode === 'text' ? 'Digite uma palavra ou frase' : 'Selecione um livro bíblico', variant: 'destructive' });
       return;
     }
 
@@ -122,8 +135,12 @@ export function DevotionalView({ onSave, getMaterialsContext, materialsCount = 0
     abortRef.current = controller;
 
     try {
-      // Build materials context prioritizing devotional materials
-      const { context: materialsCtx } = await buildRelevantMaterialsContext(materials, `${passageText} devocional meditação`);
+      // Build materials context prioritizing bíblias and devocionais
+      const priorityMaterials = [...bibliaMaterials, ...devotionalMaterials, ...materials.filter(m => m.material_category !== 'devocional' && m.material_category !== ('biblia' as any))];
+      const { context: materialsCtx } = await buildRelevantMaterialsContext(
+        priorityMaterials,
+        `${effectiveQuery} devocional meditação bíblica`
+      );
 
       // Build attachment prompt
       const { prompt: attachmentText } = buildAttachmentPrompt('', pendingAttachments);
@@ -135,12 +152,16 @@ export function DevotionalView({ onSave, getMaterialsContext, materialsCount = 0
         .map(a => a.base64 as string);
 
       let webContext = '';
-      if (useWebSearch) {
+      // For free text search, ALWAYS search web for the exact source
+      const shouldWebSearch = useWebSearch || searchMode === 'text';
+      if (shouldWebSearch) {
         setWebSearching(true);
         try {
-          const { data } = await supabase.functions.invoke('web-search', { body: { query: `${passageText} devocional meditação bíblica` } });
+          const { data } = await supabase.functions.invoke('web-search', {
+            body: { query: `${effectiveQuery} devocional meditação bíblica`, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] }
+          });
           if (data?.results?.length) {
-            webContext = '\n\n## FONTES EXTERNAS:\n' + data.results.map((r: any) =>
+            webContext = '\n\n## FONTES EXTERNAS (complementar):\n' + data.results.map((r: any) =>
               `- ${r.title} (${r.source}): ${r.snippet}`
             ).join('\n');
           }
@@ -148,20 +169,36 @@ export function DevotionalView({ onSave, getMaterialsContext, materialsCount = 0
         setWebSearching(false);
       }
 
-      const prompt = `## DEVOCIONAL DIÁRIO: ${passageText}
+      const searchDescription = searchMode === 'text'
+        ? `Pesquisa por: "${effectiveQuery}"`
+        : `Passagem: ${effectiveQuery}`;
 
+      const prompt = `## DEVOCIONAL DIÁRIO: ${effectiveQuery}
+
+${searchMode === 'text' ? `## MODO DE PESQUISA POR PALAVRA/FRASE
+O usuário pesquisou por "${effectiveQuery}".
+INSTRUÇÕES OBRIGATÓRIAS:
+1. PRIMEIRO busque na aba BÍBLIAS dos materiais do usuário a palavra/frase exata
+2. DEPOIS busque na aba DEVOCIONAIS dos materiais do usuário
+3. Encontre TODOS os versículos e passagens relacionados
+4. Use as fontes externas apenas como complemento
+5. Cite as fontes exatas com 「Nome do Material」\n` : ''}
 ${personalReflection ? `## REFLEXÃO PESSOAL DO USUÁRIO:\n${personalReflection}\n` : ''}
-${materialsCtx ? `## MATERIAIS DO USUÁRIO — FONTE PRIMÁRIA (USE OBRIGATORIAMENTE):\n${materialsCtx}\n\n**INSTRUÇÃO:** Priorize os materiais da categoria DEVOCIONAL. Cite explicitamente usando 「Nome do Material」.\n` : ''}
+${materialsCtx ? `## MATERIAIS DO USUÁRIO — FONTE PRIMÁRIA ABSOLUTA (USE OBRIGATORIAMENTE):\n${materialsCtx}\n\n**INSTRUÇÃO CRÍTICA:**
+1. Primeiro busque na categoria BÍBLIAS (${bibliaMaterials.length} disponíveis) — cite cada uma usando 「Nome」
+2. Depois busque na categoria DEVOCIONAIS (${devotionalMaterials.length} disponíveis) — cite cada uma usando 「Nome」
+3. Só use fontes externas para o que NÃO estiver nos materiais\n` : ''}
 ${attachmentSection}
 ${webContext}
 
-Crie um DEVOCIONAL COMPLETO e PROFUNDO baseado em "${passageText}" seguindo este roteiro:
+Crie um DEVOCIONAL COMPLETO e PROFUNDO baseado em "${effectiveQuery}" seguindo este roteiro:
 
 ## 🙏 Devocional: [Título Inspirador]
 
 ### 📖 Texto Bíblico
 - Escreva a passagem COMPLETA (versículos escritos por extenso, versão ACF)
 - Contexto histórico e literário breve
+${searchMode === 'text' ? '- Liste TODOS os versículos encontrados que contêm a palavra/frase buscada' : ''}
 
 ### 🔍 Meditação na Palavra
 - O que este texto revela sobre o caráter de Deus?
@@ -192,7 +229,7 @@ ${materialsCtx ? '- Materiais do usuário relacionados (cite usando 「」)' : '
 IMPORTANTE:
 - Linguagem íntima, pessoal, como conversa com Deus
 - Profundidade espiritual mas acessível
-- ${materialsCtx ? 'PRIORIZE os materiais devocionais do usuário — cite cada um usando 「Nome」' : 'Use fontes bíblicas confiáveis'}`;
+- ${materialsCtx ? 'PRIORIZE os materiais de BÍBLIAS e DEVOCIONAIS do usuário — cite cada um usando 「Nome」' : 'Use fontes bíblicas confiáveis'}`;
 
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
@@ -202,7 +239,7 @@ IMPORTANTE:
         },
         body: JSON.stringify({
           type: 'thematic_study',
-          passage: `Devocional: ${passageText}`,
+          passage: `Devocional: ${effectiveQuery}`,
           content: prompt,
           materials_context: materialsCtx,
           images: imageData.length > 0 ? imageData : undefined,
@@ -253,17 +290,17 @@ IMPORTANTE:
     } finally {
       setLoading(false);
     }
-  }, [passageText, personalReflection, materials, useWebSearch, pendingAttachments]);
+  }, [effectiveQuery, canGenerate, searchMode, personalReflection, materials, bibliaMaterials, devotionalMaterials, useWebSearch, pendingAttachments]);
 
   const handleSave = async () => {
     if (!result) return;
-    await onSave({ passage: `Devocional: ${passageText}`, analysis_type: 'devotional', content: result });
+    await onSave({ passage: `Devocional: ${effectiveQuery}`, analysis_type: 'devotional', content: result });
     toast({ title: '✅ Devocional salvo!', description: 'Acesse no Histórico de Análises.' });
   };
 
   const handleCreateNote = () => {
     if (!result || !onCreateNote) return;
-    onCreateNote(`🙏 Devocional: ${passageText}`, result);
+    onCreateNote(`🙏 Devocional: ${effectiveQuery}`, result);
   };
 
   if (showResult) {
@@ -334,55 +371,85 @@ IMPORTANTE:
         </div>
       </div>
 
-      {/* Passage input with Bible selector */}
+      {/* Passage input with Bible selector + free text search */}
       <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-3">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-primary" /> Gerar Devocional com IA
         </h3>
 
-        {/* Bible Book/Chapter/Verse Selector */}
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Passagem Bíblica *</label>
-          <div className="flex flex-wrap gap-2">
-            <Select value={bibleBook} onValueChange={(v) => { setBibleBook(v === '__clear' ? '' : v); setChapter(''); setVerseStart(''); setVerseEnd(''); }}>
-              <SelectTrigger className="w-[160px] h-9 text-xs"><SelectValue placeholder="📖 Livro" /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                <SelectItem value="__clear">— Selecione —</SelectItem>
-                {bibleBookNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            {bibleBook && bibleBook !== '__clear' && (
-              <Select value={chapter} onValueChange={(v) => { setChapter(v); setVerseStart(''); setVerseEnd(''); }}>
-                <SelectTrigger className="w-[100px] h-9 text-xs"><SelectValue placeholder="Capítulo" /></SelectTrigger>
+        {/* Search mode tabs */}
+        <Tabs value={searchMode} onValueChange={setSearchMode}>
+          <TabsList className="grid w-full grid-cols-2 h-8">
+            <TabsTrigger value="passage" className="text-xs gap-1.5">
+              <BookOpen className="w-3 h-3" /> Passagem Bíblica
+            </TabsTrigger>
+            <TabsTrigger value="text" className="text-xs gap-1.5">
+              <Search className="w-3 h-3" /> Palavra ou Frase
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="passage" className="mt-3 space-y-2">
+            <label className="text-xs font-medium text-muted-foreground block">Selecione livro, capítulo e versículo</label>
+            <div className="flex flex-wrap gap-2">
+              <Select value={bibleBook} onValueChange={(v) => { setBibleBook(v === '__clear' ? '' : v); setChapter(''); setVerseStart(''); setVerseEnd(''); }}>
+                <SelectTrigger className="w-[160px] h-9 text-xs"><SelectValue placeholder="📖 Livro" /></SelectTrigger>
                 <SelectContent className="max-h-60">
-                  {chapters.map(ch => <SelectItem key={ch} value={String(ch)}>Cap. {ch}</SelectItem>)}
+                  <SelectItem value="__clear">— Selecione —</SelectItem>
+                  {bibleBookNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
                 </SelectContent>
               </Select>
-            )}
-            {chapter && (
-              <>
-                <Select value={verseStart} onValueChange={setVerseStart}>
-                  <SelectTrigger className="w-[90px] h-9 text-xs"><SelectValue placeholder="De v." /></SelectTrigger>
+              {bibleBook && bibleBook !== '__clear' && (
+                <Select value={chapter} onValueChange={(v) => { setChapter(v); setVerseStart(''); setVerseEnd(''); }}>
+                  <SelectTrigger className="w-[100px] h-9 text-xs"><SelectValue placeholder="Capítulo" /></SelectTrigger>
                   <SelectContent className="max-h-60">
-                    <SelectItem value="__clear">Todos</SelectItem>
-                    {verses.map(v => <SelectItem key={v} value={String(v)}>v. {v}</SelectItem>)}
+                    {chapters.map(ch => <SelectItem key={ch} value={String(ch)}>Cap. {ch}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                {verseStart && verseStart !== '__clear' && (
-                  <Select value={verseEnd} onValueChange={setVerseEnd}>
-                    <SelectTrigger className="w-[90px] h-9 text-xs"><SelectValue placeholder="Até v." /></SelectTrigger>
+              )}
+              {chapter && (
+                <>
+                  <Select value={verseStart} onValueChange={setVerseStart}>
+                    <SelectTrigger className="w-[90px] h-9 text-xs"><SelectValue placeholder="De v." /></SelectTrigger>
                     <SelectContent className="max-h-60">
-                      {verses.filter(v => v >= parseInt(verseStart)).map(v => <SelectItem key={v} value={String(v)}>v. {v}</SelectItem>)}
+                      <SelectItem value="__clear">Todos</SelectItem>
+                      {verses.map(v => <SelectItem key={v} value={String(v)}>v. {v}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                )}
-              </>
+                  {verseStart && verseStart !== '__clear' && (
+                    <Select value={verseEnd} onValueChange={setVerseEnd}>
+                      <SelectTrigger className="w-[90px] h-9 text-xs"><SelectValue placeholder="Até v." /></SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {verses.filter(v => v >= parseInt(verseStart)).map(v => <SelectItem key={v} value={String(v)}>v. {v}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </>
+              )}
+            </div>
+            {passageText && (
+              <p className="text-xs text-primary font-medium mt-1">📖 {passageText}</p>
             )}
-          </div>
-          {passageText && (
-            <p className="text-xs text-primary font-medium mt-1.5">📖 {passageText}</p>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="text" className="mt-3 space-y-2">
+            <label className="text-xs font-medium text-muted-foreground block">
+              Pesquise por palavra, frase ou tema
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Ex: amor, graça, fé, misericórdia, perdão..."
+                value={freeTextQuery}
+                onChange={e => setFreeTextQuery(e.target.value)}
+                className="pl-9 h-10"
+                onKeyDown={e => { if (e.key === 'Enter') generateDevotional(); }}
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              A busca será feita: 1° nas Bíblias → 2° nos Devocionais → 3° na Web (fontes exatas)
+            </p>
+          </TabsContent>
+        </Tabs>
 
         {/* Reflection */}
         <div>
@@ -397,7 +464,7 @@ IMPORTANTE:
 
         {/* File upload */}
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Anexos (imagens, PDFs, documentos)</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Anexos — imagens, PDFs (opcional)</label>
           <input
             ref={fileInputRef}
             type="file"
@@ -426,7 +493,7 @@ IMPORTANTE:
         <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Fontes externas</span>
+            <span className="text-xs text-muted-foreground">Fontes externas (complementar)</span>
           </div>
           <Switch checked={useWebSearch} onCheckedChange={setUseWebSearch} />
         </div>
@@ -436,13 +503,12 @@ IMPORTANTE:
           <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
             <BookOpen className="w-3.5 h-3.5 text-primary" />
             <span className="text-xs text-primary font-medium">
-              {materialsCount} materiais serão utilizados
-              {devotionalMaterials.length > 0 && ` (${devotionalMaterials.length} devocionais)`}
+              {materialsCount} materiais • {bibliaMaterials.length} Bíblias • {devotionalMaterials.length} Devocionais
             </span>
           </div>
         )}
 
-        <Button onClick={generateDevotional} disabled={loading || !passageText.trim()} className="w-full gap-2" size="lg">
+        <Button onClick={generateDevotional} disabled={loading || !canGenerate} className="w-full gap-2" size="lg">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {loading ? (webSearching ? 'Buscando fontes...' : 'Gerando devocional...') : 'Gerar Devocional'}
         </Button>
@@ -456,7 +522,7 @@ IMPORTANTE:
             <button
               key={s.passage}
               onClick={() => {
-                // Parse passage to set selectors
+                setSearchMode('passage');
                 const parts = s.passage.match(/^(.+?)(?:\s+(\d+)(?::(\d+)(?:-(\d+))?)?)?$/);
                 if (parts) {
                   setBibleBook(parts[1]);
