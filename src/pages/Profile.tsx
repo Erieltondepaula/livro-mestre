@@ -26,7 +26,7 @@ const ALL_MODULES = [
   { key: 'exegese.historico', label: '  → Histórico de Análises', icon: ScrollText },
   { key: 'exegese.esbocos', label: '  → Esboços de Sermões', icon: ScrollText },
   { key: 'exegese.materiais', label: '  → Materiais de Referência', icon: ScrollText },
-  { key: 'estudo_biblico', label: 'Estudo Bíblico', icon: GraduationCap },
+  
   { key: 'dicionario', label: 'Dicionário', icon: Book },
   { key: 'flashcards', label: 'Flashcards', icon: Brain },
   { key: 'relatorios', label: 'Relatórios', icon: BarChart3 },

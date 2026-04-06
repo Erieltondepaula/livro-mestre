@@ -1,1 +1,1 @@
-export type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico' | 'flashcards' | 'estudo_biblico';
+export type View = 'dashboard' | 'cadastrar' | 'livros' | 'leitura' | 'status' | 'avaliacao' | 'citacoes' | 'dicionario' | 'biblia' | 'notas' | 'relatorios' | 'exegese' | 'ajuda' | 'diagnostico' | 'flashcards';
