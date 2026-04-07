@@ -524,7 +524,7 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
              <p className="text-[11px] max-w-sm mb-4">
                Converse naturalmente sobre a Bíblia. O chat começa pelos anexos e prioriza seus Materiais de Referência.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
               {[
                 'O que significa "justificação pela fé"?',
                 'Me explica a parábola do semeador',
@@ -540,6 +540,9 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
                 </button>
               ))}
             </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              💡 Dica: Use o botão <Link2 className="w-3 h-3 inline" /> para enviar links de vídeos e pregações para análise
+            </p>
           </div>
         ) : (
           <div className="max-w-3xl mx-auto px-3 py-3 space-y-1">
