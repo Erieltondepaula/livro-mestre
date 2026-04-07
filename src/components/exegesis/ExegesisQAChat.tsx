@@ -200,15 +200,48 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
-    if ((!text && pendingAttachments.length === 0) || isLoading) return;
+    const link = linkInput.trim();
+    if ((!text && !link && pendingAttachments.length === 0) || isLoading) return;
 
     const passage = getPassageText();
     const attachments = [...pendingAttachments];
-    const { prompt: fullText } = buildAttachmentPrompt(text, attachments);
+    
+    // Build prompt including link analysis instructions
+    let combinedText = text;
+    if (link) {
+      const isYoutube = link.includes('youtube.com') || link.includes('youtu.be');
+      combinedText = `${text ? text + '\n\n' : ''}## LINK/VÍDEO PARA ANÁLISE:
+URL: ${link}
+${isYoutube ? `TIPO: Vídeo do YouTube
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text || attachments.map(a => a.name).join(', '), passage: passage || undefined, timestamp: new Date(), attachments };
+**INSTRUÇÕES DE ANÁLISE DO VÍDEO/LINK:**
+1. Acesse e analise o conteúdo deste link/vídeo
+2. EXTRAIA o TOM DE VOZ do comunicador (formal, pastoral, acadêmico, popular, profético)
+3. IDENTIFIQUE o TIPO de conteúdo:
+   - Se PREGAÇÃO: identifique o tipo (expositiva, textual, temática), a estrutura (introdução, pontos, conclusão, apelo), o texto base, e reconstrua IPSIS LITTERIS a estrutura tal como apresentada
+   - Se PALESTRA: extraia os argumentos principais, a tese central, e a metodologia
+   - Se DOCUMENTÁRIO: extraia os fatos, fontes, e conclusões
+   - Se ESTUDO BÍBLICO: extraia a passagem, os pontos de estudo e as aplicações
+4. MONTE a estrutura EXATA do conteúdo como se fosse um esboço
+5. IDENTIFIQUE:
+   - Texto base bíblico (se houver)
+   - Pontos principais (numerados)
+   - Ilustrações utilizadas
+   - Aplicações práticas mencionadas
+   - Estilo retórico (narrativo, argumentativo, exortativo)
+   - Público-alvo aparente
+6. EXTRAIA citações marcantes ipsis litteris
+7. AVALIE a qualidade homilética/pedagógica` : `TIPO: Link web
+**INSTRUÇÕES:** Analise o conteúdo deste link, extraia as informações principais, identifique o tipo de conteúdo, e apresente uma síntese estruturada.`}`;
+    }
+    
+    const { prompt: fullText } = buildAttachmentPrompt(combinedText, attachments);
+
+    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text || link || attachments.map(a => a.name).join(', '), passage: passage || undefined, timestamp: new Date(), attachments };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setLinkInput('');
+    setShowLinkInput(false);
     setPendingAttachments([]);
     setIsLoading(true);
 
