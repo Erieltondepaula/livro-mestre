@@ -571,6 +571,24 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
         )}
       </div>
 
+      {/* Link input */}
+      {showLinkInput && (
+        <div className="px-3 py-1.5 border-t bg-muted/10 flex items-center gap-2 shrink-0 animate-in slide-in-from-bottom-2 duration-200">
+          <Link2 className="w-4 h-4 text-primary shrink-0" />
+          <input
+            type="url"
+            value={linkInput}
+            onChange={(e) => setLinkInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Cole o link do vídeo ou página (YouTube, artigo, etc.)..."
+            className="flex-1 h-8 px-3 text-sm rounded-lg border border-muted-foreground/20 bg-muted/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          />
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowLinkInput(false); setLinkInput(''); }}>
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      )}
+
       {/* Pending attachments */}
       {pendingAttachments.length > 0 && (
         <div className="px-3 py-1.5 border-t bg-muted/10 flex flex-wrap gap-1.5 shrink-0">
@@ -608,6 +626,15 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
             >
               <Paperclip className="w-4 h-4 text-muted-foreground" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              onClick={() => setShowLinkInput(!showLinkInput)}
+              title="Enviar link/vídeo para análise"
+            >
+              <Link2 className={`w-4 h-4 ${showLinkInput || linkInput ? 'text-primary' : 'text-muted-foreground'}`} />
+            </Button>
             <div className="flex-1 relative">
               <input
                 ref={inputRef}
@@ -615,14 +642,14 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={passageText ? `Pergunte sobre ${passageText}...` : 'Digite sua pergunta...'}
+                placeholder={linkInput ? 'Comentário sobre o link (opcional)...' : passageText ? `Pergunte sobre ${passageText}...` : 'Digite sua pergunta...'}
                 className="w-full h-9 px-3 text-sm rounded-full border border-muted-foreground/20 bg-muted/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
                 disabled={isLoading}
               />
             </div>
             <Button
               onClick={handleSend}
-              disabled={(!input.trim() && pendingAttachments.length === 0) || isLoading}
+              disabled={(!input.trim() && !linkInput.trim() && pendingAttachments.length === 0) || isLoading}
               size="icon"
               className="shrink-0 h-9 w-9 rounded-full"
             >
@@ -630,7 +657,7 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
             </Button>
           </div>
           <p className="text-[9px] text-muted-foreground text-center mt-1">
-            {!historyLoaded ? 'Carregando conversa...' : `${materials.length} materiais${webSearchEnabled ? ' + Web sob demanda' : ''} • Enter para enviar`}
+            {!historyLoaded ? 'Carregando conversa...' : `${materials.length} materiais${webSearchEnabled ? ' + Web sob demanda' : ''} • 🔗 Links • Enter para enviar`}
           </p>
         </div>
       </div>
