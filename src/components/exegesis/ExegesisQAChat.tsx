@@ -392,7 +392,7 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [input, isLoading, messages, bibleBook, chapter, verseStart, verseEnd, pendingAttachments, webSearchEnabled, materials, getMaterialsContext, persistConversation]);
+  }, [input, linkInput, isLoading, messages, bibleBook, chapter, verseStart, verseEnd, pendingAttachments, webSearchEnabled, materials, getMaterialsContext, persistConversation]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
