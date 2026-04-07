@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video, Save, Plus } from 'lucide-react';
+import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video, Save, Plus, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
