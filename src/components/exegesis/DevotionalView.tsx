@@ -184,40 +184,84 @@ INSTRUÇÕES OBRIGATÓRIAS:
 4. Use as fontes externas apenas como complemento
 5. Cite as fontes exatas com 「Nome do Material」\n` : ''}
 ${personalReflection ? `## REFLEXÃO PESSOAL DO USUÁRIO:\n${personalReflection}\n` : ''}
-${materialsCtx ? `## MATERIAIS DO USUÁRIO — FONTE PRIMÁRIA ABSOLUTA (USE OBRIGATORIAMENTE):\n${materialsCtx}\n\n**INSTRUÇÃO CRÍTICA:**
-1. Primeiro busque na categoria BÍBLIAS (${bibliaMaterials.length} disponíveis) — cite cada uma usando 「Nome」
-2. Depois busque na categoria DEVOCIONAIS (${devotionalMaterials.length} disponíveis) — cite cada uma usando 「Nome」
-3. Só use fontes externas para o que NÃO estiver nos materiais\n` : ''}
+${materialsCtx ? `## MATERIAIS DO USUÁRIO — FONTE PRIMÁRIA ABSOLUTA (USE 100% OBRIGATORIAMENTE):
+${materialsCtx}
+
+**INSTRUÇÃO CRÍTICA — CONSULTA OBRIGATÓRIA EM TODAS AS CATEGORIAS:**
+### 1️⃣ BÍBLIAS (${bibliaMaterials.length} disponíveis)
+- Busque o texto bíblico COMPLETO — cite a versão exata: "Na 「Nome da Bíblia」, lemos: ..."
+- Se possui múltiplas versões, COMPARE-AS
+
+### 2️⃣ DEVOCIONAIS (${devotionalMaterials.length} disponíveis)
+- Busque TODOS os devocionais relacionados ao tema
+- Extraia reflexões: "O devocional 「Nome」 nos ensina que..."
+- CONECTE insights de devocionais diferentes quando possível
+- Se há devocionais sobre o mesmo tema, SINTETIZE os pontos comuns
+
+### 3️⃣ DEMAIS MATERIAIS
+- Comentários, dicionários e livros complementam a reflexão
+- Cite SEMPRE usando 「Nome do Material」
+
+**REGRA:** Mencione NO MÍNIMO 3 materiais do acervo na resposta. Se não encontrar conexão, diga claramente.\n` : ''}
 ${attachmentSection}
 ${webContext}
 
-Crie um DEVOCIONAL COMPLETO e PROFUNDO baseado em "${effectiveQuery}" seguindo este roteiro:
+Crie um DEVOCIONAL COMPLETO, PROFUNDO e COERENTE baseado em "${effectiveQuery}" com esta estrutura:
 
-## 🙏 Devocional: [Título Inspirador]
+## 🙏 Devocional: [Título Inspirador e Específico ao Tema]
 
 ### 📖 Texto Bíblico
-- Escreva a passagem COMPLETA (versículos escritos por extenso, versão ACF)
-- Contexto histórico e literário breve
+- Escreva a passagem COMPLETA por extenso (versão ACF)
+- Contexto histórico breve: quem escreveu, para quem, quando, por quê
 ${searchMode === 'text' ? '- Liste TODOS os versículos encontrados que contêm a palavra/frase buscada' : ''}
+- Se possui Bíblias no acervo, CITE a versão: "Na 「Nome」..."
 
 ### 🔍 Meditação na Palavra
-- O que este texto revela sobre o caráter de Deus?
-- Qual é a mensagem central para nós hoje?
-- Explicação versículo por versículo (pontos-chave)
+- **O que Deus revela sobre Si mesmo neste texto?** (atributos divinos)
+- **Mensagem central:** Em uma frase clara e poderosa
+- **Explicação versículo por versículo** dos pontos-chave (mínimo 3 versículos)
+- Cite comentários e dicionários do acervo quando disponíveis
+- Conexão com o original (hebraico/grego) para enriquecer
 
-### 💡 Lições para Hoje
-- 3 a 5 lições práticas extraídas do texto
-- Conexão com desafios da vida cotidiana
+### 💡 Lições para Hoje (mínimo 4 lições)
+Para CADA lição:
+- **Título da lição**
+- Explicação bíblica fundamentada (2-3 frases)
+- Conexão com um desafio REAL do cotidiano (trabalho, família, saúde, finanças, relacionamentos)
+- Versículo de apoio adicional
 
 ### 🪞 Reflexão Pessoal
-- Perguntas para autoexame (mínimo 3)
+- 4 perguntas profundas para autoexame
+- Cada pergunta deve provocar honestidade diante de Deus
+- Ex: "Em que áreas da minha vida estou tentando resolver sozinho o que só Deus pode resolver?"
 
-### ✍️ Aplicação Prática
-- Uma ação concreta para hoje
-- Versículo para memorizar
+### ✍️ Aplicação Prática DIÁRIA
+- **HOJE:** Uma ação concreta e específica (não genérica!)
+- **ESTA SEMANA:** Um hábito para cultivar baseado no texto
+- **Versículo para memorizar:** Escrito por extenso
+- **Lembrete prático:** Como lembrar desta verdade durante o dia
+
+### 🔗 Conexões Bíblicas
+- 3-4 passagens relacionadas (AT e NT) com texto COMPLETO (ACF)
+- Para cada passagem, explique em UMA frase como se conecta ao devocional
 
 ### 🙏 Oração Guiada
-- Uma oração baseada no texto lido
+- Oração completa, pessoal e pastoral (mínimo 8 linhas)
+- Baseada nos pontos do devocional
+- Inclua: adoração, confissão, gratidão, pedido e entrega
+
+### 🎵 Hino/Louvor Sugerido
+- Um hino ou cântico que se conecta ao tema
+- Breve explicação de por que se conecta
+
+---
+**REGRAS DE QUALIDADE:**
+- ZERO informações soltas — tudo deve estar conectado ao tema central
+- TODA referência bíblica deve fazer SENTIDO com o contexto
+- Linguagem pastoral, íntima, como quem conversa com alguém que precisa ouvir
+- PROFUNDIDADE sem academicismo — clareza é profundidade
+- Coerência: cada seção deve fluir naturalmente para a próxima
+- Se usou materiais do acervo, CITE-OS explicitamente com 「Nome」
 
 ### 🎵 Sugestão de Louvor
 - Um hino/louvor que combina com o texto
