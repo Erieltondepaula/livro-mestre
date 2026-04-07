@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video, Save, Plus } from 'lucide-react';
+import { Send, Loader2, Trash2, BookOpen, MessageCircle, Globe, X, ChevronDown, StickyNote, Copy, Paperclip, Mic, Image, FileText, Video, Save, Plus, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -55,6 +55,8 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
   const [webSearchEnabled, setWebSearchEnabled] = useState(true);
   const [searchingWeb, setSearchingWeb] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
+  const [linkInput, setLinkInput] = useState('');
+  const [showLinkInput, setShowLinkInput] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -198,15 +200,48 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
-    if ((!text && pendingAttachments.length === 0) || isLoading) return;
+    const link = linkInput.trim();
+    if ((!text && !link && pendingAttachments.length === 0) || isLoading) return;
 
     const passage = getPassageText();
     const attachments = [...pendingAttachments];
-    const { prompt: fullText } = buildAttachmentPrompt(text, attachments);
+    
+    // Build prompt including link analysis instructions
+    let combinedText = text;
+    if (link) {
+      const isYoutube = link.includes('youtube.com') || link.includes('youtu.be');
+      combinedText = `${text ? text + '\n\n' : ''}## LINK/VÍDEO PARA ANÁLISE:
+URL: ${link}
+${isYoutube ? `TIPO: Vídeo do YouTube
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text || attachments.map(a => a.name).join(', '), passage: passage || undefined, timestamp: new Date(), attachments };
+**INSTRUÇÕES DE ANÁLISE DO VÍDEO/LINK:**
+1. Acesse e analise o conteúdo deste link/vídeo
+2. EXTRAIA o TOM DE VOZ do comunicador (formal, pastoral, acadêmico, popular, profético)
+3. IDENTIFIQUE o TIPO de conteúdo:
+   - Se PREGAÇÃO: identifique o tipo (expositiva, textual, temática), a estrutura (introdução, pontos, conclusão, apelo), o texto base, e reconstrua IPSIS LITTERIS a estrutura tal como apresentada
+   - Se PALESTRA: extraia os argumentos principais, a tese central, e a metodologia
+   - Se DOCUMENTÁRIO: extraia os fatos, fontes, e conclusões
+   - Se ESTUDO BÍBLICO: extraia a passagem, os pontos de estudo e as aplicações
+4. MONTE a estrutura EXATA do conteúdo como se fosse um esboço
+5. IDENTIFIQUE:
+   - Texto base bíblico (se houver)
+   - Pontos principais (numerados)
+   - Ilustrações utilizadas
+   - Aplicações práticas mencionadas
+   - Estilo retórico (narrativo, argumentativo, exortativo)
+   - Público-alvo aparente
+6. EXTRAIA citações marcantes ipsis litteris
+7. AVALIE a qualidade homilética/pedagógica` : `TIPO: Link web
+**INSTRUÇÕES:** Analise o conteúdo deste link, extraia as informações principais, identifique o tipo de conteúdo, e apresente uma síntese estruturada.`}`;
+    }
+    
+    const { prompt: fullText } = buildAttachmentPrompt(combinedText, attachments);
+
+    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: text || link || attachments.map(a => a.name).join(', '), passage: passage || undefined, timestamp: new Date(), attachments };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setLinkInput('');
+    setShowLinkInput(false);
     setPendingAttachments([]);
     setIsLoading(true);
 
@@ -357,7 +392,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [input, isLoading, messages, bibleBook, chapter, verseStart, verseEnd, pendingAttachments, webSearchEnabled, materials, getMaterialsContext, persistConversation]);
+  }, [input, linkInput, isLoading, messages, bibleBook, chapter, verseStart, verseEnd, pendingAttachments, webSearchEnabled, materials, getMaterialsContext, persistConversation]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -489,7 +524,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
              <p className="text-[11px] max-w-sm mb-4">
                Converse naturalmente sobre a Bíblia. O chat começa pelos anexos e prioriza seus Materiais de Referência.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
               {[
                 'O que significa "justificação pela fé"?',
                 'Me explica a parábola do semeador',
@@ -505,6 +540,9 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
                 </button>
               ))}
             </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              💡 Dica: Use o botão <Link2 className="w-3 h-3 inline" /> para enviar links de vídeos e pregações para análise
+            </p>
           </div>
         ) : (
           <div className="max-w-3xl mx-auto px-3 py-3 space-y-1">
@@ -535,6 +573,24 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
           </div>
         )}
       </div>
+
+      {/* Link input */}
+      {showLinkInput && (
+        <div className="px-3 py-1.5 border-t bg-muted/10 flex items-center gap-2 shrink-0 animate-in slide-in-from-bottom-2 duration-200">
+          <Link2 className="w-4 h-4 text-primary shrink-0" />
+          <input
+            type="url"
+            value={linkInput}
+            onChange={(e) => setLinkInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Cole o link do vídeo ou página (YouTube, artigo, etc.)..."
+            className="flex-1 h-8 px-3 text-sm rounded-lg border border-muted-foreground/20 bg-muted/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
+          />
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setShowLinkInput(false); setLinkInput(''); }}>
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      )}
 
       {/* Pending attachments */}
       {pendingAttachments.length > 0 && (
@@ -573,6 +629,15 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
             >
               <Paperclip className="w-4 h-4 text-muted-foreground" />
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              onClick={() => setShowLinkInput(!showLinkInput)}
+              title="Enviar link/vídeo para análise"
+            >
+              <Link2 className={`w-4 h-4 ${showLinkInput || linkInput ? 'text-primary' : 'text-muted-foreground'}`} />
+            </Button>
             <div className="flex-1 relative">
               <input
                 ref={inputRef}
@@ -580,14 +645,14 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={passageText ? `Pergunte sobre ${passageText}...` : 'Digite sua pergunta...'}
+                placeholder={linkInput ? 'Comentário sobre o link (opcional)...' : passageText ? `Pergunte sobre ${passageText}...` : 'Digite sua pergunta...'}
                 className="w-full h-9 px-3 text-sm rounded-full border border-muted-foreground/20 bg-muted/30 focus:outline-none focus:ring-1 focus:ring-primary/30"
                 disabled={isLoading}
               />
             </div>
             <Button
               onClick={handleSend}
-              disabled={(!input.trim() && pendingAttachments.length === 0) || isLoading}
+              disabled={(!input.trim() && !linkInput.trim() && pendingAttachments.length === 0) || isLoading}
               size="icon"
               className="shrink-0 h-9 w-9 rounded-full"
             >
@@ -595,7 +660,7 @@ export function ExegesisQAChat({ getMaterialsContext, materialsCount = 0, materi
             </Button>
           </div>
           <p className="text-[9px] text-muted-foreground text-center mt-1">
-            {!historyLoaded ? 'Carregando conversa...' : `${materials.length} materiais${webSearchEnabled ? ' + Web sob demanda' : ''} • Enter para enviar`}
+            {!historyLoaded ? 'Carregando conversa...' : `${materials.length} materiais${webSearchEnabled ? ' + Web sob demanda' : ''} • 🔗 Links • Enter para enviar`}
           </p>
         </div>
       </div>
