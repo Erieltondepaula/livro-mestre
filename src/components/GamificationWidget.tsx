@@ -50,6 +50,10 @@ function parseMinutes(t: string | undefined | null): number {
 }
 
 export function GamificationWidget({ readings }: GamificationWidgetProps) {
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = sessionStorage.getItem('gamification_collapsed');
+    return saved === 'true';
+  });
   const { user } = useAuth();
   const [goal, setGoal] = useState<ReadingGoal | null>(null);
   const [editingGoal, setEditingGoal] = useState(false);
