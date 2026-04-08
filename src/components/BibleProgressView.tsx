@@ -199,6 +199,31 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const totalRead = Object.values(bookProgress).reduce((sum, b) => sum + b.chaptersRead.size, 0);
   const overallProgress = totalChapters > 0 ? (totalRead / totalChapters) * 100 : 0;
 
+  // Count verses read
+  const totalVersesRead = useMemo(() => {
+    let count = 0;
+    filteredReadings.forEach(reading => {
+      if (!reading.bibleBook || !reading.bibleChapter) return;
+      const bookDef = bibleBooks.find(b => b.name === reading.bibleBook);
+      if (!bookDef) return;
+      const chapterVerses = bookDef.chapters[reading.bibleChapter - 1] || 0;
+
+      if (reading.bibleVerseStart && reading.bibleVerseEnd) {
+        count += Math.max(0, reading.bibleVerseEnd - reading.bibleVerseStart + 1);
+      } else if (reading.bibleVerseStart) {
+        count += Math.max(0, chapterVerses - reading.bibleVerseStart + 1);
+      } else {
+        // Full chapter read
+        count += chapterVerses;
+      }
+    });
+    return count;
+  }, [filteredReadings]);
+
+  const totalBibleVerses = useMemo(() => {
+    return bibleBooks.reduce((sum, b) => sum + b.chapters.reduce((s, v) => s + v, 0), 0);
+  }, []);
+
   // Count completed books: 100% chapters OR all chapters registered individually
   const completedBooks = Object.values(bookProgress).filter(b => {
     if (b.progress === 100) return true;
@@ -303,8 +328,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         </div>
       )}
 
-      {/* Overall Stats - now 3 rows of 2 on mobile, 6 cols on desktop */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <div className="card-library p-4 text-center">
           <p className="text-2xl font-bold text-primary">{overallProgress.toFixed(1)}%</p>
           <p className="text-xs text-muted-foreground">Progresso Total</p>
@@ -320,6 +344,14 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         <div className="card-library p-4 text-center">
           <p className="text-2xl font-bold text-success">{completedBooks}</p>
           <p className="text-xs text-muted-foreground">Livros Completos</p>
+        </div>
+        <div className="card-library p-4 text-center">
+          <p className="text-2xl font-bold text-primary">{totalVersesRead.toLocaleString('pt-BR')}</p>
+          <p className="text-xs text-muted-foreground">Versículos Lidos</p>
+        </div>
+        <div className="card-library p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">{totalBibleVerses.toLocaleString('pt-BR')}</p>
+          <p className="text-xs text-muted-foreground">Total de Versículos</p>
         </div>
         <div className="card-library p-4 text-center">
           <p className="text-2xl font-bold text-primary">{totalPagesRead.toLocaleString('pt-BR')}</p>

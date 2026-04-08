@@ -50,6 +50,10 @@ function parseMinutes(t: string | undefined | null): number {
 }
 
 export function GamificationWidget({ readings }: GamificationWidgetProps) {
+  const [collapsed, setCollapsed] = useState(() => {
+    const saved = sessionStorage.getItem('gamification_collapsed');
+    return saved === 'true';
+  });
   const { user } = useAuth();
   const [goal, setGoal] = useState<ReadingGoal | null>(null);
   const [editingGoal, setEditingGoal] = useState(false);
@@ -403,13 +407,38 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
     <div className="card-library p-4 md:p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg font-semibold text-foreground flex items-center gap-2">
-          <Target className="w-5 h-5 text-primary" /> Metas & Conquistas
-        </h3>
-        <Button variant="ghost" size="sm" onClick={() => setEditingGoal(!editingGoal)}>
-          {editingGoal ? 'Cancelar' : 'Editar meta'}
-        </Button>
+        <button
+          onClick={() => {
+            const next = !collapsed;
+            setCollapsed(next);
+            sessionStorage.setItem('gamification_collapsed', String(next));
+          }}
+          className="flex items-center gap-2 text-left"
+        >
+          <Target className="w-5 h-5 text-primary" />
+          <h3 className="font-display text-lg font-semibold text-foreground">Metas & Conquistas</h3>
+          {collapsed ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {!collapsed && (
+          <Button variant="ghost" size="sm" onClick={() => setEditingGoal(!editingGoal)}>
+            {editingGoal ? 'Cancelar' : 'Editar meta'}
+          </Button>
+        )}
       </div>
+
+      {/* Collapsed summary */}
+      {collapsed && (
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1"><Flame className="w-3.5 h-3.5 text-primary" /> {computedStats.streak} dias</span>
+          <span className="flex items-center gap-1"><Star className={`w-3.5 h-3.5 ${getLevelColor(level)}`} /> Nv. {level}</span>
+          <span className="flex items-center gap-1"><Award className="w-3.5 h-3.5 text-primary" /> {earnedBadgeIds.length} conquistas</span>
+          <span className="flex items-center gap-1">{computedStats.todayPages}/{dailyGoal} pág.</span>
+        </div>
+      )}
+
+      {!collapsed && (
+        <>
+
 
       {/* Level Bar */}
       <div className="space-y-1.5">
@@ -653,6 +682,9 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
             Conquistas de sequência são dinâmicas — o nível reduz se parar de ler.
           </p>
         </div>
+      )}
+
+      </>
       )}
     </div>
   );
