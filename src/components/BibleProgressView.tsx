@@ -199,6 +199,31 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const totalRead = Object.values(bookProgress).reduce((sum, b) => sum + b.chaptersRead.size, 0);
   const overallProgress = totalChapters > 0 ? (totalRead / totalChapters) * 100 : 0;
 
+  // Count verses read
+  const totalVersesRead = useMemo(() => {
+    let count = 0;
+    filteredReadings.forEach(reading => {
+      if (!reading.bibleBook || !reading.bibleChapter) return;
+      const bookDef = bibleBooks.find(b => b.name === reading.bibleBook);
+      if (!bookDef) return;
+      const chapterVerses = bookDef.chapters[reading.bibleChapter - 1] || 0;
+
+      if (reading.bibleVerseStart && reading.bibleVerseEnd) {
+        count += Math.max(0, reading.bibleVerseEnd - reading.bibleVerseStart + 1);
+      } else if (reading.bibleVerseStart) {
+        count += Math.max(0, chapterVerses - reading.bibleVerseStart + 1);
+      } else {
+        // Full chapter read
+        count += chapterVerses;
+      }
+    });
+    return count;
+  }, [filteredReadings]);
+
+  const totalBibleVerses = useMemo(() => {
+    return bibleBooks.reduce((sum, b) => sum + b.chapters.reduce((s, v) => s + v, 0), 0);
+  }, []);
+
   // Count completed books: 100% chapters OR all chapters registered individually
   const completedBooks = Object.values(bookProgress).filter(b => {
     if (b.progress === 100) return true;
