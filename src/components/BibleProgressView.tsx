@@ -328,8 +328,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         </div>
       )}
 
-      {/* Overall Stats - now 3 rows of 2 on mobile, 6 cols on desktop */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <div className="card-library p-4 text-center">
           <p className="text-2xl font-bold text-primary">{overallProgress.toFixed(1)}%</p>
           <p className="text-xs text-muted-foreground">Progresso Total</p>
@@ -345,6 +344,14 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         <div className="card-library p-4 text-center">
           <p className="text-2xl font-bold text-success">{completedBooks}</p>
           <p className="text-xs text-muted-foreground">Livros Completos</p>
+        </div>
+        <div className="card-library p-4 text-center">
+          <p className="text-2xl font-bold text-primary">{totalVersesRead.toLocaleString('pt-BR')}</p>
+          <p className="text-xs text-muted-foreground">Versículos Lidos</p>
+        </div>
+        <div className="card-library p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">{totalBibleVerses.toLocaleString('pt-BR')}</p>
+          <p className="text-xs text-muted-foreground">Total de Versículos</p>
         </div>
         <div className="card-library p-4 text-center">
           <p className="text-2xl font-bold text-primary">{totalPagesRead.toLocaleString('pt-BR')}</p>
