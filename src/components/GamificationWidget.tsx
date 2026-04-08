@@ -683,6 +683,9 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
           </p>
         </div>
       )}
+
+      </>
+      )}
     </div>
   );
 }
