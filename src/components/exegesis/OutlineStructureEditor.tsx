@@ -17,6 +17,8 @@ export interface OutlinePoint {
   sections: PointSection[];
 }
 
+export type SermonStyle = 'simples' | 'pastoral' | 'evangelistico' | 'avivamento' | 'profundo';
+
 export interface OutlineStructure {
   pointCount: number;
   points: OutlinePoint[];
@@ -25,6 +27,9 @@ export interface OutlineStructure {
   depthLevel: 'basico' | 'intermediario' | 'avancado';
   title?: string;
   theme?: string;
+  problema?: string;
+  perguntaCentral?: string;
+  estilo?: SermonStyle;
 }
 
 let sectionIdCounter = 0;
