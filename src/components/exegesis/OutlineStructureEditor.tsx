@@ -281,7 +281,7 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
             <Settings2 className="w-4 h-4 text-primary" /> Estrutura do Esboço
           </span>
           <span className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{structure.pointCount} pontos • {DEPTH_DESCRIPTIONS[structure.depthLevel]?.label}</span>
+            <span className="text-xs text-muted-foreground">{structure.pointCount} pontos • {DEPTH_DESCRIPTIONS[structure.depthLevel]?.label}{structure.estilo ? ` • ${STYLE_OPTIONS.find(s => s.id === structure.estilo)?.emoji} ${STYLE_OPTIONS.find(s => s.id === structure.estilo)?.label}` : ''}</span>
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </span>
         </button>
