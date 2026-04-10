@@ -677,7 +677,10 @@ Liste mapas bíblicos que o estudante deveria consultar:
 Seja o mais detalhado possível. O objetivo é que o leitor consiga VISUALIZAR completamente o cenário onde o texto acontece, como se estivesse lá.`;
         break;
 
-      case "outline_expository":
+      case "outline_expository": {
+        const problemaSection = structure_config?.problema ? `\n\n## 🎯 DOR/PROBLEMA QUE O SERMÃO RESOLVE:\n"${structure_config.problema}"\n**REGRA:** A introdução COMEÇA descrevendo essa dor de forma VÍVIDA. O ouvinte precisa se ver nessa dor. Cada ponto do sermão é uma RESPOSTA progressiva. O apelo CONFRONTA essa dor com a resposta de Cristo.\n` : '';
+        const perguntaSection = structure_config?.perguntaCentral ? `\n## ❓ PERGUNTA CENTRAL DO SERMÃO:\n"${structure_config.perguntaCentral}"\n**REGRA:** A introdução LEVANTA esta pergunta. A conclusão RESPONDE de forma definitiva. Cada ponto AVANÇA na resposta.\n` : '';
+
         userPrompt = `Gere um ESBOÇO DE SERMÃO EXPOSITIVO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
