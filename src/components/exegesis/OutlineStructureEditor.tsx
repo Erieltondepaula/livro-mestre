@@ -314,7 +314,56 @@ export function OutlineStructureEditor({ structure, onChange }: Props) {
               </div>
             </div>
 
-            {/* Point count */}
+            {/* Problema/Dor + Pergunta Central */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">🎯 Problema / Dor do Ouvinte</Label>
+                <input
+                  type="text"
+                  value={structure.problema || ''}
+                  onChange={(e) => onChange({ ...structure, problema: e.target.value })}
+                  className="input-library w-full text-sm"
+                  placeholder="Ex: Ansiedade, medo do futuro, solidão..."
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <p className="text-[10px] text-muted-foreground mt-0.5">A dor real que o sermão vai resolver</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">❓ Pergunta Central (opcional)</Label>
+                <input
+                  type="text"
+                  value={structure.perguntaCentral || ''}
+                  onChange={(e) => onChange({ ...structure, perguntaCentral: e.target.value })}
+                  className="input-library w-full text-sm"
+                  placeholder="Ex: Como encontrar paz em tempos difíceis?"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <p className="text-[10px] text-muted-foreground mt-0.5">A pergunta que o sermão vai responder</p>
+              </div>
+            </div>
+
+            {/* Estilo do Sermão */}
+            <div>
+              <Label className="text-xs text-muted-foreground uppercase mb-2 block">🎙️ Estilo do Sermão</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {STYLE_OPTIONS.map(style => (
+                  <button
+                    key={style.id}
+                    onClick={() => onChange({ ...structure, estilo: style.id })}
+                    className={`py-2 px-3 rounded-lg border text-xs text-left transition-all ${
+                      structure.estilo === style.id
+                        ? 'bg-primary/10 border-primary/30 text-primary font-semibold'
+                        : 'border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    <span className="block font-medium">{style.emoji} {style.label}</span>
+                    <span className="block text-[10px] text-muted-foreground mt-0.5">{style.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+
             <div className="flex items-center justify-between">
               <Label className="text-sm">Quantidade de pontos</Label>
               <div className="flex items-center gap-2">
