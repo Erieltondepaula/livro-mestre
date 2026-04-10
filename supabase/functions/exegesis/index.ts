@@ -854,6 +854,7 @@ Mínimo de 5 frases. Tom de conversa — como se olhasse nos olhos de cada pesso
 17. **Ilustração + Verdade em CADA Ponto**: Todo ponto deve ter uma ILUSTRAÇÃO (história real, analogia moderna) e uma VERDADE (frase curta que resume o ponto). A Ilustração ilumina, a Verdade fixa.`;
 
         break;
+      }
 
       case "outline_textual":
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEXTUAL completo baseado no seguinte texto:
