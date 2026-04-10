@@ -1105,6 +1105,7 @@ Aplique TODAS as 17 regras de engenharia: Regra de Ouro (visita constante ao tex
 - **Fontes externas dos materiais:** Vídeos, blogs → 「citação」(Fonte, Plataforma)
 Priorize os materiais do usuário.`;
         break;
+      }
 
       // outline_descriptive, outline_normative, outline_theological are now handled as "approach" 
       // parameter within the 3 main types (expository, textual, thematic)
