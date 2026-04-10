@@ -91,6 +91,14 @@ const DEPTH_DESCRIPTIONS: Record<string, { label: string; description: string }>
   },
 };
 
+const STYLE_OPTIONS: { id: SermonStyle; label: string; emoji: string; description: string }[] = [
+  { id: 'simples', label: 'Simples', emoji: '📝', description: 'Linguagem básica, acessível a todos' },
+  { id: 'pastoral', label: 'Pastoral', emoji: '🤝', description: 'Tom acolhedor e cuidadoso' },
+  { id: 'evangelistico', label: 'Evangelístico', emoji: '🔥', description: 'Confrontador com apelo forte' },
+  { id: 'avivamento', label: 'Avivamento', emoji: '⚡', description: 'Intensidade espiritual máxima' },
+  { id: 'profundo', label: 'Profundo', emoji: '📚', description: 'Mais base bíblica e exegética' },
+];
+
 const SUGGESTED_SECTIONS = [
   'Desenvolvimento', 'Texto', 'Aplicação Prática', 'Ilustração',
   'Frase Impacto', 'Subtópico', 'Transição', 'Reflexão',
