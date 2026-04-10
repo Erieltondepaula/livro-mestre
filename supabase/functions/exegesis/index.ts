@@ -856,11 +856,14 @@ Mínimo de 5 frases. Tom de conversa — como se olhasse nos olhos de cada pesso
         break;
       }
 
-      case "outline_textual":
+      case "outline_textual": {
+        const problemaSection = structure_config?.problema ? `\n\n## 🎯 DOR/PROBLEMA QUE O SERMÃO RESOLVE:\n"${structure_config.problema}"\n**REGRA:** A introdução COMEÇA descrevendo essa dor. Cada ponto é uma RESPOSTA progressiva. O apelo CONFRONTA essa dor com Cristo.\n` : '';
+        const perguntaSection = structure_config?.perguntaCentral ? `\n## ❓ PERGUNTA CENTRAL:\n"${structure_config.perguntaCentral}"\n**REGRA:** A introdução LEVANTA esta pergunta. A conclusão RESPONDE definitivamente.\n` : '';
+
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEXTUAL completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}${problemaSection}${perguntaSection}
 
 ## PERFIL DO PREGADOR:
 Você é um pregador experiente, humilde e amoroso. Ama a Bíblia e fala a língua do povo. Sua missão é preparar um sermão que uma criança de 12 anos entenda e um doutor admire. Cristo é o centro absoluto.
