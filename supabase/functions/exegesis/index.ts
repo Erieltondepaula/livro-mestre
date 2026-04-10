@@ -297,13 +297,26 @@ serve(async (req) => {
     const totalPoints = structure_config?.pointCount || 4;
     const userTitle = structure_config?.title ? `\n- Título sugerido pelo usuário: "${structure_config.title}" (use como base ou adapte, mas mantenha a essência)` : '';
     const userTheme = structure_config?.theme ? `\n- Tema central definido pelo usuário: "${structure_config.theme}" (REFORCE este tema ao longo de TODO o sermão)` : '';
+    const userProblema = structure_config?.problema ? `\n- 🎯 PROBLEMA/DOR DO OUVINTE: "${structure_config.problema}" — O sermão DEVE resolver esta dor. A introdução COMEÇA com essa dor. Cada ponto RESPONDE a essa dor. O apelo CONFRONTA essa dor. A conclusão CURA essa dor.` : '';
+    const userPergunta = structure_config?.perguntaCentral ? `\n- ❓ PERGUNTA CENTRAL: "${structure_config.perguntaCentral}" — Esta é a PERGUNTA que o sermão inteiro responde. A introdução LEVANTA essa pergunta. Cada ponto AVANÇA na resposta. A conclusão RESPONDE de forma definitiva.` : '';
+
+    // Style instructions
+    const styleInstructions: Record<string, string> = {
+      simples: `\n\n**🎙️ ESTILO: SIMPLES** — Linguagem básica, frases curtas, vocabulário do cotidiano. Qualquer pessoa entende na primeira vez. Zero jargão. Como conversar com um vizinho no portão.`,
+      pastoral: `\n\n**🎙️ ESTILO: PASTORAL** — Tom acolhedor, cuidadoso, empático. Fale como um pai que consola o filho. Use "nós" intensamente. Reforce que não há condenação. Cada frase deve abraçar o ouvinte. Mais ternura que confronto.`,
+      evangelistico: `\n\n**🎙️ ESTILO: EVANGELÍSTICO** — Tom confrontador com amor. Apelo FORTE e direto. Linguagem de urgência: "Hoje é o dia." Cada ponto conduz à decisão. Identifique pecados e dores com clareza. O apelo deve ser IMPACTANTE e levar à conversão.`,
+      avivamento: `\n\n**🎙️ ESTILO: AVIVAMENTO** — Intensidade espiritual máxima. Fogo santo. Linguagem profética e arrebatadora. Convocação à santidade radical. Use repetições anafóricas intensas. O sermão deve fazer a congregação se levantar. Confronte mornidão, comodismo, pecado oculto. A presença de Deus deve ser tangível em cada parágrafo.`,
+      profundo: `\n\n**🎙️ ESTILO: PROFUNDO** — Mais base bíblica e exegética. Mais referências cruzadas. Mais contexto histórico. Mais palavras no original. Cada ponto deve ter profundidade teológica acima da média, mas sem perder a clareza pastoral.`,
+    };
+    const userStyle = structure_config?.estilo && styleInstructions[structure_config.estilo] ? styleInstructions[structure_config.estilo] : '';
+
     const structureSection = structure_config
-      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**${userTitle}${userTheme}\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => {
+      ? `\n\n**🔧 ESTRUTURA DEFINIDA PELO USUÁRIO:**${userTitle}${userTheme}${userProblema}${userPergunta}\n- Quantidade de pontos: ${structure_config.pointCount}\n${structure_config.points?.map((p: any, i: number) => {
           const pointLabel = p.name ? `("${p.name}")` : '';
           const secs = p.sections ? formatSections(p.sections) : '';
           const isLast = i === structure_config.pointCount - 1;
           return `- Ponto ${i+1} ${pointLabel}${isLast ? ' ⛪ [ÚLTIMO PONTO — deve ter TÍTULO PRÓPRIO cristocêntrico, NÃO use "Clímax Cristocêntrico" como título]' : ''}: ${secs || 'sem seções definidas'}`;
-        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos. Se o usuário habilitou "Citações", SEMPRE inclua citações dos materiais formatadas como 「citação」(Autor, Obra). Se habilitou "Ilustração", SEMPRE inclua uma ilustração real e relevante.**\n\n**⛪ REGRA DO ÚLTIMO PONTO CRISTOCÊNTRICO:** O ponto ${structure_config.pointCount} (o ÚLTIMO ponto, seja qual for a quantidade) SEMPRE aponta para a CRUZ DE CRISTO — o sacrifício, a redenção, tudo que Ele fez por nós. MAS o título desse ponto DEVE ser CRIATIVO e TEMÁTICO (ex: "A Resposta Que Vem do Calvário", "O Nome Que Carrega Todo Peso"), NUNCA genérico como "O Foco em Jesus" ou "Clímax Cristocêntrico".\n`
+        }).join('\n')}\n- Apelo final: ${structure_config.hasFinalAppeal ? 'Sim' : 'Não'}\n- Cristocentrismo explícito: ${structure_config.isExplicitlyChristocentric ? 'Sim' : 'Não'}\n- Profundidade: ${structure_config.depthLevel}${userStyle}\n**SIGA ESTA ESTRUTURA EXATAMENTE. Cada ponto deve conter APENAS as seções listadas acima, na ordem definida. Use os nomes personalizados dos pontos e seções quando fornecidos. Se o usuário habilitou "Citações", SEMPRE inclua citações dos materiais formatadas como 「citação」(Autor, Obra). Se habilitou "Ilustração", SEMPRE inclua uma ilustração real e relevante.**\n\n**⛪ REGRA DO ÚLTIMO PONTO CRISTOCÊNTRICO:** O ponto ${structure_config.pointCount} (o ÚLTIMO ponto, seja qual for a quantidade) SEMPRE aponta para a CRUZ DE CRISTO — o sacrifício, a redenção, tudo que Ele fez por nós. MAS o título desse ponto DEVE ser CRIATIVO e TEMÁTICO (ex: "A Resposta Que Vem do Calvário", "O Nome Que Carrega Todo Peso"), NUNCA genérico como "O Foco em Jesus" ou "Clímax Cristocêntrico".\n\n**🔥 FILTRO DE QUALIDADE OBRIGATÓRIO (verificar antes de entregar):**\n1. O sermão tem uma PERGUNTA FORTE na introdução? Se não → regenerar\n2. Cada ponto tem APLICAÇÃO PRÁTICA concreta? Se não → adicionar\n3. A linguagem é NATURAL e pregável? Se parece artigo acadêmico → suavizar\n4. O sermão RESPONDE ao problema/dor informado? Se não → reestruturar\n5. Tem APELO claro e direto no final? Se não → adicionar automaticamente\n6. Cada ponto tem ILUSTRAÇÃO real do cotidiano? Se não → adicionar\n7. O CLÍMAX leva a Cristo? Se não → reconectar\n`
       : "";
 
     const depthLevel = structure_config?.depthLevel || 'basico';
@@ -664,11 +677,14 @@ Liste mapas bíblicos que o estudante deveria consultar:
 Seja o mais detalhado possível. O objetivo é que o leitor consiga VISUALIZAR completamente o cenário onde o texto acontece, como se estivesse lá.`;
         break;
 
-      case "outline_expository":
+      case "outline_expository": {
+        const problemaSection = structure_config?.problema ? `\n\n## 🎯 DOR/PROBLEMA QUE O SERMÃO RESOLVE:\n"${structure_config.problema}"\n**REGRA:** A introdução COMEÇA descrevendo essa dor de forma VÍVIDA. O ouvinte precisa se ver nessa dor. Cada ponto do sermão é uma RESPOSTA progressiva. O apelo CONFRONTA essa dor com a resposta de Cristo.\n` : '';
+        const perguntaSection = structure_config?.perguntaCentral ? `\n## ❓ PERGUNTA CENTRAL DO SERMÃO:\n"${structure_config.perguntaCentral}"\n**REGRA:** A introdução LEVANTA esta pergunta. A conclusão RESPONDE de forma definitiva. Cada ponto AVANÇA na resposta.\n` : '';
+
         userPrompt = `Gere um ESBOÇO DE SERMÃO EXPOSITIVO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}${problemaSection}${perguntaSection}
 
 ## PERFIL DO PREGADOR:
 Você é um pregador experiente, humilde e amoroso. Ama a Bíblia e fala a língua do povo, transformando verdades profundas em palavras simples. Sua missão é preparar um sermão que uma criança de 12 anos entenda e um doutor admire. Cristo é o centro absoluto — Sua cruz, Sua graça, Sua salvação.
@@ -838,12 +854,16 @@ Mínimo de 5 frases. Tom de conversa — como se olhasse nos olhos de cada pesso
 17. **Ilustração + Verdade em CADA Ponto**: Todo ponto deve ter uma ILUSTRAÇÃO (história real, analogia moderna) e uma VERDADE (frase curta que resume o ponto). A Ilustração ilumina, a Verdade fixa.`;
 
         break;
+      }
 
-      case "outline_textual":
+      case "outline_textual": {
+        const problemaSection = structure_config?.problema ? `\n\n## 🎯 DOR/PROBLEMA QUE O SERMÃO RESOLVE:\n"${structure_config.problema}"\n**REGRA:** A introdução COMEÇA descrevendo essa dor. Cada ponto é uma RESPOSTA progressiva. O apelo CONFRONTA essa dor com Cristo.\n` : '';
+        const perguntaSection = structure_config?.perguntaCentral ? `\n## ❓ PERGUNTA CENTRAL:\n"${structure_config.perguntaCentral}"\n**REGRA:** A introdução LEVANTA esta pergunta. A conclusão RESPONDE definitivamente.\n` : '';
+
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEXTUAL completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}${problemaSection}${perguntaSection}
 
 ## PERFIL DO PREGADOR:
 Você é um pregador experiente, humilde e amoroso. Ama a Bíblia e fala a língua do povo. Sua missão é preparar um sermão que uma criança de 12 anos entenda e um doutor admire. Cristo é o centro absoluto.
@@ -956,12 +976,16 @@ O texto base NUNCA é abandonado. Em CADA ponto, volte ao texto com frases como:
 
 Aplique TODAS as 17 regras de engenharia: Regra de Ouro (visita constante ao texto), escada progressiva, transições de excelência, Explicação mínima 800 caracteres com 5+ parágrafos, curva de intensidade crescente culminando na CRUZ no ÚLTIMO PONTO, reforço do tema, cristocentricidade, linguagem de conversa familiar, exegese do original, referências completas com 👉, aplicações concretíssimas, arco narrativo fechado, apelo com dores reais, materiais como alicerce com citações 「...」(Autor, Obra), Ilustração + Verdade em cada ponto.`;
         break;
+      }
 
-      case "outline_thematic":
+      case "outline_thematic": {
+        const problemaSection = structure_config?.problema ? `\n\n## 🎯 DOR/PROBLEMA QUE O SERMÃO RESOLVE:\n"${structure_config.problema}"\n**REGRA:** A introdução COMEÇA descrevendo essa dor. Cada ponto é uma RESPOSTA progressiva. O apelo CONFRONTA essa dor com Cristo.\n` : '';
+        const perguntaSection = structure_config?.perguntaCentral ? `\n## ❓ PERGUNTA CENTRAL:\n"${structure_config.perguntaCentral}"\n**REGRA:** A introdução LEVANTA esta pergunta. A conclusão RESPONDE definitivamente.\n` : '';
+
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEMÁTICO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}${problemaSection}${perguntaSection}
 
 ## PERFIL DO PREGADOR:
 Você é um pregador experiente, humilde e amoroso. Ama a Bíblia e fala a língua do povo. Sua missão é preparar um sermão que uma criança de 12 anos entenda e um doutor admire. Cristo é o centro absoluto.
@@ -1081,6 +1105,7 @@ Aplique TODAS as 17 regras de engenharia: Regra de Ouro (visita constante ao tex
 - **Fontes externas dos materiais:** Vídeos, blogs → 「citação」(Fonte, Plataforma)
 Priorize os materiais do usuário.`;
         break;
+      }
 
       // outline_descriptive, outline_normative, outline_theological are now handled as "approach" 
       // parameter within the 3 main types (expository, textual, thematic)
