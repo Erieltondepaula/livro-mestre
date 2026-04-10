@@ -976,12 +976,16 @@ O texto base NUNCA é abandonado. Em CADA ponto, volte ao texto com frases como:
 
 Aplique TODAS as 17 regras de engenharia: Regra de Ouro (visita constante ao texto), escada progressiva, transições de excelência, Explicação mínima 800 caracteres com 5+ parágrafos, curva de intensidade crescente culminando na CRUZ no ÚLTIMO PONTO, reforço do tema, cristocentricidade, linguagem de conversa familiar, exegese do original, referências completas com 👉, aplicações concretíssimas, arco narrativo fechado, apelo com dores reais, materiais como alicerce com citações 「...」(Autor, Obra), Ilustração + Verdade em cada ponto.`;
         break;
+      }
 
-      case "outline_thematic":
+      case "outline_thematic": {
+        const problemaSection = structure_config?.problema ? `\n\n## 🎯 DOR/PROBLEMA QUE O SERMÃO RESOLVE:\n"${structure_config.problema}"\n**REGRA:** A introdução COMEÇA descrevendo essa dor. Cada ponto é uma RESPOSTA progressiva. O apelo CONFRONTA essa dor com Cristo.\n` : '';
+        const perguntaSection = structure_config?.perguntaCentral ? `\n## ❓ PERGUNTA CENTRAL:\n"${structure_config.perguntaCentral}"\n**REGRA:** A introdução LEVANTA esta pergunta. A conclusão RESPONDE definitivamente.\n` : '';
+
         userPrompt = `Gere um ESBOÇO DE SERMÃO TEMÁTICO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}${problemaSection}${perguntaSection}
 
 ## PERFIL DO PREGADOR:
 Você é um pregador experiente, humilde e amoroso. Ama a Bíblia e fala a língua do povo. Sua missão é preparar um sermão que uma criança de 12 anos entenda e um doutor admire. Cristo é o centro absoluto.
