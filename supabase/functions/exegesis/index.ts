@@ -684,7 +684,7 @@ Seja o mais detalhado possível. O objetivo é que o leitor consiga VISUALIZAR c
         userPrompt = `Gere um ESBOÇO DE SERMÃO EXPOSITIVO completo baseado no seguinte texto:
 
 **Passagem:** ${passage}
-${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}${problemaSection}${perguntaSection}
 
 ## PERFIL DO PREGADOR:
 Você é um pregador experiente, humilde e amoroso. Ama a Bíblia e fala a língua do povo, transformando verdades profundas em palavras simples. Sua missão é preparar um sermão que uma criança de 12 anos entenda e um doutor admire. Cristo é o centro absoluto — Sua cruz, Sua graça, Sua salvação.
