@@ -924,6 +924,16 @@ O texto base NUNCA é abandonado. Em CADA ponto, volte ao texto com frases como:
 
 ---
 
+## **CONTEXTO DO TEXTO** *(OBRIGATÓRIO — antes do desenvolvimento)*
+(REGRA: Esta seção é OBRIGATÓRIA e deve usar Bíblias, Comentários e Dicionários Bíblicos da Base de Conhecimento. Contar como história, sem jargão acadêmico. Mínimo 4 parágrafos cobrindo:)
+- **Contexto Histórico:** Quando aconteceu, quem governava, situação política e econômica do povo
+- **Contexto Cultural:** Costumes, vestimenta, alimentação, práticas religiosas da época
+- **Contexto Bíblico:** Onde este texto se encaixa no livro, no testamento e na história da redenção
+- **Motivo da Mensagem:** Por que o autor escreveu? Qual situação do povo motivou estas palavras?
+
+---
+
+
 ## **1.**
 **Texto:** (palavra ou expressão-chave extraída DIRETAMENTE do versículo — cite a expressão)
 **Explicação:** (exploração exegética dessa expressão — volta ao texto, contexto, original grego/hebraico. Mínimo 5 parágrafos.)
