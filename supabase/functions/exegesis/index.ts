@@ -1101,111 +1101,98 @@ A pregação temática é estruturada em torno de um assunto/tópico central ext
 ## 📌 A REGRA DE OURO (VISITA CONSTANTE AO TEXTO BASE):
 Mesmo sendo temático com múltiplos textos, o TEXTO BASE nunca é abandonado. Em CADA ponto, volte ao texto principal com: "O nosso texto base diz...", "Voltando ao texto principal...", "Perceba que o texto base confirma isso..."
 
-## ESTRUTURA OBRIGATÓRIA DO ESBOÇO:
+## ESTRUTURA OBRIGATÓRIA — SIGA EXATAMENTE NESTA ORDEM:
 
-# **TÍTULO**
-(Comunicativo, bíblico e cristocêntrico — máximo 8 palavras)
+# **TÍTULO:** [TÍTULO EM CAIXA ALTA E NEGRITO — FORTE, MEMORÁVEL, CRISTOCÊNTRICO, MÁX 8 PALAVRAS]
 
-## **TEMA:**
-(O tema central em UMA frase curta)
+## **TEMA:** [TEMA EM UMA FRASE CURTA E CLARA — CAIXA ALTA E NEGRITO]
 
-## **Tipo:** Temático
+## **TIPO:** TEMÁTICO
 
-## **Texto Base:** ${passage}
-(OBRIGATÓRIO: Transcreva aqui o TEXTO COMPLETO da passagem na íntegra, versículo por versículo, usando a versão ACF como padrão. O pregador precisa ler o texto completo antes de pregar.)
+## **TEXTO BASE:** ${passage}
+(OBRIGATÓRIO: Transcreva o TEXTO COMPLETO da passagem na íntegra, versículo por versículo, na versão ACF.)
 
 ---
 
-## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
-(DEIXAR EM BRANCO — o pregador preenche manualmente)
+## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO:**
+(DEIXAR EM BRANCO — escreva apenas: "(O pregador preenche)")
 
 ## **INTRODUÇÃO:**
-(OBRIGATÓRIO. Gancho nos primeiros 60 segundos: pergunta retórica ou cenário REAL. Contexto breve. Urgência para hoje. Apresente o problema ou promessa. Mínimo 5 frases. Tom de conversa.)
+(Texto fluido contínuo. Pergunta retórica ou cenário REAL. Identificação. Contextualização atual. Conexão emocional. Mínimo 6 frases. Tom de púlpito.)
 
 ## **TRANSIÇÃO:**
-(Ponte da introdução para o primeiro ponto — parágrafo completo mínimo 4 frases)
+(TÉCNICA DA DIATRIBE — diálogo imaginário. Conecte INTRODUÇÃO ao PONTO 1. Mínimo 3 frases.)
 
 ---
 
-## **CONTEXTO DO TEXTO** *(OBRIGATÓRIO — antes do desenvolvimento)*
-(REGRA: Esta seção é OBRIGATÓRIA e deve usar Bíblias, Comentários e Dicionários Bíblicos da Base de Conhecimento. Mesmo sendo um sermão TEMÁTICO, o texto base precisa ser contextualizado. Contar como história, sem jargão acadêmico. Mínimo 4 parágrafos cobrindo:)
-- **Contexto Histórico:** Quando aconteceu, quem governava, situação do povo
-- **Contexto Cultural:** Costumes e práticas relevantes ao tema
-- **Contexto Bíblico:** Onde este texto se encaixa no livro e na história da redenção
-- **Conexão Temática:** Como o tema central emerge do texto base e atravessa toda a Escritura
+${[1, 2, 3, 4].map(n => `## **${n}. [TÍTULO DO PONTO ${n} EM CAIXA ALTA E NEGRITO — aspecto do tema central]**
+
+**TEXTO:** [Passagem bíblica DIFERENTE que sustenta este aspecto do tema — escrita por extenso e completa]
+
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+(Mínimo 3 referências cruzadas que SUSTENTAM o ponto.)
+
+**DESENVOLVIMENTO:**
+(MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS FLUIDOS. Profundo, pastoral, com aplicação espiritual e conexão com a vida real. Volte ao texto base. Linguagem de PÚLPITO.)
+
+**ILUSTRAÇÃO:**
+(História real, analogia moderna ou exemplo concreto que ILUMINE o desenvolvimento.)
+
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
+(Mínimo 2 citações de escritores, pregadores, livros ou artigos.)
+
+**FRASE DE EFEITO:**
+[Frase curta, forte e memorável.]
+
+**APLICAÇÃO PRÁTICA:**
+(Aplicação prática pastoral com direcionamentos CLAROS.)
+
+**TRANSIÇÃO:**
+(DIATRIBE — feche o ponto ${n} e PUXE o PONTO ${n + 1} citando seu nome.)
 
 ---
 
+`).join('')}## **5. [TÍTULO DO PONTO 5 EM CAIXA ALTA E NEGRITO — CRISTOCÊNTRICO E CRIATIVO]**
+(O ÚLTIMO ponto é SEMPRE o ÊXTASE e SEMPRE aponta para CRISTO. Título TEMÁTICO e MEMORÁVEL — NUNCA genérico.)
 
-## **1.**
-**Texto:** (passagem bíblica que sustenta este aspecto do tema — CITE na íntegra)
-**Explicação:** (explicação do aspecto temático à luz do texto — volta ao texto base, contexto, exegese. Mínimo 5 parágrafos.)
-**Ilustração:** (história real ou analogia moderna)
-**Verdade:** (verdade bíblica central em UMA frase)
-**Citações:** (「citação」(Autor, Obra, p.XX) — mínimo 2)
-**Referências:**
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-**Frase de Efeito:** (declaração memorável)
-**Aplicação Prática:** (ação CONCRETÍSSIMA com prazo)
+**TEXTO:** [Passagem climática que aponta para Cristo — escrita por extenso]
 
-## **TRANSIÇÃO:**
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
 
-## **2.**
-**Texto:** (outra passagem que AMPLIA o tema)
-**Explicação:** (mínimo 5 parágrafos)
-**Ilustração:**
-**Verdade:**
-**Citações:** (「citação」(Autor, Obra, p.XX))
-**Referências:**
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-**Frase de Efeito:**
-**Aplicação Prática:**
+**DESENVOLVIMENTO:**
+(MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS. CONDUZ TUDO para CRISTO — sua cruz, sua graça, sua salvação. ÊXTASE máximo.)
 
-## **TRANSIÇÃO:**
+**ILUSTRAÇÃO:**
+(Cristo como resposta para tudo dos pontos anteriores.)
 
-## **3.**
-**Texto:** (passagem que CONFRONTA sobre o tema)
-**Explicação:** (mínimo 5 parágrafos, tom mais confrontativo)
-**Ilustração:**
-**Verdade:**
-**Citações:** (「citação」(Autor, Obra, p.XX))
-**Referências:**
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-**Frase de Efeito:**
-**Aplicação Prática:**
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
 
-## **TRANSIÇÃO:**
+**FRASE DE EFEITO:**
+[A frase MAIS PODEROSA do sermão.]
 
-## **4. [TÍTULO PRÓPRIO DO PONTO — CRISTOCÊNTRICO]**
-(Crie um TÍTULO PRÓPRIO e CRIATIVO para o último ponto que aponte para Cristo, mas NÃO use "Clímax Cristocêntrico" ou "O Foco em Jesus" como título. O título deve ser temático, comunicativo e memorável.)
-**Texto:** (passagem climática que aponta para Cristo — CITE O TEXTO COMPLETO na íntegra)
-**Explicação:** (conduza TUDO para a pessoa e obra de Cristo. A cruz revelada plenamente. Mínimo 5 parágrafos.)
-**Ilustração:** (exemplo profundo mostrando Cristo como resposta)
-**Verdade:** (verdade cristocêntrica em UMA frase)
-**Citações:** (「citação」(Autor, Obra, p.XX))
-**Referências:**
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-**Frase de Efeito:** (a mais poderosa do sermão)
-**Aplicação Prática:** (convite à fé, arrependimento e esperança em Cristo)
-
-## **TRANSIÇÃO PARA A CONCLUSÃO**
-
-## **Conclusão**
-**Recapitulação:** (Recapitule cada ponto conectando ao TEMA CENTRAL e TÍTULO.)
-**Palavra de Ânimo:** (Encorajamento pastoral — "Meus irmãos, se o que foi dito hoje faz sentido...")
-**Esperança em Cristo:** (Declare a esperança que temos em Cristo.)
-**Oração Final:** (Oração pastoral, bíblica — mínimo 5 frases.)
-
-## **Apelo**
-(Cristocêntrico. Dores REAIS. Repetição anafórica. RETOME o tema. Última frase ECOA o título.)
+**APLICAÇÃO PRÁTICA:**
+(Convite à fé, arrependimento e esperança em Cristo.)
 
 ---
 
-Aplique TODAS as 17 regras de engenharia: Regra de Ouro (visita constante ao texto), escada progressiva, transições de excelência, Explicação mínima 800 caracteres com 5+ parágrafos, curva de intensidade crescente culminando na CRUZ no ÚLTIMO PONTO, reforço do tema, cristocentricidade, linguagem de conversa familiar, exegese do original, referências completas com 👉, aplicações concretíssimas, arco narrativo fechado, apelo com dores reais, materiais como alicerce com citações 「...」(Autor, Obra), Ilustração + Verdade em cada ponto. Cada ponto deve usar textos bíblicos DIFERENTES que sustentam o tema central.
+## **TRANSIÇÃO PARA A CONCLUSÃO:**
+(DIATRIBE — feche o ponto 5 e prepare a conclusão.)
+
+## **CONCLUSÃO:**
+(RELEMBRE OS 5 PONTOS resumidamente. Reforce mensagem central. Linguagem forte e pastoral. Aponte para CRISTO. Texto fluido. Mínimo 2 parágrafos.)
+
+## **APELO PROGRESSIVO:**
+(EMOCIONAL e equilibrado. Pastoral. Convite CLARO. Repetição anafórica conectada ao tema. PROGRESSÃO: Identificação → Revelação → Confronto → Chamado → Restauração em Cristo. Última frase ECOA o TÍTULO.)
 
 **REGRA DE CITAÇÕES AMPLIADA:** As citações podem vir de QUALQUER fonte relevante:
 - **Textos bíblicos:** Versículos (formato 👉)
