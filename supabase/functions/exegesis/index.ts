@@ -1056,6 +1056,16 @@ Mesmo sendo temático com múltiplos textos, o TEXTO BASE nunca é abandonado. E
 
 ---
 
+## **CONTEXTO DO TEXTO** *(OBRIGATÓRIO — antes do desenvolvimento)*
+(REGRA: Esta seção é OBRIGATÓRIA e deve usar Bíblias, Comentários e Dicionários Bíblicos da Base de Conhecimento. Mesmo sendo um sermão TEMÁTICO, o texto base precisa ser contextualizado. Contar como história, sem jargão acadêmico. Mínimo 4 parágrafos cobrindo:)
+- **Contexto Histórico:** Quando aconteceu, quem governava, situação do povo
+- **Contexto Cultural:** Costumes e práticas relevantes ao tema
+- **Contexto Bíblico:** Onde este texto se encaixa no livro e na história da redenção
+- **Conexão Temática:** Como o tema central emerge do texto base e atravessa toda a Escritura
+
+---
+
+
 ## **1.**
 **Texto:** (passagem bíblica que sustenta este aspecto do tema — CITE na íntegra)
 **Explicação:** (explicação do aspecto temático à luz do texto — volta ao texto base, contexto, exegese. Mínimo 5 parágrafos.)
