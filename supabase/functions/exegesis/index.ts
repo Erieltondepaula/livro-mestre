@@ -229,6 +229,17 @@ serve(async (req) => {
       });
     }
 
+    // ⚠️ REGRA 1 — TEXTO BASE OBRIGATÓRIO PARA ESBOÇOS DE SERMÃO
+    const outlineTypes = ["outline_expository", "outline_textual", "outline_thematic"];
+    if (outlineTypes.includes(type) && (!passage || !passage.trim())) {
+      return new Response(
+        JSON.stringify({
+          error: "O Texto Base é obrigatório. Nenhum esboço pode ser gerado sem uma passagem bíblica definida (ex: Jeremias 18:1-6).",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -269,13 +280,25 @@ serve(async (req) => {
 1. Os materiais acima são a FONTE PRIMÁRIA do sermão. A IA é apenas complementar. O sermão deve ser CONSTRUÍDO a partir dos materiais, não o contrário.
 2. EXTRAIA CITAÇÕES ESPECÍFICAS dos materiais e SEMPRE formate assim: **「citação extraída do material」(Autor, Obra, p.XX)**. Use os marcadores 「」 para toda citação vinda dos materiais. O leitor PRECISA ver de onde veio cada informação.
 3. Cada ponto do sermão DEVE referenciar pelo menos um material cadastrado quando disponível, usando o formato 「」(Autor, Obra).
-4. Organize hierarquicamente: Dicionários → Comentários → Livros teológicos → Devocionais.
+4. Organize hierarquicamente: Bíblias → Dicionários → Comentários → Livros teológicos → Devocionais → Mídia.
 5. NÃO parafraseie vagamente — cite o trecho exato que fundamenta o ponto com os marcadores 「」.
 6. Reconheça equivalências semânticas (avivamento = renovação = despertamento).
 7. Se o material não tiver informação relevante para determinado ponto, aí sim complemente com sua base acadêmica.
 8. CRUZE MATERIAIS: Se há um comentário de Wiersbe sobre Romanos E um Comentário Beacon sobre Romanos, USE AMBOS e compare as perspectivas. Quanto mais materiais citados, melhor.
 9. Para CADA ponto do sermão, indique QUAIS materiais foram consultados e o que foi extraído de cada um. O pregador precisa saber de onde vem cada insight.
-10. Os materiais do tipo DICIONÁRIO (Strong, Wycliffe) devem ser usados para definir TODAS as palavras-chave do texto original. Se o usuário tem um dicionário cadastrado, USE-O antes de usar sua base própria.\n`
+10. Os materiais do tipo DICIONÁRIO (Strong, Wycliffe) devem ser usados para definir TODAS as palavras-chave do texto original. Se o usuário tem um dicionário cadastrado, USE-O antes de usar sua base própria.
+
+**🔍 FILTRO DE RELEVÂNCIA (OBRIGATÓRIO antes de incluir qualquer material):**
+Para CADA material listado acima, aplique o teste:
+- Contém o nome do livro bíblico do texto base? OU
+- Contém uma palavra-chave do texto base? OU
+- Aborda termos teológicos relacionados ao tema?
+SE SIM → incluir como referência. SE NÃO → IGNORAR completamente. Não cite material desconexo só porque está cadastrado.
+
+**🎬 REGRAS PARA MÍDIAS (vídeos, imagens, PDFs):**
+- Se o material é VÍDEO e o tema/passagem é diretamente relacionado → inserir como SUGESTÃO opcional ao final do esboço (ex: "💡 Sugestão de mídia: [Título] — pode ser exibido na introdução")
+- Se o material é IMAGEM e representa cenário/personagem/lugar bíblico relevante → inserir como SUGESTÃO visual no ponto correspondente
+- Se a mídia não tem relação direta com o texto base → IGNORAR\n`
       : "\n\n**Nota:** O usuário não possui materiais cadastrados na Base de Conhecimento. Utilize sua base acadêmica padrão.\n";
 
     const analysesSection = analyses_context
@@ -738,8 +761,15 @@ Mínimo de 5 frases. Tom de conversa — como se olhasse nos olhos de cada pesso
 
 ---
 
-## **1.**
-**Texto:** (versículo ou trecho base deste ponto — CITE o texto na íntegra)
+## **CONTEXTO DO TEXTO** *(OBRIGATÓRIO — antes do desenvolvimento)*
+(REGRA: Esta seção é OBRIGATÓRIA e deve usar Bíblias, Comentários e Dicionários Bíblicos da Base de Conhecimento. Contar como história, sem jargão acadêmico. Mínimo 4 parágrafos cobrindo:)
+- **Contexto Histórico:** Quando aconteceu, quem governava, situação política e econômica do povo
+- **Contexto Cultural:** Costumes, vestimenta, alimentação, práticas religiosas da época
+- **Contexto Bíblico:** Onde este texto se encaixa no livro, no testamento e na história da redenção
+- **Motivo da Mensagem:** Por que o autor escreveu? Qual situação do povo motivou estas palavras?
+
+---
+
 **Explicação:** (explicação exegética do texto — DEVE incluir: (1) Volta ao texto base com "O texto diz...", (2) Contexto histórico e cultural contado como história, SEM jargões, (3) Palavras-chave no original grego/hebraico com transliteração e significado explicado de forma simples, (4) Citações dos materiais com marcadores 「...」(Autor, Obra). Mínimo 5 parágrafos distintos com conectores fluidos.)
 **Ilustração:** (história real do cotidiano, analogia moderna ou exemplo concreto que ilumine o ponto — deve ser vivida, breve e servir ao ponto, nunca substituí-lo)
 **Verdade:** (A verdade bíblica central deste ponto em UMA frase clara e memorável — ex: "Deus não espera que a gente se arrume pra chegar perto Dele. Ele nos aceita como estamos.")
@@ -906,6 +936,16 @@ O texto base NUNCA é abandonado. Em CADA ponto, volte ao texto com frases como:
 
 ---
 
+## **CONTEXTO DO TEXTO** *(OBRIGATÓRIO — antes do desenvolvimento)*
+(REGRA: Esta seção é OBRIGATÓRIA e deve usar Bíblias, Comentários e Dicionários Bíblicos da Base de Conhecimento. Contar como história, sem jargão acadêmico. Mínimo 4 parágrafos cobrindo:)
+- **Contexto Histórico:** Quando aconteceu, quem governava, situação política e econômica do povo
+- **Contexto Cultural:** Costumes, vestimenta, alimentação, práticas religiosas da época
+- **Contexto Bíblico:** Onde este texto se encaixa no livro, no testamento e na história da redenção
+- **Motivo da Mensagem:** Por que o autor escreveu? Qual situação do povo motivou estas palavras?
+
+---
+
+
 ## **1.**
 **Texto:** (palavra ou expressão-chave extraída DIRETAMENTE do versículo — cite a expressão)
 **Explicação:** (exploração exegética dessa expressão — volta ao texto, contexto, original grego/hebraico. Mínimo 5 parágrafos.)
@@ -1027,6 +1067,16 @@ Mesmo sendo temático com múltiplos textos, o TEXTO BASE nunca é abandonado. E
 (Ponte da introdução para o primeiro ponto — parágrafo completo mínimo 4 frases)
 
 ---
+
+## **CONTEXTO DO TEXTO** *(OBRIGATÓRIO — antes do desenvolvimento)*
+(REGRA: Esta seção é OBRIGATÓRIA e deve usar Bíblias, Comentários e Dicionários Bíblicos da Base de Conhecimento. Mesmo sendo um sermão TEMÁTICO, o texto base precisa ser contextualizado. Contar como história, sem jargão acadêmico. Mínimo 4 parágrafos cobrindo:)
+- **Contexto Histórico:** Quando aconteceu, quem governava, situação do povo
+- **Contexto Cultural:** Costumes e práticas relevantes ao tema
+- **Contexto Bíblico:** Onde este texto se encaixa no livro e na história da redenção
+- **Conexão Temática:** Como o tema central emerge do texto base e atravessa toda a Escritura
+
+---
+
 
 ## **1.**
 **Texto:** (passagem bíblica que sustenta este aspecto do tema — CITE na íntegra)
