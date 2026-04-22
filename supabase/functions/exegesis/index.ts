@@ -730,111 +730,183 @@ O texto base NUNCA é abandonado. Em CADA ponto, CADA desenvolvimento, o pregado
 - "Voltando ao nosso texto..."
 O ouvinte deve sentir que a BÍBLIA está conduzindo cada palavra, não a opinião do pregador.
 
-## ESTRUTURA OBRIGATÓRIA DO ESBOÇO:
+## ESTRUTURA OBRIGATÓRIA — SIGA EXATAMENTE NESTA ORDEM:
 
-# **TÍTULO**
-(Atraente, fiel ao texto, comunicativo — máximo 8 palavras)
+# **TÍTULO:** [TÍTULO EM CAIXA ALTA E NEGRITO — FORTE, MEMORÁVEL, MÁX 8 PALAVRAS]
 
-## **TEMA:**
-(O tema central em UMA frase curta e clara)
+## **TEMA:** [TEMA EM UMA FRASE CURTA E CLARA — CAIXA ALTA E NEGRITO]
 
-## **Tipo:** Expositivo
+## **TIPO:** EXPOSITIVO
 
-## **Texto Base:** ${passage}
-(OBRIGATÓRIO: Transcreva aqui o TEXTO COMPLETO da passagem na íntegra, versículo por versículo, usando a versão ACF como padrão. O pregador precisa ler o texto completo antes de pregar.)
+## **TEXTO BASE:** ${passage}
+(OBRIGATÓRIO: Transcreva o TEXTO COMPLETO da passagem na íntegra, versículo por versículo, usando a versão ACF. Formato: "Livro Cap:Vers: \"texto completo do versículo\"")
 
 ---
 
-## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO**
-(DEIXAR EM BRANCO — o pregador preenche manualmente)
+## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO:**
+(DEIXAR EM BRANCO — o pregador preenche manualmente. Escreva apenas: "(O pregador preenche)")
 
 ## **INTRODUÇÃO:**
-(OBRIGATÓRIO — NÃO PODE FICAR VAZIA. A introdução é o gancho que prende ou perde a congregação nos primeiros 60 segundos. Deve conter:
-(1) Uma pergunta retórica poderosa ou cenário REAL do cotidiano que gere identificação imediata — ex: "Quando foi a última vez que você realmente descansou? Não apenas deitou — mas descansou a alma?"
-(2) Contextualização breve do texto bíblico — quem está falando, para quem, em que situação — SEM usar nomes técnicos, apenas contando a história
-(3) Por que este texto é urgente HOJE para quem está ouvindo
-(4) Apresente o problema, a verdade ou a promessa que o texto revela
-Mínimo de 5 frases. Tom de conversa — como se olhasse nos olhos de cada pessoa.)
+(OBRIGATÓRIA — texto fluido e contínuo. Comece com pergunta retórica ou cenário REAL do cotidiano que gere identificação. Contextualize o tema com a realidade ATUAL. Crie conexão emocional. Prepare naturalmente para o primeiro ponto. Mínimo 6 frases em parágrafos fluidos — SEM quebras excessivas. Tom de conversa de púlpito.)
 
 ## **TRANSIÇÃO:**
-(Ponte da introdução para o primeiro ponto — parágrafo completo com mínimo 4 frases)
+(Use a TÉCNICA DA DIATRIBE — diálogo imaginário com o ouvinte. Conecte a INTRODUÇÃO ao PONTO 1. Cite o nome/ideia do ponto que vem. Mínimo 3 frases fluidas.)
 
 ---
 
-## **CONTEXTO DO TEXTO** *(OBRIGATÓRIO — antes do desenvolvimento)*
-(REGRA: Esta seção é OBRIGATÓRIA e deve usar Bíblias, Comentários e Dicionários Bíblicos da Base de Conhecimento. Contar como história, sem jargão acadêmico. Mínimo 4 parágrafos cobrindo:)
-- **Contexto Histórico:** Quando aconteceu, quem governava, situação política e econômica do povo
-- **Contexto Cultural:** Costumes, vestimenta, alimentação, práticas religiosas da época
-- **Contexto Bíblico:** Onde este texto se encaixa no livro, no testamento e na história da redenção
-- **Motivo da Mensagem:** Por que o autor escreveu? Qual situação do povo motivou estas palavras?
+## **1. [TÍTULO DO PONTO 1 EM CAIXA ALTA E NEGRITO]**
+
+**TEXTO:** [Versículo COMPLETO escrito por extenso — não apenas referência. Ex: Jeremias 18:1-2: "A palavra do Senhor, que veio a Jeremias..."]
+
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo do versículo cruzado]"
+👉 [Livro Cap:Vers]: "[texto completo do versículo cruzado]"
+👉 [Livro Cap:Vers]: "[texto completo do versículo cruzado]"
+(Mínimo 3 referências cruzadas que SUSTENTAM o ponto. Use paráfrase explicativa após cada uma quando útil.)
+
+**DESENVOLVIMENTO:**
+(OBRIGATÓRIO: NO MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS FLUIDOS. Texto contínuo, profundo, pastoral e explicativo. Volte ao texto base com "O texto diz...", explique a verdade, conecte com a vida real e dê aplicação espiritual. Linguagem de PÚLPITO — como se estivesse pregando ao vivo. SEM quebras excessivas. SEM jargão acadêmico.)
+
+**ILUSTRAÇÃO:**
+(História real, analogia moderna ou exemplo concreto que ILUMINE o desenvolvimento. Vivida, breve e a serviço do ponto.)
+
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
+(Mínimo 2 citações de escritores, pregadores, avivalistas, conferencistas, livros, artigos ou documentários.)
+
+**FRASE DE EFEITO:**
+[Frase curta, forte e memorável — estilo impacto de púlpito.]
+
+**APLICAÇÃO PRÁTICA:**
+(Aplicação prática em tom pastoral, com direcionamentos CLAROS e ESPECÍFICOS. Com prazo se possível. Não genérica.)
+
+**TRANSIÇÃO:**
+(TÉCNICA DA DIATRIBE — diálogo imaginário. Cite o ponto 1 que acabou de fechar e PUXE o nome/ideia do PONTO 2. Conecte logicamente. Mínimo 3 frases fluidas.)
 
 ---
 
-**Explicação:** (explicação exegética do texto — DEVE incluir: (1) Volta ao texto base com "O texto diz...", (2) Contexto histórico e cultural contado como história, SEM jargões, (3) Palavras-chave no original grego/hebraico com transliteração e significado explicado de forma simples, (4) Citações dos materiais com marcadores 「...」(Autor, Obra). Mínimo 5 parágrafos distintos com conectores fluidos.)
-**Ilustração:** (história real do cotidiano, analogia moderna ou exemplo concreto que ilumine o ponto — deve ser vivida, breve e servir ao ponto, nunca substituí-lo)
-**Verdade:** (A verdade bíblica central deste ponto em UMA frase clara e memorável — ex: "Deus não espera que a gente se arrume pra chegar perto Dele. Ele nos aceita como estamos.")
-**Citações:** (citações de livros, comentários e materiais da Base de Conhecimento: 「citação」(Autor, Obra, p.XX). Mínimo 2 citações.)
-**Referências:** (REFERÊNCIAS CRUZADAS — versículos de OUTROS livros/capítulos que COMPLEMENTAM o ponto)
-👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
-👉 [Livro Capítulo:Versículo]: "[texto completo do versículo]"
-(mínimo 2-3 referências CRUZADAS com texto completo. NUNCA repita versículos do texto base.)
-**Frase de Efeito:** (declaração memorável, curta e repetível que fixe o ponto na mente do ouvinte)
-**Aplicação Prática:** (ação CONCRETÍSSIMA para o ouvinte — não genérica. Com PRAZO. Ex: "Esta semana, toda vez que a ansiedade bater, pare, respire e diga em voz alta: 'Senhor, eu entrego isso a Ti.' Faça isso por 7 dias.")
+## **2. [TÍTULO DO PONTO 2 EM CAIXA ALTA E NEGRITO]**
 
-## **TRANSIÇÃO:**
-(Ponte do ponto 1 para o ponto 2 — parágrafo COMPLETO mínimo 4-5 frases que: (a) resume o impacto do ponto anterior, (b) cria ponte lógica, (c) introduz o próximo ponto com expectativa)
+**TEXTO:** [Versículo COMPLETO escrito por extenso]
 
-## **2.**
-**Texto:** (versículo ou trecho base)
-**Explicação:** (volta ao texto, contexto, exegese — mínimo 5 parágrafos)
-**Ilustração:** (história real ou analogia)
-**Verdade:** (verdade bíblica central em UMA frase)
-**Citações:** (「citação」(Autor, Obra, p.XX))
-**Referências:**
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-**Frase de Efeito:**
-**Aplicação Prática:**
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
 
-## **TRANSIÇÃO:**
+**DESENVOLVIMENTO:**
+(MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS FLUIDOS. Profundo, pastoral, com aplicação espiritual e conexão com a vida real.)
 
-## **3.**
-**Texto:** (versículo ou trecho base)
-**Explicação:** (volta ao texto, contexto, exegese — mínimo 5 parágrafos, tom mais confrontativo)
-**Ilustração:** (história mais profunda e pessoal)
-**Verdade:** (verdade bíblica central)
-**Citações:** (「citação」(Autor, Obra, p.XX))
-**Referências:**
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-**Frase de Efeito:**
-**Aplicação Prática:**
+**ILUSTRAÇÃO:**
+(História ou analogia que ilumine o desenvolvimento.)
 
-## **TRANSIÇÃO:**
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
 
-## **4. [TÍTULO PRÓPRIO DO PONTO — CRISTOCÊNTRICO]**
-(Crie um TÍTULO PRÓPRIO e CRIATIVO para o último ponto que aponte para Cristo, mas NÃO use a frase "Clímax Cristocêntrico" ou "O Foco em Jesus" como título. O título deve ser temático, comunicativo e memorável — ex: "O Descanso Que Só a Cruz Oferece", "O Nome Que Silencia Todo Medo", "A Resposta Que Vem do Calvário".)
-**Texto:** (versículo ou trecho base — CITE O TEXTO COMPLETO na íntegra)
-**Explicação:** (explicação exegética que CONDUZ TUDO para a pessoa e obra de Cristo — mostre como Jesus cumpre, responde ou resolve o tema. Tom confrontativo profundo com amor. A cruz de Cristo é revelada plenamente aqui. Mínimo 5 parágrafos.)
-**Ilustração:** (exemplo profundo e pessoal que mostre Cristo como a resposta para toda necessidade revelada nos pontos anteriores)
-**Verdade:** (verdade cristocêntrica em UMA frase — ex: "O nome desse descanso é Jesus Cristo.")
-**Citações:** (「citação」(Autor, Obra, p.XX))
-**Referências:**
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-👉 [Livro Capítulo:Versículo]: "[texto completo]"
-**Frase de Efeito:** (frase de impacto máxima — a mais poderosa do sermão)
-**Aplicação Prática:** (convite à fé, arrependimento, obediência e esperança em Cristo)
+**FRASE DE EFEITO:**
+[Frase curta e forte.]
 
-## **TRANSIÇÃO PARA A CONCLUSÃO**
+**APLICAÇÃO PRÁTICA:**
+(Direcionamentos claros e pastorais.)
 
-## **Conclusão**
-**Recapitulação:** (Recapitule cada ponto em 1-2 frases, conectando-os ao TEMA CENTRAL e ao TÍTULO. Mostre como cada ponto construiu a mesma verdade. Retome a palavra-chave central.)
-**Palavra de Ânimo:** (Palavras pastorais de encorajamento — olhando nos olhos da congregação: "Meus irmãos, se o que foi dito hoje faz sentido para você..." Reforce que há esperança.)
-**Esperança em Cristo:** (Declare a esperança que temos em Cristo — a promessa final. Conecte ao tema do sermão.)
-**Oração Final:** (Oração pastoral, bíblica, dependente do Espírito Santo — mínimo 5 frases. Pessoal e transformadora.)
+**TRANSIÇÃO:**
+(DIATRIBE — feche o ponto 2 e abra o PONTO 3 citando o nome dele.)
 
-## **Apelo**
-(SEMPRE cristocêntrico. O apelo é consequência NATURAL do último ponto que revelou a cruz. Identifique dores REAIS e ESPECÍFICAS: solidão, vícios, depressão, pensamentos suicidas, medo, cansaço. Use repetição anafórica conectada ao tema: "Se está cansado, venha. Se está ferido, venha. Se está confuso, venha." RETOME o tema em cada frase. Conecte cada dor ao que Cristo fez na cruz. Linguagem direta e pessoal. A última frase ECOA o título do sermão. Ex: Se o título é "Refúgio para o Cansado", o apelo termina com: "O nome desse refúgio é Jesus Cristo." O apelo não é genérico — é o clímax emocional máximo que faz a pessoa se levantar.)
+---
+
+## **3. [TÍTULO DO PONTO 3 EM CAIXA ALTA E NEGRITO]**
+
+**TEXTO:** [Versículo COMPLETO escrito por extenso]
+
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+
+**DESENVOLVIMENTO:**
+(MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS. Tom mais confrontativo, profundo.)
+
+**ILUSTRAÇÃO:**
+(História mais profunda e pessoal.)
+
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
+
+**FRASE DE EFEITO:**
+
+**APLICAÇÃO PRÁTICA:**
+
+**TRANSIÇÃO:**
+(DIATRIBE — feche o ponto 3 e abra o PONTO 4.)
+
+---
+
+## **4. [TÍTULO DO PONTO 4 EM CAIXA ALTA E NEGRITO]**
+
+**TEXTO:** [Versículo COMPLETO escrito por extenso]
+
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+
+**DESENVOLVIMENTO:**
+(MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS. Tom de aprofundamento, preparando o êxtase do ponto 5.)
+
+**ILUSTRAÇÃO:**
+
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
+
+**FRASE DE EFEITO:**
+
+**APLICAÇÃO PRÁTICA:**
+
+**TRANSIÇÃO:**
+(DIATRIBE — prepare o êxtase do PONTO 5 que aponta para Cristo.)
+
+---
+
+## **5. [TÍTULO DO PONTO 5 EM CAIXA ALTA E NEGRITO — CRISTOCÊNTRICO E CRIATIVO]**
+(O ÚLTIMO ponto é SEMPRE o ÊXTASE e SEMPRE aponta para CRISTO. Crie um título TEMÁTICO e MEMORÁVEL — ex: "O NOME QUE SILENCIA TODO MEDO", "A RESPOSTA QUE VEM DO CALVÁRIO". NUNCA use títulos genéricos como "Clímax Cristocêntrico" ou "O Foco em Jesus".)
+
+**TEXTO:** [Versículo COMPLETO escrito por extenso]
+
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+
+**DESENVOLVIMENTO:**
+(MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS. CONDUZ TUDO para a pessoa e obra de CRISTO — sua cruz, sua graça, sua salvação. Tom confrontativo profundo com amor. ÊXTASE máximo.)
+
+**ILUSTRAÇÃO:**
+(Exemplo profundo que mostre Cristo como a resposta para tudo que foi revelado nos pontos 1-4.)
+
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
+
+**FRASE DE EFEITO:**
+[A frase MAIS PODEROSA do sermão.]
+
+**APLICAÇÃO PRÁTICA:**
+(Convite à fé, arrependimento, obediência e esperança em Cristo.)
+
+---
+
+## **TRANSIÇÃO PARA A CONCLUSÃO:**
+(DIATRIBE — feche o ponto 5 e prepare o ouvinte para a conclusão. Mínimo 3 frases fluidas.)
+
+## **CONCLUSÃO:**
+(OBRIGATÓRIO: RELEMBRE OS 5 PONTOS de forma resumida — cite cada um pelo nome em 1-2 frases. Reforce a mensagem central e o tema. Linguagem forte, pastoral e direta. Aponte para CRISTO como centro. Texto fluido, contínuo, sem quebras excessivas. Mínimo 2 parágrafos.)
+
+## **APELO PROGRESSIVO:**
+(Apelo EMOCIONAL mas equilibrado. Direto e pastoral. Convite CLARO à decisão. Use repetição anafórica conectada ao tema: "Se você está cansado, venha. Se você está ferido, venha. Se você está confuso, venha." Pode incluir: cura emocional, restauração, arrependimento, decisão. PROGRESSÃO: Identificação da dor → Revelação da verdade → Confronto → Chamado direto → Restauração em Cristo. A última frase é uma FRASE FORTE DE IMPACTO que ecoa o TÍTULO do sermão.)
 
 ---
 
