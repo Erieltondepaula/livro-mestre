@@ -48,8 +48,8 @@ const DEFAULT_POINT = (): OutlinePoint => ({ name: '', sections: DEFAULT_SECTION
 
 export function getDefaultStructure(): OutlineStructure {
   return {
-    pointCount: 4,
-    points: Array(4).fill(null).map(() => {
+    pointCount: 5,
+    points: Array(5).fill(null).map(() => {
       const p = DEFAULT_POINT();
       return p;
     }),
