@@ -229,6 +229,17 @@ serve(async (req) => {
       });
     }
 
+    // ⚠️ REGRA 1 — TEXTO BASE OBRIGATÓRIO PARA ESBOÇOS DE SERMÃO
+    const outlineTypes = ["outline_expository", "outline_textual", "outline_thematic"];
+    if (outlineTypes.includes(type) && (!passage || !passage.trim())) {
+      return new Response(
+        JSON.stringify({
+          error: "O Texto Base é obrigatório. Nenhum esboço pode ser gerado sem uma passagem bíblica definida (ex: Jeremias 18:1-6).",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
