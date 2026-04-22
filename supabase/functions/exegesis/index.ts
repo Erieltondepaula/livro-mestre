@@ -749,8 +749,15 @@ Mínimo de 5 frases. Tom de conversa — como se olhasse nos olhos de cada pesso
 
 ---
 
-## **1.**
-**Texto:** (versículo ou trecho base deste ponto — CITE o texto na íntegra)
+## **CONTEXTO DO TEXTO** *(OBRIGATÓRIO — antes do desenvolvimento)*
+(REGRA: Esta seção é OBRIGATÓRIA e deve usar Bíblias, Comentários e Dicionários Bíblicos da Base de Conhecimento. Contar como história, sem jargão acadêmico. Mínimo 4 parágrafos cobrindo:)
+- **Contexto Histórico:** Quando aconteceu, quem governava, situação política e econômica do povo
+- **Contexto Cultural:** Costumes, vestimenta, alimentação, práticas religiosas da época
+- **Contexto Bíblico:** Onde este texto se encaixa no livro, no testamento e na história da redenção
+- **Motivo da Mensagem:** Por que o autor escreveu? Qual situação do povo motivou estas palavras?
+
+---
+
 **Explicação:** (explicação exegética do texto — DEVE incluir: (1) Volta ao texto base com "O texto diz...", (2) Contexto histórico e cultural contado como história, SEM jargões, (3) Palavras-chave no original grego/hebraico com transliteração e significado explicado de forma simples, (4) Citações dos materiais com marcadores 「...」(Autor, Obra). Mínimo 5 parágrafos distintos com conectores fluidos.)
 **Ilustração:** (história real do cotidiano, analogia moderna ou exemplo concreto que ilumine o ponto — deve ser vivida, breve e servir ao ponto, nunca substituí-lo)
 **Verdade:** (A verdade bíblica central deste ponto em UMA frase clara e memorável — ex: "Deus não espera que a gente se arrume pra chegar perto Dele. Ele nos aceita como estamos.")
