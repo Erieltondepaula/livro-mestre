@@ -1209,6 +1209,7 @@ ${[1, 2, 3, 4].map(n => `## **${n}. [TÍTULO DO PONTO ${n} EM CAIXA ALTA E NEGRI
 
 ## **APELO PROGRESSIVO:**
 (EMOCIONAL e equilibrado. Pastoral. Convite CLARO. Repetição anafórica conectada ao tema. PROGRESSÃO: Identificação → Revelação → Confronto → Chamado → Restauração em Cristo. Última frase ECOA o TÍTULO.)
+`;
         break;
       }
 
