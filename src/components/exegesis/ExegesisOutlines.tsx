@@ -18,7 +18,19 @@ import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
 
-type OutlineType = 'outline_expository' | 'outline_textual' | 'outline_thematic';
+type OutlineType =
+  | 'outline_expository'
+  | 'outline_textual'
+  | 'outline_thematic'
+  | 'outline_narrative'
+  | 'outline_biographical'
+  | 'outline_doctrinal'
+  | 'outline_evangelistic'
+  | 'outline_devotional'
+  | 'outline_apologetic'
+  | 'outline_prophetic'
+  | 'outline_exhortative'
+  | 'outline_didactic';
 
 const OUTLINE_TAGS = [
   { id: 'evangelistico', label: '🔥 Evangelístico', color: 'bg-red-500/10 text-red-700 border-red-500/20' },
@@ -45,9 +57,20 @@ interface Props {
 }
 
 const OUTLINE_TYPES: { id: OutlineType; label: string; description: string }[] = [
-  { id: 'outline_expository', label: '📖 Expositivo', description: 'Divisão natural do texto com aplicações progressivas' },
-  { id: 'outline_textual', label: '📝 Textual', description: 'Baseado em palavras/expressões-chave do texto' },
-  { id: 'outline_thematic', label: '🎯 Temático', description: 'Tema central com desenvolvimento doutrinário' },
+  // ⭐ Essenciais (mais usadas)
+  { id: 'outline_expository', label: '📖 Expositivo', description: 'Explica o texto verso por verso, seguindo a divisão natural' },
+  { id: 'outline_textual', label: '📝 Textual', description: 'Baseado em palavras/expressões-chave de um texto curto' },
+  { id: 'outline_thematic', label: '🎯 Temático', description: 'Tema central desenvolvido com vários textos bíblicos' },
+  // 🔥 Outros tipos importantes
+  { id: 'outline_narrative', label: '📜 Narrativo', description: 'Conta uma história bíblica com começo, conflito, clímax e desfecho' },
+  { id: 'outline_biographical', label: '👤 Biográfico', description: 'Foco na vida e nas lições de um personagem bíblico' },
+  { id: 'outline_doctrinal', label: '📚 Doutrinário', description: 'Explica uma doutrina bíblica com base teológica sólida' },
+  { id: 'outline_evangelistic', label: '🔥 Evangelístico', description: 'Voltado para salvação e conversão — apelo direto' },
+  { id: 'outline_devotional', label: '🙏 Devocional', description: 'Edificação espiritual — texto, reflexão e aplicação pessoal' },
+  { id: 'outline_apologetic', label: '🛡️ Apologético', description: 'Defesa racional e bíblica da fé cristã' },
+  { id: 'outline_prophetic', label: '⚡ Profético / Confronto', description: 'Exorta, corrige e chama ao arrependimento com esperança' },
+  { id: 'outline_exhortative', label: '💪 Exortativo', description: 'Encoraja mudança de comportamento e vida prática' },
+  { id: 'outline_didactic', label: '🎓 Didático', description: 'Ensino sistemático ponto a ponto com exemplos' },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
@@ -678,7 +701,23 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     return `<p class="text-xs leading-snug text-foreground/90 mb-0.5">${html}</p>`;
   };
 
-  const typeLabels: Record<string, string> = { outline_expository: 'Expositivo', outline_textual: 'Textual', outline_thematic: 'Temático', outline_descriptive: 'Descritivo', outline_normative: 'Normativo', outline_theological: 'Teológico' };
+  const typeLabels: Record<string, string> = {
+    outline_expository: 'Expositivo',
+    outline_textual: 'Textual',
+    outline_thematic: 'Temático',
+    outline_narrative: 'Narrativo',
+    outline_biographical: 'Biográfico',
+    outline_doctrinal: 'Doutrinário',
+    outline_evangelistic: 'Evangelístico',
+    outline_devotional: 'Devocional',
+    outline_apologetic: 'Apologético',
+    outline_prophetic: 'Profético',
+    outline_exhortative: 'Exortativo',
+    outline_didactic: 'Didático',
+    outline_descriptive: 'Descritivo',
+    outline_normative: 'Normativo',
+    outline_theological: 'Teológico',
+  };
   const isHtml = (content: string) => content.includes('<h1') || content.includes('<h2') || content.includes('<p>') || content.includes('<strong>');
 
   // Section elements with color coding - clicking inserts into editor
