@@ -966,7 +966,7 @@ NUNCA use frases curtas picotadas. Use PROSA NARRATIVA FLUIDA. A simplicidade es
 (Direcionamentos claros e pastorais.)
 
 **TRANSIÇÃO:**
-(DIATRIBE — feche o ponto 2 e abra o PONTO 3 citando o nome dele.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton — não diatribe agressiva. Conecte o ponto 2 ao ponto 3 com mansidão e fluidez narrativa, citando o nome do próximo ponto. Mínimo 2-3 frases.)
 
 ---
 
@@ -994,7 +994,7 @@ NUNCA use frases curtas picotadas. Use PROSA NARRATIVA FLUIDA. A simplicidade es
 **APLICAÇÃO PRÁTICA:**
 
 **TRANSIÇÃO:**
-(DIATRIBE — feche o ponto 3 e abra o PONTO 4.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton — não diatribe agressiva. Conecte o ponto 3 ao ponto 4 com mansidão narrativa. Mínimo 2-3 frases.)
 
 ---
 
@@ -1021,7 +1021,7 @@ NUNCA use frases curtas picotadas. Use PROSA NARRATIVA FLUIDA. A simplicidade es
 **APLICAÇÃO PRÁTICA:**
 
 **TRANSIÇÃO:**
-(DIATRIBE — prepare o êxtase do PONTO 5 que aponta para Cristo.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Prepare o ouvinte para o ponto 5 cristocêntrico com fluidez e mansidão. Mínimo 2-3 frases.)
 
 ---
 
@@ -1054,7 +1054,7 @@ NUNCA use frases curtas picotadas. Use PROSA NARRATIVA FLUIDA. A simplicidade es
 ---
 
 ## **TRANSIÇÃO PARA A CONCLUSÃO:**
-(DIATRIBE — feche o ponto 5 e prepare o ouvinte para a conclusão. Mínimo 3 frases fluidas.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Feche o ponto 5 e conduza pastoralmente o ouvinte para a conclusão. Mínimo 2-3 frases narrativas.)
 
 ## **CONCLUSÃO:**
 (OBRIGATÓRIO: RELEMBRE OS 5 PONTOS de forma resumida — cite cada um pelo nome em 1-2 frases. Reforce a mensagem central e o tema. Linguagem forte, pastoral e direta. Aponte para CRISTO como centro. Texto fluido, contínuo, sem quebras excessivas. Mínimo 2 parágrafos.)
@@ -1156,7 +1156,7 @@ O texto base NUNCA é abandonado. Em CADA ponto, volte ao texto com frases como:
 (Texto fluido contínuo. Pergunta retórica ou cenário REAL. Identificação. Contextualização atual. Conexão emocional. Mínimo 6 frases. Tom de púlpito.)
 
 ## **TRANSIÇÃO:**
-(TÉCNICA DA DIATRIBE — diálogo imaginário. Conecte INTRODUÇÃO ao PONTO 1. Mínimo 3 frases.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton — não diatribe agressiva. Conecte a introdução ao ponto 1 com fluidez narrativa e mansidão. Mínimo 2-3 frases.)
 
 ---
 
@@ -1188,7 +1188,7 @@ ${[1, 2, 3, 4].map(n => `## **${n}. [TÍTULO DO PONTO ${n} EM CAIXA ALTA E NEGRI
 (Aplicação prática pastoral com direcionamentos CLAROS.)
 
 **TRANSIÇÃO:**
-(DIATRIBE — feche o ponto ${n} e PUXE o PONTO ${n + 1} citando seu nome.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Feche o ponto ${n} e conduza ao PONTO ${n + 1} com mansidão narrativa. Mínimo 2-3 frases.)
 
 ---
 
@@ -1221,7 +1221,7 @@ ${[1, 2, 3, 4].map(n => `## **${n}. [TÍTULO DO PONTO ${n} EM CAIXA ALTA E NEGRI
 ---
 
 ## **TRANSIÇÃO PARA A CONCLUSÃO:**
-(DIATRIBE — feche o ponto 5 e prepare a conclusão.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Feche o ponto 5 e conduza à conclusão com fluidez. Mínimo 2-3 frases.)
 
 ## **CONCLUSÃO:**
 (RELEMBRE OS 5 PONTOS resumidamente. Reforce mensagem central. Linguagem forte e pastoral. Aponte para CRISTO. Texto fluido. Mínimo 2 parágrafos.)
@@ -1276,7 +1276,7 @@ Mesmo sendo temático com múltiplos textos, o TEXTO BASE nunca é abandonado. E
 (Texto fluido contínuo. Pergunta retórica ou cenário REAL. Identificação. Contextualização atual. Conexão emocional. Mínimo 6 frases. Tom de púlpito.)
 
 ## **TRANSIÇÃO:**
-(TÉCNICA DA DIATRIBE — diálogo imaginário. Conecte INTRODUÇÃO ao PONTO 1. Mínimo 3 frases.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton — não diatribe agressiva. Conecte a introdução ao ponto 1 com fluidez narrativa e mansidão. Mínimo 2-3 frases.)
 
 ---
 
@@ -1308,7 +1308,7 @@ ${[1, 2, 3, 4].map(n => `## **${n}. [TÍTULO DO PONTO ${n} EM CAIXA ALTA E NEGRI
 (Aplicação prática pastoral com direcionamentos CLAROS.)
 
 **TRANSIÇÃO:**
-(DIATRIBE — feche o ponto ${n} e PUXE o PONTO ${n + 1} citando seu nome.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Feche o ponto ${n} e conduza ao PONTO ${n + 1} com mansidão narrativa. Mínimo 2-3 frases.)
 
 ---
 
@@ -1341,7 +1341,7 @@ ${[1, 2, 3, 4].map(n => `## **${n}. [TÍTULO DO PONTO ${n} EM CAIXA ALTA E NEGRI
 ---
 
 ## **TRANSIÇÃO PARA A CONCLUSÃO:**
-(DIATRIBE — feche o ponto 5 e prepare a conclusão.)
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Feche o ponto 5 e conduza à conclusão com fluidez. Mínimo 2-3 frases.)
 
 ## **CONCLUSÃO:**
 (RELEMBRE OS 5 PONTOS resumidamente. Reforce mensagem central. Linguagem forte e pastoral. Aponte para CRISTO. Texto fluido. Mínimo 2 parágrafos.)
