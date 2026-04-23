@@ -365,7 +365,20 @@ serve(async (req) => {
     }
 
     // ⚠️ REGRA 1 — TEXTO BASE OBRIGATÓRIO PARA ESBOÇOS DE SERMÃO
-    const outlineTypes = ["outline_expository", "outline_textual", "outline_thematic"];
+    const outlineTypes = [
+      "outline_expository",
+      "outline_textual",
+      "outline_thematic",
+      "outline_narrative",
+      "outline_biographical",
+      "outline_doctrinal",
+      "outline_evangelistic",
+      "outline_devotional",
+      "outline_apologetic",
+      "outline_prophetic",
+      "outline_exhortative",
+      "outline_didactic",
+    ];
     if (outlineTypes.includes(type) && (!passage || !passage.trim())) {
       return new Response(
         JSON.stringify({
