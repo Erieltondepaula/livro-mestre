@@ -1374,6 +1374,204 @@ Priorize os materiais do usuário.`;
       // outline_descriptive, outline_normative, outline_theological are now handled as "approach" 
       // parameter within the 3 main types (expository, textual, thematic)
 
+
+      // ====================================================================
+      // 9 NOVOS TIPOS DE PREGAÇÃO — Estilo Erielton mantido em TODOS
+      // ====================================================================
+      case "outline_narrative":
+      case "outline_biographical":
+      case "outline_doctrinal":
+      case "outline_evangelistic":
+      case "outline_devotional":
+      case "outline_apologetic":
+      case "outline_prophetic":
+      case "outline_exhortative":
+      case "outline_didactic": {
+        const problemaSection = structure_config?.problema ? `\n\n## 🎯 DOR/PROBLEMA QUE O SERMÃO RESOLVE:\n"${structure_config.problema}"\n**REGRA:** A introdução COMEÇA descrevendo essa dor. Cada ponto é uma RESPOSTA progressiva. O apelo CONFRONTA essa dor com Cristo.\n` : '';
+        const perguntaSection = structure_config?.perguntaCentral ? `\n## ❓ PERGUNTA CENTRAL:\n"${structure_config.perguntaCentral}"\n**REGRA:** A introdução LEVANTA esta pergunta. A conclusão RESPONDE definitivamente.\n` : '';
+
+        const sermonTypeMap: Record<string, { label: string; description: string; structureNote: string; specialRule: string }> = {
+          outline_narrative: {
+            label: "NARRATIVO",
+            description: "A pregação narrativa CONTA UMA HISTÓRIA bíblica de forma envolvente. Possui começo (situação), conflito, clímax e desfecho. A estrutura segue o ARCO DA HISTÓRIA, não tópicos abstratos.",
+            structureNote: "Cada PONTO representa uma FASE da narrativa: 1) Cenário/Situação, 2) Conflito/Tensão, 3) Clímax/Encontro com Deus, 4) Desfecho/Resposta, 5) Cristo como Cumprimento. Use linguagem cinematográfica: 'Imagine a cena...', 'Olhe para os olhos de...'.",
+            specialRule: "PRENDA A ATENÇÃO PELA HISTÓRIA. O ouvinte deve VER a cena. Nada de tópicos secos."
+          },
+          outline_biographical: {
+            label: "BIOGRÁFICO",
+            description: "A pregação biográfica é centrada na VIDA DE UM PERSONAGEM bíblico. Mostra contexto, momentos decisivos, falhas, vitórias e o que Deus fez NELE e ATRAVÉS dele.",
+            structureNote: "PONTOS por FASES da vida: 1) Origem/Contexto, 2) Chamado ou Crise, 3) Lutas e Falhas, 4) Restauração/Vitória, 5) Cristo prefigurado/cumprido nessa vida. Cite NOMES, LUGARES e DATAS bíblicas.",
+            specialRule: "O personagem é a JANELA — Cristo é a PAISAGEM. Toda biografia bíblica aponta para Jesus."
+          },
+          outline_doctrinal: {
+            label: "DOUTRINÁRIO",
+            description: "A pregação doutrinária EXPLICA UMA DOUTRINA bíblica (salvação, graça, justificação, santificação, etc.) com clareza e profundidade. Usa MÚLTIPLOS textos.",
+            structureNote: "PONTOS estruturam a doutrina: 1) DEFINIÇÃO bíblica clara, 2) BASE BÍBLICA (AT e NT), 3) DESDOBRAMENTO teológico, 4) IMPLICAÇÕES PRÁTICAS, 5) CRISTO como o coração da doutrina.",
+            specialRule: "PROFUNDIDADE COM PALAVRAS SIMPLES. Toda doutrina é EXPLICADA antes de ser aplicada. Termos teológicos são SEMPRE traduzidos."
+          },
+          outline_evangelistic: {
+            label: "EVANGELÍSTICO",
+            description: "A pregação evangelística é VOLTADA PARA A SALVAÇÃO. Apresenta o pecado, a obra de Cristo, o arrependimento e a fé. O apelo é DIRETO, claro e urgente.",
+            structureNote: "ESTRUTURA: 1) DEUS é santo, 2) O HOMEM caiu — todos pecamos, 3) CRISTO é a única solução — sua morte e ressurreição, 4) ARREPENDIMENTO e fé, 5) A DECISÃO precisa ser tomada HOJE.",
+            specialRule: "URGÊNCIA + AMOR. O apelo é o CORAÇÃO do sermão — claro, direto, sem ambiguidade."
+          },
+          outline_devotional: {
+            label: "DEVOCIONAL",
+            description: "A pregação devocional é MAIS SIMPLES e voltada para EDIFICAÇÃO ESPIRITUAL. Texto, breve explicação, reflexão pastoral, aplicação pessoal e oração/apelo leve.",
+            structureNote: "ESTRUTURA MAIS LEVE: pode ter 3 pontos curtos. Cada ponto é uma REFLEXÃO pastoral curta com aplicação imediata. Foco em INTIMIDADE com Deus.",
+            specialRule: "TOM DE INTIMIDADE. Linguagem suave, pastoral, abraçadora. 'Querido irmão...'. Apelo é SUAVE."
+          },
+          outline_apologetic: {
+            label: "APOLOGÉTICO",
+            description: "A pregação apologética é a DEFESA DA FÉ CRISTÃ. Apresenta um tema/objeção, expõe o argumento contrário, oferece resposta bíblica e racional.",
+            structureNote: "ESTRUTURA: 1) APRESENTAÇÃO da pergunta/objeção, 2) ARGUMENTO CONTRÁRIO honesto, 3) RESPOSTA BÍBLICA, 4) RESPOSTA RACIONAL — evidências (cite C.S. Lewis, McDowell, Strobel, Craig), 5) CRISTO como a resposta final.",
+            specialRule: "RESPEITO COM O OUVINTE CÉTICO. Argumente com graça e verdade. 1Pe 3:15 é o padrão."
+          },
+          outline_prophetic: {
+            label: "PROFÉTICO / DE CONFRONTO",
+            description: "A pregação profética EXORTA, CORRIGE e CHAMA AO ARREPENDIMENTO. Como os profetas do AT, denuncia o pecado, mas SEMPRE oferece esperança e restauração. É amor que confronta.",
+            structureNote: "ESTRUTURA: 1) DIAGNÓSTICO ESPIRITUAL, 2) PALAVRA DE CONFRONTO, 3) CONSEQUÊNCIAS, 4) CHAMADO AO ARREPENDIMENTO, 5) ESPERANÇA E RESTAURAÇÃO em Cristo. Use a linguagem de Isaías, Jeremias, João Batista.",
+            specialRule: "FIRMEZA COM LÁGRIMAS. Confrontar SEMPRE com amor pastoral. Cristo restaura."
+          },
+          outline_exhortative: {
+            label: "EXORTATIVO",
+            description: "A pregação exortativa ENCORAJA MUDANÇA DE COMPORTAMENTO. Foco em SANTIFICAÇÃO, obediência, perseverança, vida cristã prática.",
+            structureNote: "ESTRUTURA: 1) VERDADE BÍBLICA clara, 2) DESAFIO ATUAL, 3) CHAMADO À AÇÃO — o que muda HOJE, 4) MEIOS DA GRAÇA, 5) CRISTO — força e modelo. Use verbos imperativos com ternura.",
+            specialRule: "MOTIVAÇÃO + GRAÇA. Nunca legalismo. A exortação nasce do amor de Cristo."
+          },
+          outline_didactic: {
+            label: "DIDÁTICO (ENSINO)",
+            description: "A pregação didática é VOLTADA PARA O ENSINO sistemático. Mais próxima de uma aula expositiva. Explica ponto a ponto, dá exemplos, recapitula, aplica.",
+            structureNote: "ESTRUTURA DE AULA: 1) INTRODUÇÃO com pergunta-guia, 2-4) PONTOS EXPLICATIVOS com EXEMPLOS, 5) APLICAÇÃO + RECAPITULAÇÃO. Use perguntas didáticas: 'Vocês conseguem ver isso?', 'Lembrem-se de três coisas...'.",
+            specialRule: "CLAREZA DIDÁTICA. Numere, repita, exemplifique. O ouvinte deve SAIR SABENDO algo novo."
+          },
+        };
+
+        const cfg = sermonTypeMap[type as string]!;
+
+        userPrompt = `Gere um ESBOÇO DE SERMÃO ${cfg.label} completo baseado no seguinte texto:
+
+**Passagem:** ${passage}
+${materialsSection}${analysesSection}${structureSection}${approachSection}${pastoralFilter}${problemaSection}${perguntaSection}
+
+## PERFIL DO PREGADOR:
+Você é um pregador experiente, humilde e amoroso. Ama a Bíblia e fala a língua do povo, transformando verdades profundas em palavras simples. Sua missão é preparar um sermão que uma criança de 8 anos entenda e um juiz/doutor admire — do bebê de colo ao mais ancião. Cristo é o centro absoluto.
+
+## REGRAS DOUTRINÁRIAS:
+- Conteúdo puramente bíblico: Cristo salva, cura e liberta.
+- Proibido: conteúdo liberal, relativista ou antropocêntrico.
+- Objetivo: 50 a 60 minutos de pregação sólida e cheia de esperança.
+- Use exclusivamente versões: ACF, NVI, NAA, ARA, NVT.
+
+## TIPO DE PREGAÇÃO: ${cfg.label}
+${cfg.description}
+
+## 📌 ORIENTAÇÃO ESTRUTURAL ESPECÍFICA DESTE TIPO:
+${cfg.structureNote}
+
+## ⚡ REGRA ESPECIAL DESTE TIPO:
+${cfg.specialRule}
+
+## 📌 A REGRA DE OURO (VISITA CONSTANTE AO TEXTO):
+O texto base NUNCA é abandonado. Em CADA ponto, volte ao texto: "O texto diz...", "Olhando para o versículo...", "Voltando ao nosso texto...".
+
+## ESTRUTURA OBRIGATÓRIA — SIGA EXATAMENTE NESTA ORDEM (ESTILO ERIELTON DE PAULA):
+
+# **TÍTULO:** [TÍTULO EM CAIXA ALTA E NEGRITO — FORTE, MEMORÁVEL, MÁX 8 PALAVRAS. DEVE CONTER UMA "SUB-FRASE" QUE SE REPETE NO FIM DE CADA PONTO.]
+
+## **TEMA:** [TEMA EM UMA FRASE CURTA E CLARA — CAIXA ALTA E NEGRITO]
+
+## **TIPO:** ${cfg.label}
+
+## **TEXTO BASE:** ${passage}
+(OBRIGATÓRIO: Transcreva o TEXTO COMPLETO da passagem na íntegra, versículo por versículo, na versão ACF.)
+
+---
+
+## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO:**
+(DEIXAR EM BRANCO — escreva apenas: "(O pregador preenche)")
+
+## **CONTEXTO DO TEXTO:**
+(Histórico, cultural e bíblico — motivo da mensagem e situação do povo. Mínimo 2 parágrafos.)
+
+## **INTRODUÇÃO:**
+(Texto fluido contínuo no estilo da pregação ${cfg.label}. Pergunta retórica ou cenário REAL. Identificação. Conexão emocional. Mínimo 6 frases. Tom de púlpito.)
+
+## **TRANSIÇÃO:**
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Conecte a introdução ao ponto 1 com fluidez e mansidão. Mínimo 2-3 frases.)
+
+---
+
+${[1, 2, 3, 4].map(n => `## **${n}. [TÍTULO DO PONTO ${n} EM CAIXA ALTA E NEGRITO — coerente com o tipo ${cfg.label}]**
+
+**TEXTO:** [Versículo COMPLETO escrito por extenso]
+
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+
+**DESENVOLVIMENTO:**
+(MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS FLUIDOS. Profundo, pastoral, com aplicação espiritual e conexão com a vida real. Linguagem UNIVERSAL — criança entende, doutor admira. Volte ao texto base. Termine com a SUB-FRASE do título.)
+
+**ILUSTRAÇÃO:**
+(História real, analogia moderna ou exemplo concreto. "Talvez alguém esteja aqui hoje...".)
+
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
+
+**FRASE DE EFEITO:**
+[Frase curta, forte e memorável.]
+
+**APLICAÇÃO PRÁTICA:**
+(Aplicação pastoral com direcionamentos CLAROS para a semana.)
+
+**TRANSIÇÃO:**
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Feche o ponto ${n} e conduza ao PONTO ${n + 1}. Mínimo 2-3 frases.)
+
+---
+
+`).join('')}## **5. [TÍTULO DO PONTO 5 EM CAIXA ALTA E NEGRITO — CRISTOCÊNTRICO E CRIATIVO]**
+(O ÚLTIMO ponto é SEMPRE o ÊXTASE e SEMPRE aponta para CRISTO.)
+
+**TEXTO:** [Versículo COMPLETO]
+
+**REFERÊNCIAS:**
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+👉 [Livro Cap:Vers]: "[texto completo]"
+
+**DESENVOLVIMENTO:**
+(MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS. CONDUZ TUDO para CRISTO — sua cruz, sua graça, sua salvação. ÊXTASE máximo.)
+
+**ILUSTRAÇÃO:**
+(Cristo como resposta para tudo dos pontos anteriores.)
+
+**CITAÇÕES:**
+「[citação]」(Autor, Obra)
+「[citação]」(Autor, Obra)
+
+**FRASE DE EFEITO:**
+[A frase MAIS PODEROSA do sermão.]
+
+**APLICAÇÃO PRÁTICA:**
+(Convite à fé, arrependimento e esperança em Cristo.)
+
+---
+
+## **TRANSIÇÃO PARA A CONCLUSÃO:**
+(TRANSIÇÃO PASTORAL SUAVE estilo Erielton. Mínimo 2-3 frases.)
+
+## **CONCLUSÃO:**
+(RELEMBRE OS 5 PONTOS resumidamente. Reforce mensagem central. Aponte para CRISTO. Texto fluido. Mínimo 2 parágrafos.)
+
+## **APELO PROGRESSIVO:**
+(EMOCIONAL e equilibrado. Pastoral. Convite CLARO. Repetição anafórica conectada ao tema. PROGRESSÃO: Identificação → Revelação → Confronto → Chamado → Restauração em Cristo. Última frase ECOA o TÍTULO.${cfg.label === 'EVANGELÍSTICO' ? ' Como sermão EVANGELÍSTICO, o apelo é DIRETO e URGENTE — chame as pessoas à decisão.' : cfg.label === 'DEVOCIONAL' ? ' Como sermão DEVOCIONAL, o apelo é SUAVE e ÍNTIMO — convite ao descanso em Cristo.' : cfg.label === 'PROFÉTICO / DE CONFRONTO' ? ' Como sermão PROFÉTICO, o apelo é FIRME mas com lágrimas — chamado claro ao arrependimento e restauração.' : ''})
+`;
+        break;
+      }
+
       case "question":
         userPrompt = `Sobre: ${passage}
 ${materialsSection}
