@@ -865,9 +865,9 @@ O texto base NUNCA é abandonado. Em CADA ponto, CADA desenvolvimento, o pregado
 - "Voltando ao nosso texto..."
 O ouvinte deve sentir que a BÍBLIA está conduzindo cada palavra, não a opinião do pregador.
 
-## ESTRUTURA OBRIGATÓRIA — SIGA EXATAMENTE NESTA ORDEM:
+## ESTRUTURA OBRIGATÓRIA — SIGA EXATAMENTE NESTA ORDEM (ESTILO ERIELTON DE PAULA):
 
-# **TÍTULO:** [TÍTULO EM CAIXA ALTA E NEGRITO — FORTE, MEMORÁVEL, MÁX 8 PALAVRAS]
+# **TÍTULO:** [TÍTULO EM CAIXA ALTA E NEGRITO — FORTE, MEMORÁVEL, MÁX 8 PALAVRAS. DEVE CONTER UMA "SUB-FRASE" QUE SE REPETE NO FIM DE CADA PONTO. EX: "QUEBRADO SIM, CAÍDO JAMAIS" — sub-frase "Quebrado sim, mas..."]
 
 ## **TEMA:** [TEMA EM UMA FRASE CURTA E CLARA — CAIXA ALTA E NEGRITO]
 
@@ -881,15 +881,25 @@ O ouvinte deve sentir que a BÍBLIA está conduzindo cada palavra, não a opini�
 ## **BOAS-VINDAS / APRESENTAÇÃO / AGRADECIMENTO:**
 (DEIXAR EM BRANCO — o pregador preenche manualmente. Escreva apenas: "(O pregador preenche)")
 
-## **INTRODUÇÃO:**
-(OBRIGATÓRIA — texto fluido e contínuo. Comece com pergunta retórica ou cenário REAL do cotidiano que gere identificação. Contextualize o tema com a realidade ATUAL. Crie conexão emocional. Prepare naturalmente para o primeiro ponto. Mínimo 6 frases em parágrafos fluidos — SEM quebras excessivas. Tom de conversa de púlpito.)
+## **INTRODUÇÃO — A JORNADA ATÉ O TEXTO:**
+(OBRIGATÓRIO ESTILO ERIELTON: Esta introdução é uma JORNADA NARRATIVA pastoral. Comece resgatando o CAMINHO até o texto:
+- Como o livro chegou nesse momento? Que capítulos vieram antes?
+- Qual era o estado do povo/personagem?
+- Que processos esse personagem já viveu?
+- Cite versículos anteriores em **negrito** com a referência: **"texto"** (Livro Cap.Vers).
+- Inclua exemplos de outros personagens bíblicos que viveram processos parecidos (Habacuque, Asafe, Ezequiel, Davi, etc.)
+- Faça o ouvinte CHEGAR ao texto base depois de uma viagem pastoral.
+- Termine apresentando a verdade central que o sermão vai provar.
 
-## **TRANSIÇÃO:**
-(Use a TÉCNICA DA DIATRIBE — diálogo imaginário com o ouvinte. Conecte a INTRODUÇÃO ao PONTO 1. Cite o nome/ideia do ponto que vem. Mínimo 3 frases fluidas.)
+Mínimo 4 parágrafos LONGOS, fluidos e narrativos. SEM frases picotadas. Tom de conversa pastoral de domingo.)
+
+## **TRANSIÇÃO PARA O PONTO 1:**
+(Transição PASTORAL e SUAVE — não diatribe agressiva. Use frases reflexivas: "O personagem recebe uma ordem simples, mas profunda...", "Antes da revelação houve um chamado, antes do entendimento houve obediência, e isso nos leva ao primeiro ensinamento que esse texto nos apresenta." Mínimo 2-3 frases fluidas.)
 
 ---
 
 ## **1. [TÍTULO DO PONTO 1 EM CAIXA ALTA E NEGRITO]**
+### [SUB-FRASE QUE ECOA O TÍTULO DO SERMÃO — EX: "Quebrado sim, mas chamado para descer e ouvir"]
 
 **TEXTO:** [Versículo COMPLETO escrito por extenso — não apenas referência. Ex: Jeremias 18:1-2: "A palavra do Senhor, que veio a Jeremias..."]
 
@@ -897,10 +907,19 @@ O ouvinte deve sentir que a BÍBLIA está conduzindo cada palavra, não a opini�
 👉 [Livro Cap:Vers]: "[texto completo do versículo cruzado]"
 👉 [Livro Cap:Vers]: "[texto completo do versículo cruzado]"
 👉 [Livro Cap:Vers]: "[texto completo do versículo cruzado]"
-(Mínimo 3 referências cruzadas que SUSTENTAM o ponto. Use paráfrase explicativa após cada uma quando útil.)
+(Mínimo 3 referências cruzadas que SUSTENTAM o ponto.)
 
 **DESENVOLVIMENTO:**
-(OBRIGATÓRIO: NO MÍNIMO 800 caracteres em NO MÁXIMO 3 PARÁGRAFOS FLUIDOS. Texto contínuo, profundo, pastoral e explicativo. Volte ao texto base com "O texto diz...", explique a verdade, conecte com a vida real e dê aplicação espiritual. Linguagem de PÚLPITO — como se estivesse pregando ao vivo. SEM quebras excessivas. SEM jargão acadêmico.)
+(OBRIGATÓRIO ESTILO ERIELTON: 4 a 6 parágrafos LONGOS, fluidos e narrativos — cada parágrafo de 5 a 10 linhas. Texto contínuo de PÚLPITO.
+
+ESTRUTURA INTERNA OBRIGATÓRIA:
+- Parágrafo 1: Cite o versículo do ponto em **negrito** com referência. Ex: O texto declara: **"Levanta-te e desce à casa do oleiro..."** (Jeremias 18.2). Em seguida, comece a desdobrar a verdade.
+- Parágrafo 2: Aprofunde com palavras-chave do original (hebraico/grego com transliteração) explicadas em linguagem SIMPLES.
+- Parágrafo 3: Conexão pastoral OBRIGATÓRIA com "Talvez alguém esteja aqui hoje...", "Talvez você esteja vivendo..."
+- Parágrafo 4-5: Aprofunde a aplicação com imagens do cotidiano.
+- Parágrafo final: FECHE o ponto com a SUB-FRASE em **negrito** que ecoa o título. Ex: **"Quebrado sim, mas chamado para descer e ouvir."**
+
+NUNCA use frases curtas picotadas. Use PROSA NARRATIVA FLUIDA. A simplicidade está no vocabulário, não no tamanho da frase. Versículos sempre em **negrito** com referência completa entre parênteses.)
 
 **ILUSTRAÇÃO:**
 (História real, analogia moderna ou exemplo concreto que ILUMINE o desenvolvimento. Vivida, breve e a serviço do ponto.)
@@ -917,7 +936,7 @@ O ouvinte deve sentir que a BÍBLIA está conduzindo cada palavra, não a opini�
 (Aplicação prática em tom pastoral, com direcionamentos CLAROS e ESPECÍFICOS. Com prazo se possível. Não genérica.)
 
 **TRANSIÇÃO:**
-(TÉCNICA DA DIATRIBE — diálogo imaginário. Cite o ponto 1 que acabou de fechar e PUXE o nome/ideia do PONTO 2. Conecte logicamente. Mínimo 3 frases fluidas.)
+(PASTORAL E SUAVE — NUNCA diatribe agressiva. Estilo Erielton: "E à medida que entendemos isso, somos levados a uma verdade ainda mais profunda...", "Mas isso nos leva ao próximo ponto, porque...". Conecte o ponto 1 ao ponto 2 citando seu nome com mansidão. Mínimo 2-3 frases fluidas.)
 
 ---
 
