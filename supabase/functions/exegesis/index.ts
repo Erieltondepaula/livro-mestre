@@ -693,6 +693,14 @@ serve(async (req) => {
       // Fall back to default prompt
     }
 
+    // 🔥 INJEÇÃO DINÂMICA DO MÓDULO DO TIPO DE SERMÃO
+    // O prompt base (SYSTEM_PROMPT ou customizado pelo usuário) permanece fixo.
+    // O módulo do tipo selecionado é APENDADO ao final, garantindo comportamento específico
+    // sem alterar a identidade global do sistema.
+    if (SERMON_TYPE_MODULES[type]) {
+      effectiveSystemPrompt = effectiveSystemPrompt + buildSermonTypeInjection(type);
+      console.log(`[exegesis] Sermon type module injected: ${SERMON_TYPE_MODULES[type].label}`);
+    }
 
     let userPrompt = "";
     const materialsSection = materials_context
