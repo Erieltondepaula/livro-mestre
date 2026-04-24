@@ -587,9 +587,11 @@ PROIBIDO:
 };
 
 // Build the dynamic injection block for a given outline type
-function buildSermonTypeInjection(type: string): string {
+// If customModule is provided, it overrides the default module text.
+function buildSermonTypeInjection(type: string, customModule?: string | null): string {
   const cfg = SERMON_TYPE_MODULES[type];
   if (!cfg) return "";
+  const moduleBody = (customModule && customModule.trim()) ? customModule : cfg.module;
   return `
 
 ============================================================
@@ -600,7 +602,7 @@ O sermão DEVE seguir RIGOROSAMENTE as diretrizes do tipo "${cfg.label}".
 É PROIBIDO misturar estruturas de outros tipos de sermão.
 Se o tipo for violado, o sermão está INCORRETO e deve ser regenerado.
 
-${cfg.module}
+${moduleBody}
 
 ============================================================
 PADRÃO DE QUALIDADE (sempre obrigatório, em qualquer tipo):
