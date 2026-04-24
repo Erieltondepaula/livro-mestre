@@ -587,9 +587,11 @@ PROIBIDO:
 };
 
 // Build the dynamic injection block for a given outline type
-function buildSermonTypeInjection(type: string): string {
+// If customModule is provided, it overrides the default module text.
+function buildSermonTypeInjection(type: string, customModule?: string | null): string {
   const cfg = SERMON_TYPE_MODULES[type];
   if (!cfg) return "";
+  const moduleBody = (customModule && customModule.trim()) ? customModule : cfg.module;
   return `
 
 ============================================================
@@ -600,7 +602,7 @@ O sermão DEVE seguir RIGOROSAMENTE as diretrizes do tipo "${cfg.label}".
 É PROIBIDO misturar estruturas de outros tipos de sermão.
 Se o tipo for violado, o sermão está INCORRETO e deve ser regenerado.
 
-${cfg.module}
+${moduleBody}
 
 ============================================================
 PADRÃO DE QUALIDADE (sempre obrigatório, em qualquer tipo):
@@ -636,6 +638,18 @@ serve(async (req) => {
       });
     }
 
+    // Handle get_sermon_type_modules request — return all 12 default modules for the editor UI
+    if (type === "get_sermon_type_modules") {
+      const modules = Object.entries(SERMON_TYPE_MODULES).map(([key, val]) => ({
+        sermon_type: key,
+        label: val.label,
+        prompt_text: val.module,
+      }));
+      return new Response(JSON.stringify({ modules }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ⚠️ REGRA 1 — TEXTO BASE OBRIGATÓRIO PARA ESBOÇOS DE SERMÃO
     const outlineTypes = [
       "outline_expository",
@@ -663,8 +677,9 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Try to load user's custom prompt from DB
+    // Try to load user's custom prompt + custom sermon type module from DB
     let effectiveSystemPrompt = SYSTEM_PROMPT;
+    let customTypeModule: string | null = null;
     try {
       const authHeader = req.headers.get("Authorization");
       if (authHeader) {
@@ -677,6 +692,7 @@ serve(async (req) => {
           const token = authHeader.replace("Bearer ", "");
           const { data: { user } } = await supabaseAdmin.auth.getUser(token);
           if (user) {
+            // Base prompt (custom or default)
             const { data: promptData } = await supabaseAdmin
               .from("user_sermon_prompts")
               .select("prompt_text")
@@ -685,21 +701,34 @@ serve(async (req) => {
             if (promptData?.prompt_text) {
               effectiveSystemPrompt = promptData.prompt_text;
             }
+
+            // Custom module for the selected sermon type (overrides default module)
+            if (type && SERMON_TYPE_MODULES[type]) {
+              const { data: moduleData } = await supabaseAdmin
+                .from("user_sermon_type_prompts")
+                .select("prompt_text")
+                .eq("user_id", user.id)
+                .eq("sermon_type", type)
+                .maybeSingle();
+              if (moduleData?.prompt_text) {
+                customTypeModule = moduleData.prompt_text;
+              }
+            }
           }
         }
       }
     } catch (e) {
-      console.error("Error loading custom prompt:", e);
-      // Fall back to default prompt
+      console.error("Error loading custom prompt/module:", e);
+      // Fall back to default prompt and default module
     }
 
     // 🔥 INJEÇÃO DINÂMICA DO MÓDULO DO TIPO DE SERMÃO
     // O prompt base (SYSTEM_PROMPT ou customizado pelo usuário) permanece fixo.
-    // O módulo do tipo selecionado é APENDADO ao final, garantindo comportamento específico
-    // sem alterar a identidade global do sistema.
+    // O módulo do tipo selecionado é APENDADO ao final.
+    // Se o usuário tem módulo customizado para esse tipo, ele substitui o módulo padrão.
     if (SERMON_TYPE_MODULES[type]) {
-      effectiveSystemPrompt = effectiveSystemPrompt + buildSermonTypeInjection(type);
-      console.log(`[exegesis] Sermon type module injected: ${SERMON_TYPE_MODULES[type].label}`);
+      effectiveSystemPrompt = effectiveSystemPrompt + buildSermonTypeInjection(type, customTypeModule);
+      console.log(`[exegesis] Sermon type module injected: ${SERMON_TYPE_MODULES[type].label} (${customTypeModule ? "custom" : "default"})`);
     }
 
     let userPrompt = "";

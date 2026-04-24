@@ -1182,6 +1182,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sermon_type_prompts: {
+        Row: {
+          created_at: string
+          id: string
+          is_customized: boolean
+          prompt_text: string
+          sermon_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_customized?: boolean
+          prompt_text: string
+          sermon_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_customized?: boolean
+          prompt_text?: string
+          sermon_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_thematic_topics: {
         Row: {
           category: string
