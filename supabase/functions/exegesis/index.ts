@@ -342,6 +342,278 @@ function checkRateLimit(key: string): boolean {
   return true;
 }
 
+// ============================================================
+// 🔥 MÓDULOS DINÂMICOS POR TIPO DE SERMÃO (12 tipos)
+// Cada módulo é INJETADO no system prompt quando o tipo é selecionado.
+// O prompt base permanece fixo; apenas o módulo do tipo escolhido entra em ação.
+// ============================================================
+const SERMON_TYPE_MODULES: Record<string, { label: string; module: string }> = {
+  outline_expository: {
+    label: "EXPOSITIVO",
+    module: `🟦 MÓDULO EXPOSITIVO — DIRETRIZES OBRIGATÓRIAS
+
+Trabalhe o texto bíblico seguindo sua DIVISÃO NATURAL.
+
+REGRAS OBRIGATÓRIAS:
+- Cada ponto deve corresponder a uma PARTE do texto (versículo ou bloco de versículos)
+- O sermão DEVE seguir a ORDEM do texto, do início ao fim
+- Primeiro EXPLIQUE (o que o texto diz), depois APLIQUE (como vivemos isso)
+- Considere SEMPRE o contexto histórico, cultural e literário
+- Cite o versículo COMPLETO (ACF) ao introduzir cada ponto
+- Use palavras do hebraico/grego quando esclarecer o sentido
+
+PROIBIDO:
+- Pular versículos do texto base
+- Criar ideias que não estejam no texto
+- Misturar com estrutura temática ou narrativa
+- Usar o texto apenas como gancho para outro assunto`,
+  },
+
+  outline_textual: {
+    label: "TEXTUAL",
+    module: `🟨 MÓDULO TEXTUAL — DIRETRIZES OBRIGATÓRIAS
+
+Extraia PALAVRAS ou EXPRESSÕES-CHAVE do texto base e desenvolva o sermão a partir delas.
+
+REGRAS OBRIGATÓRIAS:
+- Cada ponto deve nascer de uma PALAVRA ou FRASE específica do texto
+- Identifique no início do ponto qual é a expressão escolhida (em destaque)
+- Explique o significado da expressão DENTRO do contexto bíblico
+- Desenvolva a ideia teológica a partir do termo
+- Mantenha equilíbrio entre profundidade e simplicidade
+
+PROIBIDO:
+- Transformar em sermão expositivo (não percorrer o texto verso a verso)
+- Usar ideias não presentes no texto
+- Escolher palavras irrelevantes só pelo som ou efeito retórico`,
+  },
+
+  outline_thematic: {
+    label: "TEMÁTICO",
+    module: `🟥 MÓDULO TEMÁTICO — DIRETRIZES OBRIGATÓRIAS
+
+Desenvolva um TEMA bíblico com base em MÚLTIPLAS PASSAGENS.
+
+REGRAS OBRIGATÓRIAS:
+- Cada ponto deve abordar um ASPECTO diferente do tema
+- Utilize REFERÊNCIAS CRUZADAS de várias partes da Bíblia (AT e NT)
+- Garanta COERÊNCIA TEOLÓGICA entre os pontos
+- Cite cada texto de apoio com referência completa (ACF)
+- Apresente o tema na introdução e conclua amarrando todos os aspectos
+
+PROIBIDO:
+- Basear-se em um único texto (isso seria expositivo ou textual)
+- Opiniões sem base bíblica
+- Forçar textos fora do seu contexto original
+- Misturar temas diferentes no mesmo sermão`,
+  },
+
+  outline_narrative: {
+    label: "NARRATIVO",
+    module: `🟩 MÓDULO NARRATIVO — DIRETRIZES OBRIGATÓRIAS
+
+Construa o sermão como uma NARRATIVA bíblica envolvente.
+
+REGRAS OBRIGATÓRIAS:
+- Estruture com: INÍCIO (situação) → CONFLITO → CLÍMAX → DESFECHO
+- Mantenha FLUIDEZ e ENVOLVIMENTO ao longo do sermão
+- Use linguagem descritiva, sensorial, que faça o ouvinte "ver" a cena
+- Insira a APLICAÇÃO principalmente ao final, depois do desfecho
+- Pode haver pequenos comentários no meio, mas a história é o fio condutor
+
+PROIBIDO:
+- Interromper a narrativa com explicações teológicas excessivas
+- Adicionar detalhes que não estão na Bíblia (especulação)
+- Transformar em sermão expositivo no meio da história`,
+  },
+
+  outline_biographical: {
+    label: "BIOGRÁFICO",
+    module: `🟪 MÓDULO BIOGRÁFICO — DIRETRIZES OBRIGATÓRIAS
+
+Desenvolva o sermão a partir da TRAJETÓRIA DE VIDA de um personagem bíblico.
+
+REGRAS OBRIGATÓRIAS:
+- Identifique CLARAMENTE o personagem na introdução
+- Siga a PROGRESSÃO da vida: formação → chamado → crises → propósito → legado
+- Cada ponto representa uma FASE diferente da vida do personagem
+- Use APENAS informações que estão na Bíblia
+- Tire LIÇÕES espirituais de cada fase para a vida do ouvinte hoje
+
+PROIBIDO:
+- Inventar dados não bíblicos sobre o personagem
+- Reduzir o sermão a curiosidades históricas sem aplicação
+- Tratar o personagem como herói (o herói é sempre Deus agindo nele)
+- Misturar com análise temática genérica`,
+  },
+
+  outline_doctrinal: {
+    label: "DOUTRINÁRIO",
+    module: `🟧 MÓDULO DOUTRINÁRIO — DIRETRIZES OBRIGATÓRIAS
+
+Explique uma DOUTRINA bíblica com profundidade e clareza.
+
+REGRAS OBRIGATÓRIAS:
+- DEFINA claramente a doutrina logo no início (o que é, o que NÃO é)
+- Sustente a doutrina com MÚLTIPLOS textos bíblicos (AT e NT)
+- Explique as IMPLICAÇÕES TEÓLÓGICAS para a vida cristã
+- Apresente erros comuns de interpretação e como evitá-los
+- Conecte a doutrina com o coração: doutrina é para adoração, não só conhecimento
+
+PROIBIDO:
+- Superficialidade ou definição vaga
+- Falta de base bíblica suficiente
+- Usar jargão acadêmico sem explicar
+- Doutrinar sem aplicar à vida prática`,
+  },
+
+  outline_evangelistic: {
+    label: "EVANGELÍSTICO",
+    module: `🔴 MÓDULO EVANGELÍSTICO — DIRETRIZES OBRIGATÓRIAS
+
+Construa o sermão com FOCO TOTAL na SALVAÇÃO em Cristo.
+
+REGRAS OBRIGATÓRIAS:
+- Apresente claramente: PECADO → CONSEQUÊNCIA → SOLUÇÃO EM CRISTO → RESPOSTA
+- Use linguagem SIMPLES, DIRETA e ACESSÍVEL (pense em alguém que nunca leu a Bíblia)
+- Conclua com APELO CLARO à decisão por Jesus
+- Use ilustrações do cotidiano que conectem o ouvinte
+- O nome de JESUS deve aparecer com frequência
+
+PROIBIDO:
+- Falta de convite explícito à conversão
+- Linguagem teológica complexa que afasta o descrente
+- Sermão que apenas informa sobre Cristo sem chamar à decisão
+- Confrontar sem oferecer a esperança da cruz`,
+  },
+
+  outline_devotional: {
+    label: "DEVOCIONAL",
+    module: `🟫 MÓDULO DEVOCIONAL — DIRETRIZES OBRIGATÓRIAS
+
+Foque na EDIFICAÇÃO ESPIRITUAL pessoal e íntima.
+
+REGRAS OBRIGATÓRIAS:
+- Desenvolva REFLEXÃO profunda a partir do texto base
+- Use linguagem ÍNTIMA, ACESSÍVEL e PASTORAL ("você", "nós", "irmão")
+- APLICAÇÃO constante em cada ponto, não apenas no final
+- Conecte a Palavra com a vida real do ouvinte (família, trabalho, lutas)
+- Encerre com convite à oração pessoal e meditação
+
+PROIBIDO:
+- Excesso de teologia técnica ou linguagem acadêmica
+- Tom de aula ou debate doutrinário
+- Aplicações genéricas — seja específico e tocante`,
+  },
+
+  outline_apologetic: {
+    label: "APOLOGÉTICO",
+    module: `⚫ MÓDULO APOLOGÉTICO — DIRETRIZES OBRIGATÓRIAS
+
+DEFENDA a fé cristã com base bíblica e raciocínio lógico.
+
+REGRAS OBRIGATÓRIAS:
+- Apresente claramente a QUESTÃO ou DÚVIDA a ser respondida
+- Exponha o ARGUMENTO CONTRÁRIO com honestidade (sem caricaturar)
+- Desenvolva uma RESPOSTA bíblica E lógica/racional
+- Use evidências históricas, filosóficas ou científicas quando relevante
+- Conclua FORTALECENDO a fé do ouvinte
+
+PROIBIDO:
+- Argumentos sem base bíblica
+- Tom AGRESSIVO ou desprezo pelo questionador
+- Vencer o debate sem ganhar o coração
+- Simplificações que não respondem à dúvida real`,
+  },
+
+  outline_prophetic: {
+    label: "PROFÉTICO / CONFRONTO",
+    module: `🟠 MÓDULO PROFÉTICO (CONFRONTO) — DIRETRIZES OBRIGATÓRIAS
+
+CONFRONTE o pecado e CHAME ao arrependimento, sempre com esperança.
+
+REGRAS OBRIGATÓRIAS:
+- Apresente um DIAGNÓSTICO espiritual claro (qual o pecado/desvio)
+- Mostre as CONSEQUÊNCIAS bíblicas do pecado
+- Ofereça o CAMINHO da restauração em Cristo
+- Use textos proféticos e exortações apostólicas como base
+- Termine com ESPERANÇA — confronto sem evangelho é apenas julgamento
+
+PROIBIDO:
+- Agressividade sem amor
+- Confronto sem oferecer caminho de restauração
+- Atacar pessoas (atacar o pecado, não o pecador)
+- Uso de ironia destrutiva ou tom legalista`,
+  },
+
+  outline_exhortative: {
+    label: "EXORTATIVO",
+    module: `🟡 MÓDULO EXORTATIVO — DIRETRIZES OBRIGATÓRIAS
+
+LEVE o ouvinte à PRÁTICA imediata da Palavra.
+
+REGRAS OBRIGATÓRIAS:
+- Apresente VERDADES bíblicas claramente APLICÁVEIS
+- Direcione AÇÕES CONCRETAS e mensuráveis (o que fazer hoje, esta semana)
+- Incentive MUDANÇA imediata de comportamento
+- Use verbos no imperativo amoroso ("vamos", "decida", "comece hoje")
+- Cada ponto termina com um "passo prático"
+
+PROIBIDO:
+- Aplicações vagas ("seja melhor", "ame mais")
+- Apenas teoria sem chamado à ação
+- Legalismo (a exortação flui da graça, não da obrigação)`,
+  },
+
+  outline_didactic: {
+    label: "DIDÁTICO",
+    module: `⚪ MÓDULO DIDÁTICO (ENSINO) — DIRETRIZES OBRIGATÓRIAS
+
+ENSINE de forma estruturada, clara e pedagógica.
+
+REGRAS OBRIGATÓRIAS:
+- Explique conceitos PASSO A PASSO, do simples ao complexo
+- Use EXEMPLOS, analogias e ilustrações didáticas
+- Organize PROGRESSIVAMENTE (cada ponto se apoia no anterior)
+- Faça RECAPITULAÇÕES ao longo do sermão
+- Termine com SÍNTESE e perguntas para fixação
+
+PROIBIDO:
+- Falta de clareza ou ordem lógica
+- Saltos conceituais sem ponte explicativa
+- Tom de palestra fria — manter pastoralidade
+- Acumular informações sem aplicação espiritual`,
+  },
+};
+
+// Build the dynamic injection block for a given outline type
+function buildSermonTypeInjection(type: string): string {
+  const cfg = SERMON_TYPE_MODULES[type];
+  if (!cfg) return "";
+  return `
+
+============================================================
+🎯 TIPO DE SERMÃO SELECIONADO: ${cfg.label}
+============================================================
+⚠️ REGRA CENTRAL E INVIOLÁVEL:
+O sermão DEVE seguir RIGOROSAMENTE as diretrizes do tipo "${cfg.label}".
+É PROIBIDO misturar estruturas de outros tipos de sermão.
+Se o tipo for violado, o sermão está INCORRETO e deve ser regenerado.
+
+${cfg.module}
+
+============================================================
+PADRÃO DE QUALIDADE (sempre obrigatório, em qualquer tipo):
+- Base bíblica clara em cada ponto (ACF)
+- Explicação fiel ao texto
+- Verdade espiritual extraída
+- Aplicação prática para o ouvinte
+- Transições naturais entre os pontos
+- Apelo final coerente com o tipo de sermão
+============================================================
+`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
