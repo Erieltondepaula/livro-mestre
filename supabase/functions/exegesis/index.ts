@@ -638,6 +638,18 @@ serve(async (req) => {
       });
     }
 
+    // Handle get_sermon_type_modules request — return all 12 default modules for the editor UI
+    if (type === "get_sermon_type_modules") {
+      const modules = Object.entries(SERMON_TYPE_MODULES).map(([key, val]) => ({
+        sermon_type: key,
+        label: val.label,
+        prompt_text: val.module,
+      }));
+      return new Response(JSON.stringify({ modules }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ⚠️ REGRA 1 — TEXTO BASE OBRIGATÓRIO PARA ESBOÇOS DE SERMÃO
     const outlineTypes = [
       "outline_expository",
