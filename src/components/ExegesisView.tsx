@@ -46,18 +46,29 @@ export function ExegesisView() {
   const handleCreateNote = useCallback(async (title: string, content: string) => {
     if (!user) return;
     try {
-      await supabase.from('notes').insert({
+      const wordCount = content.split(/\s+/).filter(Boolean).length;
+      // Convert markdown-ish content to minimal HTML for the editor preview
+      const contentHtml = content
+        .split(/\n\n+/)
+        .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+        .join('');
+      const { error } = await supabase.from('notes').insert({
         user_id: user.id,
         title,
         content,
-        note_type: 'permanente',
+        content_html: contentHtml,
+        note_type: 'permanent',
         tags: ['exegese'],
+        word_count: wordCount,
       });
+      if (error) throw error;
       toast({ title: '📝 Nota criada!', description: 'Acesse em Notas para editar.' });
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error creating note:', e);
+      toast({ title: 'Erro ao criar nota', description: e.message, variant: 'destructive' });
     }
   }, [user]);
+
 
   const menuItems: MenuItem[] = [
     ...(hasModuleAccess('exegese.analisar') ? [{ id: 'analyze' as const, label: 'Analisar Passagem', icon: BookOpen }] : []),
