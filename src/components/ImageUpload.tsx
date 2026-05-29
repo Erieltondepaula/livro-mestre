@@ -33,10 +33,16 @@ export function ImageUpload({ value, onChange, bookName }: ImageUploadProps) {
     setIsUploading(true);
 
     try {
-      // Generate unique filename
+      // Get current user to scope upload path for RLS ownership
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Generate unique filename inside user's folder (required by storage RLS)
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `covers/${fileName}`;
+      const filePath = `${user.id}/${fileName}`;
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
