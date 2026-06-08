@@ -502,6 +502,8 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
               })}
             </div>
 
+            {notificationsSection}
+
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
