@@ -590,19 +590,27 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="old" className="text-sm">
             📜 Velho Testamento ({oldTestamentBooks.filter(b => b.progress === 100).length}/39)
+            {cycleCountByTestament.old > 0 && (
+              <span className="ml-2 text-xs text-success">• Ciclo {cycleCountByTestament.old + 1}</span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="new" className="text-sm">
             ✝️ Novo Testamento ({newTestamentBooks.filter(b => b.progress === 100).length}/27)
+            {cycleCountByTestament.new > 0 && (
+              <span className="ml-2 text-xs text-success">• Ciclo {cycleCountByTestament.new + 1}</span>
+            )}
           </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="old" className="mt-6">
+
+        <TabsContent value="old" className="mt-6 space-y-4">
+          <CycleHistory cycles={cycles.filter(c => c.testament === 'old')} label="Velho Testamento" />
           <div className="card-library p-4 md:p-6 max-h-[600px] overflow-y-auto">
             {renderByCategory('old')}
           </div>
         </TabsContent>
-        
-        <TabsContent value="new" className="mt-6">
+
+        <TabsContent value="new" className="mt-6 space-y-4">
+          <CycleHistory cycles={cycles.filter(c => c.testament === 'new')} label="Novo Testamento" />
           <div className="card-library p-4 md:p-6 max-h-[600px] overflow-y-auto">
             {renderByCategory('new')}
           </div>
@@ -611,3 +619,36 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     </div>
   );
 }
+
+function CycleHistory({ cycles, label }: { cycles: BibleCycle[]; label: string }) {
+  if (cycles.length === 0) return null;
+  return (
+    <div className="card-library p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <History className="w-4 h-4 text-primary" />
+        <h4 className="text-sm font-semibold">Histórico de Ciclos Concluídos — {label}</h4>
+        <span className="ml-auto text-xs text-muted-foreground">{cycles.length} ciclo(s)</span>
+      </div>
+      <div className="space-y-2 max-h-48 overflow-y-auto">
+        {cycles.map(c => {
+          const d = new Date(c.completed_at);
+          const dateStr = d.toLocaleDateString('pt-BR');
+          const weekday = WEEKDAY_NAMES[c.completed_weekday] || '';
+          return (
+            <div key={c.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/40 border border-border">
+              <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">Ciclo {c.cycle_number}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {weekday}, {dateStr}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
