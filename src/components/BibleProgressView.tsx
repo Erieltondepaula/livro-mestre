@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X, RotateCcw, History, Calendar } from 'lucide-react';
+import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X, History, Calendar } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
