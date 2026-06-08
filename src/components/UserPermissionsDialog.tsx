@@ -117,9 +117,46 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
   useEffect(() => {
     if (open && user) {
       loadPermissions();
+      loadNotifications();
       setExpandedModules([]);
     }
   }, [open, user]);
+
+  const loadNotifications = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('notification_preferences')
+      .select('goals_enabled, reminders_enabled')
+      .eq('user_id', user.user_id)
+      .maybeSingle();
+    setNotifGoals(data?.goals_enabled ?? true);
+    setNotifReminders(data?.reminders_enabled ?? true);
+  };
+
+  const updateNotif = async (field: 'goals' | 'reminders', value: boolean) => {
+    if (!user) return;
+    setNotifSaving(field);
+    const next = {
+      goals_enabled: field === 'goals' ? value : notifGoals,
+      reminders_enabled: field === 'reminders' ? value : notifReminders,
+    };
+    if (field === 'goals') setNotifGoals(value);
+    else setNotifReminders(value);
+
+    const { error } = await supabase
+      .from('notification_preferences')
+      .upsert({ user_id: user.user_id, ...next }, { onConflict: 'user_id' });
+    setNotifSaving(null);
+    if (error) {
+      toast({ title: 'Erro', description: 'Não foi possível salvar.', variant: 'destructive' });
+      // revert
+      if (field === 'goals') setNotifGoals(!value);
+      else setNotifReminders(!value);
+    } else {
+      toast({ title: value ? 'Notificações ativadas' : 'Notificações desativadas' });
+    }
+  };
+
 
   const loadPermissions = async () => {
     if (!user) return;
