@@ -366,12 +366,15 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
               })}
             </div>
 
+            {notificationsSection}
+
             <div className="flex justify-end pt-4 border-t">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Fechar
               </Button>
             </div>
           </div>
+
         ) : (
           <div className="space-y-4">
             <div className="flex gap-2">
