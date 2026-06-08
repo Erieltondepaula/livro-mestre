@@ -317,6 +317,37 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
     }
   };
 
+  const notificationsSection = (
+    <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Bell className="w-4 h-4 text-primary" />
+        <Label className="text-sm font-medium">Notificações</Label>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Notificações de Metas</p>
+          <p className="text-xs text-muted-foreground">Alertas sobre progresso e metas de leitura</p>
+        </div>
+        <Switch
+          checked={notifGoals}
+          disabled={notifSaving === 'goals'}
+          onCheckedChange={(v) => updateNotif('goals', v)}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Lembretes de Leitura</p>
+          <p className="text-xs text-muted-foreground">Lembretes diários para manter a sequência</p>
+        </div>
+        <Switch
+          checked={notifReminders}
+          disabled={notifSaving === 'reminders'}
+          onCheckedChange={(v) => updateNotif('reminders', v)}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
