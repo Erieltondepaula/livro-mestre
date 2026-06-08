@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X } from 'lucide-react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X, History, Calendar } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,6 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { bibleBooks, bibleCategories } from '@/data/bibleData';
 import type { Book as BookType, DailyReading, BookStatus } from '@/types/library';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+interface BibleCycle {
+  id: string;
+  testament: 'old' | 'new' | 'full';
+  cycle_number: number;
+  completed_at: string;
+  completed_weekday: number;
+}
+
+const WEEKDAY_NAMES = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
 
 interface BibleProgressViewProps {
   readings: DailyReading[];
@@ -72,6 +86,42 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const [searchMode, setSearchMode] = useState<'reference' | 'page'>('reference');
   const [showSearch, setShowSearch] = useState(false);
 
+  const { user } = useAuth();
+  const [cycles, setCycles] = useState<BibleCycle[]>([]);
+  const completingRef = useRef<{ old: boolean; new: boolean }>({ old: false, new: false });
+
+  const loadCycles = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('bible_cycles')
+      .select('id, testament, cycle_number, completed_at, completed_weekday')
+      .eq('user_id', user.id)
+      .order('completed_at', { ascending: false });
+    setCycles((data as BibleCycle[]) || []);
+  };
+
+  useEffect(() => { loadCycles(); }, [user?.id]);
+
+  const lastResetByTestament = useMemo(() => {
+    const map: Record<'old' | 'new', string | null> = { old: null, new: null };
+    cycles.forEach(c => {
+      if (c.testament === 'old' || c.testament === 'new') {
+        if (!map[c.testament] || c.completed_at > (map[c.testament] as string)) {
+          map[c.testament] = c.completed_at;
+        }
+      }
+    });
+    return map;
+  }, [cycles]);
+
+  const cycleCountByTestament = useMemo(() => {
+    const map: Record<'old' | 'new', number> = { old: 0, new: 0 };
+    cycles.forEach(c => {
+      if (c.testament === 'old' || c.testament === 'new') map[c.testament]++;
+    });
+    return map;
+  }, [cycles]);
+
   const filteredReadings = useMemo(() => {
     if (selectedBibleId === 'all') {
       return readings.filter(r => r.bibleBook && r.bibleChapter);
@@ -80,6 +130,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
       r.livroId === selectedBibleId && r.bibleBook && r.bibleChapter
     );
   }, [readings, selectedBibleId]);
+
 
   // All Bible readings (for search)
   const allBibleReadings = useMemo(() => 
@@ -162,7 +213,21 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     }
   };
 
-  // Calculate progress for each Bible book
+  // Map book name -> testament for cycle filtering
+  const bookTestamentMap = useMemo(() => {
+    const m: Record<string, 'old' | 'new'> = {};
+    bibleBooks.forEach(b => { m[b.name] = b.testament as 'old' | 'new'; });
+    return m;
+  }, []);
+
+  // Determine when a reading happened (created_at preferred, fallback dataInicio)
+  const readingTime = (r: DailyReading): string | null => {
+    if (r.created_at) return r.created_at;
+    if (r.dataInicio) return new Date(r.dataInicio).toISOString();
+    return null;
+  };
+
+  // Calculate progress for each Bible book, filtering by testament cycle reset timestamp
   const bookProgress = useMemo(() => {
     const progress: Record<string, BookProgress> = {};
     bibleBooks.forEach(book => {
@@ -175,11 +240,17 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     });
 
     filteredReadings.forEach(reading => {
-      if (reading.bibleBook && reading.bibleChapter) {
-        const bookData = progress[reading.bibleBook];
-        if (bookData) {
-          bookData.chaptersRead.add(reading.bibleChapter);
-        }
+      if (!reading.bibleBook || !reading.bibleChapter) return;
+      const testament = bookTestamentMap[reading.bibleBook];
+      if (!testament) return;
+      const reset = lastResetByTestament[testament];
+      if (reset) {
+        const t = readingTime(reading);
+        if (!t || t <= reset) return; // belongs to a previous (completed) cycle
+      }
+      const bookData = progress[reading.bibleBook];
+      if (bookData) {
+        bookData.chaptersRead.add(reading.bibleChapter);
       }
     });
 
@@ -190,7 +261,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     });
 
     return progress;
-  }, [filteredReadings]);
+  }, [filteredReadings, lastResetByTestament, bookTestamentMap]);
 
   const oldTestamentBooks = bibleBooks.filter(b => b.testament === 'old').map(b => bookProgress[b.name]);
   const newTestamentBooks = bibleBooks.filter(b => b.testament === 'new').map(b => bookProgress[b.name]);
@@ -198,6 +269,40 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const totalChapters = bibleBooks.reduce((sum, b) => sum + b.chapters.length, 0);
   const totalRead = Object.values(bookProgress).reduce((sum, b) => sum + b.chaptersRead.size, 0);
   const overallProgress = totalChapters > 0 ? (totalRead / totalChapters) * 100 : 0;
+
+  // Auto-detect cycle completion (record + reset)
+  const oldComplete = oldTestamentBooks.length > 0 && oldTestamentBooks.every(b => b && b.progress >= 100);
+  const newComplete = newTestamentBooks.length > 0 && newTestamentBooks.every(b => b && b.progress >= 100);
+
+  useEffect(() => {
+    const recordCompletion = async (testament: 'old' | 'new') => {
+      if (!user) return;
+      if (completingRef.current[testament]) return;
+      completingRef.current[testament] = true;
+      const now = new Date();
+      const nextNumber = cycleCountByTestament[testament] + 1;
+      const { error } = await supabase.from('bible_cycles').insert({
+        user_id: user.id,
+        testament,
+        cycle_number: nextNumber,
+        completed_at: now.toISOString(),
+        completed_weekday: now.getDay(),
+      });
+      if (!error) {
+        toast({
+          title: `🎉 ${testament === 'old' ? 'Velho' : 'Novo'} Testamento concluído!`,
+          description: `Ciclo ${nextNumber} salvo no histórico. Reiniciando para um novo ciclo.`,
+        });
+        await loadCycles();
+      }
+      completingRef.current[testament] = false;
+    };
+    if (selectedBibleId === 'all' && oldComplete) recordCompletion('old');
+    if (selectedBibleId === 'all' && newComplete) recordCompletion('new');
+    // only when in combined view to avoid double counting per bible
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oldComplete, newComplete, user?.id, selectedBibleId]);
+
 
   // Count verses read
   const totalVersesRead = useMemo(() => {
@@ -485,19 +590,27 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="old" className="text-sm">
             📜 Velho Testamento ({oldTestamentBooks.filter(b => b.progress === 100).length}/39)
+            {cycleCountByTestament.old > 0 && (
+              <span className="ml-2 text-xs text-success">• Ciclo {cycleCountByTestament.old + 1}</span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="new" className="text-sm">
             ✝️ Novo Testamento ({newTestamentBooks.filter(b => b.progress === 100).length}/27)
+            {cycleCountByTestament.new > 0 && (
+              <span className="ml-2 text-xs text-success">• Ciclo {cycleCountByTestament.new + 1}</span>
+            )}
           </TabsTrigger>
         </TabsList>
-        
-        <TabsContent value="old" className="mt-6">
+
+        <TabsContent value="old" className="mt-6 space-y-4">
+          <CycleHistory cycles={cycles.filter(c => c.testament === 'old')} label="Velho Testamento" />
           <div className="card-library p-4 md:p-6 max-h-[600px] overflow-y-auto">
             {renderByCategory('old')}
           </div>
         </TabsContent>
-        
-        <TabsContent value="new" className="mt-6">
+
+        <TabsContent value="new" className="mt-6 space-y-4">
+          <CycleHistory cycles={cycles.filter(c => c.testament === 'new')} label="Novo Testamento" />
           <div className="card-library p-4 md:p-6 max-h-[600px] overflow-y-auto">
             {renderByCategory('new')}
           </div>
@@ -506,3 +619,36 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     </div>
   );
 }
+
+function CycleHistory({ cycles, label }: { cycles: BibleCycle[]; label: string }) {
+  if (cycles.length === 0) return null;
+  return (
+    <div className="card-library p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <History className="w-4 h-4 text-primary" />
+        <h4 className="text-sm font-semibold">Histórico de Ciclos Concluídos — {label}</h4>
+        <span className="ml-auto text-xs text-muted-foreground">{cycles.length} ciclo(s)</span>
+      </div>
+      <div className="space-y-2 max-h-48 overflow-y-auto">
+        {cycles.map(c => {
+          const d = new Date(c.completed_at);
+          const dateStr = d.toLocaleDateString('pt-BR');
+          const weekday = WEEKDAY_NAMES[c.completed_weekday] || '';
+          return (
+            <div key={c.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/40 border border-border">
+              <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">Ciclo {c.cycle_number}</p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {weekday}, {dateStr}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+

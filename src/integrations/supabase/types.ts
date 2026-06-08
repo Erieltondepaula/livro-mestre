@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bible_cycles: {
+        Row: {
+          completed_at: string
+          completed_weekday: number
+          created_at: string
+          cycle_number: number
+          id: string
+          testament: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          completed_weekday: number
+          created_at?: string
+          cycle_number?: number
+          id?: string
+          testament: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          completed_weekday?: number
+          created_at?: string
+          cycle_number?: number
+          id?: string
+          testament?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       book_categories: {
         Row: {
           created_at: string | null
@@ -812,6 +842,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          goals_enabled: boolean
+          reminders_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goals_enabled?: boolean
+          reminders_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goals_enabled?: boolean
+          reminders_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       outline_templates: {
         Row: {

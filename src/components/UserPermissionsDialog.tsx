@@ -15,7 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import {
   Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked,
   Star, Quote, Book, StickyNote, ScrollText, BarChart3, Activity,
-  HelpCircle, Brain, ChevronDown, ChevronRight,
+  HelpCircle, Brain, ChevronDown, ChevronRight, Bell,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -108,15 +108,55 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
+  const [notifGoals, setNotifGoals] = useState(true);
+  const [notifReminders, setNotifReminders] = useState(true);
+  const [notifSaving, setNotifSaving] = useState<null | 'goals' | 'reminders'>(null);
   
   const isEditingMaster = user?.is_master ?? false;
 
   useEffect(() => {
     if (open && user) {
       loadPermissions();
+      loadNotifications();
       setExpandedModules([]);
     }
   }, [open, user]);
+
+  const loadNotifications = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('notification_preferences')
+      .select('goals_enabled, reminders_enabled')
+      .eq('user_id', user.user_id)
+      .maybeSingle();
+    setNotifGoals(data?.goals_enabled ?? true);
+    setNotifReminders(data?.reminders_enabled ?? true);
+  };
+
+  const updateNotif = async (field: 'goals' | 'reminders', value: boolean) => {
+    if (!user) return;
+    setNotifSaving(field);
+    const next = {
+      goals_enabled: field === 'goals' ? value : notifGoals,
+      reminders_enabled: field === 'reminders' ? value : notifReminders,
+    };
+    if (field === 'goals') setNotifGoals(value);
+    else setNotifReminders(value);
+
+    const { error } = await supabase
+      .from('notification_preferences')
+      .upsert({ user_id: user.user_id, ...next }, { onConflict: 'user_id' });
+    setNotifSaving(null);
+    if (error) {
+      toast({ title: 'Erro', description: 'Não foi possível salvar.', variant: 'destructive' });
+      // revert
+      if (field === 'goals') setNotifGoals(!value);
+      else setNotifReminders(!value);
+    } else {
+      toast({ title: value ? 'Notificações ativadas' : 'Notificações desativadas' });
+    }
+  };
+
 
   const loadPermissions = async () => {
     if (!user) return;
@@ -277,6 +317,37 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
     }
   };
 
+  const notificationsSection = (
+    <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Bell className="w-4 h-4 text-primary" />
+        <Label className="text-sm font-medium">Notificações</Label>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Notificações de Metas</p>
+          <p className="text-xs text-muted-foreground">Alertas sobre progresso e metas de leitura</p>
+        </div>
+        <Switch
+          checked={notifGoals}
+          disabled={notifSaving === 'goals'}
+          onCheckedChange={(v) => updateNotif('goals', v)}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Lembretes de Leitura</p>
+          <p className="text-xs text-muted-foreground">Lembretes diários para manter a sequência</p>
+        </div>
+        <Switch
+          checked={notifReminders}
+          disabled={notifSaving === 'reminders'}
+          onCheckedChange={(v) => updateNotif('reminders', v)}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -326,12 +397,15 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
               })}
             </div>
 
+            {notificationsSection}
+
             <div className="flex justify-end pt-4 border-t">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Fechar
               </Button>
             </div>
           </div>
+
         ) : (
           <div className="space-y-4">
             <div className="flex gap-2">
@@ -427,6 +501,8 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
                 );
               })}
             </div>
+
+            {notificationsSection}
 
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" onClick={() => onOpenChange(false)}>

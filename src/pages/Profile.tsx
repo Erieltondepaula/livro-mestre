@@ -46,10 +46,6 @@ export default function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
   
-  // Notification preferences (stored in localStorage)
-  const [notifGoals, setNotifGoals] = useState(() => localStorage.getItem('notif_goals') !== 'false');
-  const [notifReminders, setNotifReminders] = useState(() => localStorage.getItem('notif_reminders') !== 'false');
-  
   // Image crop state
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
@@ -62,17 +58,54 @@ export default function Profile() {
     if (profile?.display_name) setDisplayName(profile.display_name);
   }, [profile?.display_name]);
 
+
+  const [notifGoals, setNotifGoals] = useState(true);
+  const [notifReminders, setNotifReminders] = useState(true);
+  const [notifLoaded, setNotifLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from('notification_preferences')
+        .select('goals_enabled, reminders_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) {
+        setNotifGoals(data.goals_enabled);
+        setNotifReminders(data.reminders_enabled);
+        localStorage.setItem('notif_goals', String(data.goals_enabled));
+        localStorage.setItem('notif_reminders', String(data.reminders_enabled));
+      } else {
+        // fallback to localStorage defaults
+        setNotifGoals(localStorage.getItem('notif_goals') !== 'false');
+        setNotifReminders(localStorage.getItem('notif_reminders') !== 'false');
+      }
+      setNotifLoaded(true);
+    })();
+  }, [user]);
+
+  const persistNotif = async (goals: boolean, reminders: boolean) => {
+    if (!user) return;
+    localStorage.setItem('notif_goals', String(goals));
+    localStorage.setItem('notif_reminders', String(reminders));
+    await supabase
+      .from('notification_preferences')
+      .upsert({ user_id: user.id, goals_enabled: goals, reminders_enabled: reminders }, { onConflict: 'user_id' });
+  };
+
   const handleNotifGoalsChange = (checked: boolean) => {
     setNotifGoals(checked);
-    localStorage.setItem('notif_goals', String(checked));
+    persistNotif(checked, notifReminders);
     toast({ title: checked ? '🔔 Notificações de metas ativadas' : '🔕 Notificações de metas desativadas' });
   };
 
   const handleNotifRemindersChange = (checked: boolean) => {
     setNotifReminders(checked);
-    localStorage.setItem('notif_reminders', String(checked));
+    persistNotif(notifGoals, checked);
     toast({ title: checked ? '🔔 Lembretes de leitura ativados' : '🔕 Lembretes de leitura desativados' });
   };
+
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
