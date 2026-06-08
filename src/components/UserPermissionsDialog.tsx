@@ -15,7 +15,7 @@ import { toast } from '@/hooks/use-toast';
 import {
   Loader2, LayoutDashboard, PlusCircle, Library, BookOpen, BookMarked,
   Star, Quote, Book, StickyNote, ScrollText, BarChart3, Activity,
-  HelpCircle, Brain, ChevronDown, ChevronRight,
+  HelpCircle, Brain, ChevronDown, ChevronRight, Bell,
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
