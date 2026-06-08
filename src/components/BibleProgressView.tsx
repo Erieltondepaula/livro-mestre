@@ -86,6 +86,42 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const [searchMode, setSearchMode] = useState<'reference' | 'page'>('reference');
   const [showSearch, setShowSearch] = useState(false);
 
+  const { user } = useAuth();
+  const [cycles, setCycles] = useState<BibleCycle[]>([]);
+  const completingRef = useRef<{ old: boolean; new: boolean }>({ old: false, new: false });
+
+  const loadCycles = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('bible_cycles')
+      .select('id, testament, cycle_number, completed_at, completed_weekday')
+      .eq('user_id', user.id)
+      .order('completed_at', { ascending: false });
+    setCycles((data as BibleCycle[]) || []);
+  };
+
+  useEffect(() => { loadCycles(); }, [user?.id]);
+
+  const lastResetByTestament = useMemo(() => {
+    const map: Record<'old' | 'new', string | null> = { old: null, new: null };
+    cycles.forEach(c => {
+      if (c.testament === 'old' || c.testament === 'new') {
+        if (!map[c.testament] || c.completed_at > (map[c.testament] as string)) {
+          map[c.testament] = c.completed_at;
+        }
+      }
+    });
+    return map;
+  }, [cycles]);
+
+  const cycleCountByTestament = useMemo(() => {
+    const map: Record<'old' | 'new', number> = { old: 0, new: 0 };
+    cycles.forEach(c => {
+      if (c.testament === 'old' || c.testament === 'new') map[c.testament]++;
+    });
+    return map;
+  }, [cycles]);
+
   const filteredReadings = useMemo(() => {
     if (selectedBibleId === 'all') {
       return readings.filter(r => r.bibleBook && r.bibleChapter);
@@ -94,6 +130,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
       r.livroId === selectedBibleId && r.bibleBook && r.bibleChapter
     );
   }, [readings, selectedBibleId]);
+
 
   // All Bible readings (for search)
   const allBibleReadings = useMemo(() => 
