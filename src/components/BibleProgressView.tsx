@@ -213,7 +213,21 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     }
   };
 
-  // Calculate progress for each Bible book
+  // Map book name -> testament for cycle filtering
+  const bookTestamentMap = useMemo(() => {
+    const m: Record<string, 'old' | 'new'> = {};
+    bibleBooks.forEach(b => { m[b.name] = b.testament as 'old' | 'new'; });
+    return m;
+  }, []);
+
+  // Determine when a reading happened (created_at preferred, fallback dataInicio)
+  const readingTime = (r: DailyReading): string | null => {
+    if (r.created_at) return r.created_at;
+    if (r.dataInicio) return new Date(r.dataInicio).toISOString();
+    return null;
+  };
+
+  // Calculate progress for each Bible book, filtering by testament cycle reset timestamp
   const bookProgress = useMemo(() => {
     const progress: Record<string, BookProgress> = {};
     bibleBooks.forEach(book => {
@@ -226,11 +240,17 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     });
 
     filteredReadings.forEach(reading => {
-      if (reading.bibleBook && reading.bibleChapter) {
-        const bookData = progress[reading.bibleBook];
-        if (bookData) {
-          bookData.chaptersRead.add(reading.bibleChapter);
-        }
+      if (!reading.bibleBook || !reading.bibleChapter) return;
+      const testament = bookTestamentMap[reading.bibleBook];
+      if (!testament) return;
+      const reset = lastResetByTestament[testament];
+      if (reset) {
+        const t = readingTime(reading);
+        if (!t || t <= reset) return; // belongs to a previous (completed) cycle
+      }
+      const bookData = progress[reading.bibleBook];
+      if (bookData) {
+        bookData.chaptersRead.add(reading.bibleChapter);
       }
     });
 
@@ -241,7 +261,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
     });
 
     return progress;
-  }, [filteredReadings]);
+  }, [filteredReadings, lastResetByTestament, bookTestamentMap]);
 
   const oldTestamentBooks = bibleBooks.filter(b => b.testament === 'old').map(b => bookProgress[b.name]);
   const newTestamentBooks = bibleBooks.filter(b => b.testament === 'new').map(b => bookProgress[b.name]);
@@ -249,6 +269,40 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const totalChapters = bibleBooks.reduce((sum, b) => sum + b.chapters.length, 0);
   const totalRead = Object.values(bookProgress).reduce((sum, b) => sum + b.chaptersRead.size, 0);
   const overallProgress = totalChapters > 0 ? (totalRead / totalChapters) * 100 : 0;
+
+  // Auto-detect cycle completion (record + reset)
+  const oldComplete = oldTestamentBooks.length > 0 && oldTestamentBooks.every(b => b && b.progress >= 100);
+  const newComplete = newTestamentBooks.length > 0 && newTestamentBooks.every(b => b && b.progress >= 100);
+
+  useEffect(() => {
+    const recordCompletion = async (testament: 'old' | 'new') => {
+      if (!user) return;
+      if (completingRef.current[testament]) return;
+      completingRef.current[testament] = true;
+      const now = new Date();
+      const nextNumber = cycleCountByTestament[testament] + 1;
+      const { error } = await supabase.from('bible_cycles').insert({
+        user_id: user.id,
+        testament,
+        cycle_number: nextNumber,
+        completed_at: now.toISOString(),
+        completed_weekday: now.getDay(),
+      });
+      if (!error) {
+        toast({
+          title: `🎉 ${testament === 'old' ? 'Velho' : 'Novo'} Testamento concluído!`,
+          description: `Ciclo ${nextNumber} salvo no histórico. Reiniciando para um novo ciclo.`,
+        });
+        await loadCycles();
+      }
+      completingRef.current[testament] = false;
+    };
+    if (selectedBibleId === 'all' && oldComplete) recordCompletion('old');
+    if (selectedBibleId === 'all' && newComplete) recordCompletion('new');
+    // only when in combined view to avoid double counting per bible
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oldComplete, newComplete, user?.id, selectedBibleId]);
+
 
   // Count verses read
   const totalVersesRead = useMemo(() => {
