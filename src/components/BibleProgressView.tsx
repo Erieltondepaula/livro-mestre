@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X } from 'lucide-react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X, RotateCcw, History, Calendar } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,6 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { bibleBooks, bibleCategories } from '@/data/bibleData';
 import type { Book as BookType, DailyReading, BookStatus } from '@/types/library';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
+
+interface BibleCycle {
+  id: string;
+  testament: 'old' | 'new' | 'full';
+  cycle_number: number;
+  completed_at: string;
+  completed_weekday: number;
+}
+
+const WEEKDAY_NAMES = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
 
 interface BibleProgressViewProps {
   readings: DailyReading[];
