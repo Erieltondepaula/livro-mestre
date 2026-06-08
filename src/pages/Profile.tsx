@@ -46,7 +46,19 @@ export default function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '');
   
-  // Notification preferences (synced with DB)
+  // Image crop state
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string>('');
+
+  useEffect(() => {
+    if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+  }, [profile?.avatar_url]);
+
+  useEffect(() => {
+    if (profile?.display_name) setDisplayName(profile.display_name);
+  }, [profile?.display_name]);
+
+
   const [notifGoals, setNotifGoals] = useState(true);
   const [notifReminders, setNotifReminders] = useState(true);
   const [notifLoaded, setNotifLoaded] = useState(false);
