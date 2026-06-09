@@ -293,6 +293,27 @@ export default function Profile() {
               </div>
               <Switch checked={notifReminders} onCheckedChange={handleNotifRemindersChange} />
             </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Mudança de Nível</p>
+                <p className="text-xs text-muted-foreground">Avisar ao subir ou descer de nível na gamificação</p>
+              </div>
+              <Switch checked={notifLevels} onCheckedChange={handleNotifLevelsChange} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Conquistas</p>
+                <p className="text-xs text-muted-foreground">Avisar quando ganhar ou perder conquistas</p>
+              </div>
+              <Switch checked={notifAchievements} onCheckedChange={handleNotifAchievementsChange} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Ciclos da Bíblia</p>
+                <p className="text-xs text-muted-foreground">Avisar ao concluir Velho/Novo Testamento e reiniciar o ciclo</p>
+              </div>
+              <Switch checked={notifCycles} onCheckedChange={handleNotifCyclesChange} />
+            </div>
           </div>
         </div>
 
