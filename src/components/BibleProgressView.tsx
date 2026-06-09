@@ -88,6 +88,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const [showSearch, setShowSearch] = useState(false);
 
   const { user } = useAuth();
+  const { prefs: notifPrefs } = useNotificationPrefs();
   const [cycles, setCycles] = useState<BibleCycle[]>([]);
   const completingRef = useRef<{ old: boolean; new: boolean }>({ old: false, new: false });
 
