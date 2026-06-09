@@ -110,7 +110,11 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const [notifGoals, setNotifGoals] = useState(true);
   const [notifReminders, setNotifReminders] = useState(true);
-  const [notifSaving, setNotifSaving] = useState<null | 'goals' | 'reminders'>(null);
+  const [notifLevels, setNotifLevels] = useState(true);
+  const [notifAchievements, setNotifAchievements] = useState(true);
+  const [notifCycles, setNotifCycles] = useState(true);
+  type NotifField = 'goals' | 'reminders' | 'levels' | 'achievements' | 'cycles';
+  const [notifSaving, setNotifSaving] = useState<null | NotifField>(null);
   
   const isEditingMaster = user?.is_master ?? false;
 
@@ -126,22 +130,37 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
     if (!user) return;
     const { data } = await supabase
       .from('notification_preferences')
-      .select('goals_enabled, reminders_enabled')
+      .select('goals_enabled, reminders_enabled, levels_enabled, achievements_enabled, cycles_enabled')
       .eq('user_id', user.user_id)
       .maybeSingle();
     setNotifGoals(data?.goals_enabled ?? true);
     setNotifReminders(data?.reminders_enabled ?? true);
+    setNotifLevels((data as any)?.levels_enabled ?? true);
+    setNotifAchievements((data as any)?.achievements_enabled ?? true);
+    setNotifCycles((data as any)?.cycles_enabled ?? true);
   };
 
-  const updateNotif = async (field: 'goals' | 'reminders', value: boolean) => {
+  const updateNotif = async (field: NotifField, value: boolean) => {
     if (!user) return;
     setNotifSaving(field);
-    const next = {
-      goals_enabled: field === 'goals' ? value : notifGoals,
-      reminders_enabled: field === 'reminders' ? value : notifReminders,
+    const current = {
+      goals_enabled: notifGoals,
+      reminders_enabled: notifReminders,
+      levels_enabled: notifLevels,
+      achievements_enabled: notifAchievements,
+      cycles_enabled: notifCycles,
     };
-    if (field === 'goals') setNotifGoals(value);
-    else setNotifReminders(value);
+    const key = `${field}_enabled` as keyof typeof current;
+    const next = { ...current, [key]: value };
+
+    const setters: Record<NotifField, (v: boolean) => void> = {
+      goals: setNotifGoals,
+      reminders: setNotifReminders,
+      levels: setNotifLevels,
+      achievements: setNotifAchievements,
+      cycles: setNotifCycles,
+    };
+    setters[field](value);
 
     const { error } = await supabase
       .from('notification_preferences')
@@ -149,9 +168,7 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
     setNotifSaving(null);
     if (error) {
       toast({ title: 'Erro', description: 'Não foi possível salvar.', variant: 'destructive' });
-      // revert
-      if (field === 'goals') setNotifGoals(!value);
-      else setNotifReminders(!value);
+      setters[field](!value);
     } else {
       toast({ title: value ? 'Notificações ativadas' : 'Notificações desativadas' });
     }
@@ -343,6 +360,39 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
           checked={notifReminders}
           disabled={notifSaving === 'reminders'}
           onCheckedChange={(v) => updateNotif('reminders', v)}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Mudança de Nível</p>
+          <p className="text-xs text-muted-foreground">Avisar ao subir/descer de nível</p>
+        </div>
+        <Switch
+          checked={notifLevels}
+          disabled={notifSaving === 'levels'}
+          onCheckedChange={(v) => updateNotif('levels', v)}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Conquistas</p>
+          <p className="text-xs text-muted-foreground">Avisar ao ganhar/perder conquistas</p>
+        </div>
+        <Switch
+          checked={notifAchievements}
+          disabled={notifSaving === 'achievements'}
+          onCheckedChange={(v) => updateNotif('achievements', v)}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Ciclos da Bíblia</p>
+          <p className="text-xs text-muted-foreground">Avisar ao concluir Velho/Novo Testamento</p>
+        </div>
+        <Switch
+          checked={notifCycles}
+          disabled={notifSaving === 'cycles'}
+          onCheckedChange={(v) => updateNotif('cycles', v)}
         />
       </div>
     </div>

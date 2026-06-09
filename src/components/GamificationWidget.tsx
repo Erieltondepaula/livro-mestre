@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { useNotificationPrefs } from '@/hooks/useNotificationPrefs';
 import type { DailyReading } from '@/types/library';
 import {
   ALL_ACHIEVEMENTS,
@@ -55,6 +56,7 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
     return saved === 'true';
   });
   const { user } = useAuth();
+  const { prefs: notifPrefs } = useNotificationPrefs();
   const [goal, setGoal] = useState<ReadingGoal | null>(null);
   const [editingGoal, setEditingGoal] = useState(false);
   const [newGoalValue, setNewGoalValue] = useState('20');
@@ -302,31 +304,35 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
     supabase.from('reading_goals').update({ total_badges: earnedBadgeIds }).eq('id', goal.id).then(() => {
       setGoal(prev => prev ? { ...prev, total_badges: [...earnedBadgeIds] } : prev);
       // Only notify first 3 gains/losses to avoid spam
-      gained.slice(0, 3).forEach(id => {
-        const b = ALL_ACHIEVEMENTS.find(x => x.id === id);
-        if (b) toast({ title: '🏅 Nova Conquista!', description: `${b.icon} ${b.label} (+${b.xp} XP)` });
-      });
-      if (gained.length > 3) {
-        toast({ title: '🏅 Múltiplas Conquistas!', description: `+${gained.length - 3} conquistas adicionais!` });
+      if (notifPrefs.achievements_enabled) {
+        gained.slice(0, 3).forEach(id => {
+          const b = ALL_ACHIEVEMENTS.find(x => x.id === id);
+          if (b) toast({ title: '🏅 Nova Conquista!', description: `${b.icon} ${b.label} (+${b.xp} XP)` });
+        });
+        if (gained.length > 3) {
+          toast({ title: '🏅 Múltiplas Conquistas!', description: `+${gained.length - 3} conquistas adicionais!` });
+        }
+        lost.slice(0, 2).forEach(id => {
+          const b = ALL_ACHIEVEMENTS.find(x => x.id === id);
+          if (b) toast({ title: '⬇️ Conquista Perdida', description: `${b.icon} ${b.label} (-${b.xp} XP)`, variant: 'destructive' });
+        });
       }
-      lost.slice(0, 2).forEach(id => {
-        const b = ALL_ACHIEVEMENTS.find(x => x.id === id);
-        if (b) toast({ title: '⬇️ Conquista Perdida', description: `${b.icon} ${b.label} (-${b.xp} XP)`, variant: 'destructive' });
-      });
     });
   }, [earnedBadgeIds, user, goal]);
 
   // Level change notification
   useEffect(() => {
     if (prevLevelRef.current !== null && prevLevelRef.current !== level) {
-      if (level > prevLevelRef.current) {
-        toast({ title: `⬆️ Nível ${level}!`, description: getLevelTitle(level) });
-      } else {
-        toast({ title: `⬇️ Nível ${level}`, description: getLevelTitle(level), variant: 'destructive' });
+      if (notifPrefs.levels_enabled) {
+        if (level > prevLevelRef.current) {
+          toast({ title: `⬆️ Nível ${level}!`, description: getLevelTitle(level) });
+        } else {
+          toast({ title: `⬇️ Nível ${level}`, description: getLevelTitle(level), variant: 'destructive' });
+        }
       }
     }
     prevLevelRef.current = level;
-  }, [level]);
+  }, [level, notifPrefs.levels_enabled]);
 
   // Update streak in DB
   useEffect(() => {

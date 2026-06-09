@@ -10,6 +10,7 @@ import type { Book as BookType, DailyReading, BookStatus } from '@/types/library
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useNotificationPrefs } from '@/hooks/useNotificationPrefs';
 
 interface BibleCycle {
   id: string;
@@ -87,6 +88,7 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   const [showSearch, setShowSearch] = useState(false);
 
   const { user } = useAuth();
+  const { prefs: notifPrefs } = useNotificationPrefs();
   const [cycles, setCycles] = useState<BibleCycle[]>([]);
   const completingRef = useRef<{ old: boolean; new: boolean }>({ old: false, new: false });
 
@@ -289,10 +291,12 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         completed_weekday: now.getDay(),
       });
       if (!error) {
-        toast({
-          title: `🎉 ${testament === 'old' ? 'Velho' : 'Novo'} Testamento concluído!`,
-          description: `Ciclo ${nextNumber} salvo no histórico. Reiniciando para um novo ciclo.`,
-        });
+        if (notifPrefs.cycles_enabled) {
+          toast({
+            title: `🎉 ${testament === 'old' ? 'Velho' : 'Novo'} Testamento concluído!`,
+            description: `Ciclo ${nextNumber} salvo no histórico. Reiniciando para um novo ciclo.`,
+          });
+        }
         await loadCycles();
       }
       completingRef.current[testament] = false;
@@ -621,7 +625,20 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
 }
 
 function CycleHistory({ cycles, label }: { cycles: BibleCycle[]; label: string }) {
-  if (cycles.length === 0) return null;
+  if (cycles.length === 0) {
+    return (
+      <div className="card-library p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <History className="w-4 h-4 text-muted-foreground" />
+          <h4 className="text-sm font-semibold">Histórico de Ciclos Concluídos — {label}</h4>
+          <span className="ml-auto text-xs text-muted-foreground">0 ciclo(s)</span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Nenhum ciclo concluído ainda. Ao completar 100% do {label}, a data será registrada aqui e a leitura reiniciará automaticamente para um novo ciclo.
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="card-library p-4">
       <div className="flex items-center gap-2 mb-3">

@@ -61,6 +61,9 @@ export default function Profile() {
 
   const [notifGoals, setNotifGoals] = useState(true);
   const [notifReminders, setNotifReminders] = useState(true);
+  const [notifLevels, setNotifLevels] = useState(true);
+  const [notifAchievements, setNotifAchievements] = useState(true);
+  const [notifCycles, setNotifCycles] = useState(true);
   const [notifLoaded, setNotifLoaded] = useState(false);
 
   useEffect(() => {
@@ -68,42 +71,63 @@ export default function Profile() {
     (async () => {
       const { data } = await supabase
         .from('notification_preferences')
-        .select('goals_enabled, reminders_enabled')
+        .select('goals_enabled, reminders_enabled, levels_enabled, achievements_enabled, cycles_enabled')
         .eq('user_id', user.id)
         .maybeSingle();
       if (data) {
         setNotifGoals(data.goals_enabled);
         setNotifReminders(data.reminders_enabled);
-        localStorage.setItem('notif_goals', String(data.goals_enabled));
-        localStorage.setItem('notif_reminders', String(data.reminders_enabled));
-      } else {
-        // fallback to localStorage defaults
-        setNotifGoals(localStorage.getItem('notif_goals') !== 'false');
-        setNotifReminders(localStorage.getItem('notif_reminders') !== 'false');
+        setNotifLevels((data as any).levels_enabled ?? true);
+        setNotifAchievements((data as any).achievements_enabled ?? true);
+        setNotifCycles((data as any).cycles_enabled ?? true);
       }
       setNotifLoaded(true);
     })();
   }, [user]);
 
-  const persistNotif = async (goals: boolean, reminders: boolean) => {
+  const persistNotif = async (patch: Partial<{ goals_enabled: boolean; reminders_enabled: boolean; levels_enabled: boolean; achievements_enabled: boolean; cycles_enabled: boolean; }>) => {
     if (!user) return;
-    localStorage.setItem('notif_goals', String(goals));
-    localStorage.setItem('notif_reminders', String(reminders));
-    await supabase
-      .from('notification_preferences')
-      .upsert({ user_id: user.id, goals_enabled: goals, reminders_enabled: reminders }, { onConflict: 'user_id' });
+    const full = {
+      user_id: user.id,
+      goals_enabled: notifGoals,
+      reminders_enabled: notifReminders,
+      levels_enabled: notifLevels,
+      achievements_enabled: notifAchievements,
+      cycles_enabled: notifCycles,
+      ...patch,
+    };
+    await supabase.from('notification_preferences').upsert(full, { onConflict: 'user_id' });
+    window.dispatchEvent(new Event('notif-prefs-updated'));
   };
 
   const handleNotifGoalsChange = (checked: boolean) => {
     setNotifGoals(checked);
-    persistNotif(checked, notifReminders);
+    persistNotif({ goals_enabled: checked });
     toast({ title: checked ? '🔔 Notificações de metas ativadas' : '🔕 Notificações de metas desativadas' });
   };
 
   const handleNotifRemindersChange = (checked: boolean) => {
     setNotifReminders(checked);
-    persistNotif(notifGoals, checked);
+    persistNotif({ reminders_enabled: checked });
     toast({ title: checked ? '🔔 Lembretes de leitura ativados' : '🔕 Lembretes de leitura desativados' });
+  };
+
+  const handleNotifLevelsChange = (checked: boolean) => {
+    setNotifLevels(checked);
+    persistNotif({ levels_enabled: checked });
+    toast({ title: checked ? '🔔 Notificações de nível ativadas' : '🔕 Notificações de nível desativadas' });
+  };
+
+  const handleNotifAchievementsChange = (checked: boolean) => {
+    setNotifAchievements(checked);
+    persistNotif({ achievements_enabled: checked });
+    toast({ title: checked ? '🔔 Notificações de conquistas ativadas' : '🔕 Notificações de conquistas desativadas' });
+  };
+
+  const handleNotifCyclesChange = (checked: boolean) => {
+    setNotifCycles(checked);
+    persistNotif({ cycles_enabled: checked });
+    toast({ title: checked ? '🔔 Notificações de ciclos bíblicos ativadas' : '🔕 Notificações de ciclos bíblicos desativadas' });
   };
 
 
@@ -268,6 +292,27 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground">Lembretes diários para manter sua sequência de leitura</p>
               </div>
               <Switch checked={notifReminders} onCheckedChange={handleNotifRemindersChange} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Mudança de Nível</p>
+                <p className="text-xs text-muted-foreground">Avisar ao subir ou descer de nível na gamificação</p>
+              </div>
+              <Switch checked={notifLevels} onCheckedChange={handleNotifLevelsChange} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Conquistas</p>
+                <p className="text-xs text-muted-foreground">Avisar quando ganhar ou perder conquistas</p>
+              </div>
+              <Switch checked={notifAchievements} onCheckedChange={handleNotifAchievementsChange} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Ciclos da Bíblia</p>
+                <p className="text-xs text-muted-foreground">Avisar ao concluir Velho/Novo Testamento e reiniciar o ciclo</p>
+              </div>
+              <Switch checked={notifCycles} onCheckedChange={handleNotifCyclesChange} />
             </div>
           </div>
         </div>
