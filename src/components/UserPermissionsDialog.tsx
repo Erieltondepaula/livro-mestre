@@ -110,7 +110,11 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
   const [notifGoals, setNotifGoals] = useState(true);
   const [notifReminders, setNotifReminders] = useState(true);
-  const [notifSaving, setNotifSaving] = useState<null | 'goals' | 'reminders'>(null);
+  const [notifLevels, setNotifLevels] = useState(true);
+  const [notifAchievements, setNotifAchievements] = useState(true);
+  const [notifCycles, setNotifCycles] = useState(true);
+  type NotifField = 'goals' | 'reminders' | 'levels' | 'achievements' | 'cycles';
+  const [notifSaving, setNotifSaving] = useState<null | NotifField>(null);
   
   const isEditingMaster = user?.is_master ?? false;
 
