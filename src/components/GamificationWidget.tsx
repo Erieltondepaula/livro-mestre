@@ -323,14 +323,16 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
   // Level change notification
   useEffect(() => {
     if (prevLevelRef.current !== null && prevLevelRef.current !== level) {
-      if (level > prevLevelRef.current) {
-        toast({ title: `⬆️ Nível ${level}!`, description: getLevelTitle(level) });
-      } else {
-        toast({ title: `⬇️ Nível ${level}`, description: getLevelTitle(level), variant: 'destructive' });
+      if (notifPrefs.levels_enabled) {
+        if (level > prevLevelRef.current) {
+          toast({ title: `⬆️ Nível ${level}!`, description: getLevelTitle(level) });
+        } else {
+          toast({ title: `⬇️ Nível ${level}`, description: getLevelTitle(level), variant: 'destructive' });
+        }
       }
     }
     prevLevelRef.current = level;
-  }, [level]);
+  }, [level, notifPrefs.levels_enabled]);
 
   // Update streak in DB
   useEffect(() => {
