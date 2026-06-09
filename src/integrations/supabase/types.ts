@@ -845,22 +845,31 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          achievements_enabled: boolean
           created_at: string
+          cycles_enabled: boolean
           goals_enabled: boolean
+          levels_enabled: boolean
           reminders_enabled: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
+          achievements_enabled?: boolean
           created_at?: string
+          cycles_enabled?: boolean
           goals_enabled?: boolean
+          levels_enabled?: boolean
           reminders_enabled?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
+          achievements_enabled?: boolean
           created_at?: string
+          cycles_enabled?: boolean
           goals_enabled?: boolean
+          levels_enabled?: boolean
           reminders_enabled?: boolean
           updated_at?: string
           user_id?: string
