@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X, History, Calendar } from 'lucide-react';
+import { BookOpen, CheckCircle, Circle, TrendingUp, Book, Search, ExternalLink, FileText, X, History, Calendar, Trophy, Clock, BookMarked, ChevronRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -625,6 +626,17 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
 }
 
 function CycleHistory({ cycles, label }: { cycles: BibleCycle[]; label: string }) {
+  const [selectedCycle, setSelectedCycle] = useState<BibleCycle | null>(null);
+
+  const testamentBooks = useMemo(() => {
+    if (!selectedCycle) return [];
+    return bibleBooks.filter(b => b.testament === selectedCycle.testament);
+  }, [selectedCycle]);
+
+  const testamentChapters = useMemo(() => {
+    return testamentBooks.reduce((sum, b) => sum + b.chapters.length, 0);
+  }, [testamentBooks]);
+
   if (cycles.length === 0) {
     return (
       <div className="card-library p-4">
@@ -639,33 +651,99 @@ function CycleHistory({ cycles, label }: { cycles: BibleCycle[]; label: string }
       </div>
     );
   }
+
   return (
-    <div className="card-library p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <History className="w-4 h-4 text-primary" />
-        <h4 className="text-sm font-semibold">Histórico de Ciclos Concluídos — {label}</h4>
-        <span className="ml-auto text-xs text-muted-foreground">{cycles.length} ciclo(s)</span>
+    <>
+      <div className="card-library p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <History className="w-4 h-4 text-primary" />
+          <h4 className="text-sm font-semibold">Histórico de Ciclos Concluídos — {label}</h4>
+          <span className="ml-auto text-xs text-muted-foreground">{cycles.length} ciclo(s)</span>
+        </div>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {cycles.map(c => {
+            const d = new Date(c.completed_at);
+            const dateStr = d.toLocaleDateString('pt-BR');
+            const timeStr = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const weekday = WEEKDAY_NAMES[c.completed_weekday] || '';
+            return (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCycle(c)}
+                className="w-full flex items-center gap-3 p-2 rounded-md bg-muted/40 border border-border hover:bg-muted/70 hover:border-primary/30 transition-colors text-left group"
+              >
+                <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium group-hover:text-primary transition-colors">Ciclo {c.cycle_number}</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {weekday}, {dateStr} às {timeStr}
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+              </button>
+            );
+          })}
+        </div>
       </div>
-      <div className="space-y-2 max-h-48 overflow-y-auto">
-        {cycles.map(c => {
-          const d = new Date(c.completed_at);
-          const dateStr = d.toLocaleDateString('pt-BR');
-          const weekday = WEEKDAY_NAMES[c.completed_weekday] || '';
-          return (
-            <div key={c.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/40 border border-border">
-              <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">Ciclo {c.cycle_number}</p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {weekday}, {dateStr}
-                </p>
+
+      <Dialog open={!!selectedCycle} onOpenChange={() => setSelectedCycle(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-success" />
+              Ciclo {selectedCycle?.cycle_number} — {label}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedCycle && (
+            <div className="flex-1 overflow-y-auto space-y-5">
+              {/* Date & Time */}
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-success/5 border border-success/20">
+                <Clock className="w-5 h-5 text-success mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">
+                    Concluído em {WEEKDAY_NAMES[selectedCycle.completed_weekday] || ''}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(selectedCycle.completed_at).toLocaleDateString('pt-BR', {
+                      day: '2-digit', month: 'long', year: 'numeric'
+                    })} às {new Date(selectedCycle.completed_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
+                  <p className="text-2xl font-bold text-primary">{testamentBooks.length}</p>
+                  <p className="text-xs text-muted-foreground">Livros Completos</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/40 border border-border text-center">
+                  <p className="text-2xl font-bold text-primary">{testamentChapters}</p>
+                  <p className="text-xs text-muted-foreground">Capítulos Lidos</p>
+                </div>
+              </div>
+
+              {/* Books list */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <BookMarked className="w-4 h-4 text-primary" />
+                  <h5 className="text-sm font-semibold">Livros deste Ciclo</h5>
+                </div>
+                <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                  {testamentBooks.map(book => (
+                    <div key={book.name} className="flex items-center justify-between p-2 rounded-md bg-muted/30 text-xs">
+                      <span className="font-medium">{book.name}</span>
+                      <span className="text-muted-foreground">{book.chapters.length} cap.</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          );
-        })}
-      </div>
-    </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
