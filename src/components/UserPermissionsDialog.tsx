@@ -130,22 +130,37 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
     if (!user) return;
     const { data } = await supabase
       .from('notification_preferences')
-      .select('goals_enabled, reminders_enabled')
+      .select('goals_enabled, reminders_enabled, levels_enabled, achievements_enabled, cycles_enabled')
       .eq('user_id', user.user_id)
       .maybeSingle();
     setNotifGoals(data?.goals_enabled ?? true);
     setNotifReminders(data?.reminders_enabled ?? true);
+    setNotifLevels((data as any)?.levels_enabled ?? true);
+    setNotifAchievements((data as any)?.achievements_enabled ?? true);
+    setNotifCycles((data as any)?.cycles_enabled ?? true);
   };
 
-  const updateNotif = async (field: 'goals' | 'reminders', value: boolean) => {
+  const updateNotif = async (field: NotifField, value: boolean) => {
     if (!user) return;
     setNotifSaving(field);
-    const next = {
-      goals_enabled: field === 'goals' ? value : notifGoals,
-      reminders_enabled: field === 'reminders' ? value : notifReminders,
+    const current = {
+      goals_enabled: notifGoals,
+      reminders_enabled: notifReminders,
+      levels_enabled: notifLevels,
+      achievements_enabled: notifAchievements,
+      cycles_enabled: notifCycles,
     };
-    if (field === 'goals') setNotifGoals(value);
-    else setNotifReminders(value);
+    const key = `${field}_enabled` as keyof typeof current;
+    const next = { ...current, [key]: value };
+
+    const setters: Record<NotifField, (v: boolean) => void> = {
+      goals: setNotifGoals,
+      reminders: setNotifReminders,
+      levels: setNotifLevels,
+      achievements: setNotifAchievements,
+      cycles: setNotifCycles,
+    };
+    setters[field](value);
 
     const { error } = await supabase
       .from('notification_preferences')
@@ -153,9 +168,7 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
     setNotifSaving(null);
     if (error) {
       toast({ title: 'Erro', description: 'Não foi possível salvar.', variant: 'destructive' });
-      // revert
-      if (field === 'goals') setNotifGoals(!value);
-      else setNotifReminders(!value);
+      setters[field](!value);
     } else {
       toast({ title: value ? 'Notificações ativadas' : 'Notificações desativadas' });
     }
