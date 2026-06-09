@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { useNotificationPrefs } from '@/hooks/useNotificationPrefs';
 import type { DailyReading } from '@/types/library';
 import {
   ALL_ACHIEVEMENTS,
