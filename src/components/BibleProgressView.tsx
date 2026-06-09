@@ -291,10 +291,12 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         completed_weekday: now.getDay(),
       });
       if (!error) {
-        toast({
-          title: `🎉 ${testament === 'old' ? 'Velho' : 'Novo'} Testamento concluído!`,
-          description: `Ciclo ${nextNumber} salvo no histórico. Reiniciando para um novo ciclo.`,
-        });
+        if (notifPrefs.cycles_enabled) {
+          toast({
+            title: `🎉 ${testament === 'old' ? 'Velho' : 'Novo'} Testamento concluído!`,
+            description: `Ciclo ${nextNumber} salvo no histórico. Reiniciando para um novo ciclo.`,
+          });
+        }
         await loadCycles();
       }
       completingRef.current[testament] = false;
