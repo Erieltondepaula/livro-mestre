@@ -56,6 +56,7 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
     return saved === 'true';
   });
   const { user } = useAuth();
+  const { prefs: notifPrefs } = useNotificationPrefs();
   const [goal, setGoal] = useState<ReadingGoal | null>(null);
   const [editingGoal, setEditingGoal] = useState(false);
   const [newGoalValue, setNewGoalValue] = useState('20');
