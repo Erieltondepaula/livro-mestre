@@ -362,6 +362,39 @@ export function UserPermissionsDialog({ open, onOpenChange, user, onSave, isMast
           onCheckedChange={(v) => updateNotif('reminders', v)}
         />
       </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Mudança de Nível</p>
+          <p className="text-xs text-muted-foreground">Avisar ao subir/descer de nível</p>
+        </div>
+        <Switch
+          checked={notifLevels}
+          disabled={notifSaving === 'levels'}
+          onCheckedChange={(v) => updateNotif('levels', v)}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Conquistas</p>
+          <p className="text-xs text-muted-foreground">Avisar ao ganhar/perder conquistas</p>
+        </div>
+        <Switch
+          checked={notifAchievements}
+          disabled={notifSaving === 'achievements'}
+          onCheckedChange={(v) => updateNotif('achievements', v)}
+        />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="min-w-0 pr-3">
+          <p className="text-sm">Ciclos da Bíblia</p>
+          <p className="text-xs text-muted-foreground">Avisar ao concluir Velho/Novo Testamento</p>
+        </div>
+        <Switch
+          checked={notifCycles}
+          disabled={notifSaving === 'cycles'}
+          onCheckedChange={(v) => updateNotif('cycles', v)}
+        />
+      </div>
     </div>
   );
 
