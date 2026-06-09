@@ -10,6 +10,7 @@ import type { Book as BookType, DailyReading, BookStatus } from '@/types/library
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useNotificationPrefs } from '@/hooks/useNotificationPrefs';
 
 interface BibleCycle {
   id: string;
