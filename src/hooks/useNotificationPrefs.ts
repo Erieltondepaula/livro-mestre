@@ -11,11 +11,11 @@ export interface NotificationPrefs {
 }
 
 const DEFAULT_PREFS: NotificationPrefs = {
-  goals_enabled: true,
-  reminders_enabled: true,
-  levels_enabled: true,
-  achievements_enabled: true,
-  cycles_enabled: true,
+  goals_enabled: false,
+  reminders_enabled: false,
+  levels_enabled: false,
+  achievements_enabled: false,
+  cycles_enabled: false,
 };
 
 export function useNotificationPrefs() {
