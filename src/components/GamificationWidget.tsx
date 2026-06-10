@@ -304,7 +304,7 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
     supabase.from('reading_goals').update({ total_badges: earnedBadgeIds }).eq('id', goal.id).then(() => {
       setGoal(prev => prev ? { ...prev, total_badges: [...earnedBadgeIds] } : prev);
       // Only notify first 3 gains/losses to avoid spam
-      if (notifPrefs.achievements_enabled) {
+      if (notifLoaded && notifPrefs.achievements_enabled) {
         gained.slice(0, 3).forEach(id => {
           const b = ALL_ACHIEVEMENTS.find(x => x.id === id);
           if (b) toast({ title: '🏅 Nova Conquista!', description: `${b.icon} ${b.label} (+${b.xp} XP)` });
