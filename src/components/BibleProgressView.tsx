@@ -608,14 +608,28 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         </TabsList>
 
         <TabsContent value="old" className="mt-6 space-y-4">
-          <CycleHistory cycles={cycles.filter(c => c.testament === 'old')} label="Velho Testamento" />
+          <CycleHistory
+            cycles={cycles.filter(c => c.testament === 'old')}
+            label="Velho Testamento"
+            testament="old"
+            userId={user?.id}
+            nextCycleNumber={cycleCountByTestament.old + 1}
+            onChanged={loadCycles}
+          />
           <div className="card-library p-4 md:p-6 max-h-[600px] overflow-y-auto">
             {renderByCategory('old')}
           </div>
         </TabsContent>
 
         <TabsContent value="new" className="mt-6 space-y-4">
-          <CycleHistory cycles={cycles.filter(c => c.testament === 'new')} label="Novo Testamento" />
+          <CycleHistory
+            cycles={cycles.filter(c => c.testament === 'new')}
+            label="Novo Testamento"
+            testament="new"
+            userId={user?.id}
+            nextCycleNumber={cycleCountByTestament.new + 1}
+            onChanged={loadCycles}
+          />
           <div className="card-library p-4 md:p-6 max-h-[600px] overflow-y-auto">
             {renderByCategory('new')}
           </div>
@@ -625,28 +639,78 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
   );
 }
 
-function CycleHistory({ cycles, label }: { cycles: BibleCycle[]; label: string }) {
+function CycleHistory({
+  cycles,
+  label,
+  testament,
+  userId,
+  nextCycleNumber,
+  onChanged,
+}: {
+  cycles: BibleCycle[];
+  label: string;
+  testament: 'old' | 'new';
+  userId?: string;
+  nextCycleNumber: number;
+  onChanged: () => Promise<void> | void;
+}) {
   const [selectedCycle, setSelectedCycle] = useState<BibleCycle | null>(null);
+  const [marking, setMarking] = useState(false);
 
   const testamentBooks = useMemo(() => {
-    if (!selectedCycle) return [];
-    return bibleBooks.filter(b => b.testament === selectedCycle.testament);
-  }, [selectedCycle]);
+    const t = selectedCycle?.testament ?? testament;
+    return bibleBooks.filter(b => b.testament === t);
+  }, [selectedCycle, testament]);
 
   const testamentChapters = useMemo(() => {
     return testamentBooks.reduce((sum, b) => sum + b.chapters.length, 0);
   }, [testamentBooks]);
 
+  const handleMarkComplete = async () => {
+    if (!userId) return;
+    if (!confirm(`Marcar ${label} como concluído manualmente? Um novo ciclo será iniciado.`)) return;
+    setMarking(true);
+    const now = new Date();
+    const { error } = await supabase.from('bible_cycles').insert({
+      user_id: userId,
+      testament,
+      cycle_number: nextCycleNumber,
+      completed_at: now.toISOString(),
+      completed_weekday: now.getDay(),
+    });
+    setMarking(false);
+    if (error) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      return;
+    }
+    toast({ title: `🎉 ${label} concluído!`, description: `Ciclo ${nextCycleNumber} salvo no histórico.` });
+    await onChanged();
+  };
+
+  const headerActions = (
+    <Button
+      size="sm"
+      variant="outline"
+      className="h-7 text-xs gap-1"
+      onClick={handleMarkComplete}
+      disabled={marking || !userId}
+    >
+      <CheckCircle className="w-3 h-3" />
+      Marcar Ciclo
+    </Button>
+  );
+
   if (cycles.length === 0) {
     return (
       <div className="card-library p-4">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <History className="w-4 h-4 text-muted-foreground" />
           <h4 className="text-sm font-semibold">Histórico de Ciclos Concluídos — {label}</h4>
-          <span className="ml-auto text-xs text-muted-foreground">0 ciclo(s)</span>
+          <span className="text-xs text-muted-foreground">0 ciclo(s)</span>
+          <div className="ml-auto">{headerActions}</div>
         </div>
         <p className="text-xs text-muted-foreground">
-          Nenhum ciclo concluído ainda. Ao completar 100% do {label}, a data será registrada aqui e a leitura reiniciará automaticamente para um novo ciclo.
+          Nenhum ciclo concluído ainda. Ao completar 100% do {label}, a data será registrada aqui e a leitura reiniciará automaticamente para um novo ciclo. Você também pode marcar manualmente usando o botão acima.
         </p>
       </div>
     );
@@ -655,10 +719,11 @@ function CycleHistory({ cycles, label }: { cycles: BibleCycle[]; label: string }
   return (
     <>
       <div className="card-library p-4">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
           <History className="w-4 h-4 text-primary" />
           <h4 className="text-sm font-semibold">Histórico de Ciclos Concluídos — {label}</h4>
-          <span className="ml-auto text-xs text-muted-foreground">{cycles.length} ciclo(s)</span>
+          <span className="text-xs text-muted-foreground">{cycles.length} ciclo(s)</span>
+          <div className="ml-auto">{headerActions}</div>
         </div>
         <div className="space-y-2 max-h-48 overflow-y-auto">
           {cycles.map(c => {
