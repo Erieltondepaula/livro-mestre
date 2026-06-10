@@ -608,14 +608,28 @@ export function BibleProgressView({ readings, books, statuses }: BibleProgressVi
         </TabsList>
 
         <TabsContent value="old" className="mt-6 space-y-4">
-          <CycleHistory cycles={cycles.filter(c => c.testament === 'old')} label="Velho Testamento" />
+          <CycleHistory
+            cycles={cycles.filter(c => c.testament === 'old')}
+            label="Velho Testamento"
+            testament="old"
+            userId={user?.id}
+            nextCycleNumber={cycleCountByTestament.old + 1}
+            onChanged={loadCycles}
+          />
           <div className="card-library p-4 md:p-6 max-h-[600px] overflow-y-auto">
             {renderByCategory('old')}
           </div>
         </TabsContent>
 
         <TabsContent value="new" className="mt-6 space-y-4">
-          <CycleHistory cycles={cycles.filter(c => c.testament === 'new')} label="Novo Testamento" />
+          <CycleHistory
+            cycles={cycles.filter(c => c.testament === 'new')}
+            label="Novo Testamento"
+            testament="new"
+            userId={user?.id}
+            nextCycleNumber={cycleCountByTestament.new + 1}
+            onChanged={loadCycles}
+          />
           <div className="card-library p-4 md:p-6 max-h-[600px] overflow-y-auto">
             {renderByCategory('new')}
           </div>
