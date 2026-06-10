@@ -323,7 +323,7 @@ export function GamificationWidget({ readings }: GamificationWidgetProps) {
   // Level change notification
   useEffect(() => {
     if (prevLevelRef.current !== null && prevLevelRef.current !== level) {
-      if (notifPrefs.levels_enabled) {
+      if (notifLoaded && notifPrefs.levels_enabled) {
         if (level > prevLevelRef.current) {
           toast({ title: `⬆️ Nível ${level}!`, description: getLevelTitle(level) });
         } else {
