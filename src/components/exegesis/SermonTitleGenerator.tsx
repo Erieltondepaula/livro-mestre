@@ -3,6 +3,7 @@ import { Sparkles, Send, Loader2, Copy, Check, Lightbulb, HelpCircle, Flame, Shi
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -56,7 +57,7 @@ export function SermonTitleGenerator({ getMaterialsContext }: Props) {
     try {
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           passage,
           type: 'title_generator',

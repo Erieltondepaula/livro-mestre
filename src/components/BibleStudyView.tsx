@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 const STUDY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bible-study`;
 
@@ -169,10 +170,7 @@ export function BibleStudyView() {
     try {
       const resp = await fetch(STUDY_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           content: content.trim(),
           analysis_type: selectedType,

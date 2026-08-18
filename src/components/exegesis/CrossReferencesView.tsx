@@ -21,6 +21,7 @@ interface Props {
 }
 
 import type { ExegesisMaterial } from '@/hooks/useExegesis';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -164,7 +165,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
 
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           passage,
           type: 'cross_references',

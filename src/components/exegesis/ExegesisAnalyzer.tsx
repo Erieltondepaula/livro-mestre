@@ -9,6 +9,7 @@ import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibl
 import type { ExegesisAnalysis, ExegesisMaterial } from '@/hooks/useExegesis';
 import { MapImageViewer, appendMapImageUrl } from './MapImageViewer';
 import { supabase } from '@/integrations/supabase/client';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
@@ -118,7 +119,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
       const mapInfo = mapDataMatch ? mapDataMatch[1] : `Mapa bíblico de ${passage}`;
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           passage,
           type: 'generate_map_image',
@@ -180,7 +181,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
 
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: await fnHeaders(),
         body: JSON.stringify({ passage, type: selectedType, question: questionWithWeb, materials_context: getMaterialsContext?.() }),
         signal: controller.signal,
       });
@@ -240,7 +241,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [bibleBook, chapterStart, chapterEnd, verseStart, verseEnd, customPassage, selectedType, question, onSave, getMaterialsContext]);
+  }, [bibleBook, chapterStart, chapterEnd, verseStart, verseEnd, customPassage, selectedType, question, webSearchEnabled, onSave, getMaterialsContext]);
 
   const renderMarkdown = (text: string) => {
     let html = text

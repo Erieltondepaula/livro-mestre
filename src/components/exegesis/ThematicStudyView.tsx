@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { ExegesisAnalysis, ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -474,10 +475,7 @@ ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : '
 
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           type: 'thematic_study',
           passage: themeTitle,

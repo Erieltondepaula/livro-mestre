@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 // ===== Types =====
 interface GrammarIssue {
@@ -322,10 +323,7 @@ export function OutlineCopilot({ content, currentElement, selectedText, previous
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/outline-copilot`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
+          headers: await fnHeaders(),
           body: JSON.stringify({
             content: plainContent,
             currentElement,
@@ -366,10 +364,7 @@ export function OutlineCopilot({ content, currentElement, selectedText, previous
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/outline-copilot-research`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
+          headers: await fnHeaders(),
           body: JSON.stringify({
             content: plainContent,
             currentElement,

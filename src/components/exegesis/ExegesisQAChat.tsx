@@ -43,6 +43,7 @@ interface Props {
 }
 
 import type { MaterialCategory } from '@/hooks/useExegesis';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -299,10 +300,7 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
 
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           passage: passage || text || 'Anexos enviados',
           type: 'question',

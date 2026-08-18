@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Settings2, Save, RotateCcw, Loader2, Eye, Edit3, Layers } from 'lucide-react';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 type SermonModule = {
   sermon_type: string;
@@ -88,10 +89,7 @@ export function PromptEditorDialog() {
       } else {
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
+          headers: await fnHeaders(),
           body: JSON.stringify({ type: 'get_system_prompt' }),
         });
         if (resp.ok) {
@@ -117,10 +115,7 @@ export function PromptEditorDialog() {
       // Fetch defaults from edge function
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: await fnHeaders(),
         body: JSON.stringify({ type: 'get_sermon_type_modules' }),
       });
       const defaults: { modules: { sermon_type: string; label: string; prompt_text: string }[] } =

@@ -17,6 +17,7 @@ import { OutlineCopilot } from './OutlineCopilot';
 import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 type OutlineType =
   | 'outline_expository'
@@ -323,7 +324,15 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   }>({});
   const [showCopilot, setShowCopilot] = useState(true);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [lastSavedOutlineId, setLastSavedOutlineId] = useState<string | null>(null);
+  const [lastSavedOutlineId, setLastSavedOutlineIdState] = useState<string | null>(null);
+  // Refs mirror the id/saving flag so the debounced auto-save never reads stale
+  // state and never creates a duplicate outline when it overlaps a manual save.
+  const lastSavedOutlineIdRef = useRef<string | null>(null);
+  const isSavingRef = useRef(false);
+  const setLastSavedOutlineId = useCallback((id: string | null) => {
+    lastSavedOutlineIdRef.current = id;
+    setLastSavedOutlineIdState(id);
+  }, []);
   const abortRef = useRef<AbortController | null>(null);
   const editorRef = useRef<ExegesisRichEditorRef | null>(null);
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -415,15 +424,19 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     
     autoSaveRef.current = setTimeout(async () => {
       if (!manualContent.trim()) return;
-      
+      // A manual save is already in flight — skip this cycle to avoid duplicates
+      if (isSavingRef.current) return;
+      if (manualContent === lastSavedContentRef.current) return;
+
       // Auto-extract passage from content if no bible passage selected
       const selectedPassage = getPassageText();
       const passage = selectedPassage || getPassageFromContentEarly(manualContent);
-      
+
+      isSavingRef.current = true;
       setAutoSaveStatus('saving');
       try {
-        if (lastSavedOutlineId) {
-          await onUpdateContent(lastSavedOutlineId, manualContent);
+        if (lastSavedOutlineIdRef.current) {
+          await onUpdateContent(lastSavedOutlineIdRef.current, manualContent);
         } else {
           const result = await onSave({
             passage,
@@ -439,6 +452,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
       } catch {
         setAutoSaveStatus('idle');
+      } finally {
+        isSavingRef.current = false;
       }
     }, 5000);
 
@@ -519,7 +534,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     try {
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           passage,
           type: selectedType,
@@ -631,10 +646,15 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     }
     
     const passage = getEffectivePassage(manualContent);
-    
+
+    // Cancel any pending auto-save so it cannot create a second outline
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+
     try {
-      if (lastSavedOutlineId) {
-        await onUpdateContent(lastSavedOutlineId, manualContent);
+      if (lastSavedOutlineIdRef.current) {
+        await onUpdateContent(lastSavedOutlineIdRef.current, manualContent);
         toast({ title: "Esboço atualizado com sucesso!" });
       } else {
         const result = await onSave({
@@ -658,6 +678,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         description: "Não foi possível salvar o esboço manual",
         variant: "destructive" 
       });
+    } finally {
+      isSavingRef.current = false;
     }
   };
 
