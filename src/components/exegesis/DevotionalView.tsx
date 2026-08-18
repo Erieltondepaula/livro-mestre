@@ -14,6 +14,7 @@ import type { ExegesisAnalysis, ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { buildAttachmentFromFile, buildAttachmentPrompt, buildRelevantMaterialsContext, type ChatAttachment } from './chatHelpers';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -277,10 +278,7 @@ IMPORTANTE:
 
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           type: 'thematic_study',
           passage: `Devocional: ${effectiveQuery}`,

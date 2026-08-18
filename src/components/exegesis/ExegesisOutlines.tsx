@@ -17,6 +17,7 @@ import { OutlineCopilot } from './OutlineCopilot';
 import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
+import { fnHeaders } from '@/lib/edgeFunctions';
 
 type OutlineType =
   | 'outline_expository'
@@ -519,7 +520,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     try {
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: await fnHeaders(),
         body: JSON.stringify({
           passage,
           type: selectedType,
