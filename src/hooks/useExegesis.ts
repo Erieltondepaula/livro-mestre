@@ -106,17 +106,45 @@ export function useExegesis() {
 
   const updateOutlineContent = useCallback(async (id: string, content: string) => {
     if (!user) return;
-    // Save version before updating
-    const outline = outlines.find(o => o.id === id);
+    const outline = outlinesRef.current.find(o => o.id === id);
+    // Nothing changed → no write, no version.
+    if (outline && outline.content === content) return;
+
     if (outline) {
-      const { data: versions } = await supabase.from('exegesis_outline_versions' as any).select('version_number').eq('outline_id', id).order('version_number', { ascending: false }).limit(1);
-      const nextVersion = ((versions as any)?.[0]?.version_number || 0) + 1;
-      await supabase.from('exegesis_outline_versions' as any).insert({ outline_id: id, content: outline.content, version_number: nextVersion, user_id: user.id });
+      const lastSnapshotAt = lastVersionAtRef.current[id] || 0;
+      const elapsed = Date.now() - lastSnapshotAt;
+      // The editor auto-saves every 5s; snapshotting each save floods the
+      // history. Keep at most one snapshot per VERSION_INTERVAL_MS per outline.
+      if (elapsed > VERSION_INTERVAL_MS) {
+        const { data: versions } = await supabase
+          .from('exegesis_outline_versions' as any)
+          .select('id, version_number, content')
+          .eq('outline_id', id)
+          .order('version_number', { ascending: false })
+          .limit(MAX_VERSIONS);
+        const rows = (versions as any[]) || [];
+        // Skip if the newest snapshot already holds this exact content.
+        if (rows[0]?.content !== outline.content) {
+          const nextVersion = (rows[0]?.version_number || 0) + 1;
+          await supabase.from('exegesis_outline_versions' as any).insert({
+            outline_id: id, content: outline.content, version_number: nextVersion, user_id: user.id,
+          });
+          lastVersionAtRef.current[id] = Date.now();
+          // Prune anything beyond the retention window.
+          if (rows.length >= MAX_VERSIONS) {
+            const stale = rows.slice(MAX_VERSIONS - 1).map(r => r.id);
+            if (stale.length) await supabase.from('exegesis_outline_versions' as any).delete().in('id', stale);
+          }
+        } else {
+          lastVersionAtRef.current[id] = Date.now();
+        }
+      }
     }
     const { error } = await supabase.from('exegesis_outlines').update({ content } as any).eq('id', id);
     if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
     setOutlines(prev => prev.map(o => o.id === id ? { ...o, content } : o));
-  }, [user, outlines]);
+  }, [user]);
+
 
   const deleteOutline = useCallback(async (id: string) => {
     const { error } = await supabase.from('exegesis_outlines').delete().eq('id', id);
