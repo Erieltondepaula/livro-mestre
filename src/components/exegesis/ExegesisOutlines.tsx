@@ -423,6 +423,11 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     if (manualContent === lastSavedContentRef.current) return;
     
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+
+    // Longer idle window while actively typing keeps the DB writes (and the
+    // version history) proportional to real edits instead of keystrokes.
+    const delay = Math.abs(manualContent.length - lastSavedContentRef.current.length) > 400 ? 4000 : 8000;
+
     
     autoSaveRef.current = setTimeout(async () => {
       if (!manualContent.trim()) return;
