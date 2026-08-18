@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend } from 'recharts';
-import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target } from 'lucide-react';
+import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Book, DailyReading, BookStatus } from '@/types/library';
@@ -364,6 +364,43 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     },
   ];
 
+  // ===== Última leitura registrada (independente do filtro de período) =====
+  const lastReadingInfo = useMemo(() => {
+    const toDate = (r: DailyReading): Date | null => {
+      if (r.dataInicio) return new Date(r.dataInicio);
+      if (r.created_at) return new Date(r.created_at);
+      return null;
+    };
+    const withDates = readings
+      .map(r => ({ r, d: toDate(r) }))
+      .filter((x): x is { r: DailyReading; d: Date } => !!x.d && !isNaN(x.d.getTime()));
+    if (!withDates.length) return null;
+    withDates.sort((a, b) => b.d.getTime() - a.d.getTime());
+    const { r, d } = withDates[0];
+    const book = books.find(b => b.id === r.livroId);
+    const bookName = book?.nome || r.livroLido || 'Livro não identificado';
+    const totalPages = book?.totalPaginas || 0;
+
+    const today = new Date();
+    const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const daysSince = Math.max(0, Math.round((startOfDay(today) - startOfDay(d)) / 86400000));
+
+    return {
+      bookName,
+      page: r.paginaFinal,
+      totalPages,
+      date: d,
+      dateLabel: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      weekday: d.toLocaleDateString('pt-BR', { weekday: 'long' }),
+      daysSince,
+      pagesRead: r.quantidadePaginas,
+      minutes: r.tempoGasto,
+      bibleRef: r.bibleBook
+        ? `${r.bibleBook}${r.bibleChapter ? ' ' + r.bibleChapter : ''}${r.bibleVerseStart ? ':' + r.bibleVerseStart : ''}${r.bibleVerseEnd && r.bibleVerseEnd !== r.bibleVerseStart ? '-' + r.bibleVerseEnd : ''}`
+        : null,
+    };
+  }, [readings, books]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -403,6 +440,66 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
           </div>
         ))}
       </div>
+
+      {/* Última leitura */}
+      {lastReadingInfo && (
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4 md:p-5 shadow-sm">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-cyan-500 opacity-[0.06]" />
+          <div className="relative space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+                <History className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <h3 className="font-semibold text-foreground">Sua última leitura</h3>
+              {lastReadingInfo.daysSince === 0 ? (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Hoje</span>
+              ) : (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                  {lastReadingInfo.daysSince} {lastReadingInfo.daysSince === 1 ? 'dia' : 'dias'} atrás
+                </span>
+              )}
+            </div>
+
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="rounded-lg bg-background/70 border border-border p-3">
+                <p className="text-[11px] text-muted-foreground">Último livro lido</p>
+                <p className="font-semibold text-foreground text-sm truncate" title={lastReadingInfo.bookName}>{lastReadingInfo.bookName}</p>
+              </div>
+              <div className="rounded-lg bg-background/70 border border-border p-3">
+                <p className="text-[11px] text-muted-foreground">Última página</p>
+                <p className="font-semibold text-foreground text-sm">
+                  {lastReadingInfo.page}{lastReadingInfo.totalPages ? ` de ${lastReadingInfo.totalPages}` : ''}
+                </p>
+              </div>
+              <div className="rounded-lg bg-background/70 border border-border p-3">
+                <p className="text-[11px] text-muted-foreground">Último dia</p>
+                <p className="font-semibold text-foreground text-sm capitalize">
+                  {lastReadingInfo.weekday}, {lastReadingInfo.dateLabel}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-sm text-muted-foreground leading-relaxed space-y-1">
+              <p>
+                📖 Sua última leitura foi <span className="font-semibold text-foreground">{lastReadingInfo.bookName}</span>
+                {lastReadingInfo.bibleRef ? <> (<span className="font-medium text-foreground">{lastReadingInfo.bibleRef}</span>)</> : null}
+                , em <span className="font-semibold text-foreground capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}
+                {lastReadingInfo.pagesRead > 0 ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> página(s) lida(s)</> : null}
+                {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{Math.floor(lastReadingInfo.minutes)}min</span></> : null}.
+              </p>
+              <p>
+                🔖 Você parou na página <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
+                {lastReadingInfo.totalPages ? <> de <span className="font-semibold text-foreground">{lastReadingInfo.totalPages}</span></> : null}.
+              </p>
+              <p>
+                {lastReadingInfo.daysSince === 0
+                  ? '✅ Você já registrou leitura hoje. Continue assim!'
+                  : <>⏳ Já tem <span className="font-semibold text-foreground">{lastReadingInfo.daysSince}</span> {lastReadingInfo.daysSince === 1 ? 'dia' : 'dias'} sem registro de leitura desde a última vez.</>}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className="flex gap-1 bg-muted/60 p-1.5 rounded-xl overflow-x-auto">
