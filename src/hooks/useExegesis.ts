@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -47,12 +47,22 @@ export interface ExegesisMaterial {
   content_origin?: string | null;
 }
 
+// Snapshot retention for outline history: at most one snapshot per outline
+// every 2 minutes, keeping the 30 most recent.
+const VERSION_INTERVAL_MS = 2 * 60 * 1000;
+const MAX_VERSIONS = 30;
+
 export function useExegesis() {
   const { user } = useAuth();
   const [analyses, setAnalyses] = useState<ExegesisAnalysis[]>([]);
   const [outlines, setOutlines] = useState<ExegesisOutline[]>([]);
   const [materials, setMaterials] = useState<ExegesisMaterial[]>([]);
   const [loading, setLoading] = useState(false);
+  // Mirrors `outlines` so callbacks stay referentially stable (no re-renders of
+  // the heavy editor tree on every list change).
+  const outlinesRef = useRef<ExegesisOutline[]>([]);
+  useEffect(() => { outlinesRef.current = outlines; }, [outlines]);
+  const lastVersionAtRef = useRef<Record<string, number>>({});
 
   // --- Analyses ---
   const fetchAnalyses = useCallback(async () => {
