@@ -646,10 +646,15 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     }
     
     const passage = getEffectivePassage(manualContent);
-    
+
+    // Cancel any pending auto-save so it cannot create a second outline
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+
     try {
-      if (lastSavedOutlineId) {
-        await onUpdateContent(lastSavedOutlineId, manualContent);
+      if (lastSavedOutlineIdRef.current) {
+        await onUpdateContent(lastSavedOutlineIdRef.current, manualContent);
         toast({ title: "Esboço atualizado com sucesso!" });
       } else {
         const result = await onSave({
@@ -673,6 +678,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         description: "Não foi possível salvar o esboço manual",
         variant: "destructive" 
       });
+    } finally {
+      isSavingRef.current = false;
     }
   };
 
