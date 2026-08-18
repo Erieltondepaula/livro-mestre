@@ -462,7 +462,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       } finally {
         isSavingRef.current = false;
       }
-    }, 5000);
+    }, delay);
 
     return () => {
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
