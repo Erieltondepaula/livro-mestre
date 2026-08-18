@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend, LineChart, Line, ComposedChart } from 'recharts';
-import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target, History, Gauge } from 'lucide-react';
+import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target, History, Gauge, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Book, DailyReading, BookStatus } from '@/types/library';
@@ -47,6 +47,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   const [period, setPeriod] = useState<Period>('all');
   const [activeTab, setActiveTab] = useState<ChartTab>('pages');
   const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | null>(null);
+  const [selectedLastBookId, setSelectedLastBookId] = useState<string | null>(null);
 
   // Helper: check if a book is Bible category
   const isBibleBook = useCallback((bookId: string) => {
@@ -434,32 +435,59 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     },
   ];
 
-  // ===== Última leitura registrada (independente do filtro de período) =====
+  // ===== Livros com leitura registrada (para navegação) =====
+  const startOfDay = useCallback((x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()), []);
+  const readingDate = useCallback((r: DailyReading): Date | null => {
+    const d = r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null);
+    return d && !isNaN(d.getTime()) ? d : null;
+  }, []);
+
+  const booksWithReadings = useMemo(() => {
+    const map = new Map<string, { bookId: string; name: string; last: Date }>();
+    readings.forEach(r => {
+      const d = readingDate(r);
+      if (!d) return;
+      const book = books.find(b => b.id === r.livroId);
+      const name = book?.livro || r.livroLido || 'Livro não identificado';
+      const cur = map.get(r.livroId);
+      if (!cur || d.getTime() > cur.last.getTime()) map.set(r.livroId, { bookId: r.livroId, name, last: d });
+    });
+    return Array.from(map.values()).sort((a, b) => b.last.getTime() - a.last.getTime());
+  }, [readings, books, readingDate]);
+
+  const activeBookId = selectedLastBookId && booksWithReadings.some(b => b.bookId === selectedLastBookId)
+    ? selectedLastBookId
+    : booksWithReadings[0]?.bookId ?? null;
+  const activeIndex = booksWithReadings.findIndex(b => b.bookId === activeBookId);
+
+  // ===== Última leitura registrada do livro selecionado =====
   const lastReadingInfo = useMemo(() => {
-    const toDate = (r: DailyReading): Date | null => {
-      if (r.dataInicio) return new Date(r.dataInicio);
-      if (r.created_at) return new Date(r.created_at);
-      return null;
-    };
+    if (!activeBookId) return null;
     const withDates = readings
-      .map(r => ({ r, d: toDate(r) }))
-      .filter((x): x is { r: DailyReading; d: Date } => !!x.d && !isNaN(x.d.getTime()));
+      .filter(r => r.livroId === activeBookId)
+      .map(r => ({ r, d: readingDate(r) }))
+      .filter((x): x is { r: DailyReading; d: Date } => !!x.d);
     if (!withDates.length) return null;
     withDates.sort((a, b) => b.d.getTime() - a.d.getTime());
     const { r, d } = withDates[0];
-    const book = books.find(b => b.id === r.livroId);
+    const book = books.find(b => b.id === activeBookId);
     const bookName = book?.livro || r.livroLido || 'Livro não identificado';
     const totalPages = book?.totalPaginas || 0;
 
-    const today = new Date();
-    const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-    const daysSince = Math.max(0, Math.round((startOfDay(today) - startOfDay(d)) / 86400000));
+    const daysSince = Math.max(0, Math.round((startOfDay(new Date()).getTime() - startOfDay(d).getTime()) / 86400000));
+
+    // Página atual real do livro (Bíblia: MAX; demais: SOMA)
+    const allOfBook = withDates.map(x => x.r);
+    const pagesOfBook = isBibleBook(activeBookId)
+      ? Math.max(...allOfBook.map(x => x.paginaFinal))
+      : allOfBook.reduce((sum, x) => sum + Math.max(0, x.quantidadePaginas), 0);
 
     return {
-      bookId: r.livroId,
+      bookId: activeBookId,
       book,
       bookName,
-      page: r.paginaFinal,
+      page: isBibleBook(activeBookId) ? pagesOfBook : Math.max(r.paginaFinal, pagesOfBook),
+      pagesOfBook,
       totalPages,
       date: d,
       dateLabel: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
@@ -470,68 +498,52 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       bibleRef: r.bibleBook
         ? `${r.bibleBook}${r.bibleChapter ? ' ' + r.bibleChapter : ''}${r.bibleVerseStart ? ':' + r.bibleVerseStart : ''}${r.bibleVerseEnd && r.bibleVerseEnd !== r.bibleVerseStart ? '-' + r.bibleVerseEnd : ''}`
         : null,
+      allOfBook,
     };
-  }, [readings, books]);
+  }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook]);
 
   // ===== Assistente de recuperação do plano de leitura =====
   const recovery = useMemo(() => {
     if (!lastReadingInfo) return null;
-    const { bookId, book, daysSince, page, totalPages } = lastReadingInfo;
-
-    const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+    const { book, daysSince, totalPages, pagesOfBook, allOfBook } = lastReadingInfo;
     const today = startOfDay(new Date());
 
-    // Ritmo diário do plano: prioriza a data prevista de conclusão do livro;
-    // senão usa a média histórica de páginas por dia de leitura desse livro.
-    const bookReadings = readings.filter(r => r.livroId === bookId);
-    const daysWithReading = new Set(
-      bookReadings.map(r => {
-        const d = r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null);
-        return d && !isNaN(d.getTime()) ? startOfDay(d).toISOString() : null;
-      }).filter(Boolean) as string[],
-    ).size || 1;
-    const pagesOfBook = isBibleBook(bookId)
-      ? (bookReadings.length ? Math.max(...bookReadings.map(r => r.paginaFinal)) : 0)
-      : bookReadings.reduce((sum, r) => sum + Math.max(0, r.quantidadePaginas), 0);
-    const historicalPace = Math.max(1, Math.round(pagesOfBook / daysWithReading));
-
-    let planPace = historicalPace;
+    // Ritmo base do plano: 4 páginas/capítulos por dia (leitura diária normal).
+    // Se o livro tem data prevista de conclusão, o ritmo do plano vem dela.
+    const DEFAULT_PACE = 4;
+    let planPace = DEFAULT_PACE;
     let planDeadline: Date | null = null;
+
+    const firstDate = allOfBook
+      .map(readingDate)
+      .filter((d): d is Date => !!d)
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+    const start = firstDate ? startOfDay(firstDate) : today;
+    const elapsedDays = Math.max(1, Math.round((today.getTime() - start.getTime()) / 86400000) + 1);
+
     if (book?.targetCompletionDate) {
       const target = startOfDay(new Date(book.targetCompletionDate));
       if (!isNaN(target.getTime())) {
         planDeadline = target;
-        const firstDate = bookReadings
-          .map(r => (r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null)))
-          .filter((d): d is Date => !!d && !isNaN(d.getTime()))
-          .sort((a, b) => a.getTime() - b.getTime())[0];
-        const start = firstDate ? startOfDay(firstDate) : today;
-        const planDays = Math.max(1, Math.round((target.getTime() - start.getTime()) / 86400000));
+        const planDays = Math.max(1, Math.round((target.getTime() - start.getTime()) / 86400000) + 1);
         if (totalPages > 0) planPace = Math.max(1, Math.round(totalPages / planDays));
       }
     }
 
-    // Atraso: dias sem registro × ritmo do plano. Se houver prazo definido,
-    // considera também o quanto deveria ter sido lido até hoje.
-    let backlogPages = daysSince * planPace;
-    if (planDeadline && totalPages > 0) {
-      const firstDate = bookReadings
-        .map(r => (r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null)))
-        .filter((d): d is Date => !!d && !isNaN(d.getTime()))
-        .sort((a, b) => a.getTime() - b.getTime())[0];
-      const start = firstDate ? startOfDay(firstDate) : today;
-      const elapsed = Math.max(0, Math.round((today.getTime() - start.getTime()) / 86400000));
-      const expected = Math.min(totalPages, elapsed * planPace);
-      backlogPages = Math.max(backlogPages, Math.round(expected - pagesOfBook));
-    }
-    if (totalPages > 0) backlogPages = Math.min(backlogPages, Math.max(0, totalPages - page));
+    // Atraso = o que deveria ter sido lido até hoje − o que realmente foi lido.
+    // Assim, cada novo registro de leitura reduz automaticamente o atraso.
+    const expected = totalPages > 0
+      ? Math.min(totalPages, elapsedDays * planPace)
+      : elapsedDays * planPace;
+    let backlogPages = Math.round(expected - pagesOfBook);
+    if (totalPages > 0) backlogPages = Math.min(backlogPages, Math.max(0, totalPages - pagesOfBook));
     backlogPages = Math.max(0, backlogPages);
 
     const backlogDays = Math.ceil(backlogPages / planPace);
-    const remainingPages = totalPages > 0 ? Math.max(0, totalPages - page) : null;
-    const isBehind = daysSince >= 1 && backlogPages > 0;
+    const remainingPages = totalPages > 0 ? Math.max(0, totalPages - pagesOfBook) : null;
+    const isBehind = backlogPages > 0;
 
-    // Ritmos sustentáveis: nunca acima de 1,5× o ritmo do plano (regra 7).
+    // Ritmos sustentáveis: nunca acima de 1,5× o ritmo do plano.
     const mk = (id: 'calmo' | 'equilibrado' | 'acelerado', emoji: string, label: string, factor: number, note: string) => {
       const extra = Math.max(1, Math.round(planPace * factor));
       const days = Math.max(1, Math.ceil(backlogPages / extra));
@@ -544,14 +556,14 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     };
     const strategies = isBehind
       ? [
-          mk('calmo', '🐢', 'Tranquilo', 0.4, 'Constância acima de tudo — quase não pesa na rotina.'),
-          mk('equilibrado', '👍', 'Equilibrado', 0.8, 'Recomendado: recupera bem sem tornar a leitura pesada.'),
-          mk('acelerado', '🔥', 'Acelerado', 1.5, 'Para quem quer ficar em dia rapidamente.'),
+          mk('calmo', '🐢', 'Tranquilo', 0.5, `Leitura normal (${planPace}) + pouco extra: mal muda sua rotina.`),
+          mk('equilibrado', '👍', 'Equilibrado', 1, 'Recomendado: dobra a leitura do dia e recupera rápido sem cansar.'),
+          mk('acelerado', '🔥', 'Acelerado', 1.5, 'Para quem quer ficar em dia o quanto antes.'),
         ]
       : [];
 
-    return { planPace, backlogPages, backlogDays, remainingPages, isBehind, strategies, planDeadline, pagesOfBook };
-  }, [lastReadingInfo, readings, isBibleBook]);
+    return { planPace, backlogPages, backlogDays, remainingPages, isBehind, strategies, planDeadline, pagesOfBook, daysSince, elapsedDays };
+  }, [lastReadingInfo, startOfDay, readingDate]);
 
   const selectedStrategy = recovery?.strategies.find(s => s.id === selectedRecoveryId) || null;
 
@@ -573,6 +585,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     }
     return rows;
   }, [recovery, selectedStrategy]);
+
 
   return (
     <div className="space-y-6">
@@ -619,7 +632,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
         <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4 md:p-5 shadow-sm">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-cyan-500 opacity-[0.06]" />
           <div className="relative space-y-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
                 <History className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
@@ -631,7 +644,56 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                   {lastReadingInfo.daysSince} {lastReadingInfo.daysSince === 1 ? 'dia' : 'dias'} atrás
                 </span>
               )}
+
+              {/* Navegação entre livros */}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Livro anterior"
+                  disabled={activeIndex <= 0}
+                  onClick={() => {
+                    const prev = booksWithReadings[activeIndex - 1];
+                    if (prev) { setSelectedLastBookId(prev.bookId); setSelectedRecoveryId(null); }
+                  }}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Select
+                  value={activeBookId ?? undefined}
+                  onValueChange={(v) => { setSelectedLastBookId(v); setSelectedRecoveryId(null); }}
+                >
+                  <SelectTrigger className="h-8 w-52 text-xs">
+                    <SelectValue placeholder="Escolher livro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {booksWithReadings.map(b => (
+                      <SelectItem key={b.bookId} value={b.bookId} className="text-xs">
+                        📚 {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Próximo livro"
+                  disabled={activeIndex < 0 || activeIndex >= booksWithReadings.length - 1}
+                  onClick={() => {
+                    const next = booksWithReadings[activeIndex + 1];
+                    if (next) { setSelectedLastBookId(next.bookId); setSelectedRecoveryId(null); }
+                  }}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground -mt-1">
+              Livro {activeIndex + 1} de {booksWithReadings.length} com leitura registrada — navegue para ver a última leitura de cada um.
+            </p>
+
 
             <div className="grid gap-2 sm:grid-cols-3">
               <div className="rounded-lg bg-background/70 border border-border p-3">
@@ -687,9 +749,10 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                     {' '}({recovery.backlogPages} página(s) para colocar em dia).
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Ritmo do seu plano: {recovery.planPace} página(s)/dia
+                    Ritmo do seu plano: {recovery.planPace} página(s)/capítulo(s) por dia (leitura diária normal)
                     {recovery.remainingPages !== null ? ` · faltam ${recovery.remainingPages} página(s) para concluir o livro` : ''}.
-                    Sem culpa nenhuma — o importante é retomar hoje. Você escolhe recuperar aos poucos ou mais rápido.
+                    Você já leu {recovery.pagesOfBook} página(s) em {recovery.elapsedDays} dia(s) de plano.
+                    Sem culpa nenhuma — o importante é retomar hoje. Cada leitura registrada diminui esse atraso automaticamente.
                   </p>
                 </div>
 
@@ -716,7 +779,13 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                             </span>
                           )}
                         </div>
-                        <p className="text-sm font-semibold text-foreground mt-1.5">+{st.extra} página(s) extra por dia</p>
+                        <p className="text-sm font-semibold text-foreground mt-1.5">{st.perDay} por dia ({recovery.planPace} normal + {st.extra} extra)</p>
+                        <p className="text-xs text-muted-foreground">≈ {st.days} {st.days === 1 ? 'dia' : 'dias'} para eliminar o atraso</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">{st.note}</p>
+                      </button>
+                    );
+                  })}
+
                         <p className="text-xs text-muted-foreground">≈ {st.days} {st.days === 1 ? 'dia' : 'dias'} para eliminar o atraso</p>
                         <p className="text-[11px] text-muted-foreground mt-1">{st.note}</p>
                       </button>
