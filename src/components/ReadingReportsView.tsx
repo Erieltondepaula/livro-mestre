@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend } from 'recharts';
-import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target, History } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend, LineChart, Line, ComposedChart } from 'recharts';
+import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target, History, Gauge } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Book, DailyReading, BookStatus } from '@/types/library';
@@ -12,7 +12,7 @@ interface ReadingReportsViewProps {
 }
 
 type Period = 'all' | '3m' | '6m' | '1y';
-type ChartTab = 'pages' | 'time' | 'books' | 'categories';
+type ChartTab = 'pages' | 'time' | 'speed' | 'books' | 'categories';
 
 const MONTHS_PT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
@@ -306,9 +306,78 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       .slice(0, 8);
   }, [correctPagesPerBook, filteredReadings]);
 
+  // ===== Velocidade de leitura (páginas/hora) =====
+  const MOVING_WINDOW = 7;
+  const speedOverTime = useMemo(() => {
+    // Agrupa por dia: páginas lidas / horas gastas (Bíblia usa MAX por dia)
+    const byDay = new Map<string, { pages: number; minutes: number; date: Date }>();
+    filteredReadings.forEach(r => {
+      const raw = r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null);
+      if (!raw || isNaN(raw.getTime())) return;
+      const key = raw.toISOString().split('T')[0];
+      const entry = byDay.get(key) || { pages: 0, minutes: 0, date: new Date(key) };
+      if (isBibleBook(r.livroId)) {
+        entry.pages += Math.max(0, r.quantidadePaginas);
+        entry.minutes = Math.max(entry.minutes, r.tempoGasto);
+      } else {
+        entry.pages += Math.max(0, r.quantidadePaginas);
+        entry.minutes += r.tempoGasto;
+      }
+      byDay.set(key, entry);
+    });
+
+    const rows = [...byDay.entries()]
+      .filter(([, v]) => v.minutes > 0 && v.pages > 0)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, v]) => ({
+        key,
+        name: v.date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        velocidade: Number(((v.pages / v.minutes) * 60).toFixed(1)),
+      }));
+
+    // Média móvel de 7 pontos
+    return rows.map((row, i) => {
+      const window = rows.slice(Math.max(0, i - (MOVING_WINDOW - 1)), i + 1);
+      const avg = window.reduce((sum, w) => sum + w.velocidade, 0) / window.length;
+      return { ...row, media: Number(avg.toFixed(1)) };
+    });
+  }, [filteredReadings, isBibleBook]);
+
+  const speedByBook = useMemo(() => {
+    const map = new Map<string, { pages: number; minutes: number }>();
+    filteredReadings.forEach(r => {
+      const entry = map.get(r.livroId) || { pages: 0, minutes: 0 };
+      entry.pages += Math.max(0, r.quantidadePaginas);
+      entry.minutes += r.tempoGasto;
+      map.set(r.livroId, entry);
+    });
+    return [...map.entries()]
+      .filter(([, v]) => v.minutes > 0 && v.pages > 0)
+      .map(([bookId, v]) => {
+        const book = books.find(b => b.id === bookId);
+        return {
+          name: (book?.livro || 'Sem título').length > 26 ? (book?.livro || '').slice(0, 26) + '…' : (book?.livro || 'Sem título'),
+          velocidade: Number(((v.pages / v.minutes) * 60).toFixed(1)),
+          paginas: v.pages,
+          horas: Number((v.minutes / 60).toFixed(1)),
+        };
+      })
+      .sort((a, b) => b.velocidade - a.velocidade)
+      .slice(0, 12);
+  }, [filteredReadings, books]);
+
+  const overallSpeed = useMemo(() => {
+    const totals = filteredReadings.reduce(
+      (acc, r) => ({ pages: acc.pages + Math.max(0, r.quantidadePaginas), minutes: acc.minutes + r.tempoGasto }),
+      { pages: 0, minutes: 0 },
+    );
+    return totals.minutes > 0 ? Number(((totals.pages / totals.minutes) * 60).toFixed(1)) : 0;
+  }, [filteredReadings]);
+
   const tabs = [
     { id: 'pages' as ChartTab, label: 'Páginas', icon: BarChart3, color: '#6366f1' },
     { id: 'time' as ChartTab, label: 'Tempo', icon: Clock, color: '#f59e0b' },
+    { id: 'speed' as ChartTab, label: 'Velocidade', icon: Gauge, color: '#0ea5e9' },
     { id: 'books' as ChartTab, label: 'Livros', icon: BookOpen, color: '#10b981' },
     { id: 'categories' as ChartTab, label: 'Categorias', icon: PieChartIcon, color: '#f43f5e' },
   ];
@@ -626,6 +695,67 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
               </ResponsiveContainer>
             </div>
           ) : <EmptyState />}
+        </div>
+      )}
+
+      {activeTab === 'speed' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-border bg-card p-4 md:p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-sky-500" />
+                Evolução da velocidade de leitura (páginas/hora)
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                Média geral: <span className="font-semibold text-foreground">{overallSpeed} pág/h</span> · média móvel de {MOVING_WINDOW} registros
+              </span>
+            </div>
+            {speedOverTime.length > 0 ? (
+              <div className="h-64 md:h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={speedOverTime}>
+                    <defs>
+                      <linearGradient id="speedGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.45} />
+                        <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} unit=" p/h" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Area type="monotone" dataKey="velocidade" stroke="#0ea5e9" strokeWidth={2} fill="url(#speedGradient)" name="Velocidade" />
+                    <Line type="monotone" dataKey="media" stroke="#8b5cf6" strokeWidth={2.5} dot={false} name={`Média móvel (${MOVING_WINDOW})`} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            ) : <EmptyState />}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-4 md:p-6 shadow-sm">
+            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-violet-500" />
+              Comparativo de velocidade entre livros
+            </h3>
+            {speedByBook.length > 0 ? (
+              <div style={{ height: Math.max(240, speedByBook.length * 34) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={speedByBook} layout="vertical" margin={{ left: 8, right: 24 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} unit=" p/h" />
+                    <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="velocidade" radius={[0, 6, 6, 0]} name="Páginas/hora">
+                      {speedByBook.map((_, i) => (
+                        <Cell key={i} fill={VIBRANT_COLORS[i % VIBRANT_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : <EmptyState />}
+          </div>
         </div>
       )}
 
