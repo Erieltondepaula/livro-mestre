@@ -15,6 +15,7 @@ import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { buildAttachmentFromFile, buildAttachmentPrompt, buildRelevantMaterialsContext, type ChatAttachment } from './chatHelpers';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { streamChatCompletion } from '@/lib/sse';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -276,51 +277,16 @@ IMPORTANTE:
 - Profundidade espiritual mas acessível
 - ${materialsCtx ? 'PRIORIZE os materiais de BÍBLIAS e DEVOCIONAIS do usuário — cite cada um usando 「Nome」' : 'Use fontes bíblicas confiáveis'}`;
 
-      const resp = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: await fnHeaders(),
-        body: JSON.stringify({
+      const fullContent = await streamChatCompletion(CHAT_URL, {
           type: 'thematic_study',
           passage: `Devocional: ${effectiveQuery}`,
           content: prompt,
           materials_context: materialsCtx,
           images: imageData.length > 0 ? imageData : undefined,
-        }),
+        }, {
         signal: controller.signal,
+        onDelta: (text) => setResult(text),
       });
-
-      if (!resp.ok) {
-        const e = await resp.json().catch(() => ({}));
-        throw new Error(e.error || `Erro ${resp.status}`);
-      }
-      if (!resp.body) throw new Error('Sem resposta do servidor');
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-      let fullContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, nl);
-          textBuffer = textBuffer.slice(nl + 1);
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line.startsWith('data: ') || line.trim() === '' || line.startsWith(':')) continue;
-          const json = line.slice(6).trim();
-          if (json === '[DONE]') break;
-          try {
-            const c = JSON.parse(json).choices?.[0]?.delta?.content;
-            if (c) {
-              fullContent += c;
-              setResult(fullContent);
-            }
-          } catch { /* partial json */ }
-        }
-      }
 
       if (!fullContent) {
         toast({ title: 'Nenhum conteúdo gerado', variant: 'destructive' });
