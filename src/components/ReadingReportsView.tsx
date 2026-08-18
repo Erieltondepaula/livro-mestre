@@ -46,6 +46,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function ReadingReportsView({ books, readings, statuses }: ReadingReportsViewProps) {
   const [period, setPeriod] = useState<Period>('all');
   const [activeTab, setActiveTab] = useState<ChartTab>('pages');
+  const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | null>(null);
 
   // Helper: check if a book is Bible category
   const isBibleBook = useCallback((bookId: string) => {
@@ -455,6 +456,8 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     const daysSince = Math.max(0, Math.round((startOfDay(today) - startOfDay(d)) / 86400000));
 
     return {
+      bookId: r.livroId,
+      book,
       bookName,
       page: r.paginaFinal,
       totalPages,
@@ -469,6 +472,107 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
         : null,
     };
   }, [readings, books]);
+
+  // ===== Assistente de recuperação do plano de leitura =====
+  const recovery = useMemo(() => {
+    if (!lastReadingInfo) return null;
+    const { bookId, book, daysSince, page, totalPages } = lastReadingInfo;
+
+    const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+    const today = startOfDay(new Date());
+
+    // Ritmo diário do plano: prioriza a data prevista de conclusão do livro;
+    // senão usa a média histórica de páginas por dia de leitura desse livro.
+    const bookReadings = readings.filter(r => r.livroId === bookId);
+    const daysWithReading = new Set(
+      bookReadings.map(r => {
+        const d = r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null);
+        return d && !isNaN(d.getTime()) ? startOfDay(d).toISOString() : null;
+      }).filter(Boolean) as string[],
+    ).size || 1;
+    const pagesOfBook = isBibleBook(bookId)
+      ? (bookReadings.length ? Math.max(...bookReadings.map(r => r.paginaFinal)) : 0)
+      : bookReadings.reduce((sum, r) => sum + Math.max(0, r.quantidadePaginas), 0);
+    const historicalPace = Math.max(1, Math.round(pagesOfBook / daysWithReading));
+
+    let planPace = historicalPace;
+    let planDeadline: Date | null = null;
+    if (book?.targetCompletionDate) {
+      const target = startOfDay(new Date(book.targetCompletionDate));
+      if (!isNaN(target.getTime())) {
+        planDeadline = target;
+        const firstDate = bookReadings
+          .map(r => (r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null)))
+          .filter((d): d is Date => !!d && !isNaN(d.getTime()))
+          .sort((a, b) => a.getTime() - b.getTime())[0];
+        const start = firstDate ? startOfDay(firstDate) : today;
+        const planDays = Math.max(1, Math.round((target.getTime() - start.getTime()) / 86400000));
+        if (totalPages > 0) planPace = Math.max(1, Math.round(totalPages / planDays));
+      }
+    }
+
+    // Atraso: dias sem registro × ritmo do plano. Se houver prazo definido,
+    // considera também o quanto deveria ter sido lido até hoje.
+    let backlogPages = daysSince * planPace;
+    if (planDeadline && totalPages > 0) {
+      const firstDate = bookReadings
+        .map(r => (r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null)))
+        .filter((d): d is Date => !!d && !isNaN(d.getTime()))
+        .sort((a, b) => a.getTime() - b.getTime())[0];
+      const start = firstDate ? startOfDay(firstDate) : today;
+      const elapsed = Math.max(0, Math.round((today.getTime() - start.getTime()) / 86400000));
+      const expected = Math.min(totalPages, elapsed * planPace);
+      backlogPages = Math.max(backlogPages, Math.round(expected - pagesOfBook));
+    }
+    if (totalPages > 0) backlogPages = Math.min(backlogPages, Math.max(0, totalPages - page));
+    backlogPages = Math.max(0, backlogPages);
+
+    const backlogDays = Math.ceil(backlogPages / planPace);
+    const remainingPages = totalPages > 0 ? Math.max(0, totalPages - page) : null;
+    const isBehind = daysSince >= 1 && backlogPages > 0;
+
+    // Ritmos sustentáveis: nunca acima de 1,5× o ritmo do plano (regra 7).
+    const mk = (id: 'calmo' | 'equilibrado' | 'acelerado', emoji: string, label: string, factor: number, note: string) => {
+      const extra = Math.max(1, Math.round(planPace * factor));
+      const days = Math.max(1, Math.ceil(backlogPages / extra));
+      const finish = new Date(today.getTime() + days * 86400000);
+      return {
+        id, emoji, label, note, extra, days, finish,
+        perDay: planPace + extra,
+        finishLabel: finish.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      };
+    };
+    const strategies = isBehind
+      ? [
+          mk('calmo', '🐢', 'Tranquilo', 0.4, 'Constância acima de tudo — quase não pesa na rotina.'),
+          mk('equilibrado', '👍', 'Equilibrado', 0.8, 'Recomendado: recupera bem sem tornar a leitura pesada.'),
+          mk('acelerado', '🔥', 'Acelerado', 1.5, 'Para quem quer ficar em dia rapidamente.'),
+        ]
+      : [];
+
+    return { planPace, backlogPages, backlogDays, remainingPages, isBehind, strategies, planDeadline, pagesOfBook };
+  }, [lastReadingInfo, readings, isBibleBook]);
+
+  const selectedStrategy = recovery?.strategies.find(s => s.id === selectedRecoveryId) || null;
+
+  const recoverySchedule = useMemo(() => {
+    if (!recovery || !selectedStrategy) return [];
+    const today = new Date();
+    let remaining = recovery.backlogPages;
+    const rows: Array<{ dayLabel: string; dayPages: number; recoveryPages: number; remaining: number }> = [];
+    for (let i = 0; i < Math.min(selectedStrategy.days, 14) && remaining > 0; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+      const recoveryPages = Math.min(selectedStrategy.extra, remaining);
+      remaining -= recoveryPages;
+      rows.push({
+        dayLabel: date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }),
+        dayPages: recovery.planPace,
+        recoveryPages,
+        remaining: Math.max(0, Math.round(remaining)),
+      });
+    }
+    return rows;
+  }, [recovery, selectedStrategy]);
 
   return (
     <div className="space-y-6">
