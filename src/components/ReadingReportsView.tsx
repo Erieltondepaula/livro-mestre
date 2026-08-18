@@ -378,7 +378,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     withDates.sort((a, b) => b.d.getTime() - a.d.getTime());
     const { r, d } = withDates[0];
     const book = books.find(b => b.id === r.livroId);
-    const bookName = book?.nome || r.livroLido || 'Livro não identificado';
+    const bookName = book?.livro || r.livroLido || 'Livro não identificado';
     const totalPages = book?.totalPaginas || 0;
 
     const today = new Date();
