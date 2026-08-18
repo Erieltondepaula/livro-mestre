@@ -167,7 +167,7 @@ export function DevotionalView({ onSave, getMaterialsContext, materialsCount = 0
               `- ${r.title} (${r.source}): ${r.snippet}`
             ).join('\n');
           }
-        } catch (e) { console.error('Web search error:', e); }
+        } catch (e) { console.error('Web search error:', e); toast({ title: 'Busca na web indisponível', description: 'Continuando apenas com os materiais locais.' }); }
         setWebSearching(false);
       }
 

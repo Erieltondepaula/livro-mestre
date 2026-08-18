@@ -44,6 +44,7 @@ interface Props {
 
 import type { MaterialCategory } from '@/hooks/useExegesis';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { streamChatCompletion } from '@/lib/sse';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -288,6 +289,7 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
           }
         } catch (e) {
           console.warn('Web search failed:', e);
+          toast({ title: 'Busca na web indisponível', description: 'Continuando apenas com os materiais locais.' });
         } finally {
           setSearchingWeb(false);
         }

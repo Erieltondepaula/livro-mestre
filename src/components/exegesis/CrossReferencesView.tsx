@@ -157,7 +157,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
             body: { query: `${passage} referências cruzadas bíblicas`, sources: ['wikipedia_pt', 'wikipedia_en', 'arxiv', 'scielo'] },
           });
           if (searchData?.context) webContext = searchData.context;
-        } catch (e) { console.warn('Web search failed:', e); }
+        } catch (e) { console.warn('Web search failed:', e); toast({ title: 'Busca na web indisponível', description: 'Continuando apenas com os materiais locais.' }); }
         finally { setSearchingWeb(false); }
       }
 

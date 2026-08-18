@@ -401,7 +401,7 @@ export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount 
               `- ${r.title} (${r.source}): ${r.snippet}\n  Ref. ABNT: ${r.abnt_reference || `${r.source}. Disponível em: ${r.url}. Acesso em: ${new Date().toLocaleDateString('pt-BR')}`}`
             ).join('\n');
           }
-        } catch (e) { console.error('Web search error:', e); }
+        } catch (e) { console.error('Web search error:', e); toast({ title: 'Busca na web indisponível', description: 'Continuando apenas com os materiais locais.' }); }
         setWebSearching(false);
       }
 
