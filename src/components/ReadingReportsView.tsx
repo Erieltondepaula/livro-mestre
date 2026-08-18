@@ -749,9 +749,10 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                     {' '}({recovery.backlogPages} página(s) para colocar em dia).
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Ritmo do seu plano: {recovery.planPace} página(s)/dia
+                    Ritmo do seu plano: {recovery.planPace} página(s)/capítulo(s) por dia (leitura diária normal)
                     {recovery.remainingPages !== null ? ` · faltam ${recovery.remainingPages} página(s) para concluir o livro` : ''}.
-                    Sem culpa nenhuma — o importante é retomar hoje. Você escolhe recuperar aos poucos ou mais rápido.
+                    Você já leu {recovery.pagesOfBook} página(s) em {recovery.elapsedDays} dia(s) de plano.
+                    Sem culpa nenhuma — o importante é retomar hoje. Cada leitura registrada diminui esse atraso automaticamente.
                   </p>
                 </div>
 
@@ -778,7 +779,13 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                             </span>
                           )}
                         </div>
-                        <p className="text-sm font-semibold text-foreground mt-1.5">+{st.extra} página(s) extra por dia</p>
+                        <p className="text-sm font-semibold text-foreground mt-1.5">{st.perDay} por dia ({recovery.planPace} normal + {st.extra} extra)</p>
+                        <p className="text-xs text-muted-foreground">≈ {st.days} {st.days === 1 ? 'dia' : 'dias'} para eliminar o atraso</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">{st.note}</p>
+                      </button>
+                    );
+                  })}
+
                         <p className="text-xs text-muted-foreground">≈ {st.days} {st.days === 1 ? 'dia' : 'dias'} para eliminar o atraso</p>
                         <p className="text-[11px] text-muted-foreground mt-1">{st.note}</p>
                       </button>
