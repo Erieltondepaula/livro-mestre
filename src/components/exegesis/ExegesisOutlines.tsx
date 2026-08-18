@@ -464,9 +464,11 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     };
   }, [manualContent, outlineMode]);
 
-  const bibleBookNames = getBibleBookNames();
-  const chapters = bibleBook ? getChaptersArray(bibleBook) : [];
-  const verses = bibleBook && chapter ? getVersesArray(bibleBook, parseInt(chapter)) : [];
+  // Memoized so typing in the editor doesn't rebuild the whole bible index on
+  // every keystroke re-render.
+  const bibleBookNames = useMemo(() => getBibleBookNames(), []);
+  const chapters = useMemo(() => (bibleBook ? getChaptersArray(bibleBook) : []), [bibleBook]);
+  const verses = useMemo(() => (bibleBook && chapter ? getVersesArray(bibleBook, parseInt(chapter)) : []), [bibleBook, chapter]);
 
   const getPassageText = () => {
     if (customPassage.trim()) return customPassage.trim();
