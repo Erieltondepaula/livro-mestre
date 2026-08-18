@@ -46,6 +46,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function ReadingReportsView({ books, readings, statuses }: ReadingReportsViewProps) {
   const [period, setPeriod] = useState<Period>('all');
   const [activeTab, setActiveTab] = useState<ChartTab>('pages');
+  const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | null>(null);
 
   // Helper: check if a book is Bible category
   const isBibleBook = useCallback((bookId: string) => {
@@ -455,6 +456,8 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     const daysSince = Math.max(0, Math.round((startOfDay(today) - startOfDay(d)) / 86400000));
 
     return {
+      bookId: r.livroId,
+      book,
       bookName,
       page: r.paginaFinal,
       totalPages,
@@ -469,6 +472,107 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
         : null,
     };
   }, [readings, books]);
+
+  // ===== Assistente de recuperação do plano de leitura =====
+  const recovery = useMemo(() => {
+    if (!lastReadingInfo) return null;
+    const { bookId, book, daysSince, page, totalPages } = lastReadingInfo;
+
+    const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+    const today = startOfDay(new Date());
+
+    // Ritmo diário do plano: prioriza a data prevista de conclusão do livro;
+    // senão usa a média histórica de páginas por dia de leitura desse livro.
+    const bookReadings = readings.filter(r => r.livroId === bookId);
+    const daysWithReading = new Set(
+      bookReadings.map(r => {
+        const d = r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null);
+        return d && !isNaN(d.getTime()) ? startOfDay(d).toISOString() : null;
+      }).filter(Boolean) as string[],
+    ).size || 1;
+    const pagesOfBook = isBibleBook(bookId)
+      ? (bookReadings.length ? Math.max(...bookReadings.map(r => r.paginaFinal)) : 0)
+      : bookReadings.reduce((sum, r) => sum + Math.max(0, r.quantidadePaginas), 0);
+    const historicalPace = Math.max(1, Math.round(pagesOfBook / daysWithReading));
+
+    let planPace = historicalPace;
+    let planDeadline: Date | null = null;
+    if (book?.targetCompletionDate) {
+      const target = startOfDay(new Date(book.targetCompletionDate));
+      if (!isNaN(target.getTime())) {
+        planDeadline = target;
+        const firstDate = bookReadings
+          .map(r => (r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null)))
+          .filter((d): d is Date => !!d && !isNaN(d.getTime()))
+          .sort((a, b) => a.getTime() - b.getTime())[0];
+        const start = firstDate ? startOfDay(firstDate) : today;
+        const planDays = Math.max(1, Math.round((target.getTime() - start.getTime()) / 86400000));
+        if (totalPages > 0) planPace = Math.max(1, Math.round(totalPages / planDays));
+      }
+    }
+
+    // Atraso: dias sem registro × ritmo do plano. Se houver prazo definido,
+    // considera também o quanto deveria ter sido lido até hoje.
+    let backlogPages = daysSince * planPace;
+    if (planDeadline && totalPages > 0) {
+      const firstDate = bookReadings
+        .map(r => (r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null)))
+        .filter((d): d is Date => !!d && !isNaN(d.getTime()))
+        .sort((a, b) => a.getTime() - b.getTime())[0];
+      const start = firstDate ? startOfDay(firstDate) : today;
+      const elapsed = Math.max(0, Math.round((today.getTime() - start.getTime()) / 86400000));
+      const expected = Math.min(totalPages, elapsed * planPace);
+      backlogPages = Math.max(backlogPages, Math.round(expected - pagesOfBook));
+    }
+    if (totalPages > 0) backlogPages = Math.min(backlogPages, Math.max(0, totalPages - page));
+    backlogPages = Math.max(0, backlogPages);
+
+    const backlogDays = Math.ceil(backlogPages / planPace);
+    const remainingPages = totalPages > 0 ? Math.max(0, totalPages - page) : null;
+    const isBehind = daysSince >= 1 && backlogPages > 0;
+
+    // Ritmos sustentáveis: nunca acima de 1,5× o ritmo do plano (regra 7).
+    const mk = (id: 'calmo' | 'equilibrado' | 'acelerado', emoji: string, label: string, factor: number, note: string) => {
+      const extra = Math.max(1, Math.round(planPace * factor));
+      const days = Math.max(1, Math.ceil(backlogPages / extra));
+      const finish = new Date(today.getTime() + days * 86400000);
+      return {
+        id, emoji, label, note, extra, days, finish,
+        perDay: planPace + extra,
+        finishLabel: finish.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      };
+    };
+    const strategies = isBehind
+      ? [
+          mk('calmo', '🐢', 'Tranquilo', 0.4, 'Constância acima de tudo — quase não pesa na rotina.'),
+          mk('equilibrado', '👍', 'Equilibrado', 0.8, 'Recomendado: recupera bem sem tornar a leitura pesada.'),
+          mk('acelerado', '🔥', 'Acelerado', 1.5, 'Para quem quer ficar em dia rapidamente.'),
+        ]
+      : [];
+
+    return { planPace, backlogPages, backlogDays, remainingPages, isBehind, strategies, planDeadline, pagesOfBook };
+  }, [lastReadingInfo, readings, isBibleBook]);
+
+  const selectedStrategy = recovery?.strategies.find(s => s.id === selectedRecoveryId) || null;
+
+  const recoverySchedule = useMemo(() => {
+    if (!recovery || !selectedStrategy) return [];
+    const today = new Date();
+    let remaining = recovery.backlogPages;
+    const rows: Array<{ dayLabel: string; dayPages: number; recoveryPages: number; remaining: number }> = [];
+    for (let i = 0; i < Math.min(selectedStrategy.days, 14) && remaining > 0; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+      const recoveryPages = Math.min(selectedStrategy.extra, remaining);
+      remaining -= recoveryPages;
+      rows.push({
+        dayLabel: date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }),
+        dayPages: recovery.planPace,
+        recoveryPages,
+        remaining: Math.max(0, Math.round(remaining)),
+      });
+    }
+    return rows;
+  }, [recovery, selectedStrategy]);
 
   return (
     <div className="space-y-6">
@@ -566,6 +670,105 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                   : <>⏳ Já tem <span className="font-semibold text-foreground">{lastReadingInfo.daysSince}</span> {lastReadingInfo.daysSince === 1 ? 'dia' : 'dias'} sem registro de leitura desde a última vez.</>}
               </p>
             </div>
+
+            {/* Assistente de recuperação */}
+            {recovery && !recovery.isBehind && (
+              <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 text-sm text-emerald-800 dark:text-emerald-200">
+                🌱 Tudo em dia! Você está acompanhando o seu plano de leitura normalmente. Continue nesse ritmo de{' '}
+                <span className="font-semibold">{recovery.planPace} página(s) por dia</span> — a constância é o que mais importa.
+              </div>
+            )}
+
+            {recovery?.isBehind && (
+              <div className="space-y-3 rounded-lg border border-border bg-background/70 p-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Você está aproximadamente {recovery.backlogDays} {recovery.backlogDays === 1 ? 'dia' : 'dias'} atrasado
+                    {' '}({recovery.backlogPages} página(s) para colocar em dia).
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Ritmo do seu plano: {recovery.planPace} página(s)/dia
+                    {recovery.remainingPages !== null ? ` · faltam ${recovery.remainingPages} página(s) para concluir o livro` : ''}.
+                    Sem culpa nenhuma — o importante é retomar hoje. Você escolhe recuperar aos poucos ou mais rápido.
+                  </p>
+                </div>
+
+                <p className="text-sm text-foreground">Você pode recuperar esse atraso de três formas:</p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {recovery.strategies.map(st => {
+                    const isActive = selectedRecoveryId === st.id;
+                    const isRecommended = st.id === 'equilibrado';
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setSelectedRecoveryId(isActive ? null : st.id)}
+                        className={`text-left rounded-lg border p-3 transition-all hover:shadow-md ${
+                          isActive ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-indigo-50/60 dark:bg-indigo-950/30' : 'border-border bg-card'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{st.emoji}</span>
+                          <span className="font-semibold text-sm text-foreground">{st.label}</span>
+                          {isRecommended && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                              recomendado
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-semibold text-foreground mt-1.5">+{st.extra} página(s) extra por dia</p>
+                        <p className="text-xs text-muted-foreground">≈ {st.days} {st.days === 1 ? 'dia' : 'dias'} para eliminar o atraso</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">{st.note}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  💡 Nossa sugestão: escolha o ritmo equilibrado para recuperar o atraso sem tornar a leitura pesada.
+                </p>
+
+                {selectedStrategy && (
+                  <div className="rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50/60 dark:bg-indigo-950/30 p-3 space-y-2">
+                    <p className="text-sm font-semibold text-foreground">
+                      {selectedStrategy.emoji} Plano de recuperação — ritmo {selectedStrategy.label.toLowerCase()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Leia <span className="font-semibold text-foreground">{selectedStrategy.perDay} página(s) por dia</span>{' '}
+                      ({recovery.planPace} do dia + {selectedStrategy.extra} de recuperação). Previsão de ficar em dia:{' '}
+                      <span className="font-semibold text-foreground">{selectedStrategy.finishLabel}</span>.
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="text-muted-foreground text-left">
+                            <th className="py-1 pr-3 font-medium">Dia</th>
+                            <th className="py-1 pr-3 font-medium">Leitura do dia</th>
+                            <th className="py-1 pr-3 font-medium">Recuperação</th>
+                            <th className="py-1 font-medium">Atraso restante</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recoverySchedule.map((row, i) => (
+                            <tr key={i} className="border-t border-border/60">
+                              <td className="py-1 pr-3 capitalize text-foreground">{row.dayLabel}</td>
+                              <td className="py-1 pr-3">{row.dayPages} pág.</td>
+                              <td className="py-1 pr-3 text-indigo-600 dark:text-indigo-400">+{row.recoveryPages} pág.</td>
+                              <td className="py-1">{row.remaining} pág.</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {selectedStrategy.days > recoverySchedule.length && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Mostrando os primeiros {recoverySchedule.length} dias — mantenha esse ritmo até {selectedStrategy.finishLabel}.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
