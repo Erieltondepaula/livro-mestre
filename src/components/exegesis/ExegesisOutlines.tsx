@@ -423,6 +423,11 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     if (manualContent === lastSavedContentRef.current) return;
     
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+
+    // Longer idle window while actively typing keeps the DB writes (and the
+    // version history) proportional to real edits instead of keystrokes.
+    const delay = Math.abs(manualContent.length - lastSavedContentRef.current.length) > 400 ? 4000 : 8000;
+
     
     autoSaveRef.current = setTimeout(async () => {
       if (!manualContent.trim()) return;
@@ -457,16 +462,18 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       } finally {
         isSavingRef.current = false;
       }
-    }, 5000);
+    }, delay);
 
     return () => {
       if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
     };
   }, [manualContent, outlineMode]);
 
-  const bibleBookNames = getBibleBookNames();
-  const chapters = bibleBook ? getChaptersArray(bibleBook) : [];
-  const verses = bibleBook && chapter ? getVersesArray(bibleBook, parseInt(chapter)) : [];
+  // Memoized so typing in the editor doesn't rebuild the whole bible index on
+  // every keystroke re-render.
+  const bibleBookNames = useMemo(() => getBibleBookNames(), []);
+  const chapters = useMemo(() => (bibleBook ? getChaptersArray(bibleBook) : []), [bibleBook]);
+  const verses = useMemo(() => (bibleBook && chapter ? getVersesArray(bibleBook, parseInt(chapter)) : []), [bibleBook, chapter]);
 
   const getPassageText = () => {
     if (customPassage.trim()) return customPassage.trim();
