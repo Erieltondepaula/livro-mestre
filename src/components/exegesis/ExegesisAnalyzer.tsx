@@ -241,7 +241,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
       setIsLoading(false);
       abortRef.current = null;
     }
-  }, [bibleBook, chapterStart, chapterEnd, verseStart, verseEnd, customPassage, selectedType, question, onSave, getMaterialsContext]);
+  }, [bibleBook, chapterStart, chapterEnd, verseStart, verseEnd, customPassage, selectedType, question, webSearchEnabled, onSave, getMaterialsContext]);
 
   const renderMarkdown = (text: string) => {
     let html = text
