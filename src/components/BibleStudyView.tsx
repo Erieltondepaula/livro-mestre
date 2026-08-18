@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 const STUDY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bible-study`;
 
@@ -692,7 +693,7 @@ A IA utilizará automaticamente seus Materiais (Exegese >> Materiais) como refer
                   )}
                   <div
                     className="prose prose-sm max-w-none overflow-x-hidden"
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(displayContent) }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(displayContent)) }}
                   />
                 </div>
               )}
@@ -775,7 +776,7 @@ A IA utilizará automaticamente seus Materiais (Exegese >> Materiais) como refer
                 {study.result && (
                   <details>
                     <summary className="text-xs text-primary cursor-pointer hover:underline">Ver conteúdo</summary>
-                    <div className="prose prose-sm max-w-none mt-2 overflow-x-hidden" dangerouslySetInnerHTML={{ __html: renderMarkdown(study.result) }} />
+                    <div className="prose prose-sm max-w-none mt-2 overflow-x-hidden" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(study.result)) }} />
                   </details>
                 )}
               </div>

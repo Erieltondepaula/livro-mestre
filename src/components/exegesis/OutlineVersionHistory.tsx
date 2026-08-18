@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { History, RotateCcw, Eye, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export interface OutlineVersion {
   id: string;
@@ -62,7 +63,7 @@ export function OutlineVersionHistory({ versions, open, onClose, onRestore }: Pr
                   </div>
                 </div>
                 {previewIdx === i && (
-                  <div className="p-4 border-t max-h-60 overflow-y-auto prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderContent(v.content) }} />
+                  <div className="p-4 border-t max-h-60 overflow-y-auto prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderContent(v.content)) }} />
                 )}
               </div>
             ))

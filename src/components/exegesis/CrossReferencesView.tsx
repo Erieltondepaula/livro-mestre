@@ -22,6 +22,7 @@ interface Props {
 
 import type { ExegesisMaterial } from '@/hooks/useExegesis';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -532,7 +533,7 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
           </div>
           <div
             className="prose prose-sm max-w-none dark:prose-invert"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(displayContent) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(displayContent)) }}
           />
           {isLoading && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

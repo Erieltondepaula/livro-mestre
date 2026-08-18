@@ -10,6 +10,7 @@ import type { ExegesisAnalysis, ExegesisMaterial } from '@/hooks/useExegesis';
 import { MapImageViewer, appendMapImageUrl } from './MapImageViewer';
 import { supabase } from '@/integrations/supabase/client';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
@@ -395,7 +396,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
             <Loader2 className="w-4 h-4 animate-spin text-primary" />
             <span className="text-sm font-medium text-primary">Gerando análise...</span>
           </div>
-          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(currentStream) }} />
+          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(currentStream)) }} />
         </div>
       )}
 
@@ -437,7 +438,7 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
               )}
             </div>
           </div>
-          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(lastResult.content) }} />
+          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(lastResult.content)) }} />
           {/* Map for Geographic/Historical - AI generated image */}
           {lastResult.type === 'geographic_historical' && (
             <MapImageViewer

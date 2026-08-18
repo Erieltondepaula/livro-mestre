@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Maximize, Minimize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 interface PreacherModeProps {
   content: string;
@@ -71,7 +72,7 @@ export function PreacherMode({ content, passage, onClose }: PreacherModeProps) {
         <div
           className="prose max-w-4xl mx-auto preacher-content"
           style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
         />
       </div>
 

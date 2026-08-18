@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -210,7 +211,7 @@ export function SermonTitleGenerator({ getMaterialsContext }: Props) {
               </div>
             )}
           </div>
-          <div className="p-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(result) }} />
+          <div className="p-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(result)) }} />
         </div>
       )}
     </div>

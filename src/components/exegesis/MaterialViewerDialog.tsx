@@ -48,6 +48,7 @@ interface TextItem {
 }
 import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -833,7 +834,7 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
                 ) : fileUrl ? (
                   <div className="card-library mx-auto max-w-xl p-6 text-center space-y-4"><p className="text-sm text-muted-foreground">Este arquivo não é PDF. Você pode abri-lo em outra aba.</p><Button onClick={() => window.open(fileUrl, '_blank')} className="gap-2"><ExternalLink className="h-4 w-4" />Abrir documento</Button></div>
                 ) : showFallbackTextEditor ? (
-                  <div className="card-library mx-auto max-w-4xl p-6"><div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground break-words"><div dangerouslySetInnerHTML={{ __html: escapeHtml(content).replace(/\n/g, '<br />') }} /></div></div>
+                  <div className="card-library mx-auto max-w-4xl p-6"><div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground break-words"><div dangerouslySetInnerHTML={{ __html: sanitizeHtml(escapeHtml(content).replace(/\n/g, '<br />')) }} /></div></div>
                 ) : null}
               </div>
 

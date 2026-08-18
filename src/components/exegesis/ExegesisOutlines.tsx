@@ -18,6 +18,7 @@ import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 type OutlineType =
   | 'outline_expository'
@@ -1173,7 +1174,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       {isLoading && currentStream && (
         <div className="card-library p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-3"><Loader2 className="w-4 h-4 animate-spin text-primary" /><span className="text-sm font-medium text-primary">Gerando esboço...</span></div>
-          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(currentStream) }} />
+          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(currentStream)) }} />
         </div>
       )}
 
@@ -1456,9 +1457,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                         <ExegesisRichEditor content={editContent} onChange={setEditContent} placeholder="Edite o esboço..." minHeight="400px" />
                       ) : (
                         isHtml(o.content) ? (
-                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: o.content }} />
+                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(o.content) }} />
                         ) : (
-                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(o.content) }} />
+                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(o.content)) }} />
                         )
                       )}
 
