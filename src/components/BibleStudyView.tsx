@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { fnHeaders } from '@/lib/edgeFunctions';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { streamChatCompletion } from '@/lib/sse';
 
 const STUDY_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bible-study`;
 
@@ -169,54 +170,14 @@ export function BibleStudyView() {
     abortRef.current = controller;
 
     try {
-      const resp = await fetch(STUDY_URL, {
-        method: "POST",
-        headers: await fnHeaders(),
-        body: JSON.stringify({
+      const fullContent = await streamChatCompletion(STUDY_URL, {
           content: content.trim(),
           analysis_type: selectedType,
           user_id: user?.id,
-        }),
+        }, {
         signal: controller.signal,
+        onDelta: (text) => setCurrentStream(text),
       });
-
-      if (!resp.ok) {
-        const e = await resp.json().catch(() => ({}));
-        throw new Error(e.error || `Erro ${resp.status}`);
-      }
-      if (!resp.body) throw new Error("Sem resposta");
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-      let fullContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, nl);
-          textBuffer = textBuffer.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ") || line.trim() === "" || line.startsWith(":")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") break;
-          try {
-            const c = JSON.parse(json).choices?.[0]?.delta?.content;
-            if (c) { fullContent += c; setCurrentStream(fullContent); }
-          } catch { textBuffer = line + "\n" + textBuffer; break; }
-        }
-      }
-
-      // flush remaining
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw || !raw.startsWith("data: ")) continue;
-        const j = raw.slice(6).trim();
-        if (j === "[DONE]") continue;
-        try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) fullContent += c; } catch {}
-      }
 
       setLastResult(fullContent);
       setEditableContent(fullContent);

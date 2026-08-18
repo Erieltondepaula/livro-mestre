@@ -23,6 +23,7 @@ interface Props {
 import type { ExegesisMaterial } from '@/hooks/useExegesis';
 import { fnHeaders } from '@/lib/edgeFunctions';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { streamChatCompletion } from '@/lib/sse';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -164,52 +165,16 @@ export function CrossReferencesView({ onSave, getMaterialsContext, materialsCoun
         ? `${selectedRefType}\n\n## FONTES EXTERNAS (filtro crítico — materiais locais têm PRIORIDADE):\n${webContext}`
         : selectedRefType;
 
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: await fnHeaders(),
-        body: JSON.stringify({
+      const fullContent = await streamChatCompletion(CHAT_URL, {
           passage,
           type: 'cross_references',
           question: questionWithWeb,
           query_mode: queryType,
           materials_context: getMaterialsContext?.(),
-        }),
+        }, {
         signal: controller.signal,
+        onDelta: (text) => setCurrentStream(text),
       });
-
-      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
-      if (!resp.body) throw new Error("Sem resposta");
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-      let fullContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, nl);
-          textBuffer = textBuffer.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ") || line.trim() === "" || line.startsWith(":")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") break;
-          try {
-            const c = JSON.parse(json).choices?.[0]?.delta?.content;
-            if (c) { fullContent += c; setCurrentStream(fullContent); }
-          } catch { textBuffer = line + "\n" + textBuffer; break; }
-        }
-      }
-
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw || !raw.startsWith("data: ")) continue;
-        const j = raw.slice(6).trim();
-        if (j === "[DONE]") continue;
-        try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) fullContent += c; } catch {}
-      }
 
       const currentKeywords = extractedKeywords.length > 0 ? extractedKeywords : [];
       const result = { passage, content: fullContent, keywords: currentKeywords };

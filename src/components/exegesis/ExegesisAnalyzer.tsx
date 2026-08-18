@@ -11,6 +11,7 @@ import { MapImageViewer, appendMapImageUrl } from './MapImageViewer';
 import { supabase } from '@/integrations/supabase/client';
 import { fnHeaders } from '@/lib/edgeFunctions';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { streamChatCompletion } from '@/lib/sse';
 
 export type AnalysisType = 
   | 'full_exegesis' | 'context_analysis' | 'word_study' | 'genre_analysis' 
@@ -180,47 +181,10 @@ export function ExegesisAnalyzer({ onSave, getMaterialsContext, materialsCount =
         ? `${question.trim() || ''}\n\n## FONTES EXTERNAS (use com filtro crítico — materiais locais têm PRIORIDADE ABSOLUTA):\n${webContext}`
         : question.trim() || undefined;
 
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: await fnHeaders(),
-        body: JSON.stringify({ passage, type: selectedType, question: questionWithWeb, materials_context: getMaterialsContext?.() }),
+      const fullContent = await streamChatCompletion(CHAT_URL, { passage, type: selectedType, question: questionWithWeb, materials_context: getMaterialsContext?.() }, {
         signal: controller.signal,
+        onDelta: (text) => setCurrentStream(text),
       });
-
-      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
-      if (!resp.body) throw new Error("Sem resposta");
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-      let fullContent = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, nl);
-          textBuffer = textBuffer.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ") || line.trim() === "" || line.startsWith(":")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") break;
-          try {
-            const c = JSON.parse(json).choices?.[0]?.delta?.content;
-            if (c) { fullContent += c; setCurrentStream(fullContent); }
-          } catch { textBuffer = line + "\n" + textBuffer; break; }
-        }
-      }
-
-      // flush
-      for (let raw of textBuffer.split("\n")) {
-        if (!raw || !raw.startsWith("data: ")) continue;
-        const j = raw.slice(6).trim();
-        if (j === "[DONE]") continue;
-        try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) fullContent += c; } catch {}
-      }
 
       setLastResult({ passage, type: selectedType, question: selectedType === 'question' ? question.trim() : undefined, content: fullContent });
       setCurrentStream('');
