@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { Settings2, Save, RotateCcw, Loader2, Eye, Edit3, Layers } from 'lucide-react';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { describeResponseError } from '@/lib/sse';
 
 type SermonModule = {
   sermon_type: string;
@@ -96,11 +97,14 @@ export function PromptEditorDialog() {
           const result = await resp.json();
           setPromptText(result.prompt || '');
           setOriginalPrompt(result.prompt || '');
+        } else {
+          toast({ title: 'Erro ao carregar o prompt base', description: await describeResponseError(resp), variant: 'destructive' });
         }
         setHasCustomPrompt(false);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast({ title: 'Erro ao carregar o prompt', description: e?.message || 'Tente novamente.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -118,6 +122,9 @@ export function PromptEditorDialog() {
         headers: await fnHeaders(),
         body: JSON.stringify({ type: 'get_sermon_type_modules' }),
       });
+      if (!resp.ok) {
+        toast({ title: 'Erro ao carregar os módulos', description: await describeResponseError(resp), variant: 'destructive' });
+      }
       const defaults: { modules: { sermon_type: string; label: string; prompt_text: string }[] } =
         resp.ok ? await resp.json() : { modules: [] };
 

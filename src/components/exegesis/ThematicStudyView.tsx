@@ -14,6 +14,7 @@ import type { ExegesisAnalysis, ExegesisMaterial } from '@/hooks/useExegesis';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { streamChatCompletion } from '@/lib/sse';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -400,7 +401,7 @@ export function ThematicStudyView({ onSave, getMaterialsContext, materialsCount 
               `- ${r.title} (${r.source}): ${r.snippet}\n  Ref. ABNT: ${r.abnt_reference || `${r.source}. Disponível em: ${r.url}. Acesso em: ${new Date().toLocaleDateString('pt-BR')}`}`
             ).join('\n');
           }
-        } catch (e) { console.error('Web search error:', e); }
+        } catch (e) { console.error('Web search error:', e); toast({ title: 'Busca na web indisponível', description: 'Continuando apenas com os materiais locais.' }); }
         setWebSearching(false);
       }
 
@@ -473,50 +474,15 @@ IMPORTANTE:
 - ${materialsContext ? 'PRIORIZE os materiais do usuário como fonte primária' : 'Use fontes bíblicas confiáveis'}
 ${webContext ? '- Cite as fontes externas no formato ABNT quando utilizadas' : ''}`;
 
-      const resp = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: await fnHeaders(),
-        body: JSON.stringify({
+      const fullContent = await streamChatCompletion(CHAT_URL, {
           type: 'thematic_study',
           passage: themeTitle,
           content: prompt,
           materials_context: materialsContext,
-        }),
+        }, {
         signal: controller.signal,
+        onDelta: (text) => setStudyResult(text),
       });
-
-      if (!resp.ok) {
-        const e = await resp.json().catch(() => ({}));
-        throw new Error(e.error || `Erro ${resp.status}`);
-      }
-      if (!resp.body) throw new Error('Sem resposta do servidor');
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-      let fullContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, nl);
-          textBuffer = textBuffer.slice(nl + 1);
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line.startsWith('data: ') || line.trim() === '' || line.startsWith(':')) continue;
-          const json = line.slice(6).trim();
-          if (json === '[DONE]') break;
-          try {
-            const c = JSON.parse(json).choices?.[0]?.delta?.content;
-            if (c) {
-              fullContent += c;
-              setStudyResult(fullContent);
-            }
-          } catch { /* partial json */ }
-        }
-      }
 
       if (!fullContent) {
         toast({ title: 'Nenhum conteúdo gerado', variant: 'destructive' });

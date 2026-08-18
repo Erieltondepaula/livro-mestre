@@ -7,6 +7,7 @@ import type { ExegesisAnalysis } from '@/hooks/useExegesis';
 import { MapImageViewer, extractMapImageUrl } from './MapImageViewer';
 import { ReferenceMapView } from './ReferenceMapView';
 import { ReferenceMapOrganic } from './ReferenceMapOrganic';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 interface Props {
   analyses: ExegesisAnalysis[];
@@ -160,7 +161,7 @@ export function ExegesisHistory({ analyses, onFetch, onUpdateNotes, onDelete, on
 
                 {isExpanded && (
                   <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
-                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(a.content) }} />
+                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(a.content)) }} />
                     
                     {/* Render cross-references map for cross_references analyses */}
                     {a.analysis_type === 'cross_references' && (() => {

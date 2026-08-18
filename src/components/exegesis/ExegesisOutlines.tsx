@@ -18,6 +18,8 @@ import type { OutlineStructure } from './OutlineStructureEditor';
 import type { OutlineVersion } from './OutlineVersionHistory';
 import type { ExegesisOutline, ExegesisMaterial } from '@/hooks/useExegesis';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { sanitizeHtml } from '@/lib/sanitize';
+import { streamChatCompletion } from '@/lib/sse';
 
 type OutlineType =
   | 'outline_expository'
@@ -532,43 +534,16 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     abortRef.current = controller;
 
     try {
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: await fnHeaders(),
-        body: JSON.stringify({
+      const full = await streamChatCompletion(CHAT_URL, {
           passage,
           type: selectedType,
           materials_context: getMaterialsContext?.(),
           analyses_context: getRelevantAnalysesContext?.(passage),
           structure_config: structure,
-        }),
+        }, {
         signal: controller.signal,
+        onDelta: (text) => setCurrentStream(text),
       });
-      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
-      if (!resp.body) throw new Error("Sem resposta");
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "", full = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let nl;
-        while ((nl = buf.indexOf("\n")) !== -1) {
-          let line = buf.slice(0, nl); buf = buf.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ")) continue;
-          const j = line.slice(6).trim();
-          if (j === "[DONE]") break;
-          try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) { full += c; setCurrentStream(full); } } catch { buf = line + "\n" + buf; break; }
-        }
-      }
-      for (let raw of buf.split("\n")) {
-        if (!raw?.startsWith("data: ")) continue;
-        const j = raw.slice(6).trim(); if (j === "[DONE]") continue;
-        try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) full += c; } catch {}
-      }
 
       setCurrentStream('');
       const saved = await onSave({ passage, outline_type: selectedType, content: full });
@@ -1173,7 +1148,7 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
       {isLoading && currentStream && (
         <div className="card-library p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-3"><Loader2 className="w-4 h-4 animate-spin text-primary" /><span className="text-sm font-medium text-primary">Gerando esboço...</span></div>
-          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(currentStream) }} />
+          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(currentStream)) }} />
         </div>
       )}
 
@@ -1456,9 +1431,9 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
                         <ExegesisRichEditor content={editContent} onChange={setEditContent} placeholder="Edite o esboço..." minHeight="400px" />
                       ) : (
                         isHtml(o.content) ? (
-                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: o.content }} />
+                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(o.content) }} />
                         ) : (
-                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(o.content) }} />
+                          <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(o.content)) }} />
                         )
                       )}
 

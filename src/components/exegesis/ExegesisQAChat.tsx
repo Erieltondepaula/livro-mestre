@@ -44,6 +44,7 @@ interface Props {
 
 import type { MaterialCategory } from '@/hooks/useExegesis';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { streamChatCompletion } from '@/lib/sse';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -288,6 +289,7 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
           }
         } catch (e) {
           console.warn('Web search failed:', e);
+          toast({ title: 'Busca na web indisponível', description: 'Continuando apenas com os materiais locais.' });
         } finally {
           setSearchingWeb(false);
         }
@@ -298,82 +300,21 @@ ${isYoutube ? `TIPO: Vídeo do YouTube
         .filter(a => a.type === 'image' && a.base64)
         .map(a => a.base64 as string);
 
-      const resp = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: await fnHeaders(),
-        body: JSON.stringify({
-          passage: passage || text || 'Anexos enviados',
-          type: 'question',
-          question: `${fullText}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
-          materials_context: materialsCtx || getMaterialsContext?.(),
-          conversation_history: history,
-          images: imageData.length > 0 ? imageData : undefined,
-        }),
-        signal: controller.signal,
-      });
-
-      if (!resp.ok) {
-        const e = await resp.json().catch(() => ({}));
-        if (resp.status === 429) {
-          toast({ title: 'Limite atingido', description: 'Aguarde um momento.', variant: 'destructive' });
-        } else if (resp.status === 402) {
-          toast({ title: 'Créditos insuficientes', variant: 'destructive' });
-        } else {
-          throw new Error(e.error || `Erro ${resp.status}`);
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      if (!resp.body) throw new Error('Sem resposta');
-
       setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', timestamp: new Date(), webSources: webSources.length > 0 ? webSources : undefined }]);
 
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, nl);
-          textBuffer = textBuffer.slice(nl + 1);
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (!line.startsWith('data: ') || line.trim() === '' || line.startsWith(':')) continue;
-          const json = line.slice(6).trim();
-          if (json === '[DONE]') break;
-          try {
-            const c = JSON.parse(json).choices?.[0]?.delta?.content;
-            if (c) {
-              fullContent += c;
-              setMessages(prev =>
-                prev.map(m => m.id === assistantId ? { ...m, content: fullContent } : m)
-              );
-            }
-          } catch {
-            textBuffer = line + '\n' + textBuffer;
-            break;
-          }
-        }
-      }
-
-      for (let raw of textBuffer.split('\n')) {
-        if (!raw || !raw.startsWith('data: ')) continue;
-        const j = raw.slice(6).trim();
-        if (j === '[DONE]') continue;
-        try {
-          const c = JSON.parse(j).choices?.[0]?.delta?.content;
-          if (c) {
-            fullContent += c;
-            setMessages(prev =>
-              prev.map(m => m.id === assistantId ? { ...m, content: fullContent } : m)
-            );
-          }
-        } catch {}
-      }
+      fullContent = await streamChatCompletion(CHAT_URL, {
+        passage: passage || text || 'Anexos enviados',
+        type: 'question',
+        question: `${fullText}\n\n## Histórico da conversa:\n${history}${webContext ? `\n\n${webContext}` : ''}`,
+        materials_context: materialsCtx || getMaterialsContext?.(),
+        conversation_history: history,
+        images: imageData.length > 0 ? imageData : undefined,
+      }, {
+        signal: controller.signal,
+        onDelta: (streamed) => {
+          setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: streamed } : m));
+        },
+      });
 
       let finalMessages: Message[] = [];
       setMessages(prev => {

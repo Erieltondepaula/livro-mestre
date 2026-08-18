@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { getBibleBookNames, getChaptersArray, getVersesArray } from '@/data/bibleData';
 import { fnHeaders } from '@/lib/edgeFunctions';
+import { sanitizeHtml } from '@/lib/sanitize';
+import { streamChatCompletion } from '@/lib/sse';
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/exegesis`;
 
@@ -55,42 +57,15 @@ export function SermonTitleGenerator({ getMaterialsContext }: Props) {
     abortRef.current = controller;
 
     try {
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: await fnHeaders(),
-        body: JSON.stringify({
+      const full = await streamChatCompletion(CHAT_URL, {
           passage,
           type: 'title_generator',
           question: selectedStyle,
           materials_context: getMaterialsContext?.(),
-        }),
+        }, {
         signal: controller.signal,
+        onDelta: (text) => setResult(text),
       });
-      if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || `Erro ${resp.status}`); }
-      if (!resp.body) throw new Error("Sem resposta");
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = "", full = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let nl;
-        while ((nl = buf.indexOf("\n")) !== -1) {
-          let line = buf.slice(0, nl); buf = buf.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (!line.startsWith("data: ")) continue;
-          const j = line.slice(6).trim();
-          if (j === "[DONE]") break;
-          try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) { full += c; setResult(full); } } catch { buf = line + "\n" + buf; break; }
-        }
-      }
-      for (let raw of buf.split("\n")) {
-        if (!raw?.startsWith("data: ")) continue;
-        const j = raw.slice(6).trim(); if (j === "[DONE]") continue;
-        try { const c = JSON.parse(j).choices?.[0]?.delta?.content; if (c) full += c; } catch {}
-      }
       setResult(full);
     } catch (e: any) {
       if (e.name !== 'AbortError') toast({ title: "Erro", description: e.message, variant: "destructive" });
@@ -210,7 +185,7 @@ export function SermonTitleGenerator({ getMaterialsContext }: Props) {
               </div>
             )}
           </div>
-          <div className="p-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderMarkdown(result) }} />
+          <div className="p-4 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderMarkdown(result)) }} />
         </div>
       )}
     </div>
