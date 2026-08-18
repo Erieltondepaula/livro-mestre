@@ -324,7 +324,15 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
   }>({});
   const [showCopilot, setShowCopilot] = useState(true);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [lastSavedOutlineId, setLastSavedOutlineId] = useState<string | null>(null);
+  const [lastSavedOutlineId, setLastSavedOutlineIdState] = useState<string | null>(null);
+  // Refs mirror the id/saving flag so the debounced auto-save never reads stale
+  // state and never creates a duplicate outline when it overlaps a manual save.
+  const lastSavedOutlineIdRef = useRef<string | null>(null);
+  const isSavingRef = useRef(false);
+  const setLastSavedOutlineId = useCallback((id: string | null) => {
+    lastSavedOutlineIdRef.current = id;
+    setLastSavedOutlineIdState(id);
+  }, []);
   const abortRef = useRef<AbortController | null>(null);
   const editorRef = useRef<ExegesisRichEditorRef | null>(null);
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
