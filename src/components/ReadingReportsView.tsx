@@ -47,6 +47,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   const [period, setPeriod] = useState<Period>('all');
   const [activeTab, setActiveTab] = useState<ChartTab>('pages');
   const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | null>(null);
+  const [selectedLastBookId, setSelectedLastBookId] = useState<string | null>(null);
 
   // Helper: check if a book is Bible category
   const isBibleBook = useCallback((bookId: string) => {
