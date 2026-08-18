@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, Legend, LineChart, Line, ComposedChart } from 'recharts';
-import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target, History, Gauge } from 'lucide-react';
+import { BookOpen, Clock, TrendingUp, Calendar, BarChart3, PieChart as PieChartIcon, Flame, Target, History, Gauge, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Book, DailyReading, BookStatus } from '@/types/library';
