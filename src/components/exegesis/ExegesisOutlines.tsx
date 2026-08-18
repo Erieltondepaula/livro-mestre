@@ -424,15 +424,19 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
     
     autoSaveRef.current = setTimeout(async () => {
       if (!manualContent.trim()) return;
-      
+      // A manual save is already in flight — skip this cycle to avoid duplicates
+      if (isSavingRef.current) return;
+      if (manualContent === lastSavedContentRef.current) return;
+
       // Auto-extract passage from content if no bible passage selected
       const selectedPassage = getPassageText();
       const passage = selectedPassage || getPassageFromContentEarly(manualContent);
-      
+
+      isSavingRef.current = true;
       setAutoSaveStatus('saving');
       try {
-        if (lastSavedOutlineId) {
-          await onUpdateContent(lastSavedOutlineId, manualContent);
+        if (lastSavedOutlineIdRef.current) {
+          await onUpdateContent(lastSavedOutlineIdRef.current, manualContent);
         } else {
           const result = await onSave({
             passage,
@@ -448,6 +452,8 @@ export function ExegesisOutlines({ outlines, onFetch, onSave, onUpdateNotes, onU
         setTimeout(() => setAutoSaveStatus('idle'), 2000);
       } catch {
         setAutoSaveStatus('idle');
+      } finally {
+        isSavingRef.current = false;
       }
     }, 5000);
 
