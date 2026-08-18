@@ -632,7 +632,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
         <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4 md:p-5 shadow-sm">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-cyan-500 opacity-[0.06]" />
           <div className="relative space-y-3">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
                 <History className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
               </div>
@@ -644,7 +644,56 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                   {lastReadingInfo.daysSince} {lastReadingInfo.daysSince === 1 ? 'dia' : 'dias'} atrás
                 </span>
               )}
+
+              {/* Navegação entre livros */}
+              <div className="flex items-center gap-1.5 ml-auto">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Livro anterior"
+                  disabled={activeIndex <= 0}
+                  onClick={() => {
+                    const prev = booksWithReadings[activeIndex - 1];
+                    if (prev) { setSelectedLastBookId(prev.bookId); setSelectedRecoveryId(null); }
+                  }}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Select
+                  value={activeBookId ?? undefined}
+                  onValueChange={(v) => { setSelectedLastBookId(v); setSelectedRecoveryId(null); }}
+                >
+                  <SelectTrigger className="h-8 w-52 text-xs">
+                    <SelectValue placeholder="Escolher livro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {booksWithReadings.map(b => (
+                      <SelectItem key={b.bookId} value={b.bookId} className="text-xs">
+                        📚 {b.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Próximo livro"
+                  disabled={activeIndex < 0 || activeIndex >= booksWithReadings.length - 1}
+                  onClick={() => {
+                    const next = booksWithReadings[activeIndex + 1];
+                    if (next) { setSelectedLastBookId(next.bookId); setSelectedRecoveryId(null); }
+                  }}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground -mt-1">
+              Livro {activeIndex + 1} de {booksWithReadings.length} com leitura registrada — navegue para ver a última leitura de cada um.
+            </p>
+
 
             <div className="grid gap-2 sm:grid-cols-3">
               <div className="rounded-lg bg-background/70 border border-border p-3">
