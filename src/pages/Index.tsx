@@ -255,7 +255,7 @@ const Index = () => {
       case 'leitura':
         return <Suspense fallback={fallback}><ReadingForm books={books} onSubmit={handleAddReading} /></Suspense>;
       case 'status':
-        return <Suspense fallback={fallback}><StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} onUpdateReading={handleUpdateReading} /></Suspense>;
+        return <Suspense fallback={fallback}><StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} onUpdateReading={handleUpdateReading} onRestartBookReading={handleRestartBookReading} /></Suspense>;
       case 'avaliacao':
         return <Suspense fallback={fallback}><EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} /></Suspense>;
       case 'citacoes':
