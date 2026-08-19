@@ -419,6 +419,41 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
         onClose={() => setViewingBook(null)}
         onUpdateReading={onUpdateReading}
       />
+
+      <AlertDialog open={!!restartCandidate} onOpenChange={(open) => { if (!open && !isRestarting) setRestartCandidate(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+              <PartyPopper className="w-5 h-5" />
+              Este livro já foi concluído
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Parabéns! A leitura de <span className="font-semibold text-foreground">{restartCandidate?.livro}</span> já foi concluída.
+              Deseja reiniciar a leitura? Se sim, o histórico da leitura atual será guardado e o registo começa do zero.
+              Se não, continuamos a mostrar as informações como estão hoje.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={isRestarting}
+              onClick={() => {
+                const book = restartCandidate;
+                setRestartCandidate(null);
+                if (book) setViewingBook(book);
+              }}
+            >
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isRestarting}
+              onClick={(e) => { e.preventDefault(); confirmRestart(); }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isRestarting ? 'Reiniciando...' : 'Sim, reiniciar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
