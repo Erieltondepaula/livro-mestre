@@ -846,6 +846,7 @@ export function useLibrary() {
     updateBook,
     addReading,
     updateReading,
+    restartBookReading,
     addEvaluation,
     addQuote,
     deleteBook,
