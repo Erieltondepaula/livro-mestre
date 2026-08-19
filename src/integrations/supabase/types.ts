@@ -95,6 +95,68 @@ export type Database = {
         }
         Relationships: []
       }
+      book_reading_cycles: {
+        Row: {
+          book_id: string
+          book_name: string
+          completed_at: string
+          completed_weekday: number
+          created_at: string
+          cycle_number: number
+          first_reading_at: string | null
+          id: string
+          last_reading_at: string | null
+          pages_read: number
+          readings_count: number
+          snapshot: Json | null
+          total_minutes: number
+          total_pages: number
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          book_name: string
+          completed_at?: string
+          completed_weekday?: number
+          created_at?: string
+          cycle_number?: number
+          first_reading_at?: string | null
+          id?: string
+          last_reading_at?: string | null
+          pages_read?: number
+          readings_count?: number
+          snapshot?: Json | null
+          total_minutes?: number
+          total_pages?: number
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          book_name?: string
+          completed_at?: string
+          completed_weekday?: number
+          created_at?: string
+          cycle_number?: number
+          first_reading_at?: string | null
+          id?: string
+          last_reading_at?: string | null
+          pages_read?: number
+          readings_count?: number
+          snapshot?: Json | null
+          total_minutes?: number
+          total_pages?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_reading_cycles_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_types: {
         Row: {
           created_at: string | null
