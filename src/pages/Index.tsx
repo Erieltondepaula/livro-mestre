@@ -160,6 +160,18 @@ const Index = () => {
     });
   };
 
+  const handleRestartBookReading = async (bookId: string) => {
+    const bookName = books.find(b => b.id === bookId)?.livro ?? 'Livro';
+    const ok = await restartBookReading(bookId);
+    toast({
+      title: ok ? 'Leitura reiniciada!' : 'Não foi possível reiniciar',
+      description: ok
+        ? `O histórico da leitura de "${bookName}" foi guardado e o registo começou do zero.`
+        : 'Tente novamente em alguns instantes.',
+      variant: ok ? undefined : 'destructive',
+    });
+  };
+
   const handleAddEvaluation = (evaluation: Parameters<typeof addEvaluation>[0]) => {
     addEvaluation(evaluation);
     toast({
