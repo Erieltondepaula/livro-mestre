@@ -501,6 +501,14 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       allOfBook,
     };
   }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook]);
+  // ===== Livro já concluído? =====
+  const isActiveBookCompleted = useMemo(() => {
+    if (!lastReadingInfo) return false;
+    const st = statuses.find(s => s.livroId === lastReadingInfo.bookId);
+    if (st?.status === 'Concluido') return true;
+    return !!lastReadingInfo.totalPages && lastReadingInfo.page >= lastReadingInfo.totalPages;
+  }, [lastReadingInfo, statuses]);
+
 
   // ===== Assistente de recuperação do plano de leitura =====
   const recovery = useMemo(() => {
@@ -733,15 +741,32 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
               </p>
             </div>
 
+            {/* Leitura concluída */}
+            {isActiveBookCompleted && (
+              <div className="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-4 text-emerald-800 dark:text-emerald-200">
+                <p className="font-semibold text-base flex items-center gap-2">
+                  🎉 Parabéns! Essa leitura já foi concluída.
+                </p>
+                <p className="text-sm mt-1">
+                  Você finalizou <span className="font-semibold">{lastReadingInfo.bookName}</span>
+                  {lastReadingInfo.totalPages ? <> — {lastReadingInfo.totalPages} página(s)</> : null}, concluído em{' '}
+                  <span className="font-semibold capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}.
+                </p>
+                <p className="text-xs mt-1 opacity-90">
+                  Em “Status dos Livros” você pode clicar neste livro para reiniciar a leitura — o histórico atual fica guardado.
+                </p>
+              </div>
+            )}
+
             {/* Assistente de recuperação */}
-            {recovery && !recovery.isBehind && (
+            {!isActiveBookCompleted && recovery && !recovery.isBehind && (
               <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 text-sm text-emerald-800 dark:text-emerald-200">
                 🌱 Tudo em dia! Você está acompanhando o seu plano de leitura normalmente. Continue nesse ritmo de{' '}
                 <span className="font-semibold">{recovery.planPace} página(s) por dia</span> — a constância é o que mais importa.
               </div>
             )}
 
-            {recovery?.isBehind && (
+            {!isActiveBookCompleted && recovery?.isBehind && (
               <div className="space-y-3 rounded-lg border border-border bg-background/70 p-3">
                 <div>
                   <p className="text-sm font-semibold text-foreground">

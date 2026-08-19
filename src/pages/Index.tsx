@@ -57,6 +57,7 @@ const Index = () => {
     updateBook,
     addReading,
     updateReading,
+    restartBookReading,
     addEvaluation,
     addQuote,
     deleteBook,
@@ -159,6 +160,18 @@ const Index = () => {
     });
   };
 
+  const handleRestartBookReading = async (bookId: string) => {
+    const bookName = books.find(b => b.id === bookId)?.livro ?? 'Livro';
+    const ok = await restartBookReading(bookId);
+    toast({
+      title: ok ? 'Leitura reiniciada!' : 'Não foi possível reiniciar',
+      description: ok
+        ? `O histórico da leitura de "${bookName}" foi guardado e o registo começou do zero.`
+        : 'Tente novamente em alguns instantes.',
+      variant: ok ? undefined : 'destructive',
+    });
+  };
+
   const handleAddEvaluation = (evaluation: Parameters<typeof addEvaluation>[0]) => {
     addEvaluation(evaluation);
     toast({
@@ -242,7 +255,7 @@ const Index = () => {
       case 'leitura':
         return <Suspense fallback={fallback}><ReadingForm books={books} onSubmit={handleAddReading} /></Suspense>;
       case 'status':
-        return <Suspense fallback={fallback}><StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} onUpdateReading={handleUpdateReading} /></Suspense>;
+        return <Suspense fallback={fallback}><StatusView statuses={statuses} books={books} readings={readings} evaluations={evaluations} quotes={quotes} vocabulary={vocabulary} onDeleteBook={handleDeleteBook} onUpdateBook={handleUpdateBook} onUpdateReading={handleUpdateReading} onRestartBookReading={handleRestartBookReading} /></Suspense>;
       case 'avaliacao':
         return <Suspense fallback={fallback}><EvaluationForm books={books} evaluations={evaluations} onSubmit={handleAddEvaluation} /></Suspense>;
       case 'citacoes':

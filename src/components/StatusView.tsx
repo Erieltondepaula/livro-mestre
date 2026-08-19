@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Trash2, Edit2, BarChart3, Search, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
+import { Trash2, Edit2, BarChart3, Search, Calendar, TrendingUp, AlertCircle, PartyPopper } from 'lucide-react';
 import type { BookStatus, Book, DailyReading, BookEvaluation, Quote, VocabularyEntry } from '@/types/library';
 import { BookEditDialog } from './BookEditDialog';
 import { BookMetricsDialog } from './BookMetricsDialog';
@@ -8,6 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 
 interface StatusViewProps {
@@ -20,13 +30,16 @@ interface StatusViewProps {
   onDeleteBook: (id: string) => void;
   onUpdateBook: (book: Book) => void;
   onUpdateReading?: (reading: DailyReading) => void;
+  onRestartBookReading?: (bookId: string) => void | Promise<void>;
 }
 
 type StatusFilter = 'all' | 'Lendo' | 'Concluido' | 'Não iniciado';
 
-export function StatusView({ statuses, books, readings, evaluations, quotes, vocabulary, onDeleteBook, onUpdateBook, onUpdateReading }: StatusViewProps) {
+export function StatusView({ statuses, books, readings, evaluations, quotes, vocabulary, onDeleteBook, onUpdateBook, onUpdateReading, onRestartBookReading }: StatusViewProps) {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [viewingBook, setViewingBook] = useState<Book | null>(null);
+  const [restartCandidate, setRestartCandidate] = useState<Book | null>(null);
+  const [isRestarting, setIsRestarting] = useState(false);
   // Filtro padrão: "Lendo"
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Lendo');
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,6 +66,27 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
     const book = books.find(b => b.id === livroId);
     if (book) {
       setViewingBook(book);
+    }
+  };
+
+  const handleRowClick = (status: BookStatus) => {
+    const book = books.find(b => b.id === status.livroId);
+    if (!book) return;
+    if (status.status === 'Concluido' && onRestartBookReading) {
+      setRestartCandidate(book);
+      return;
+    }
+    setViewingBook(book);
+  };
+
+  const confirmRestart = async () => {
+    if (!restartCandidate || !onRestartBookReading) return;
+    setIsRestarting(true);
+    try {
+      await onRestartBookReading(restartCandidate.id);
+      setRestartCandidate(null);
+    } finally {
+      setIsRestarting(false);
     }
   };
 
@@ -183,7 +217,7 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                   <tr 
                     key={status.id} 
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => handleViewMetrics(status.livroId)}
+                    onClick={() => handleRowClick(status)}
                   >
                     <td className="font-medium hidden sm:table-cell">{status.numero}</td>
                     <td className="hidden md:table-cell">
@@ -385,6 +419,41 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
         onClose={() => setViewingBook(null)}
         onUpdateReading={onUpdateReading}
       />
+
+      <AlertDialog open={!!restartCandidate} onOpenChange={(open) => { if (!open && !isRestarting) setRestartCandidate(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+              <PartyPopper className="w-5 h-5" />
+              Este livro já foi concluído
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Parabéns! A leitura de <span className="font-semibold text-foreground">{restartCandidate?.livro}</span> já foi concluída.
+              Deseja reiniciar a leitura? Se sim, o histórico da leitura atual será guardado e o registo começa do zero.
+              Se não, continuamos a mostrar as informações como estão hoje.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={isRestarting}
+              onClick={() => {
+                const book = restartCandidate;
+                setRestartCandidate(null);
+                if (book) setViewingBook(book);
+              }}
+            >
+              Não
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isRestarting}
+              onClick={(e) => { e.preventDefault(); confirmRestart(); }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isRestarting ? 'Reiniciando...' : 'Sim, reiniciar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
