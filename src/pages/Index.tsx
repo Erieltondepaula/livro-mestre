@@ -57,6 +57,7 @@ const Index = () => {
     updateBook,
     addReading,
     updateReading,
+    restartBookReading,
     addEvaluation,
     addQuote,
     deleteBook,
