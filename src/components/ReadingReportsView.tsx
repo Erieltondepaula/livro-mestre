@@ -785,12 +785,6 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                       </button>
                     );
                   })}
-
-                        <p className="text-xs text-muted-foreground">≈ {st.days} {st.days === 1 ? 'dia' : 'dias'} para eliminar o atraso</p>
-                        <p className="text-[11px] text-muted-foreground mt-1">{st.note}</p>
-                      </button>
-                    );
-                  })}
                 </div>
 
                 <p className="text-xs text-muted-foreground">
