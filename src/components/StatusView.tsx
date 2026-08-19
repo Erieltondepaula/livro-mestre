@@ -217,7 +217,7 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                   <tr 
                     key={status.id} 
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => handleViewMetrics(status.livroId)}
+                    onClick={() => handleRowClick(status)}
                   >
                     <td className="font-medium hidden sm:table-cell">{status.numero}</td>
                     <td className="hidden md:table-cell">
