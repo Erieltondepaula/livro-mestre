@@ -623,7 +623,73 @@ export function useLibrary() {
     return newQuoteData;
   }, [loadData, user]);
 
+  // Reiniciar a leitura de um livro já concluído (grava histórico do ciclo e zera registros)
+  const restartBookReading = useCallback(async (bookId: string) => {
+    if (!user) return false;
+
+    const [{ data: book }, { data: rs }, { count }] = await Promise.all([
+      supabase.from('books').select('id, name, total_pages').eq('id', bookId).maybeSingle(),
+      supabase.from('readings').select('*').eq('book_id', bookId),
+      supabase.from('book_reading_cycles').select('id', { count: 'exact', head: true }).eq('book_id', bookId),
+    ]);
+
+    if (!book) return false;
+
+    const list = rs ?? [];
+    const parseMinutes = (t: unknown): number => {
+      const s = String(t ?? '').trim();
+      if (!s) return 0;
+      if (s.includes(':')) {
+        const [m, sec] = s.split(':');
+        return (Number(m) || 0) + (Number(sec) || 0) / 60;
+      }
+      return Number(s) || 0;
+    };
+
+    const pagesRead = list.length ? Math.max(...list.map(r => r.end_page ?? 0)) : 0;
+    const totalMinutes = list.reduce((sum, r) => sum + parseMinutes(r.time_spent), 0);
+    const dates = list
+      .map(r => (r.start_date || r.created_at || '').toString().slice(0, 10))
+      .filter(Boolean)
+      .sort();
+
+    const { error: cycleError } = await supabase.from('book_reading_cycles').insert({
+      user_id: user.id,
+      book_id: bookId,
+      book_name: book.name,
+      cycle_number: (count ?? 0) + 1,
+      total_pages: book.total_pages,
+      pages_read: Math.min(pagesRead, book.total_pages),
+      readings_count: list.length,
+      total_minutes: Math.round(totalMinutes * 100) / 100,
+      first_reading_at: dates[0] ?? null,
+      last_reading_at: dates[dates.length - 1] ?? null,
+      completed_weekday: new Date().getDay(),
+      snapshot: list as never,
+    } as never);
+
+    if (cycleError) {
+      console.error('Error saving reading cycle:', cycleError);
+      return false;
+    }
+
+    const { error: delError } = await supabase.from('readings').delete().eq('book_id', bookId);
+    if (delError) {
+      console.error('Error clearing readings:', delError);
+      return false;
+    }
+
+    await supabase
+      .from('statuses')
+      .update({ status: 'Não iniciado', pages_read: 0 } as never)
+      .eq('book_id', bookId);
+
+    await loadData();
+    return true;
+  }, [loadData, user]);
+
   // Delete functions
+
   const deleteBook = useCallback(async (id: string) => {
     const { error } = await supabase
       .from('books')
