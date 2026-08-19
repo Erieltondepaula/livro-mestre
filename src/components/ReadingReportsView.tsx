@@ -501,6 +501,14 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       allOfBook,
     };
   }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook]);
+  // ===== Livro já concluído? =====
+  const isActiveBookCompleted = useMemo(() => {
+    if (!lastReadingInfo) return false;
+    const st = statuses.find(s => s.livroId === lastReadingInfo.bookId);
+    if (st?.status === 'Concluido') return true;
+    return !!lastReadingInfo.totalPages && lastReadingInfo.page >= lastReadingInfo.totalPages;
+  }, [lastReadingInfo, statuses]);
+
 
   // ===== Assistente de recuperação do plano de leitura =====
   const recovery = useMemo(() => {
