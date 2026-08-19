@@ -69,6 +69,27 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
     }
   };
 
+  const handleRowClick = (status: BookStatus) => {
+    const book = books.find(b => b.id === status.livroId);
+    if (!book) return;
+    if (status.status === 'Concluido' && onRestartBookReading) {
+      setRestartCandidate(book);
+      return;
+    }
+    setViewingBook(book);
+  };
+
+  const confirmRestart = async () => {
+    if (!restartCandidate || !onRestartBookReading) return;
+    setIsRestarting(true);
+    try {
+      await onRestartBookReading(restartCandidate.id);
+      setRestartCandidate(null);
+    } finally {
+      setIsRestarting(false);
+    }
+  };
+
   const getBookStatus = (bookId: string) => {
     return statuses.find(s => s.livroId === bookId) || null;
   };
