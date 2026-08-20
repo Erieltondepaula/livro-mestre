@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
+import { ResponsiveImage } from '@/components/ui/responsive-image';
 
 interface StatusViewProps {
   statuses: BookStatus[];
@@ -223,9 +224,11 @@ export function StatusView({ statuses, books, readings, evaluations, quotes, voc
                     <td className="hidden md:table-cell">
                       <div className="w-10 h-14 lg:w-12 lg:h-16 rounded overflow-hidden bg-muted flex items-center justify-center">
                         {book?.coverUrl ? (
-                          <img
+                          <ResponsiveImage
                             src={book.coverUrl}
                             alt={`Capa de ${status.livro}`}
+                            widths={[80, 160, 240, 320]}
+                            sizes="(max-width: 1024px) 40px, 48px"
                             className="w-full h-full object-cover"
                           />
                         ) : (

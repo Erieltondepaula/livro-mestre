@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
+import { ResponsiveImage } from '@/components/ui/responsive-image';
 
 interface BooksListViewProps {
   books: Book[];
@@ -168,9 +169,10 @@ export const BooksListView = forwardRef<HTMLDivElement, BooksListViewProps>(func
             {/* Capa do Livro */}
             <div className="w-full aspect-[2/3] bg-muted flex items-center justify-center overflow-hidden flex-shrink-0 relative">
               {book.coverUrl ? (
-                <img
+                <ResponsiveImage
                   src={book.coverUrl}
                   alt={`Capa de ${book.livro}`}
+                  sizes="(max-width: 319px) 140px, (max-width: 480px) 45vw, (max-width: 992px) 30vw, (max-width: 1440px) 22vw, 300px"
                   className="w-full h-full object-contain bg-muted"
                 />
               ) : (
