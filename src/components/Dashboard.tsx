@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { calculateReadingProjection, formatProjectedDateCompact } from '@/lib/readingProjections';
 import { GamificationWidget } from '@/components/GamificationWidget';
 import { useAuth } from '@/contexts/AuthContext';
+import { ResponsiveImage } from '@/components/ui/responsive-image';
 interface DashboardProps {
   stats: DashboardStats;
   recentStatuses: BookStatus[];
@@ -285,9 +286,11 @@ export function Dashboard({ stats, recentStatuses, books, readings, onNavigateTo
                         <td>
                           <div className="w-8 h-11 sm:w-10 sm:h-14 md:w-12 md:h-16 rounded overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
                             {book?.coverUrl ? (
-                              <img
+                              <ResponsiveImage
                                 src={book.coverUrl}
                                 alt={`Capa de ${status.livro}`}
+                                widths={[80, 160, 240, 320]}
+                                sizes="(max-width: 480px) 32px, (max-width: 768px) 40px, 48px"
                                 className="w-full h-full object-cover"
                               />
                             ) : (

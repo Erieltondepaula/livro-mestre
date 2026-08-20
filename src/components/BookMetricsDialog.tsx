@@ -8,6 +8,7 @@ import { BookOpen, Clock, Calendar, TrendingUp, Star, Quote, MessageSquare, Book
 import { differenceInDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Book as BookType, BookStatus, DailyReading, BookEvaluation, Quote as QuoteType, VocabularyEntry } from '@/types/library';
+import { ResponsiveImage } from '@/components/ui/responsive-image';
 
 interface BookMetricsDialogProps {
   book: BookType | null;
@@ -352,9 +353,11 @@ export function BookMetricsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-start gap-4">
             {book.coverUrl && (
-              <img 
-                src={book.coverUrl} 
+              <ResponsiveImage
+                src={book.coverUrl}
                 alt={book.livro}
+                widths={[128, 256, 384, 512]}
+                sizes="64px"
                 className="w-16 h-24 object-cover rounded shadow-md"
               />
             )}

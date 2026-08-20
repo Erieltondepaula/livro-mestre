@@ -6,6 +6,8 @@ export default {
   prefix: "",
   theme: {
     screens: {
+      // Ultra pequenos: smartwatches e celulares muito antigos (< 320px lógicos)
+      'watch': { 'raw': '(max-width: 319px)' },
       'xs': '320px',
       'sm': '480px',
       'md': '720px',
