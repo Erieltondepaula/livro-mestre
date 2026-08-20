@@ -2100,7 +2100,11 @@ Seja profundo mas acessível. Cada lição, aplicação e reflexão deve ser fun
           comparative: 'COMPARATIVAS — textos que apresentam contraste ou equilíbrio teológico (fé vs obras, justiça vs graça, lei vs evangelho)',
           apostolic: 'APOSTÓLICAS — citações do AT feitas pelos autores do NT, mostrando como os apóstolos interpretaram os textos',
           eschatological: 'ESCATOLÓGICAS — relação com juízo final, reino de Deus, segunda vinda, consumação da história',
-          all: 'PANORAMA GERAL — busca completa em todas as 12 categorias + síntese panorâmica de como toda a Bíblia trata o tema',
+          citation: 'CITAÇÃO DIRETA — textos citados literalmente (ou quase) por outro texto bíblico, com identificação da fonte (MT ou LXX) e das diferenças verbais',
+          allusion: 'ALUSÃO — ecos e referências indiretas: vocabulário, imagem ou estrutura evocando outro texto sem citá-lo, classificando o grau de certeza (forte / provável / possível)',
+          fulfillment: 'CUMPRIMENTO — onde e como a promessa/profecia se cumpre (literal, tipológico, progressivo ou ainda futuro), sempre partindo da promessa para o cumprimento',
+          parallel: 'PARALELOS — passagens paralelas: sinóticos (Mateus/Marcos/Lucas), Reis↔Crônicas, Salmos duplicados, epístolas gêmeas (Efésios/Colossenses), com comparação lado a lado das diferenças',
+          all: 'PANORAMA GERAL — busca completa em todas as 16 categorias + síntese panorâmica de como toda a Bíblia trata o tema',
         };
         const refType = question || 'all';
         const refLabel = refTypeMap[refType] || refTypeMap.all;
@@ -2246,7 +2250,42 @@ Relação com juízo final, reino de Deus, segunda vinda, consumação da histó
 - **Conexão:** Como o texto base se relaciona com o destino final
 Mínimo 3 referências.
 ` : ''}
-${refType === 'all' ? `### 🌐 12. PANORAMA BÍBLICO
+${refType === 'all' || refType === 'citation' ? `### 📌 12. CITAÇÕES DIRETAS
+Textos citados LITERALMENTE (ou quase) por outro texto bíblico:
+👉 [Livro Capítulo:Versículo (texto citante)]: "[texto completo na ACF]"
+  ↳ Cita [Livro Capítulo:Versículo (texto citado)]: "[texto completo na ACF]"
+- **Fonte da citação:** Texto Massorético (MT) ou Septuaginta (LXX)
+- **Diferenças verbais:** o que muda entre o original e a citação, e por quê
+- **Função retórica:** por que o autor citou este texto neste ponto
+Mínimo 4 referências.
+` : ''}
+${refType === 'all' || refType === 'allusion' ? `### 🌬️ 13. ALUSÕES (Ecos Textuais)
+Referências INDIRETAS — vocabulário, imagem ou estrutura que evocam outro texto sem citá-lo:
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+  ↳ Alude a [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Marcadores da alusão:** palavras, imagens ou estrutura compartilhadas
+- **Grau de certeza:** FORTE / PROVÁVEL / POSSÍVEL (seja honesto; não force conexões)
+- **Efeito teológico:** o que a alusão acrescenta ao sentido
+Mínimo 4 referências.
+` : ''}
+${refType === 'all' || refType === 'fulfillment' ? `### ✅ 14. CUMPRIMENTOS (Promessa → Realização)
+Sempre da PROMESSA para o CUMPRIMENTO, com o tipo de cumprimento explícito:
+👉 Promessa — [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+  ↳ Cumprimento — [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Tipo de cumprimento:** LITERAL / TIPOLÓGICO / PROGRESSIVO / AINDA FUTURO
+- **Evidência textual:** o que no texto confirma o cumprimento (fórmula "para que se cumprisse", correspondência de detalhes etc.)
+Mínimo 4 referências.
+` : ''}
+${refType === 'all' || refType === 'parallel' ? `### 🪞 15. PASSAGENS PARALELAS
+Relatos paralelos: sinóticos (Mateus/Marcos/Lucas), Reis ↔ Crônicas, Salmos duplicados, epístolas gêmeas (Efésios/Colossenses):
+👉 [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+  ↳ Paralelo em [Livro Capítulo:Versículo]: "[texto completo na ACF]"
+- **Comparação lado a lado:** o que é IGUAL, o que é OMITIDO, o que é ACRESCENTADO
+- **Intenção de cada autor:** por que o relato foi contado assim naquele livro
+- **Harmonização:** como os relatos se complementam sem contradição
+Mínimo 4 referências.
+` : ''}
+${refType === 'all' ? `### 🌐 16. PANORAMA BÍBLICO
 Síntese integradora de como TODA A BÍBLIA trata o tema:
 - Como o tema aparece no Pentateuco, Históricos, Poéticos, Profetas, Evangelhos, Atos, Epístolas, Apocalipse
 - Arco narrativo: Criação → Queda → Redenção → Consumação
