@@ -727,11 +727,11 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 📖 Sua última leitura foi <span className="font-semibold text-foreground">{lastReadingInfo.bookName}</span>
                 {lastReadingInfo.bibleRef ? <> (<span className="font-medium text-foreground">{lastReadingInfo.bibleRef}</span>)</> : null}
                 , em <span className="font-semibold text-foreground capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}
-                {lastReadingInfo.pagesRead > 0 ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> página(s) lida(s)</> : null}
+                {lastReadingInfo.pagesRead > 0 ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> {unit.many} {unit.isBible ? 'lido(s)' : 'lida(s)'}</> : null}
                 {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{Math.floor(lastReadingInfo.minutes)}min</span></> : null}.
               </p>
               <p>
-                🔖 Você parou na página <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
+                🔖 Você parou {unit.isBible ? 'no capítulo' : 'na página'} <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
                 {lastReadingInfo.totalPages ? <> de <span className="font-semibold text-foreground">{lastReadingInfo.totalPages}</span></> : null}.
               </p>
               <p>
