@@ -822,7 +822,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                       {selectedStrategy.emoji} Plano de recuperação — ritmo {selectedStrategy.label.toLowerCase()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Leia <span className="font-semibold text-foreground">{selectedStrategy.perDay} página(s) por dia</span>{' '}
+                      Leia <span className="font-semibold text-foreground">{selectedStrategy.perDay} {unit.many} por dia</span>{' '}
                       ({recovery.planPace} do dia + {selectedStrategy.extra} de recuperação). Previsão de ficar em dia:{' '}
                       <span className="font-semibold text-foreground">{selectedStrategy.finishLabel}</span>.
                     </p>
