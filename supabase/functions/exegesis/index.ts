@@ -2322,6 +2322,28 @@ As 5 referências cruzadas mais significativas e por que são essenciais.
 - Evitar o uso de versículos como pretexto para ideias isoladas
 - "Texto fora de contexto é pretexto para heresia"
 
+### 📚 BIBLIOGRAFIA DAS REFERÊNCIAS BÍBLICAS
+Encerre SEMPRE com a bibliografia completa do que foi efetivamente usado nesta pesquisa, em normas ABNT (NBR 6023), agrupada assim:
+
+**1. Fonte bíblica primária**
+- BÍBLIA. Português. *Bíblia Sagrada*: Almeida Corrigida Fiel. São Paulo: Sociedade Bíblica Trinitariana do Brasil, [ano da edição consultada].
+
+**2. Materiais do usuário (Base de Conhecimento — PRIORIDADE)**
+Liste APENAS os materiais locais realmente citados, no formato ABNT, indicando entre parênteses a(s) seção(ões) desta análise em que foram usados:
+- SOBRENOME, Nome. *Título da obra*. Edição. Cidade: Editora, ano. p. [páginas]. (usado em: Citações, Cumprimentos)
+
+**3. Aparato de referências cruzadas e obras de apoio**
+- Sistema de referências cruzadas da ACF, notas doutrinárias, perfis de personagens e sítios arqueológicos, indicando o verbete/índice consultado.
+- Léxicos e concordâncias (Strong, dicionários hebraico/grego) quando termos originais foram analisados.
+
+**4. Fontes externas / web (quando houver)**
+- AUTOR ou INSTITUIÇÃO. *Título da página*. Disponível em: <URL>. Acesso em: [data]. — sempre marcadas como **fonte secundária**, subordinadas aos materiais locais.
+
+**Regras da bibliografia:**
+- NUNCA invente obra, autor, editora, ano, página ou URL. Se o dado não estiver disponível no material fornecido, escreva "dados incompletos no material fornecido".
+- Nada entra na bibliografia que não tenha sido efetivamente usado no corpo da resposta — e todo material local citado no corpo DEVE aparecer aqui.
+- Ordene alfabeticamente dentro de cada grupo.
+
 ### 📋 ESBOÇO SUGERIDO PARA ESTUDO
 Organize os resultados em estrutura lógica:
 1. **Introdução** — Conceito central do tema
@@ -2339,6 +2361,7 @@ Organize os resultados em estrutura lógica:
 - Formato obrigatório: 👉 [Livro Capítulo:Versículo]: "[texto completo]"
 - Quando envolver personagens bíblicos, inclua perfil, contexto histórico e lições espirituais
 - Seja EXAUSTIVO e PROFUNDO — esta é uma ferramenta de estudo nível seminário
+- A seção 📚 BIBLIOGRAFIA DAS REFERÊNCIAS BÍBLICAS é OBRIGATÓRIA e deve fechar a resposta, em normas ABNT, sem dados inventados
 
 ## ⚠️ REGRA CRÍTICA DE PRECISÃO NAS REFERÊNCIAS BÍBLICAS:
 ANTES de incluir qualquer referência, VERIFIQUE que o TEXTO DO VERSÍCULO corresponde EXATAMENTE à referência citada.
