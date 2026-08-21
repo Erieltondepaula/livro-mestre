@@ -762,7 +762,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
             {!isActiveBookCompleted && recovery && !recovery.isBehind && (
               <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 text-sm text-emerald-800 dark:text-emerald-200">
                 🌱 Tudo em dia! Você está acompanhando o seu plano de leitura normalmente. Continue nesse ritmo de{' '}
-                <span className="font-semibold">{recovery.planPace} página(s) por dia</span> — a constância é o que mais importa.
+                <span className="font-semibold">{recovery.planPace} {unit.many} por dia</span> — a constância é o que mais importa.
               </div>
             )}
 
