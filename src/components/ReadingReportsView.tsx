@@ -486,6 +486,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       bookId: activeBookId,
       book,
       bookName,
+      isBible: isBibleBook(activeBookId),
       page: isBibleBook(activeBookId) ? pagesOfBook : Math.max(r.paginaFinal, pagesOfBook),
       pagesOfBook,
       totalPages,
@@ -501,6 +502,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       allOfBook,
     };
   }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook]);
+
+  // ===== Unidade de medida: Bíblia → capítulos; outros livros → páginas =====
+  const unit = useMemo(() => {
+    const isBible = !!lastReadingInfo?.isBible;
+    return isBible
+      ? { isBible, many: 'capítulo(s)', short: 'cap.', lastLabel: 'Último capítulo' }
+      : { isBible, many: 'página(s)', short: 'pág.', lastLabel: 'Última página' };
+  }, [lastReadingInfo]);
+
   // ===== Livro já concluído? =====
   const isActiveBookCompleted = useMemo(() => {
     if (!lastReadingInfo) return false;
@@ -709,7 +719,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 <p className="font-semibold text-foreground text-sm truncate" title={lastReadingInfo.bookName}>{lastReadingInfo.bookName}</p>
               </div>
               <div className="rounded-lg bg-background/70 border border-border p-3">
-                <p className="text-[11px] text-muted-foreground">Última página</p>
+                <p className="text-[11px] text-muted-foreground">{unit.lastLabel}</p>
                 <p className="font-semibold text-foreground text-sm">
                   {lastReadingInfo.page}{lastReadingInfo.totalPages ? ` de ${lastReadingInfo.totalPages}` : ''}
                 </p>
@@ -727,11 +737,11 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 📖 Sua última leitura foi <span className="font-semibold text-foreground">{lastReadingInfo.bookName}</span>
                 {lastReadingInfo.bibleRef ? <> (<span className="font-medium text-foreground">{lastReadingInfo.bibleRef}</span>)</> : null}
                 , em <span className="font-semibold text-foreground capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}
-                {lastReadingInfo.pagesRead > 0 ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> página(s) lida(s)</> : null}
+                {lastReadingInfo.pagesRead > 0 ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> {unit.many} {unit.isBible ? 'lido(s)' : 'lida(s)'}</> : null}
                 {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{Math.floor(lastReadingInfo.minutes)}min</span></> : null}.
               </p>
               <p>
-                🔖 Você parou na página <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
+                🔖 Você parou {unit.isBible ? 'no capítulo' : 'na página'} <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
                 {lastReadingInfo.totalPages ? <> de <span className="font-semibold text-foreground">{lastReadingInfo.totalPages}</span></> : null}.
               </p>
               <p>
@@ -749,7 +759,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 </p>
                 <p className="text-sm mt-1">
                   Você finalizou <span className="font-semibold">{lastReadingInfo.bookName}</span>
-                  {lastReadingInfo.totalPages ? <> — {lastReadingInfo.totalPages} página(s)</> : null}, concluído em{' '}
+                  {lastReadingInfo.totalPages ? <> — {lastReadingInfo.totalPages} {unit.many}</> : null}, concluído em{' '}
                   <span className="font-semibold capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}.
                 </p>
                 <p className="text-xs mt-1 opacity-90">
@@ -762,7 +772,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
             {!isActiveBookCompleted && recovery && !recovery.isBehind && (
               <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 text-sm text-emerald-800 dark:text-emerald-200">
                 🌱 Tudo em dia! Você está acompanhando o seu plano de leitura normalmente. Continue nesse ritmo de{' '}
-                <span className="font-semibold">{recovery.planPace} página(s) por dia</span> — a constância é o que mais importa.
+                <span className="font-semibold">{recovery.planPace} {unit.many} por dia</span> — a constância é o que mais importa.
               </div>
             )}
 
@@ -771,12 +781,12 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 <div>
                   <p className="text-sm font-semibold text-foreground">
                     Você está aproximadamente {recovery.backlogDays} {recovery.backlogDays === 1 ? 'dia' : 'dias'} atrasado
-                    {' '}({recovery.backlogPages} página(s) para colocar em dia).
+                    {' '}({recovery.backlogPages} {unit.many} para colocar em dia).
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Ritmo do seu plano: {recovery.planPace} página(s)/capítulo(s) por dia (leitura diária normal)
-                    {recovery.remainingPages !== null ? ` · faltam ${recovery.remainingPages} página(s) para concluir o livro` : ''}.
-                    Você já leu {recovery.pagesOfBook} página(s) em {recovery.elapsedDays} dia(s) de plano.
+                    Ritmo do seu plano: {recovery.planPace} {unit.many} por dia (leitura diária normal)
+                    {recovery.remainingPages !== null ? ` · faltam ${recovery.remainingPages} ${unit.many} para concluir ${unit.isBible ? 'a leitura' : 'o livro'}` : ''}.
+                    Você já leu {recovery.pagesOfBook} {unit.many} em {recovery.elapsedDays} dia(s) de plano.
                     Sem culpa nenhuma — o importante é retomar hoje. Cada leitura registrada diminui esse atraso automaticamente.
                   </p>
                 </div>
@@ -822,7 +832,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                       {selectedStrategy.emoji} Plano de recuperação — ritmo {selectedStrategy.label.toLowerCase()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Leia <span className="font-semibold text-foreground">{selectedStrategy.perDay} página(s) por dia</span>{' '}
+                      Leia <span className="font-semibold text-foreground">{selectedStrategy.perDay} {unit.many} por dia</span>{' '}
                       ({recovery.planPace} do dia + {selectedStrategy.extra} de recuperação). Previsão de ficar em dia:{' '}
                       <span className="font-semibold text-foreground">{selectedStrategy.finishLabel}</span>.
                     </p>
@@ -840,9 +850,9 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                           {recoverySchedule.map((row, i) => (
                             <tr key={i} className="border-t border-border/60">
                               <td className="py-1 pr-3 capitalize text-foreground">{row.dayLabel}</td>
-                              <td className="py-1 pr-3">{row.dayPages} pág.</td>
-                              <td className="py-1 pr-3 text-indigo-600 dark:text-indigo-400">+{row.recoveryPages} pág.</td>
-                              <td className="py-1">{row.remaining} pág.</td>
+                              <td className="py-1 pr-3">{row.dayPages} {unit.short}</td>
+                              <td className="py-1 pr-3 text-indigo-600 dark:text-indigo-400">+{row.recoveryPages} {unit.short}</td>
+                              <td className="py-1">{row.remaining} {unit.short}</td>
                             </tr>
                           ))}
                         </tbody>
