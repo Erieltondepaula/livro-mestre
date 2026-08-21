@@ -840,9 +840,9 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                           {recoverySchedule.map((row, i) => (
                             <tr key={i} className="border-t border-border/60">
                               <td className="py-1 pr-3 capitalize text-foreground">{row.dayLabel}</td>
-                              <td className="py-1 pr-3">{row.dayPages} pág.</td>
-                              <td className="py-1 pr-3 text-indigo-600 dark:text-indigo-400">+{row.recoveryPages} pág.</td>
-                              <td className="py-1">{row.remaining} pág.</td>
+                              <td className="py-1 pr-3">{row.dayPages} {unit.short}</td>
+                              <td className="py-1 pr-3 text-indigo-600 dark:text-indigo-400">+{row.recoveryPages} {unit.short}</td>
+                              <td className="py-1">{row.remaining} {unit.short}</td>
                             </tr>
                           ))}
                         </tbody>
