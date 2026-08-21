@@ -771,12 +771,12 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 <div>
                   <p className="text-sm font-semibold text-foreground">
                     Você está aproximadamente {recovery.backlogDays} {recovery.backlogDays === 1 ? 'dia' : 'dias'} atrasado
-                    {' '}({recovery.backlogPages} página(s) para colocar em dia).
+                    {' '}({recovery.backlogPages} {unit.many} para colocar em dia).
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Ritmo do seu plano: {recovery.planPace} página(s)/capítulo(s) por dia (leitura diária normal)
-                    {recovery.remainingPages !== null ? ` · faltam ${recovery.remainingPages} página(s) para concluir o livro` : ''}.
-                    Você já leu {recovery.pagesOfBook} página(s) em {recovery.elapsedDays} dia(s) de plano.
+                    Ritmo do seu plano: {recovery.planPace} {unit.many} por dia (leitura diária normal)
+                    {recovery.remainingPages !== null ? ` · faltam ${recovery.remainingPages} ${unit.many} para concluir ${unit.isBible ? 'a leitura' : 'o livro'}` : ''}.
+                    Você já leu {recovery.pagesOfBook} {unit.many} em {recovery.elapsedDays} dia(s) de plano.
                     Sem culpa nenhuma — o importante é retomar hoje. Cada leitura registrada diminui esse atraso automaticamente.
                   </p>
                 </div>
