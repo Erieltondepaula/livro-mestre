@@ -709,7 +709,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 <p className="font-semibold text-foreground text-sm truncate" title={lastReadingInfo.bookName}>{lastReadingInfo.bookName}</p>
               </div>
               <div className="rounded-lg bg-background/70 border border-border p-3">
-                <p className="text-[11px] text-muted-foreground">Última página</p>
+                <p className="text-[11px] text-muted-foreground">{unit.lastLabel}</p>
                 <p className="font-semibold text-foreground text-sm">
                   {lastReadingInfo.page}{lastReadingInfo.totalPages ? ` de ${lastReadingInfo.totalPages}` : ''}
                 </p>
