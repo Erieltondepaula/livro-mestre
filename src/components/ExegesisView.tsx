@@ -72,7 +72,7 @@ export function ExegesisView() {
 
   const menuItems: MenuItem[] = [
     ...(hasModuleAccess('exegese.analisar') ? [{ id: 'analyze' as const, label: 'Analisar Passagem', icon: BookOpen }] : []),
-    ...(hasModuleAccess('exegese.ref_cruzadas') ? [{ id: 'cross_refs' as const, label: 'Referências Cruzadas', icon: Link2 }] : []),
+    ...(hasModuleAccess('exegese.ref_cruzadas') ? [{ id: 'cross_refs' as const, label: '🔗 Referências Bíblicas', icon: Link2 }] : []),
     ...(hasModuleAccess('exegese.historico') ? [{ id: 'history' as const, label: 'Histórico de Análises', icon: History }] : []),
     ...(hasModuleAccess('exegese.esbocos') ? [{ id: 'outlines' as const, label: 'Esboços de Sermões', icon: FileText }] : []),
     ...(hasModuleAccess('exegese.materiais') ? [{ id: 'materials' as const, label: 'Materiais de Referência', icon: Library, badge: materials.length }] : []),

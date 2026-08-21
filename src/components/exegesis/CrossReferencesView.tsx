@@ -39,7 +39,11 @@ const CROSS_REF_TYPES = [
   { id: 'comparative', label: 'Comparativas', icon: '⚖️', description: 'Textos com contraste ou equilíbrio teológico (fé vs obras, justiça vs graça)' },
   { id: 'apostolic', label: 'Apostólicas', icon: '✉️', description: 'Citações do AT feitas pelos autores do NT — como os apóstolos interpretaram' },
   { id: 'eschatological', label: 'Escatológicas', icon: '🌅', description: 'Relação com juízo final, reino de Deus, segunda vinda, consumação' },
-  { id: 'all', label: 'Panorama Geral', icon: '🌐', description: 'Busca completa nas 12 categorias + síntese panorâmica de toda a Bíblia' },
+  { id: 'citation', label: 'Citações', icon: '📌', description: 'Textos citados literalmente por outro texto bíblico, com fonte (MT/LXX) e diferenças verbais' },
+  { id: 'allusion', label: 'Alusões', icon: '🌬️', description: 'Ecos indiretos — vocabulário, imagem ou estrutura evocando outro texto, com grau de certeza' },
+  { id: 'fulfillment', label: 'Cumprimentos', icon: '✅', description: 'Promessa → cumprimento, classificando literal, tipológico, progressivo ou ainda futuro' },
+  { id: 'parallel', label: 'Paralelos', icon: '🪞', description: 'Passagens paralelas: sinóticos, Reis↔Crônicas, Salmos duplicados, epístolas gêmeas' },
+  { id: 'all', label: 'Panorama Geral', icon: '🌐', description: 'Busca completa nas 16 categorias + síntese panorâmica de toda a Bíblia' },
 ];
 
 const BIBLE_ONLINE_SLUGS: Record<string, string> = {
