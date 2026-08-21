@@ -749,7 +749,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 </p>
                 <p className="text-sm mt-1">
                   Você finalizou <span className="font-semibold">{lastReadingInfo.bookName}</span>
-                  {lastReadingInfo.totalPages ? <> — {lastReadingInfo.totalPages} página(s)</> : null}, concluído em{' '}
+                  {lastReadingInfo.totalPages ? <> — {lastReadingInfo.totalPages} {unit.many}</> : null}, concluído em{' '}
                   <span className="font-semibold capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}.
                 </p>
                 <p className="text-xs mt-1 opacity-90">
