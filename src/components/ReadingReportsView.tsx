@@ -486,6 +486,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       bookId: activeBookId,
       book,
       bookName,
+      isBible: isBibleBook(activeBookId),
       page: isBibleBook(activeBookId) ? pagesOfBook : Math.max(r.paginaFinal, pagesOfBook),
       pagesOfBook,
       totalPages,
@@ -501,6 +502,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       allOfBook,
     };
   }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook]);
+
+  // ===== Unidade de medida: Bíblia → capítulos; outros livros → páginas =====
+  const unit = useMemo(() => {
+    const isBible = !!lastReadingInfo?.isBible;
+    return isBible
+      ? { isBible, many: 'capítulo(s)', short: 'cap.', lastLabel: 'Último capítulo' }
+      : { isBible, many: 'página(s)', short: 'pág.', lastLabel: 'Última página' };
+  }, [lastReadingInfo]);
+
   // ===== Livro já concluído? =====
   const isActiveBookCompleted = useMemo(() => {
     if (!lastReadingInfo) return false;
