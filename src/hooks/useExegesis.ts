@@ -45,6 +45,7 @@ export interface ExegesisMaterial {
   bible_references?: string[] | null;
   author?: string | null;
   content_origin?: string | null;
+  content?: string | null;
 }
 
 // Snapshot retention for outline history: at most one snapshot per outline
@@ -210,6 +211,39 @@ export function useExegesis() {
     return data as ExegesisMaterial;
   }, [user]);
 
+  // --- Materiais personalizados (texto próprio) ---
+  const addTextMaterial = useCallback(async (
+    title: string,
+    content: string,
+    category: MaterialCategory,
+    description?: string,
+  ) => {
+    if (!user) return null;
+    const { data, error } = await supabase.from('exegesis_materials').insert({
+      user_id: user.id,
+      title,
+      material_type: 'texto',
+      material_category: category,
+      content,
+      description,
+      content_origin: 'texto',
+    } as any).select().single();
+    if (error) { toast({ title: 'Erro ao salvar material', description: error.message, variant: 'destructive' }); return null; }
+    setMaterials(prev => [data as ExegesisMaterial, ...prev]);
+    toast({ title: 'Material personalizado salvo!', description: `"${title}" está na sua Base de Conhecimento.` });
+    return data as ExegesisMaterial;
+  }, [user]);
+
+  const updateMaterialContent = useCallback(async (
+    id: string,
+    fields: { title?: string; content?: string; description?: string },
+  ) => {
+    const { error } = await supabase.from('exegesis_materials').update(fields as any).eq('id', id);
+    if (error) { toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' }); return; }
+    setMaterials(prev => prev.map(m => m.id === id ? { ...m, ...fields } : m));
+    toast({ title: 'Material atualizado!' });
+  }, []);
+
   const updateMaterialMetadata = useCallback(async (id: string, metadata: { theme?: string; sub_themes?: string[]; keywords?: string[]; bible_references?: string[]; author?: string; content_origin?: string }) => {
     const { error } = await supabase.from('exegesis_materials').update(metadata as any).eq('id', id);
     if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
@@ -243,6 +277,10 @@ export function useExegesis() {
       if (m.theme) line += ` [Tema: ${m.theme}]`;
       if (m.keywords && (m.keywords as any).length > 0) line += ` [Palavras-chave: ${(m.keywords as any).join(', ')}]`;
       if (m.bible_references && (m.bible_references as any).length > 0) line += ` [Refs: ${(m.bible_references as any).join(', ')}]`;
+      if (m.material_type === 'texto' && m.content) {
+        const txt = m.content.trim();
+        line += `\n  CONTEÚDO INTEGRAL (material personalizado do usuário — use como fonte local prioritária):\n  "${txt.substring(0, 4000)}${txt.length > 4000 ? '...' : ''}"`;
+      }
       return line;
     };
     if (grouped.biblia.length > 0) context += `\n### 📖 Bíblias e Versões:\n${grouped.biblia.map(formatMaterial).join('\n')}`;
@@ -359,7 +397,7 @@ export function useExegesis() {
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
     fetchOutlines, saveOutline, updateOutlineNotes, updateOutlineContent, deleteOutline,
     fetchOutlineVersions,
-    fetchMaterials, uploadMaterial, addLink, updateMaterialMetadata, deleteMaterial,
+    fetchMaterials, uploadMaterial, addLink, addTextMaterial, updateMaterialContent, updateMaterialMetadata, deleteMaterial,
     getMaterialsContext, getRelevantAnalysesContext,
     classifyContent, extractMetadata, suggestImprovements, classifyAllMaterials,
   };

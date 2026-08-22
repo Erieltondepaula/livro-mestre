@@ -12,6 +12,8 @@ interface Props {
   onFetch: () => void;
   onUpload: (file: File, title: string, category: MaterialCategory, description?: string) => Promise<ExegesisMaterial | null>;
   onAddLink: (title: string, url: string, type: 'youtube' | 'article', category: MaterialCategory, description?: string) => Promise<ExegesisMaterial | null>;
+  onAddText?: (title: string, content: string, category: MaterialCategory, description?: string) => Promise<ExegesisMaterial | null>;
+  onUpdateContent?: (id: string, fields: { title?: string; content?: string; description?: string }) => Promise<void>;
   onUpdateMetadata?: (id: string, metadata: { theme?: string; keywords?: string[]; bible_references?: string[]; author?: string; content_origin?: string }) => Promise<void>;
   onDelete: (id: string, filePath?: string | null) => Promise<void>;
   onClassify?: (content: string) => Promise<any | null>;
@@ -28,7 +30,7 @@ const CATEGORIES: { id: MaterialCategory; label: string; icon: React.ElementType
   { id: 'midia', label: 'Mídia', icon: Film, description: 'Vídeos, imagens, links e outros recursos multimídia' },
 ];
 
-export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onUpdateMetadata, onDelete, onClassify, onExtractMetadata, onClassifyAll }: Props) {
+export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAddLink, onAddText, onUpdateContent, onUpdateMetadata, onDelete, onClassify, onExtractMetadata, onClassifyAll }: Props) {
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>('biblia');
   const [showUpload, setShowUpload] = useState(false);
   const [showLink, setShowLink] = useState(false);
@@ -48,6 +50,11 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
   const [materialSearch, setMaterialSearch] = useState('');
   const [viewingMaterial, setViewingMaterial] = useState<ExegesisMaterial | null>(null);
+  const [showCustom, setShowCustom] = useState(false);
+  const [customForm, setCustomForm] = useState({ title: '', description: '', content: '' });
+  const [savingCustom, setSavingCustom] = useState(false);
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [contentForm, setContentForm] = useState({ title: '', description: '', content: '' });
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { onFetch(); }, [onFetch]);
@@ -94,6 +101,48 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
     setTitle(''); setUrl(''); setDescription(''); setShowLink(false);
   };
 
+  const handleSaveCustom = async () => {
+    if (!onAddText) return;
+    if (!customForm.title.trim() || !customForm.content.trim()) {
+      toast({ title: 'Informe título e conteúdo', variant: 'destructive' });
+      return;
+    }
+    setSavingCustom(true);
+    try {
+      const saved = await onAddText(customForm.title.trim(), customForm.content.trim(), activeCategory, customForm.description.trim() || undefined);
+      if (saved && onExtractMetadata) {
+        const meta = await onExtractMetadata(customForm.content.trim(), customForm.title.trim());
+        if (meta && onUpdateMetadata) {
+          await onUpdateMetadata(saved.id, {
+            theme: meta.theme || undefined,
+            keywords: meta.keywords || [],
+            bible_references: meta.bible_references || [],
+            author: meta.author || undefined,
+            content_origin: 'texto',
+          });
+        }
+      }
+      if (saved) { setCustomForm({ title: '', description: '', content: '' }); setShowCustom(false); }
+    } finally { setSavingCustom(false); }
+  };
+
+  const startEditContent = (m: ExegesisMaterial) => {
+    setEditingMetaId(null);
+    setEditingContentId(m.id);
+    setContentForm({ title: m.title, description: m.description || '', content: m.content || '' });
+  };
+
+  const saveContent = async () => {
+    if (!editingContentId || !onUpdateContent) return;
+    if (!contentForm.title.trim()) { toast({ title: 'Informe um título', variant: 'destructive' }); return; }
+    await onUpdateContent(editingContentId, {
+      title: contentForm.title.trim(),
+      description: contentForm.description.trim(),
+      content: contentForm.content,
+    });
+    setEditingContentId(null);
+  };
+
   const handleClassifyPaste = async () => {
     if (!pasteContent.trim() || !onClassify) return;
     setClassifying(true);
@@ -112,7 +161,9 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
     if (!pasteTitle.trim()) { toast({ title: 'Informe um título', variant: 'destructive' }); return; }
     const cat = classificationResult?.material_category || activeCategory;
     const desc = classificationResult?.reasoning || '';
-    const result = await onAddLink(pasteTitle.trim(), '', 'article', cat, desc);
+    const result = onAddText
+      ? await onAddText(pasteTitle.trim(), pasteContent.trim(), cat, desc)
+      : await onAddLink(pasteTitle.trim(), '', 'article', cat, desc);
     if (result && onUpdateMetadata && classificationResult) {
       await onUpdateMetadata(result.id, {
         theme: classificationResult.theme || undefined,
@@ -149,6 +200,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
   };
 
   const getIcon = (type: string) => {
+    if (type === 'texto') return <Edit3 className="w-5 h-5 text-emerald-500" />;
     if (type === 'youtube') return <Youtube className="w-5 h-5 text-red-500" />;
     if (type === 'article') return <Link2 className="w-5 h-5 text-blue-500" />;
     return <FileText className="w-5 h-5 text-primary" />;
@@ -189,8 +241,13 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                   <Plus className="w-4 h-4" /> Adicionar Link
                 </Button>
                 {onClassify && (
-                  <Button variant="outline" size="sm" onClick={() => { setShowPaste(!showPaste); setShowUpload(false); setShowLink(false); }} className="gap-2">
+                  <Button variant="outline" size="sm" onClick={() => { setShowPaste(!showPaste); setShowUpload(false); setShowLink(false); setShowCustom(false); }} className="gap-2">
                     <ClipboardPaste className="w-4 h-4" /> Colar Conteúdo
+                  </Button>
+                )}
+                {onAddText && (
+                  <Button variant="outline" size="sm" onClick={() => { setShowCustom(!showCustom); setShowUpload(false); setShowLink(false); setShowPaste(false); }} className="gap-2">
+                    <Edit3 className="w-4 h-4" /> Material Personalizado
                   </Button>
                 )}
                 {onClassifyAll && (() => {
@@ -265,6 +322,34 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                 </div>
               )}
 
+              {showCustom && onAddText && (
+                <div className="card-library p-4 space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2"><Edit3 className="w-4 h-4 text-emerald-500" /> Material Personalizado — {cat.label}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Escreva ou cole o seu próprio texto (anotações, esboços, estudos, transcrições). Ele fica salvo na Base de Conhecimento,
+                    pode ser editado a qualquer momento e é usado pela IA como fonte local prioritária.
+                  </p>
+                  <input type="text" value={customForm.title} onChange={(e) => setCustomForm(p => ({ ...p, title: e.target.value }))} className="input-library w-full text-sm" placeholder="Título do material *" />
+                  <input type="text" value={customForm.description} onChange={(e) => setCustomForm(p => ({ ...p, description: e.target.value }))} className="input-library w-full text-sm" placeholder="Descrição breve (opcional)" />
+                  <textarea
+                    value={customForm.content}
+                    onChange={(e) => setCustomForm(p => ({ ...p, content: e.target.value }))}
+                    className="input-library w-full text-sm min-h-[200px] resize-y font-mono"
+                    placeholder="Digite ou cole aqui o seu conteúdo..."
+                  />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button size="sm" onClick={handleSaveCustom} disabled={savingCustom || !customForm.title.trim() || !customForm.content.trim()} className="gap-2 btn-library-primary">
+                      {savingCustom ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      {savingCustom ? 'Salvando...' : 'Salvar material'}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setShowCustom(false); setCustomForm({ title: '', description: '', content: '' }); }} className="gap-1.5">
+                      <X className="w-3.5 h-3.5" /> Cancelar
+                    </Button>
+                    <span className="text-[11px] text-muted-foreground">{customForm.content.length} caractere(s)</span>
+                  </div>
+                </div>
+              )}
+
               {showUpload && (
                 <div className="card-library p-4 space-y-3">
                   <h4 className="text-sm font-medium flex items-center gap-2"><Files className="w-4 h-4" /> Enviar {cat.label}</h4>
@@ -330,6 +415,7 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                           {m.description && <p className="text-xs text-muted-foreground truncate">{m.description}</p>}
                           <div className="flex items-center gap-2 flex-wrap mt-0.5">
                             <p className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleDateString('pt-BR')}</p>
+                            {m.material_type === 'texto' && <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded">Texto próprio</span>}
                             {m.theme && <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">{m.theme}</span>}
                             {m.author && <span className="text-[10px] text-muted-foreground">por {m.author}</span>}
                           </div>
@@ -342,6 +428,11 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                           )}
                         </div>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          {onUpdateContent && m.material_type === 'texto' && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar conteúdo" onClick={() => editingContentId === m.id ? setEditingContentId(null) : startEditContent(m)}>
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                           {onUpdateMetadata && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => editingMetaId === m.id ? setEditingMetaId(null) : startEditMeta(m)}>
                               <Tag className="w-3.5 h-3.5" />
@@ -360,6 +451,21 @@ export function ExegesisMaterials({ materials, loading, onFetch, onUpload, onAdd
                           </Button>
                         </div>
                       </div>
+                      {/* Content editor (materiais personalizados) */}
+                      {editingContentId === m.id && (
+                        <div className="p-3 border-t bg-emerald-500/5 space-y-2" onClick={(e) => e.stopPropagation()}>
+                          <p className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-1"><Edit3 className="w-3 h-3" /> Editar material personalizado</p>
+                          <input type="text" value={contentForm.title} onChange={(e) => setContentForm(p => ({ ...p, title: e.target.value }))} className="input-library w-full text-xs" placeholder="Título *" />
+                          <input type="text" value={contentForm.description} onChange={(e) => setContentForm(p => ({ ...p, description: e.target.value }))} className="input-library w-full text-xs" placeholder="Descrição (opcional)" />
+                          <textarea value={contentForm.content} onChange={(e) => setContentForm(p => ({ ...p, content: e.target.value }))} className="input-library w-full text-xs min-h-[180px] resize-y font-mono" placeholder="Conteúdo do material" />
+                          <div className="flex gap-2 items-center">
+                            <Button size="sm" className="h-7 text-xs gap-1" onClick={saveContent}><Check className="w-3 h-3" /> Salvar</Button>
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setEditingContentId(null)}><X className="w-3 h-3" /> Cancelar</Button>
+                            <span className="text-[10px] text-muted-foreground">{contentForm.content.length} caractere(s)</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Metadata editor */}
                       {editingMetaId === m.id && (
                         <div className="p-3 border-t bg-muted/20 space-y-2">
