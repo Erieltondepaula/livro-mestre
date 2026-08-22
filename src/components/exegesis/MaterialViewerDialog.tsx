@@ -330,6 +330,13 @@ export function MaterialViewerDialog({ material, open, onOpenChange }: Props) {
         return;
       }
 
+      // Material personalizado (texto próprio do usuário)
+      if (material.content && material.content.trim()) {
+        setContent(material.content);
+        setLoading(false);
+        return;
+      }
+
       if (material.url) {
         setFileUrl(material.url);
         setLoading(false);
