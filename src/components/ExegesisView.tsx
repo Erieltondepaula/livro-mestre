@@ -34,7 +34,7 @@ export function ExegesisView() {
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
     fetchOutlines, saveOutline, updateOutlineNotes, updateOutlineContent, deleteOutline,
     fetchOutlineVersions,
-    fetchMaterials, uploadMaterial, addLink, updateMaterialMetadata, deleteMaterial,
+    fetchMaterials, uploadMaterial, addLink, addTextMaterial, updateMaterialContent, updateMaterialMetadata, deleteMaterial,
     getMaterialsContext, getRelevantAnalysesContext,
     classifyContent, extractMetadata, suggestImprovements, classifyAllMaterials,
   } = useExegesis();
@@ -116,6 +116,8 @@ export function ExegesisView() {
             onFetch={fetchMaterials}
             onUpload={uploadMaterial}
             onAddLink={addLink}
+            onAddText={addTextMaterial}
+            onUpdateContent={updateMaterialContent}
             onUpdateMetadata={updateMaterialMetadata}
             onDelete={deleteMaterial}
             onClassify={classifyContent}
