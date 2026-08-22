@@ -210,6 +210,39 @@ export function useExegesis() {
     return data as ExegesisMaterial;
   }, [user]);
 
+  // --- Materiais personalizados (texto próprio) ---
+  const addTextMaterial = useCallback(async (
+    title: string,
+    content: string,
+    category: MaterialCategory,
+    description?: string,
+  ) => {
+    if (!user) return null;
+    const { data, error } = await supabase.from('exegesis_materials').insert({
+      user_id: user.id,
+      title,
+      material_type: 'texto',
+      material_category: category,
+      content,
+      description,
+      content_origin: 'texto',
+    } as any).select().single();
+    if (error) { toast({ title: 'Erro ao salvar material', description: error.message, variant: 'destructive' }); return null; }
+    setMaterials(prev => [data as ExegesisMaterial, ...prev]);
+    toast({ title: 'Material personalizado salvo!', description: `"${title}" está na sua Base de Conhecimento.` });
+    return data as ExegesisMaterial;
+  }, [user]);
+
+  const updateMaterialContent = useCallback(async (
+    id: string,
+    fields: { title?: string; content?: string; description?: string },
+  ) => {
+    const { error } = await supabase.from('exegesis_materials').update(fields as any).eq('id', id);
+    if (error) { toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' }); return; }
+    setMaterials(prev => prev.map(m => m.id === id ? { ...m, ...fields } : m));
+    toast({ title: 'Material atualizado!' });
+  }, []);
+
   const updateMaterialMetadata = useCallback(async (id: string, metadata: { theme?: string; sub_themes?: string[]; keywords?: string[]; bible_references?: string[]; author?: string; content_origin?: string }) => {
     const { error } = await supabase.from('exegesis_materials').update(metadata as any).eq('id', id);
     if (error) { toast({ title: 'Erro', description: error.message, variant: 'destructive' }); return; }
