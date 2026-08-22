@@ -453,6 +453,7 @@ export type Database = {
         Row: {
           author: string | null
           bible_references: Json | null
+          content: string | null
           content_origin: string | null
           created_at: string
           description: string | null
@@ -470,6 +471,7 @@ export type Database = {
         Insert: {
           author?: string | null
           bible_references?: Json | null
+          content?: string | null
           content_origin?: string | null
           created_at?: string
           description?: string | null
@@ -487,6 +489,7 @@ export type Database = {
         Update: {
           author?: string | null
           bible_references?: Json | null
+          content?: string | null
           content_origin?: string | null
           created_at?: string
           description?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.exegesis_materials ADD COLUMN IF NOT EXISTS content TEXT;
