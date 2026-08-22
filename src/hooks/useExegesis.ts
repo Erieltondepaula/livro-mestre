@@ -45,6 +45,7 @@ export interface ExegesisMaterial {
   bible_references?: string[] | null;
   author?: string | null;
   content_origin?: string | null;
+  content?: string | null;
 }
 
 // Snapshot retention for outline history: at most one snapshot per outline
@@ -276,6 +277,10 @@ export function useExegesis() {
       if (m.theme) line += ` [Tema: ${m.theme}]`;
       if (m.keywords && (m.keywords as any).length > 0) line += ` [Palavras-chave: ${(m.keywords as any).join(', ')}]`;
       if (m.bible_references && (m.bible_references as any).length > 0) line += ` [Refs: ${(m.bible_references as any).join(', ')}]`;
+      if (m.material_type === 'texto' && m.content) {
+        const txt = m.content.trim();
+        line += `\n  CONTEÚDO INTEGRAL (material personalizado do usuário — use como fonte local prioritária):\n  "${txt.substring(0, 4000)}${txt.length > 4000 ? '...' : ''}"`;
+      }
       return line;
     };
     if (grouped.biblia.length > 0) context += `\n### 📖 Bíblias e Versões:\n${grouped.biblia.map(formatMaterial).join('\n')}`;
@@ -392,7 +397,7 @@ export function useExegesis() {
     fetchAnalyses, saveAnalysis, updateAnalysisNotes, deleteAnalysis,
     fetchOutlines, saveOutline, updateOutlineNotes, updateOutlineContent, deleteOutline,
     fetchOutlineVersions,
-    fetchMaterials, uploadMaterial, addLink, updateMaterialMetadata, deleteMaterial,
+    fetchMaterials, uploadMaterial, addLink, addTextMaterial, updateMaterialContent, updateMaterialMetadata, deleteMaterial,
     getMaterialsContext, getRelevantAnalysesContext,
     classifyContent, extractMetadata, suggestImprovements, classifyAllMaterials,
   };
