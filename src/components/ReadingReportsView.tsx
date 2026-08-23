@@ -491,12 +491,17 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       ? Math.max(...allOfBook.map(x => x.paginaFinal))
       : allOfBook.reduce((sum, x) => sum + Math.max(0, x.quantidadePaginas), 0);
 
-    const isPlan = isPlanBible(activeBookId);
+    // Numa bíblia de plano (McCheyne), um mesmo dia reúne vários livros e capítulos
+    // e o avanço é medido pela PÁGINA do plano.
+    const dayRows = withDates.filter(x => startOfDay(x.d).getTime() === startOfDay(d).getTime());
+    const distinctBooksOnDay = new Set(dayRows.map(x => x.r.bibleBook).filter(Boolean)).size;
+    const isPlan = isPlanBible(activeBookId) || (isBibleBook(activeBookId) && distinctBooksOnDay > 1);
 
-    // Numa bíblia de plano (McCheyne), um mesmo dia/página reúne vários livros e capítulos.
-    const sessionRows = withDates.filter(x =>
-      startOfDay(x.d).getTime() === startOfDay(d).getTime() && x.r.paginaFinal === r.paginaFinal
-    );
+    // Sessão = todas as linhas do mesmo dia (no plano) ou a linha mais recente (livro comum)
+    const sessionRows = isPlan
+      ? dayRows
+      : withDates.filter(x => startOfDay(x.d).getTime() === startOfDay(d).getTime() && x.r.paginaFinal === r.paginaFinal);
+
     const sessionRefs = Array.from(new Set(
       sessionRows
         .slice()
@@ -504,8 +509,13 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
         .map(x => x.r.bibleBook ? `${x.r.bibleBook}${x.r.bibleChapter ? ' ' + x.r.bibleChapter : ''}` : null)
         .filter((s): s is string => !!s)
     ));
-    const sessionPages = Math.max(0, r.paginaFinal - r.paginaInicial + 1);
+    const sessionChapters = sessionRefs.length;
     const sessionMinutes = sessionRows.reduce((sum, x) => sum + Math.max(0, x.r.tempoGasto || 0), 0);
+
+    // Página do plano alcançada no dia (maior página final registrada no dia)
+    const sessionEndPage = Math.max(...sessionRows.map(x => x.r.paginaFinal), 0);
+    const sessionStartPage = Math.min(...sessionRows.map(x => x.r.paginaInicial), sessionEndPage);
+    const sessionPages = Math.max(0, sessionEndPage - sessionStartPage);
 
     const bibleRef = r.bibleBook
       ? `${r.bibleBook}${r.bibleChapter ? ' ' + r.bibleChapter : ''}${r.bibleVerseStart ? ':' + r.bibleVerseStart : ''}${r.bibleVerseEnd && r.bibleVerseEnd !== r.bibleVerseStart ? '-' + r.bibleVerseEnd : ''}`
@@ -517,7 +527,9 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       bookName,
       isBible: isBibleBook(activeBookId),
       isPlan,
-      page: isBibleBook(activeBookId) ? pagesOfBook : Math.max(r.paginaFinal, pagesOfBook),
+      page: isPlan
+        ? Math.max(sessionEndPage, pagesOfBook)
+        : isBibleBook(activeBookId) ? pagesOfBook : Math.max(r.paginaFinal, pagesOfBook),
       pagesOfBook,
       totalPages,
       date: d,
@@ -525,12 +537,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       weekday: d.toLocaleDateString('pt-BR', { weekday: 'long' }),
       daysSince,
       pagesRead: isPlan ? sessionPages : r.quantidadePaginas,
+      sessionChapters,
       minutes: isPlan ? sessionMinutes : r.tempoGasto,
-      bibleRef: isPlan && sessionRefs.length ? sessionRefs.join(', ') : bibleRef,
+      // No plano não faz sentido citar um único versículo: listamos todos os capítulos do dia
+      bibleRef: isPlan ? null : bibleRef,
       sessionRefs,
       allOfBook,
     };
   }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook, isPlanBible]);
+
 
   // ===== Unidade de medida =====
   // Bíblia em plano de leitura (McCheyne) → páginas do plano (vários livros/capítulos por dia)
