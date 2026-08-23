@@ -781,10 +781,16 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 {lastReadingInfo.pagesRead > 0 ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> {unit.many} {unit.isBible ? 'lido(s)' : 'lida(s)'}</> : null}
                 {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{Math.floor(lastReadingInfo.minutes)}min</span></> : null}.
               </p>
+              {unit.isPlan && lastReadingInfo.sessionRefs.length > 0 && (
+                <p>
+                  📚 Leitura do dia no plano: <span className="font-medium text-foreground">{lastReadingInfo.sessionRefs.join(' · ')}</span>.
+                </p>
+              )}
               <p>
-                🔖 Você parou {unit.isBible ? 'no capítulo' : 'na página'} <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
+                🔖 Você parou {unit.isBible ? 'no capítulo' : unit.isPlan ? 'na página do plano' : 'na página'} <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
                 {lastReadingInfo.totalPages ? <> de <span className="font-semibold text-foreground">{lastReadingInfo.totalPages}</span></> : null}.
               </p>
+
               <p>
                 {lastReadingInfo.daysSince === 0
                   ? '✅ Você já registrou leitura hoje. Continue assim!'
