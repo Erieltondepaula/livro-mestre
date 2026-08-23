@@ -46,7 +46,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function ReadingReportsView({ books, readings, statuses }: ReadingReportsViewProps) {
   const [period, setPeriod] = useState<Period>('all');
   const [activeTab, setActiveTab] = useState<ChartTab>('pages');
-  const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | null>(null);
+  const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | 'agressivo' | null>(null);
   const [selectedLastBookId, setSelectedLastBookId] = useState<string | null>(null);
 
   // Helper: check if a book is Bible category
@@ -55,6 +55,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     const cat = book?.categoria?.toLowerCase();
     return cat === 'bíblia' || cat === 'biblia';
   }, [books]);
+
+  // Helper: Bíblia em plano de leitura (ex.: McCheyne) — mede-se por PÁGINA do plano,
+  // mas cada dia contém vários livros/capítulos.
+  const isPlanBible = useCallback((bookId: string) => {
+    const book = books.find(b => b.id === bookId);
+    const name = (book?.livro || '').toLowerCase();
+    return /cheyne|plano/.test(name);
+  }, [books]);
+
 
   const filteredReadings = useMemo(() => {
     if (period === 'all') return readings;
