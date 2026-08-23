@@ -838,8 +838,9 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                   </p>
                 </div>
 
-                <p className="text-sm text-foreground">Você pode recuperar esse atraso de três formas:</p>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <p className="text-sm text-foreground">Você pode recuperar esse atraso de {recovery.strategies.length === 4 ? 'quatro' : 'três'} formas:</p>
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+
                   {recovery.strategies.map(st => {
                     const isActive = selectedRecoveryId === st.id;
                     const isRecommended = st.id === 'equilibrado';
