@@ -46,7 +46,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function ReadingReportsView({ books, readings, statuses }: ReadingReportsViewProps) {
   const [period, setPeriod] = useState<Period>('all');
   const [activeTab, setActiveTab] = useState<ChartTab>('pages');
-  const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | null>(null);
+  const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | 'agressivo' | null>(null);
   const [selectedLastBookId, setSelectedLastBookId] = useState<string | null>(null);
 
   // Helper: check if a book is Bible category
@@ -55,6 +55,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     const cat = book?.categoria?.toLowerCase();
     return cat === 'bíblia' || cat === 'biblia';
   }, [books]);
+
+  // Helper: Bíblia em plano de leitura (ex.: McCheyne) — mede-se por PÁGINA do plano,
+  // mas cada dia contém vários livros/capítulos.
+  const isPlanBible = useCallback((bookId: string) => {
+    const book = books.find(b => b.id === bookId);
+    const name = (book?.livro || '').toLowerCase();
+    return /cheyne|plano/.test(name);
+  }, [books]);
+
 
   const filteredReadings = useMemo(() => {
     if (period === 'all') return readings;
@@ -482,11 +491,32 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       ? Math.max(...allOfBook.map(x => x.paginaFinal))
       : allOfBook.reduce((sum, x) => sum + Math.max(0, x.quantidadePaginas), 0);
 
+    const isPlan = isPlanBible(activeBookId);
+
+    // Numa bíblia de plano (McCheyne), um mesmo dia/página reúne vários livros e capítulos.
+    const sessionRows = withDates.filter(x =>
+      startOfDay(x.d).getTime() === startOfDay(d).getTime() && x.r.paginaFinal === r.paginaFinal
+    );
+    const sessionRefs = Array.from(new Set(
+      sessionRows
+        .slice()
+        .sort((a, b) => a.d.getTime() - b.d.getTime())
+        .map(x => x.r.bibleBook ? `${x.r.bibleBook}${x.r.bibleChapter ? ' ' + x.r.bibleChapter : ''}` : null)
+        .filter((s): s is string => !!s)
+    ));
+    const sessionPages = Math.max(0, r.paginaFinal - r.paginaInicial + 1);
+    const sessionMinutes = sessionRows.reduce((sum, x) => sum + Math.max(0, x.r.tempoGasto || 0), 0);
+
+    const bibleRef = r.bibleBook
+      ? `${r.bibleBook}${r.bibleChapter ? ' ' + r.bibleChapter : ''}${r.bibleVerseStart ? ':' + r.bibleVerseStart : ''}${r.bibleVerseEnd && r.bibleVerseEnd !== r.bibleVerseStart ? '-' + r.bibleVerseEnd : ''}`
+      : null;
+
     return {
       bookId: activeBookId,
       book,
       bookName,
       isBible: isBibleBook(activeBookId),
+      isPlan,
       page: isBibleBook(activeBookId) ? pagesOfBook : Math.max(r.paginaFinal, pagesOfBook),
       pagesOfBook,
       totalPages,
@@ -494,22 +524,26 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       dateLabel: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
       weekday: d.toLocaleDateString('pt-BR', { weekday: 'long' }),
       daysSince,
-      pagesRead: r.quantidadePaginas,
-      minutes: r.tempoGasto,
-      bibleRef: r.bibleBook
-        ? `${r.bibleBook}${r.bibleChapter ? ' ' + r.bibleChapter : ''}${r.bibleVerseStart ? ':' + r.bibleVerseStart : ''}${r.bibleVerseEnd && r.bibleVerseEnd !== r.bibleVerseStart ? '-' + r.bibleVerseEnd : ''}`
-        : null,
+      pagesRead: isPlan ? sessionPages : r.quantidadePaginas,
+      minutes: isPlan ? sessionMinutes : r.tempoGasto,
+      bibleRef: isPlan && sessionRefs.length ? sessionRefs.join(', ') : bibleRef,
+      sessionRefs,
       allOfBook,
     };
-  }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook]);
+  }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook, isPlanBible]);
 
-  // ===== Unidade de medida: Bíblia → capítulos; outros livros → páginas =====
+  // ===== Unidade de medida =====
+  // Bíblia em plano de leitura (McCheyne) → páginas do plano (vários livros/capítulos por dia)
+  // Bíblia comum → capítulos · Outros livros → páginas
   const unit = useMemo(() => {
     const isBible = !!lastReadingInfo?.isBible;
-    return isBible
-      ? { isBible, many: 'capítulo(s)', short: 'cap.', lastLabel: 'Último capítulo' }
-      : { isBible, many: 'página(s)', short: 'pág.', lastLabel: 'Última página' };
+    const isPlan = !!lastReadingInfo?.isPlan;
+    if (isBible && !isPlan) {
+      return { isBible: true, isPlan, many: 'capítulo(s)', short: 'cap.', lastLabel: 'Último capítulo' };
+    }
+    return { isBible: false, isPlan, many: 'página(s)', short: 'pág.', lastLabel: isPlan ? 'Última página do plano' : 'Última página' };
   }, [lastReadingInfo]);
+
 
   // ===== Livro já concluído? =====
   const isActiveBookCompleted = useMemo(() => {
@@ -561,9 +595,9 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     const remainingPages = totalPages > 0 ? Math.max(0, totalPages - pagesOfBook) : null;
     const isBehind = backlogPages > 0;
 
-    // Ritmos sustentáveis: nunca acima de 1,5× o ritmo do plano.
-    const mk = (id: 'calmo' | 'equilibrado' | 'acelerado', emoji: string, label: string, factor: number, note: string) => {
-      const extra = Math.max(1, Math.round(planPace * factor));
+    type StrategyId = 'calmo' | 'equilibrado' | 'acelerado' | 'agressivo';
+    const build = (id: StrategyId, emoji: string, label: string, extraRaw: number, note: string) => {
+      const extra = Math.max(1, Math.round(extraRaw));
       const days = Math.max(1, Math.ceil(backlogPages / extra));
       const finish = new Date(today.getTime() + days * 86400000);
       return {
@@ -572,13 +606,20 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
         finishLabel: finish.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
       };
     };
+    // Ritmos sustentáveis: até 1,5× o ritmo do plano. O agressivo mira 8 a 10 por dia.
+    const mk = (id: StrategyId, emoji: string, label: string, factor: number, note: string) =>
+      build(id, emoji, label, planPace * factor, note);
+    // Agressivo: total de 8 a 10 (páginas ou capítulos) por dia.
+    const aggressiveTotal = Math.max(8, Math.min(10, planPace + 6));
     const strategies = isBehind
       ? [
           mk('calmo', '🐢', 'Tranquilo', 0.5, `Leitura normal (${planPace}) + pouco extra: mal muda sua rotina.`),
           mk('equilibrado', '👍', 'Equilibrado', 1, 'Recomendado: dobra a leitura do dia e recupera rápido sem cansar.'),
           mk('acelerado', '🔥', 'Acelerado', 1.5, 'Para quem quer ficar em dia o quanto antes.'),
+          build('agressivo', '🚀', 'Agressivo', Math.max(1, aggressiveTotal - planPace), 'Ritmo intenso de 8 a 10 por dia: elimina o atraso no menor tempo possível.'),
         ]
       : [];
+
 
     return { planPace, backlogPages, backlogDays, remainingPages, isBehind, strategies, planDeadline, pagesOfBook, daysSince, elapsedDays };
   }, [lastReadingInfo, startOfDay, readingDate]);
@@ -740,10 +781,16 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 {lastReadingInfo.pagesRead > 0 ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> {unit.many} {unit.isBible ? 'lido(s)' : 'lida(s)'}</> : null}
                 {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{Math.floor(lastReadingInfo.minutes)}min</span></> : null}.
               </p>
+              {unit.isPlan && lastReadingInfo.sessionRefs.length > 0 && (
+                <p>
+                  📚 Leitura do dia no plano: <span className="font-medium text-foreground">{lastReadingInfo.sessionRefs.join(' · ')}</span>.
+                </p>
+              )}
               <p>
-                🔖 Você parou {unit.isBible ? 'no capítulo' : 'na página'} <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
+                🔖 Você parou {unit.isBible ? 'no capítulo' : unit.isPlan ? 'na página do plano' : 'na página'} <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
                 {lastReadingInfo.totalPages ? <> de <span className="font-semibold text-foreground">{lastReadingInfo.totalPages}</span></> : null}.
               </p>
+
               <p>
                 {lastReadingInfo.daysSince === 0
                   ? '✅ Você já registrou leitura hoje. Continue assim!'
@@ -791,8 +838,9 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                   </p>
                 </div>
 
-                <p className="text-sm text-foreground">Você pode recuperar esse atraso de três formas:</p>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <p className="text-sm text-foreground">Você pode recuperar esse atraso de {recovery.strategies.length === 4 ? 'quatro' : 'três'} formas:</p>
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+
                   {recovery.strategies.map(st => {
                     const isActive = selectedRecoveryId === st.id;
                     const isRecommended = st.id === 'equilibrado';
