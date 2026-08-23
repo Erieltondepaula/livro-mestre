@@ -595,9 +595,9 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     const remainingPages = totalPages > 0 ? Math.max(0, totalPages - pagesOfBook) : null;
     const isBehind = backlogPages > 0;
 
-    // Ritmos sustentáveis: nunca acima de 1,5× o ritmo do plano.
-    const mk = (id: 'calmo' | 'equilibrado' | 'acelerado', emoji: string, label: string, factor: number, note: string) => {
-      const extra = Math.max(1, Math.round(planPace * factor));
+    type StrategyId = 'calmo' | 'equilibrado' | 'acelerado' | 'agressivo';
+    const build = (id: StrategyId, emoji: string, label: string, extraRaw: number, note: string) => {
+      const extra = Math.max(1, Math.round(extraRaw));
       const days = Math.max(1, Math.ceil(backlogPages / extra));
       const finish = new Date(today.getTime() + days * 86400000);
       return {
@@ -606,13 +606,20 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
         finishLabel: finish.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
       };
     };
+    // Ritmos sustentáveis: até 1,5× o ritmo do plano. O agressivo mira 8 a 10 por dia.
+    const mk = (id: StrategyId, emoji: string, label: string, factor: number, note: string) =>
+      build(id, emoji, label, planPace * factor, note);
+    // Agressivo: total de 8 a 10 (páginas ou capítulos) por dia.
+    const aggressiveTotal = Math.max(8, Math.min(10, planPace + 6));
     const strategies = isBehind
       ? [
           mk('calmo', '🐢', 'Tranquilo', 0.5, `Leitura normal (${planPace}) + pouco extra: mal muda sua rotina.`),
           mk('equilibrado', '👍', 'Equilibrado', 1, 'Recomendado: dobra a leitura do dia e recupera rápido sem cansar.'),
           mk('acelerado', '🔥', 'Acelerado', 1.5, 'Para quem quer ficar em dia o quanto antes.'),
+          build('agressivo', '🚀', 'Agressivo', Math.max(1, aggressiveTotal - planPace), 'Ritmo intenso de 8 a 10 por dia: elimina o atraso no menor tempo possível.'),
         ]
       : [];
+
 
     return { planPace, backlogPages, backlogDays, remainingPages, isBehind, strategies, planDeadline, pagesOfBook, daysSince, elapsedDays };
   }, [lastReadingInfo, startOfDay, readingDate]);
