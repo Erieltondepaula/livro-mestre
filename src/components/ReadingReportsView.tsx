@@ -46,7 +46,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export function ReadingReportsView({ books, readings, statuses }: ReadingReportsViewProps) {
   const [period, setPeriod] = useState<Period>('all');
   const [activeTab, setActiveTab] = useState<ChartTab>('pages');
-  const [selectedRecoveryId, setSelectedRecoveryId] = useState<'calmo' | 'equilibrado' | 'acelerado' | 'agressivo' | null>(null);
   const [selectedLastBookId, setSelectedLastBookId] = useState<string | null>(null);
 
   // Helper: check if a book is Bible category
@@ -485,37 +484,10 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
 
     const daysSince = Math.max(0, Math.round((startOfDay(new Date()).getTime() - startOfDay(d).getTime()) / 86400000));
 
-    // Página atual real do livro (Bíblia: MAX; demais: SOMA)
-    const allOfBook = withDates.map(x => x.r);
-    const pagesOfBook = isBibleBook(activeBookId)
-      ? Math.max(...allOfBook.map(x => x.paginaFinal))
-      : allOfBook.reduce((sum, x) => sum + Math.max(0, x.quantidadePaginas), 0);
-
-    // Numa bíblia de plano (McCheyne), um mesmo dia reúne vários livros e capítulos
-    // e o avanço é medido pela PÁGINA do plano.
-    const dayRows = withDates.filter(x => startOfDay(x.d).getTime() === startOfDay(d).getTime());
-    const distinctBooksOnDay = new Set(dayRows.map(x => x.r.bibleBook).filter(Boolean)).size;
-    const isPlan = isPlanBible(activeBookId) || (isBibleBook(activeBookId) && distinctBooksOnDay > 1);
-
-    // Sessão = todas as linhas do mesmo dia (no plano) ou a linha mais recente (livro comum)
-    const sessionRows = isPlan
-      ? dayRows
-      : withDates.filter(x => startOfDay(x.d).getTime() === startOfDay(d).getTime() && x.r.paginaFinal === r.paginaFinal);
-
-    const sessionRefs = Array.from(new Set(
-      sessionRows
-        .slice()
-        .sort((a, b) => a.d.getTime() - b.d.getTime())
-        .map(x => x.r.bibleBook ? `${x.r.bibleBook}${x.r.bibleChapter ? ' ' + x.r.bibleChapter : ''}` : null)
-        .filter((s): s is string => !!s)
-    ));
-    const sessionChapters = sessionRefs.length;
-    const sessionMinutes = sessionRows.reduce((sum, x) => sum + Math.max(0, x.r.tempoGasto || 0), 0);
-
-    // Página do plano alcançada no dia (maior página final registrada no dia)
-    const sessionEndPage = Math.max(...sessionRows.map(x => x.r.paginaFinal), 0);
-    const sessionStartPage = Math.min(...sessionRows.map(x => x.r.paginaInicial), sessionEndPage);
-    const sessionPages = Math.max(0, sessionEndPage - sessionStartPage);
+    // O progresso vem exclusivamente do mesmo registro usado em Status dos Livros.
+    // Não somamos nem inferimos páginas/capítulos a partir do histórico.
+    const status = statuses.find(s => s.livroId === activeBookId) ?? null;
+    const isPlan = isPlanBible(activeBookId);
 
     const bibleRef = r.bibleBook
       ? `${r.bibleBook}${r.bibleChapter ? ' ' + r.bibleChapter : ''}${r.bibleVerseStart ? ':' + r.bibleVerseStart : ''}${r.bibleVerseEnd && r.bibleVerseEnd !== r.bibleVerseStart ? '-' + r.bibleVerseEnd : ''}`
@@ -527,24 +499,20 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       bookName,
       isBible: isBibleBook(activeBookId),
       isPlan,
-      page: isPlan
-        ? Math.max(sessionEndPage, pagesOfBook)
-        : isBibleBook(activeBookId) ? pagesOfBook : Math.max(r.paginaFinal, pagesOfBook),
-      pagesOfBook,
+      status,
+      page: status?.quantidadeLida ?? 0,
       totalPages,
       date: d,
       dateLabel: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
       weekday: d.toLocaleDateString('pt-BR', { weekday: 'long' }),
       daysSince,
-      pagesRead: isPlan ? sessionPages : r.quantidadePaginas,
-      sessionChapters,
-      minutes: isPlan ? sessionMinutes : r.tempoGasto,
-      // No plano não faz sentido citar um único versículo: listamos todos os capítulos do dia
-      bibleRef: isPlan ? null : bibleRef,
-      sessionRefs,
-      allOfBook,
+      latestStartPage: r.paginaInicial,
+      latestEndPage: r.paginaFinal,
+      pagesRead: Math.max(0, r.quantidadePaginas),
+      minutes: Math.max(0, r.tempoGasto),
+      bibleRef,
     };
-  }, [activeBookId, readings, books, readingDate, startOfDay, isBibleBook, isPlanBible]);
+  }, [activeBookId, readings, books, statuses, readingDate, startOfDay, isBibleBook, isPlanBible]);
 
 
   // ===== Unidade de medida =====
@@ -553,112 +521,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   const unit = useMemo(() => {
     const isBible = !!lastReadingInfo?.isBible;
     const isPlan = !!lastReadingInfo?.isPlan;
-    if (isBible && !isPlan) {
-      return { isBible: true, isPlan, many: 'capítulo(s)', short: 'cap.', lastLabel: 'Último capítulo' };
-    }
-    return { isBible: false, isPlan, many: 'página(s)', short: 'pág.', lastLabel: isPlan ? 'Última página do plano' : 'Última página' };
+    return { isBible, isPlan, many: 'página(s)', lastLabel: 'Quantidade lida no Status' };
   }, [lastReadingInfo]);
 
 
   // ===== Livro já concluído? =====
   const isActiveBookCompleted = useMemo(() => {
     if (!lastReadingInfo) return false;
-    const st = statuses.find(s => s.livroId === lastReadingInfo.bookId);
-    if (st?.status === 'Concluido') return true;
-    return !!lastReadingInfo.totalPages && lastReadingInfo.page >= lastReadingInfo.totalPages;
-  }, [lastReadingInfo, statuses]);
-
-
-  // ===== Assistente de recuperação do plano de leitura =====
-  const recovery = useMemo(() => {
-    if (!lastReadingInfo) return null;
-    const { book, daysSince, totalPages, pagesOfBook, allOfBook } = lastReadingInfo;
-    const today = startOfDay(new Date());
-
-    // Ritmo base do plano: 4 páginas/capítulos por dia (leitura diária normal).
-    // Se o livro tem data prevista de conclusão, o ritmo do plano vem dela.
-    const DEFAULT_PACE = 4;
-    let planPace = DEFAULT_PACE;
-    let planDeadline: Date | null = null;
-
-    const firstDate = allOfBook
-      .map(readingDate)
-      .filter((d): d is Date => !!d)
-      .sort((a, b) => a.getTime() - b.getTime())[0];
-    const start = firstDate ? startOfDay(firstDate) : today;
-    const elapsedDays = Math.max(1, Math.round((today.getTime() - start.getTime()) / 86400000) + 1);
-
-    if (book?.targetCompletionDate) {
-      const target = startOfDay(new Date(book.targetCompletionDate));
-      if (!isNaN(target.getTime())) {
-        planDeadline = target;
-        const planDays = Math.max(1, Math.round((target.getTime() - start.getTime()) / 86400000) + 1);
-        if (totalPages > 0) planPace = Math.max(1, Math.round(totalPages / planDays));
-      }
-    }
-
-    // Atraso = o que deveria ter sido lido até hoje − o que realmente foi lido.
-    // Assim, cada novo registro de leitura reduz automaticamente o atraso.
-    const expected = totalPages > 0
-      ? Math.min(totalPages, elapsedDays * planPace)
-      : elapsedDays * planPace;
-    let backlogPages = Math.round(expected - pagesOfBook);
-    if (totalPages > 0) backlogPages = Math.min(backlogPages, Math.max(0, totalPages - pagesOfBook));
-    backlogPages = Math.max(0, backlogPages);
-
-    const backlogDays = Math.ceil(backlogPages / planPace);
-    const remainingPages = totalPages > 0 ? Math.max(0, totalPages - pagesOfBook) : null;
-    const isBehind = backlogPages > 0;
-
-    type StrategyId = 'calmo' | 'equilibrado' | 'acelerado' | 'agressivo';
-    const build = (id: StrategyId, emoji: string, label: string, extraRaw: number, note: string) => {
-      const extra = Math.max(1, Math.round(extraRaw));
-      const days = Math.max(1, Math.ceil(backlogPages / extra));
-      const finish = new Date(today.getTime() + days * 86400000);
-      return {
-        id, emoji, label, note, extra, days, finish,
-        perDay: planPace + extra,
-        finishLabel: finish.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
-      };
-    };
-    // Ritmos sustentáveis: até 1,5× o ritmo do plano. O agressivo mira 8 a 10 por dia.
-    const mk = (id: StrategyId, emoji: string, label: string, factor: number, note: string) =>
-      build(id, emoji, label, planPace * factor, note);
-    // Agressivo: total de 8 a 10 (páginas ou capítulos) por dia.
-    const aggressiveTotal = Math.max(8, Math.min(10, planPace + 6));
-    const strategies = isBehind
-      ? [
-          mk('calmo', '🐢', 'Tranquilo', 0.5, `Leitura normal (${planPace}) + pouco extra: mal muda sua rotina.`),
-          mk('equilibrado', '👍', 'Equilibrado', 1, 'Recomendado: dobra a leitura do dia e recupera rápido sem cansar.'),
-          mk('acelerado', '🔥', 'Acelerado', 1.5, 'Para quem quer ficar em dia o quanto antes.'),
-          build('agressivo', '🚀', 'Agressivo', Math.max(1, aggressiveTotal - planPace), 'Ritmo intenso de 8 a 10 por dia: elimina o atraso no menor tempo possível.'),
-        ]
-      : [];
-
-
-    return { planPace, backlogPages, backlogDays, remainingPages, isBehind, strategies, planDeadline, pagesOfBook, daysSince, elapsedDays };
-  }, [lastReadingInfo, startOfDay, readingDate]);
-
-  const selectedStrategy = recovery?.strategies.find(s => s.id === selectedRecoveryId) || null;
-
-  const recoverySchedule = useMemo(() => {
-    if (!recovery || !selectedStrategy) return [];
-    const today = new Date();
-    let remaining = recovery.backlogPages;
-    const rows: Array<{ dayLabel: string; dayPages: number; recoveryPages: number; remaining: number }> = [];
-    for (let i = 0; i < Math.min(selectedStrategy.days, 14) && remaining > 0; i++) {
-      const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
-      const recoveryPages = Math.min(selectedStrategy.extra, remaining);
-      remaining -= recoveryPages;
-      rows.push({
-        dayLabel: date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' }),
-        dayPages: recovery.planPace,
-        recoveryPages,
-        remaining: Math.max(0, Math.round(remaining)),
-      });
-    }
-    return rows;
-  }, [recovery, selectedStrategy]);
+    return lastReadingInfo.status?.status === 'Concluido';
+  }, [lastReadingInfo]);
 
 
   return (
@@ -729,14 +600,14 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                   disabled={activeIndex <= 0}
                   onClick={() => {
                     const prev = booksWithReadings[activeIndex - 1];
-                    if (prev) { setSelectedLastBookId(prev.bookId); setSelectedRecoveryId(null); }
+                    if (prev) setSelectedLastBookId(prev.bookId);
                   }}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <Select
                   value={activeBookId ?? undefined}
-                  onValueChange={(v) => { setSelectedLastBookId(v); setSelectedRecoveryId(null); }}
+                  onValueChange={setSelectedLastBookId}
                 >
                   <SelectTrigger className="h-8 w-52 text-xs">
                     <SelectValue placeholder="Escolher livro" />
@@ -757,7 +628,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                   disabled={activeIndex < 0 || activeIndex >= booksWithReadings.length - 1}
                   onClick={() => {
                     const next = booksWithReadings[activeIndex + 1];
-                    if (next) { setSelectedLastBookId(next.bookId); setSelectedRecoveryId(null); }
+                    if (next) setSelectedLastBookId(next.bookId);
                   }}
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -769,7 +640,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
             </p>
 
 
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-lg bg-background/70 border border-border p-3">
                 <p className="text-[11px] text-muted-foreground">Último livro lido</p>
                 <p className="font-semibold text-foreground text-sm truncate" title={lastReadingInfo.bookName}>{lastReadingInfo.bookName}</p>
@@ -778,6 +649,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 <p className="text-[11px] text-muted-foreground">{unit.lastLabel}</p>
                 <p className="font-semibold text-foreground text-sm">
                   {lastReadingInfo.page}{lastReadingInfo.totalPages ? ` de ${lastReadingInfo.totalPages}` : ''}
+                </p>
+              </div>
+              <div className="rounded-lg bg-background/70 border border-border p-3">
+                <p className="text-[11px] text-muted-foreground">Status e classificação</p>
+                <p className="font-semibold text-foreground text-sm">
+                  {lastReadingInfo.status?.status ?? 'Sem status'}
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {[lastReadingInfo.book?.categoria, lastReadingInfo.book?.tipo].filter(Boolean).join(' • ') || 'Sem classificação'}
                 </p>
               </div>
               <div className="rounded-lg bg-background/70 border border-border p-3">
@@ -793,23 +673,13 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 📖 Sua última leitura foi <span className="font-semibold text-foreground">{lastReadingInfo.bookName}</span>
                 {lastReadingInfo.bibleRef ? <> (<span className="font-medium text-foreground">{lastReadingInfo.bibleRef}</span>)</> : null}
                 , em <span className="font-semibold text-foreground capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}
-                {unit.isPlan
-                  ? (lastReadingInfo.sessionChapters > 0
-                      ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.sessionChapters}</span> capítulo(s) lido(s)
-                          {lastReadingInfo.pagesRead > 0 ? <> (<span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> página(s) do plano)</> : null}</>
-                      : null)
-                  : (lastReadingInfo.pagesRead > 0
-                      ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> {unit.many} {unit.isBible ? 'lido(s)' : 'lida(s)'}</>
-                      : null)}
+                {lastReadingInfo.pagesRead > 0
+                  ? <>, da página <span className="font-semibold text-foreground">{lastReadingInfo.latestStartPage}</span> até a página <span className="font-semibold text-foreground">{lastReadingInfo.latestEndPage}</span></>
+                  : null}
                 {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{Math.floor(lastReadingInfo.minutes)}min</span></> : null}.
               </p>
-              {unit.isPlan && lastReadingInfo.sessionRefs.length > 0 && (
-                <p>
-                  📚 Leitura do dia no plano: <span className="font-medium text-foreground">{lastReadingInfo.sessionRefs.join(' · ')}</span>.
-                </p>
-              )}
               <p>
-                🔖 Você parou {unit.isBible ? 'no capítulo' : unit.isPlan ? 'na página do plano' : 'na página'} <span className="font-semibold text-foreground">{lastReadingInfo.page}</span>
+                🔖 Em “Status dos Livros”, constam <span className="font-semibold text-foreground">{lastReadingInfo.page}</span> página(s) lida(s)
                 {lastReadingInfo.totalPages ? <> de <span className="font-semibold text-foreground">{lastReadingInfo.totalPages}</span></> : null}.
               </p>
 
@@ -837,106 +707,6 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
               </div>
             )}
 
-            {/* Assistente de recuperação */}
-            {!isActiveBookCompleted && recovery && !recovery.isBehind && (
-              <div className="rounded-lg border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/30 p-3 text-sm text-emerald-800 dark:text-emerald-200">
-                🌱 Tudo em dia! Você está acompanhando o seu plano de leitura normalmente. Continue nesse ritmo de{' '}
-                <span className="font-semibold">{recovery.planPace} {unit.many} por dia</span> — a constância é o que mais importa.
-              </div>
-            )}
-
-            {!isActiveBookCompleted && recovery?.isBehind && (
-              <div className="space-y-3 rounded-lg border border-border bg-background/70 p-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Você está aproximadamente {recovery.backlogDays} {recovery.backlogDays === 1 ? 'dia' : 'dias'} atrasado
-                    {' '}({recovery.backlogPages} {unit.many} para colocar em dia).
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Ritmo do seu plano: {recovery.planPace} {unit.many} por dia (leitura diária normal)
-                    {recovery.remainingPages !== null ? ` · faltam ${recovery.remainingPages} ${unit.many} para concluir ${unit.isBible ? 'a leitura' : 'o livro'}` : ''}.
-                    Você já leu {recovery.pagesOfBook} {unit.many} em {recovery.elapsedDays} dia(s) de plano.
-                    Sem culpa nenhuma — o importante é retomar hoje. Cada leitura registrada diminui esse atraso automaticamente.
-                  </p>
-                </div>
-
-                <p className="text-sm text-foreground">Você pode recuperar esse atraso de {recovery.strategies.length === 4 ? 'quatro' : 'três'} formas:</p>
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-
-                  {recovery.strategies.map(st => {
-                    const isActive = selectedRecoveryId === st.id;
-                    const isRecommended = st.id === 'equilibrado';
-                    return (
-                      <button
-                        key={st.id}
-                        type="button"
-                        onClick={() => setSelectedRecoveryId(isActive ? null : st.id)}
-                        className={`text-left rounded-lg border p-3 transition-all hover:shadow-md ${
-                          isActive ? 'border-indigo-500 ring-2 ring-indigo-500/30 bg-indigo-50/60 dark:bg-indigo-950/30' : 'border-border bg-card'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span>{st.emoji}</span>
-                          <span className="font-semibold text-sm text-foreground">{st.label}</span>
-                          {isRecommended && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                              recomendado
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm font-semibold text-foreground mt-1.5">{st.perDay} por dia ({recovery.planPace} normal + {st.extra} extra)</p>
-                        <p className="text-xs text-muted-foreground">≈ {st.days} {st.days === 1 ? 'dia' : 'dias'} para eliminar o atraso</p>
-                        <p className="text-[11px] text-muted-foreground mt-1">{st.note}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <p className="text-xs text-muted-foreground">
-                  💡 Nossa sugestão: escolha o ritmo equilibrado para recuperar o atraso sem tornar a leitura pesada.
-                </p>
-
-                {selectedStrategy && (
-                  <div className="rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50/60 dark:bg-indigo-950/30 p-3 space-y-2">
-                    <p className="text-sm font-semibold text-foreground">
-                      {selectedStrategy.emoji} Plano de recuperação — ritmo {selectedStrategy.label.toLowerCase()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Leia <span className="font-semibold text-foreground">{selectedStrategy.perDay} {unit.many} por dia</span>{' '}
-                      ({recovery.planPace} do dia + {selectedStrategy.extra} de recuperação). Previsão de ficar em dia:{' '}
-                      <span className="font-semibold text-foreground">{selectedStrategy.finishLabel}</span>.
-                    </p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="text-muted-foreground text-left">
-                            <th className="py-1 pr-3 font-medium">Dia</th>
-                            <th className="py-1 pr-3 font-medium">Leitura do dia</th>
-                            <th className="py-1 pr-3 font-medium">Recuperação</th>
-                            <th className="py-1 font-medium">Atraso restante</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {recoverySchedule.map((row, i) => (
-                            <tr key={i} className="border-t border-border/60">
-                              <td className="py-1 pr-3 capitalize text-foreground">{row.dayLabel}</td>
-                              <td className="py-1 pr-3">{row.dayPages} {unit.short}</td>
-                              <td className="py-1 pr-3 text-indigo-600 dark:text-indigo-400">+{row.recoveryPages} {unit.short}</td>
-                              <td className="py-1">{row.remaining} {unit.short}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    {selectedStrategy.days > recoverySchedule.length && (
-                      <p className="text-[11px] text-muted-foreground">
-                        Mostrando os primeiros {recoverySchedule.length} dias — mantenha esse ritmo até {selectedStrategy.finishLabel}.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       )}
