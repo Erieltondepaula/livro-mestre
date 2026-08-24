@@ -793,7 +793,14 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 📖 Sua última leitura foi <span className="font-semibold text-foreground">{lastReadingInfo.bookName}</span>
                 {lastReadingInfo.bibleRef ? <> (<span className="font-medium text-foreground">{lastReadingInfo.bibleRef}</span>)</> : null}
                 , em <span className="font-semibold text-foreground capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}
-                {lastReadingInfo.pagesRead > 0 ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> {unit.many} {unit.isBible ? 'lido(s)' : 'lida(s)'}</> : null}
+                {unit.isPlan
+                  ? (lastReadingInfo.sessionChapters > 0
+                      ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.sessionChapters}</span> capítulo(s) lido(s)
+                          {lastReadingInfo.pagesRead > 0 ? <> (<span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> página(s) do plano)</> : null}</>
+                      : null)
+                  : (lastReadingInfo.pagesRead > 0
+                      ? <>, com <span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span> {unit.many} {unit.isBible ? 'lido(s)' : 'lida(s)'}</>
+                      : null)}
                 {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{Math.floor(lastReadingInfo.minutes)}min</span></> : null}.
               </p>
               {unit.isPlan && lastReadingInfo.sessionRefs.length > 0 && (
