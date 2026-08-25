@@ -479,7 +479,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     const withDates = readings
       .filter(r => r.livroId === activeBookId)
       .map(r => ({ r, d: readingDate(r), sortDate: readingSortDate(r) }))
-      .filter((x): x is { r: DailyReading; d: Date } => !!x.d);
+      .filter((x): x is { r: DailyReading; d: Date; sortDate: Date | null } => !!x.d);
     if (!withDates.length) return null;
     withDates.sort((a, b) => (b.sortDate?.getTime() ?? b.d.getTime()) - (a.sortDate?.getTime() ?? a.d.getTime()));
     const { r, d } = withDates[0];
