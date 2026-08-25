@@ -450,10 +450,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     return d && !isNaN(d.getTime()) ? d : null;
   }, []);
 
+  const readingSortDate = useCallback((r: DailyReading): Date | null => {
+    const d = r.created_at ? new Date(r.created_at) : (r.dataInicio ? new Date(r.dataInicio) : null);
+    return d && !isNaN(d.getTime()) ? d : null;
+  }, []);
+
   const booksWithReadings = useMemo(() => {
     const map = new Map<string, { bookId: string; name: string; last: Date }>();
     readings.forEach(r => {
-      const d = readingDate(r);
+      const d = readingSortDate(r);
       if (!d) return;
       const book = books.find(b => b.id === r.livroId);
       const name = book?.livro || r.livroLido || 'Livro não identificado';
@@ -461,7 +466,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       if (!cur || d.getTime() > cur.last.getTime()) map.set(r.livroId, { bookId: r.livroId, name, last: d });
     });
     return Array.from(map.values()).sort((a, b) => b.last.getTime() - a.last.getTime());
-  }, [readings, books, readingDate]);
+  }, [readings, books, readingSortDate]);
 
   const activeBookId = selectedLastBookId && booksWithReadings.some(b => b.bookId === selectedLastBookId)
     ? selectedLastBookId
@@ -473,10 +478,10 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
     if (!activeBookId) return null;
     const withDates = readings
       .filter(r => r.livroId === activeBookId)
-      .map(r => ({ r, d: readingDate(r) }))
-      .filter((x): x is { r: DailyReading; d: Date } => !!x.d);
+      .map(r => ({ r, d: readingDate(r), sortDate: readingSortDate(r) }))
+      .filter((x): x is { r: DailyReading; d: Date; sortDate: Date | null } => !!x.d);
     if (!withDates.length) return null;
-    withDates.sort((a, b) => b.d.getTime() - a.d.getTime());
+    withDates.sort((a, b) => (b.sortDate?.getTime() ?? b.d.getTime()) - (a.sortDate?.getTime() ?? a.d.getTime()));
     const { r, d } = withDates[0];
     const book = books.find(b => b.id === activeBookId);
     const bookName = book?.livro || r.livroLido || 'Livro não identificado';
@@ -512,7 +517,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       minutes: Math.max(0, r.tempoGasto),
       bibleRef,
     };
-  }, [activeBookId, readings, books, statuses, readingDate, startOfDay, isBibleBook, isPlanBible]);
+  }, [activeBookId, readings, books, statuses, readingDate, readingSortDate, startOfDay, isBibleBook, isPlanBible]);
 
 
   // ===== Unidade de medida =====
