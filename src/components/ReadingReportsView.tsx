@@ -44,10 +44,7 @@ const formatBibleReference = (reading: DailyReading) => {
 };
 
 const sameReadingDay = (a: DailyReading, b: DailyReading) => {
-  if (a.dataInicio && b.dataInicio) {
-    return new Date(a.dataInicio).toISOString().split('T')[0] === new Date(b.dataInicio).toISOString().split('T')[0];
-  }
-  return a.dia === b.dia && a.mes === b.mes;
+  return a.dia === b.dia && String(a.mes).toLowerCase() === String(b.mes).toLowerCase();
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -567,7 +564,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   const unit = useMemo(() => {
     const isBible = !!lastReadingInfo?.isBible;
     const isPlan = !!lastReadingInfo?.isPlan;
-    return { isBible, isPlan, many: 'página(s)', lastLabel: isPlan ? 'Última página do plano' : 'Quantidade lida no Status' };
+    return {
+      isBible,
+      isPlan,
+      many: isPlan ? 'página(s) do plano' : isBible ? 'capítulo(s)' : 'página(s)',
+      short: isPlan || !isBible ? 'p' : 'cap',
+      rangeStartLabel: isPlan ? 'da página do plano' : isBible ? 'do capítulo' : 'da página',
+      rangeEndLabel: isPlan ? 'até a página do plano' : isBible ? 'até o capítulo' : 'até a página',
+      lastLabel: isPlan ? 'Última página do plano' : isBible ? 'Último capítulo' : 'Quantidade lida no Status',
+    };
   }, [lastReadingInfo]);
 
 
@@ -719,7 +724,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
                 📖 Sua última leitura foi <span className="font-semibold text-foreground">{lastReadingInfo.bookName}</span>
                 , em <span className="font-semibold text-foreground capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}
                 {lastReadingInfo.pagesRead > 0
-                  ? <>, da página <span className="font-semibold text-foreground">{lastReadingInfo.latestStartPage}</span> até a página <span className="font-semibold text-foreground">{lastReadingInfo.latestEndPage}</span> (<span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span>p)</>
+                  ? <>, {unit.rangeStartLabel} <span className="font-semibold text-foreground">{lastReadingInfo.latestStartPage}</span> {unit.rangeEndLabel} <span className="font-semibold text-foreground">{lastReadingInfo.latestEndPage}</span> (<span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span>{unit.short})</>
                   : null}
                 {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{formatReadingTime(lastReadingInfo.minutes)}</span></> : null}.
               </p>
@@ -730,7 +735,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
               )}
 
               <p>
-                🔖 Em “Status dos Livros”, constam <span className="font-semibold text-foreground">{lastReadingInfo.page}</span> página(s) lida(s)
+                🔖 Em “Status dos Livros”, constam <span className="font-semibold text-foreground">{lastReadingInfo.page}</span> {unit.many} lida(s)
                 {lastReadingInfo.totalPages ? <> de <span className="font-semibold text-foreground">{lastReadingInfo.totalPages}</span></> : null}.
               </p>
 
