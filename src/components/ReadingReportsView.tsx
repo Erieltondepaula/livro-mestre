@@ -27,6 +27,26 @@ const STATUS_COLORS = {
   'Não iniciados': '#94a3b8',
 };
 
+
+const formatReadingTime = (minutes: number) => {
+  const mins = Math.floor(minutes);
+  const secs = Math.round((minutes % 1) * 60);
+  if (secs > 0) return `${mins}:${secs.toString().padStart(2, '0')} min`;
+  return `${mins} min`;
+};
+
+const formatBibleReference = (reading: DailyReading) => {
+  if (!reading.bibleBook) return null;
+  const chapter = reading.bibleChapter ? ` ${reading.bibleChapter}` : '';
+  const start = reading.bibleVerseStart ? `:${reading.bibleVerseStart}` : '';
+  const end = reading.bibleVerseEnd && reading.bibleVerseEnd !== reading.bibleVerseStart ? `-${reading.bibleVerseEnd}` : '';
+  return `${reading.bibleBook}${chapter}${start}${end}`;
+};
+
+const sameReadingDay = (a: DailyReading, b: DailyReading) => {
+  return a.dia === b.dia && String(a.mes).toLowerCase() === String(b.mes).toLowerCase();
+};
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -458,7 +478,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   const booksWithReadings = useMemo(() => {
     const map = new Map<string, { bookId: string; name: string; last: Date }>();
     readings.forEach(r => {
-      const d = readingSortDate(r);
+      const d = readingDate(r);
       if (!d) return;
       const book = books.find(b => b.id === r.livroId);
       const name = book?.livro || r.livroLido || 'Livro não identificado';
@@ -466,7 +486,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       if (!cur || d.getTime() > cur.last.getTime()) map.set(r.livroId, { bookId: r.livroId, name, last: d });
     });
     return Array.from(map.values()).sort((a, b) => b.last.getTime() - a.last.getTime());
-  }, [readings, books, readingSortDate]);
+  }, [readings, books, readingDate]);
 
   const activeBookId = selectedLastBookId && booksWithReadings.some(b => b.bookId === selectedLastBookId)
     ? selectedLastBookId
@@ -476,46 +496,64 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   // ===== Última leitura registrada do livro selecionado =====
   const lastReadingInfo = useMemo(() => {
     if (!activeBookId) return null;
-    const withDates = readings
-      .filter(r => r.livroId === activeBookId)
+    const bookReadings = readings.filter(r => r.livroId === activeBookId);
+    const withDates = bookReadings
       .map(r => ({ r, d: readingDate(r), sortDate: readingSortDate(r) }))
       .filter((x): x is { r: DailyReading; d: Date; sortDate: Date | null } => !!x.d);
     if (!withDates.length) return null;
-    withDates.sort((a, b) => (b.sortDate?.getTime() ?? b.d.getTime()) - (a.sortDate?.getTime() ?? a.d.getTime()));
-    const { r, d } = withDates[0];
+
+    withDates.sort((a, b) => {
+      const dateDiff = b.d.getTime() - a.d.getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return (b.sortDate?.getTime() ?? 0) - (a.sortDate?.getTime() ?? 0);
+    });
+
+    const { r: latestReading, d } = withDates[0];
     const book = books.find(b => b.id === activeBookId);
-    const bookName = book?.livro || r.livroLido || 'Livro não identificado';
+    const bookName = book?.livro || latestReading.livroLido || 'Livro não identificado';
     const totalPages = book?.totalPaginas || 0;
-
-    const daysSince = Math.max(0, Math.round((startOfDay(new Date()).getTime() - startOfDay(d).getTime()) / 86400000));
-
-    // O progresso vem exclusivamente do mesmo registro usado em Status dos Livros.
-    // Não somamos nem inferimos páginas/capítulos a partir do histórico.
     const status = statuses.find(s => s.livroId === activeBookId) ?? null;
+    const isBible = isBibleBook(activeBookId);
     const isPlan = isPlanBible(activeBookId);
 
-    const bibleRef = r.bibleBook
-      ? `${r.bibleBook}${r.bibleChapter ? ' ' + r.bibleChapter : ''}${r.bibleVerseStart ? ':' + r.bibleVerseStart : ''}${r.bibleVerseEnd && r.bibleVerseEnd !== r.bibleVerseStart ? '-' + r.bibleVerseEnd : ''}`
-      : null;
+    const readingsFromLastDay = isBible
+      ? bookReadings.filter(reading => sameReadingDay(reading, latestReading))
+      : [latestReading];
+
+    const latestStartPage = isBible
+      ? Math.min(...readingsFromLastDay.map(reading => reading.paginaInicial))
+      : latestReading.paginaInicial;
+    const latestEndPage = isBible
+      ? Math.max(...readingsFromLastDay.map(reading => reading.paginaFinal))
+      : latestReading.paginaFinal;
+    const pagesRead = Math.max(0, latestEndPage - latestStartPage);
+    const minutes = isBible
+      ? Math.max(...readingsFromLastDay.map(reading => Math.max(0, reading.tempoGasto)))
+      : Math.max(0, latestReading.tempoGasto);
+    const bibleRefs = readingsFromLastDay
+      .map(formatBibleReference)
+      .filter((ref): ref is string => Boolean(ref));
+
+    const daysSince = Math.max(0, Math.round((startOfDay(new Date()).getTime() - startOfDay(d).getTime()) / 86400000));
 
     return {
       bookId: activeBookId,
       book,
       bookName,
-      isBible: isBibleBook(activeBookId),
+      isBible,
       isPlan,
       status,
-      page: status?.quantidadeLida ?? 0,
+      page: status?.quantidadeLida ?? latestEndPage,
       totalPages,
       date: d,
       dateLabel: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
       weekday: d.toLocaleDateString('pt-BR', { weekday: 'long' }),
       daysSince,
-      latestStartPage: r.paginaInicial,
-      latestEndPage: r.paginaFinal,
-      pagesRead: Math.max(0, r.quantidadePaginas),
-      minutes: Math.max(0, r.tempoGasto),
-      bibleRef,
+      latestStartPage,
+      latestEndPage,
+      pagesRead,
+      minutes,
+      bibleRefs,
     };
   }, [activeBookId, readings, books, statuses, readingDate, readingSortDate, startOfDay, isBibleBook, isPlanBible]);
 
@@ -526,7 +564,15 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   const unit = useMemo(() => {
     const isBible = !!lastReadingInfo?.isBible;
     const isPlan = !!lastReadingInfo?.isPlan;
-    return { isBible, isPlan, many: 'página(s)', lastLabel: 'Quantidade lida no Status' };
+    return {
+      isBible,
+      isPlan,
+      many: isPlan ? 'página(s) do plano' : isBible ? 'capítulo(s)' : 'página(s)',
+      short: isPlan || !isBible ? 'p' : 'cap',
+      rangeStartLabel: isPlan ? 'da página do plano' : isBible ? 'do capítulo' : 'da página',
+      rangeEndLabel: isPlan ? 'até a página do plano' : isBible ? 'até o capítulo' : 'até a página',
+      lastLabel: isPlan ? 'Última página do plano' : isBible ? 'Último capítulo' : 'Quantidade lida no Status',
+    };
   }, [lastReadingInfo]);
 
 
@@ -676,15 +722,20 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
             <div className="text-sm text-muted-foreground leading-relaxed space-y-1">
               <p>
                 📖 Sua última leitura foi <span className="font-semibold text-foreground">{lastReadingInfo.bookName}</span>
-                {lastReadingInfo.bibleRef ? <> (<span className="font-medium text-foreground">{lastReadingInfo.bibleRef}</span>)</> : null}
                 , em <span className="font-semibold text-foreground capitalize">{lastReadingInfo.weekday}</span>, {lastReadingInfo.dateLabel}
                 {lastReadingInfo.pagesRead > 0
-                  ? <>, da página <span className="font-semibold text-foreground">{lastReadingInfo.latestStartPage}</span> até a página <span className="font-semibold text-foreground">{lastReadingInfo.latestEndPage}</span></>
+                  ? <>, {unit.rangeStartLabel} <span className="font-semibold text-foreground">{lastReadingInfo.latestStartPage}</span> {unit.rangeEndLabel} <span className="font-semibold text-foreground">{lastReadingInfo.latestEndPage}</span> (<span className="font-semibold text-foreground">{lastReadingInfo.pagesRead}</span>{unit.short})</>
                   : null}
-                {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{Math.floor(lastReadingInfo.minutes)}min</span></> : null}.
+                {lastReadingInfo.minutes > 0 ? <> em <span className="font-semibold text-foreground">{formatReadingTime(lastReadingInfo.minutes)}</span></> : null}.
               </p>
+              {lastReadingInfo.bibleRefs.length > 0 && (
+                <p>
+                  📚 Leitura do dia: <span className="font-medium text-foreground">{lastReadingInfo.bibleRefs.join(' · ')}</span>.
+                </p>
+              )}
+
               <p>
-                🔖 Em “Status dos Livros”, constam <span className="font-semibold text-foreground">{lastReadingInfo.page}</span> página(s) lida(s)
+                🔖 Em “Status dos Livros”, constam <span className="font-semibold text-foreground">{lastReadingInfo.page}</span> {unit.many} lida(s)
                 {lastReadingInfo.totalPages ? <> de <span className="font-semibold text-foreground">{lastReadingInfo.totalPages}</span></> : null}.
               </p>
 
