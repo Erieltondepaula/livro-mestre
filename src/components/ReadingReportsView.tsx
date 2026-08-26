@@ -481,7 +481,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   const booksWithReadings = useMemo(() => {
     const map = new Map<string, { bookId: string; name: string; last: Date }>();
     readings.forEach(r => {
-      const d = readingSortDate(r);
+      const d = readingDate(r);
       if (!d) return;
       const book = books.find(b => b.id === r.livroId);
       const name = book?.livro || r.livroLido || 'Livro não identificado';
@@ -489,7 +489,7 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
       if (!cur || d.getTime() > cur.last.getTime()) map.set(r.livroId, { bookId: r.livroId, name, last: d });
     });
     return Array.from(map.values()).sort((a, b) => b.last.getTime() - a.last.getTime());
-  }, [readings, books, readingSortDate]);
+  }, [readings, books, readingDate]);
 
   const activeBookId = selectedLastBookId && booksWithReadings.some(b => b.bookId === selectedLastBookId)
     ? selectedLastBookId
