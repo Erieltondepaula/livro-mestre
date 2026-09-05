@@ -602,6 +602,42 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   }, [lastReadingInfo]);
 
 
+  // ===== Assistente de recuperação do atraso =====
+  // Ritmo diário = quanto foi lido no último dia registrado (fonte: Histórico/Status).
+  // Atraso acumulado = ritmo diário × dias sem registro.
+  const recoveryPlan = useMemo(() => {
+    if (!lastReadingInfo) return null;
+    if (lastReadingInfo.status?.status === 'Concluido') return null;
+    const daysSince = lastReadingInfo.daysSince;
+    if (daysSince < 1) return null;
+
+    const dailyBase = lastReadingInfo.pagesRead > 0 ? lastReadingInfo.pagesRead : 4;
+    const remaining = lastReadingInfo.totalPages
+      ? Math.max(0, lastReadingInfo.totalPages - lastReadingInfo.page)
+      : 0;
+    const rawBacklog = dailyBase * daysSince;
+    const backlog = remaining > 0 ? Math.min(rawBacklog, remaining) : rawBacklog;
+    if (backlog <= 0) return null;
+
+    const strategies = [
+      { emoji: '🐢', name: 'Ritmo tranquilo', days: 14, tone: 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30' },
+      { emoji: '👍', name: 'Ritmo equilibrado', days: 7, tone: 'border-sky-300 dark:border-sky-800 bg-sky-50/70 dark:bg-sky-950/30' },
+      { emoji: '🔥', name: 'Ritmo acelerado', days: 3, tone: 'border-orange-300 dark:border-orange-800 bg-orange-50/70 dark:bg-orange-950/30' },
+      { emoji: '🚀', name: 'Ritmo agressivo', days: 1, tone: 'border-rose-300 dark:border-rose-800 bg-rose-50/70 dark:bg-rose-950/30' },
+    ].map(s => {
+      const extraPerDay = Math.ceil(backlog / s.days);
+      return {
+        ...s,
+        extraPerDay,
+        totalPerDay: dailyBase + extraPerDay,
+      };
+    });
+
+    return { daysSince, dailyBase, backlog, remaining, strategies };
+  }, [lastReadingInfo]);
+
+
+
   return (
     <div className="space-y-6">
       {/* Header */}
