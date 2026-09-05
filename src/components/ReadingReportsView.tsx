@@ -47,6 +47,13 @@ const sameReadingDay = (a: DailyReading, b: DailyReading) => {
   return a.dia === b.dia && String(a.mes).toLowerCase() === String(b.mes).toLowerCase();
 };
 
+const MONTH_NUMBER_BY_NAME: Record<string, number> = {
+  janeiro: 0, fevereiro: 1, março: 2, marco: 2, abril: 3, maio: 4, junho: 5,
+  julho: 6, agosto: 7, setembro: 8, outubro: 9, novembro: 10, dezembro: 11,
+  jan: 0, fev: 1, mar: 2, abr: 3, mai: 4, jun: 5,
+  jul: 6, ago: 7, set: 8, out: 9, nov: 10, dez: 11,
+};
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
@@ -466,7 +473,19 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
   // ===== Livros com leitura registrada (para navegação) =====
   const startOfDay = useCallback((x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()), []);
   const readingDate = useCallback((r: DailyReading): Date | null => {
-    const d = r.dataInicio ? new Date(r.dataInicio) : (r.created_at ? new Date(r.created_at) : null);
+    if (r.dataInicio) {
+      const d = new Date(r.dataInicio);
+      return !isNaN(d.getTime()) ? d : null;
+    }
+
+    // Registros importados da McCheyne não possuem start_date. Neles, created_at
+    // indica quando ocorreu a importação, e não o dia da leitura. O Histórico de
+    // Leituras usa dia/mês; este relatório deve usar exatamente a mesma fonte.
+    const month = MONTH_NUMBER_BY_NAME[String(r.mes).trim().toLowerCase()];
+    if (month === undefined || !Number.isFinite(r.dia)) return null;
+    const createdYear = r.created_at ? new Date(r.created_at).getFullYear() : new Date().getFullYear();
+    const year = Number.isFinite(createdYear) ? createdYear : new Date().getFullYear();
+    const d = new Date(year, month, r.dia);
     return d && !isNaN(d.getTime()) ? d : null;
   }, []);
 
