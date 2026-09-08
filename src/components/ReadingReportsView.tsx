@@ -801,6 +801,45 @@ export function ReadingReportsView({ books, readings, statuses }: ReadingReports
               </p>
             </div>
 
+            {/* Assistente de recuperação do atraso */}
+            {recoveryPlan && (
+              <div className="rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/30 p-4 space-y-3">
+                <p className="font-semibold text-sm text-amber-800 dark:text-amber-200">
+                  ⏳ Você está {recoveryPlan.daysSince} {recoveryPlan.daysSince === 1 ? 'dia' : 'dias'} sem registrar leitura.
+                  Atraso acumulado estimado: <span className="font-bold">{recoveryPlan.backlog} {unit.many}</span>
+                  {recoveryPlan.remaining > 0 && recoveryPlan.backlog >= recoveryPlan.remaining
+                    ? ' (praticamente o que falta para concluir)'
+                    : <> (ritmo de {recoveryPlan.dailyBase}{unit.short}/dia × {recoveryPlan.daysSince} {recoveryPlan.daysSince === 1 ? 'dia' : 'dias'})</>}.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Hoje, leia normalmente os <span className="font-semibold text-foreground">{recoveryPlan.dailyBase} {unit.many}</span> do dia e some o extra de uma das estratégias abaixo para sair do atraso:
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  {recoveryPlan.strategies.map(s => (
+                    <div key={s.name} className={`rounded-lg border p-3 ${s.tone}`}>
+                      <p className="font-semibold text-sm text-foreground">{s.emoji} {s.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {s.days === 1
+                          ? 'Quite o atraso amanhã:'
+                          : `Recupere em ${s.days} dias:`}
+                      </p>
+                      <p className="text-sm mt-1 text-foreground">
+                        <span className="font-bold">+{s.extraPerDay} {unit.short}</span> extras/dia
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Total: <span className="font-semibold text-foreground">{s.totalPerDay} {unit.many}/dia</span>
+                        {' '}({recoveryPlan.dailyBase}{unit.short} do dia + {s.extraPerDay}{unit.short} do atraso)
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Cálculo baseado no seu último dia registrado em “Status dos Livros” ({recoveryPlan.dailyBase} {unit.many} na última leitura).
+                </p>
+              </div>
+            )}
+
+
             {/* Leitura concluída */}
             {isActiveBookCompleted && (
               <div className="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 p-4 text-emerald-800 dark:text-emerald-200">
