@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { safeParseInt, safeParseFloat } from '@/lib/validations';
-import { PlusCircle, Plus, Settings } from 'lucide-react';
+import { PlusCircle, Plus, Settings, Search, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { isValidIsbn, lookupIsbn } from '@/lib/isbnLookup';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -39,6 +41,41 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
   const [manageTypesOpen, setManageTypesOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [isbn, setIsbn] = useState('');
+  const [isbnLoading, setIsbnLoading] = useState(false);
+  const [isbnMessage, setIsbnMessage] = useState('');
+  const [isbnError, setIsbnError] = useState(false);
+
+  const handleIsbnSearch = async () => {
+    if (isbnLoading) return;
+    setIsbnMessage('');
+    setIsbnError(false);
+    if (!isValidIsbn(isbn)) {
+      setIsbnError(true);
+      setIsbnMessage('Digite um ISBN válido de 10 ou 13 caracteres.');
+      return;
+    }
+    setIsbnLoading(true);
+    try {
+      const book = await lookupIsbn(isbn);
+      if (!book) {
+        setIsbnError(true);
+        setIsbnMessage('Livro não encontrado. Confira o ISBN ou preencha os dados manualmente.');
+        return;
+      }
+      setLivro(book.title);
+      setAutor(book.author || '');
+      setAno(book.year ? String(book.year) : '');
+      setTotalPaginas(book.pages ? String(book.pages) : '');
+      setCoverUrl(book.coverUrl);
+      setIsbnMessage(`Dados encontrados em ${book.source}.${book.pages ? '' : ' Número de páginas não informado pelo catálogo.'}`);
+    } catch (error) {
+      setIsbnError(true);
+      setIsbnMessage(error instanceof Error ? error.message : 'Não foi possível buscar o livro.');
+    } finally {
+      setIsbnLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadTypesAndCategories();
@@ -139,6 +176,8 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
     setValorPago('');
     setCoverUrl(undefined);
     setTargetCompletionDate('');
+    setIsbn('');
+    setIsbnMessage('');
   };
 
   return (
@@ -150,6 +189,29 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
 
       <div className="card-library-elevated p-4 sm:p-6 lg:p-8 max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="space-y-2 border-b border-border pb-5">
+            <label htmlFor="book-isbn" className="block text-sm font-medium text-foreground">ISBN</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                id="book-isbn"
+                type="text"
+                value={isbn}
+                onChange={(event) => { setIsbn(event.target.value); setIsbnMessage(''); }}
+                onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); void handleIsbnSearch(); } }}
+                disabled={isbnLoading}
+                className="input-library flex-1 min-w-0"
+                placeholder="Ex: 9788535914849"
+                maxLength={32}
+                aria-invalid={isbnError && Boolean(isbnMessage)}
+                aria-describedby={isbnMessage ? 'isbn-result' : undefined}
+              />
+              <Button type="button" onClick={handleIsbnSearch} disabled={isbnLoading || !isbn.trim()} className="shrink-0">
+                {isbnLoading ? <Loader2 className="animate-spin" /> : <Search />}
+                {isbnLoading ? 'Buscando…' : 'Buscar por ISBN'}
+              </Button>
+            </div>
+            {isbnMessage && <p id="isbn-result" role="status" className={`text-sm ${isbnError ? 'text-destructive' : 'text-muted-foreground'}`}>{isbnMessage}</p>}
+          </div>
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
             <ImageUpload
               value={coverUrl}
@@ -371,10 +433,10 @@ export function BookForm({ onSubmit, currentBookCount = 0 }: BookFormProps) {
             </p>
           </div>
 
-          <button type="submit" className="btn-primary w-full">
+          <Button type="submit" disabled={isbnLoading} className="btn-primary w-full">
             <PlusCircle className="w-5 h-5" />
             Cadastrar Livro
-          </button>
+          </Button>
         </form>
       </div>
 
