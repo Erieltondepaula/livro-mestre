@@ -28,9 +28,15 @@ function publicationYear(date?: string): number | undefined {
 }
 
 async function fetchJson(url: string) {
-  const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error(`Consulta indisponível (${response.status}).`);
-  return response.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`Consulta indisponível (${response.status}).`);
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function lookupIsbn(value: string): Promise<IsbnBook | null> {
