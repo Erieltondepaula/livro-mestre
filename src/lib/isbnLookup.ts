@@ -4,7 +4,7 @@ export interface IsbnBook {
   year?: number;
   pages?: number;
   coverUrl?: string;
-  source: 'Open Library' | 'Google Books';
+  source: 'Open Library' | 'Google Books' | 'Crossref';
 }
 
 export function normalizeIsbn(value: string): string {
@@ -27,7 +27,7 @@ function publicationYear(date?: string): number | undefined {
   return match ? Number(match[0]) : undefined;
 }
 
-async function fetchJson(url: string) {
+export async function fetchCatalogJson(url: string) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
@@ -44,7 +44,7 @@ export async function lookupIsbn(value: string): Promise<IsbnBook | null> {
   if (!isValidIsbn(isbn)) throw new Error('Digite um ISBN válido de 10 ou 13 caracteres.');
   let libraryFailed = false;
   try {
-    const data = await fetchJson(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&jscmd=data&format=json`);
+    const data = await fetchCatalogJson(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&jscmd=data&format=json`);
     const book = data[`ISBN:${isbn}`];
     if (book?.title) {
       return {
@@ -61,7 +61,7 @@ export async function lookupIsbn(value: string): Promise<IsbnBook | null> {
   }
 
   try {
-    const data = await fetchJson(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=5`);
+    const data = await fetchCatalogJson(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=5`);
     // Only accept an edition whose identifier matches the requested ISBN.
     const book = data.items?.find((item: { volumeInfo?: { industryIdentifiers?: { identifier: string }[] } }) =>
       item.volumeInfo?.industryIdentifiers?.some(identifier => normalizeIsbn(identifier.identifier) === isbn)

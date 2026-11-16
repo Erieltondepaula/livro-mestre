@@ -1,3 +1,3 @@
 # Architecture rules
 
-- Keep ISBN catalog lookup in `src/lib/isbnLookup.ts`, using public Open Library with exact-identifier Google Books fallback; this fills the existing book form without new storage or credentials.
+- Keep registration catalog lookup in `src/lib/isbnLookup.ts` and `src/lib/bookSearch.ts`: Open Library/Google Books for books and exact Amazon identifiers, Crossref for ISSN periodicals; `BookSearch` selects and resolves edition metadata before filling the existing form without new storage or credentials.
